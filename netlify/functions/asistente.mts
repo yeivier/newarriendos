@@ -1,122 +1,117 @@
 import type { Context, Config } from '@netlify/functions'
 
-// Asistente de IA de ArriendoPro (proxy seguro hacia la API de Anthropic).
-// La clave nunca sale del servidor: se lee de la variable ANTHROPIC_API_KEY.
-//
-// POST /api/asistente
-//   { system, messages:[{role,content}], files?:[{media_type,data,name}] }        -> { text }
-//   { mode:"extraer", files:[{media_type,data,name}], propiedades?:[{id,nombre,direccion}] } -> { text, datos }
-
-const API = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-sonnet-4-6'
+const API = 'https://api.openai.com/v1/responses'
+const MODEL = 'gpt-5-mini'
 
 type Archivo = { media_type?: string; data?: string; name?: string }
 
-const bloqueArchivo = (f: Archivo) => {
-  const media = String(f.media_type || 'image/jpeg')
-  const data = String(f.data || '')
-  if (media === 'application/pdf') {
-    return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }
+const extraerTexto = (j: any): string => {
+  if (typeof j?.output_text === 'string' && j.output_text.trim()) return j.output_text.trim()
+  const partes: string[] = []
+  for (const item of j?.output || []) {
+    for (const c of item?.content || []) {
+      if (typeof c?.text === 'string') partes.push(c.text)
+    }
   }
-  return { type: 'image', source: { type: 'base64', media_type: media, data } }
+  return partes.join('\n').trim()
 }
 
-const EXTRACCION = `Eres un lector experto de documentos inmobiliarios chilenos (contratos de arriendo, escrituras, certificados de dominio vigente, avalúos del SII, informes Equifax/DICOM e InfoCheck, liquidaciones de sueldo).
-Lee los archivos adjuntos con máxima precisión y devuelve SOLO un objeto JSON válido (sin comentarios, sin markdown, sin texto adicional) con esta estructura exacta; omite las claves que el documento no permita completar con certeza:
+const inputArchivo = (f: Archivo) => {
+  const media = String(f.media_type || '')
+  const data = String(f.data || '')
+  if (!data) return null
+  if (media.startsWith('image/')) {
+    return { type: 'input_image', image_url: `data:${media};base64,${data}` }
+  }
+  if (media === 'application/pdf') {
+    return { type: 'input_file', filename: f.name || 'documento.pdf', file_data: `data:application/pdf;base64,${data}` }
+  }
+  return null
+}
+
+const EXTRACCION = `Eres un lector experto de documentos inmobiliarios chilenos. Devuelve SOLO JSON válido, sin markdown, con esta estructura:
 {
- "resumen": "3 a 5 frases en español describiendo qué documento es y sus datos clave",
- "coincidenciaId": "id de la propiedad existente que coincide con el documento, o null",
- "propiedad": { "nombre": "", "direccion": "", "comuna": "", "region": "", "tipo": "", "rolSII": "", "inscripcion": "fojas/número/año y CBR", "superficieConstruida": "", "superficieTerreno": "", "dormitorios": "", "banos": "", "estacionamientos": "", "bodega": "", "anoConstruccion": "", "avaluoFiscal": "" },
- "arriendo": { "rentaUF": 0, "rentaCLP": 0, "diaPago": 0, "multaPct": 0, "fechaInicio": "AAAA-MM-DD", "fechaTermino": "AAAA-MM-DD", "reajuste": "UF|IPC" },
- "garantia": { "montoCLP": 0, "montoUF": 0, "fecha": "AAAA-MM-DD" },
+ "resumen": "",
+ "coincidenciaId": null,
+ "propiedad": { "nombre": "", "direccion": "", "comuna": "", "region": "", "tipo": "", "rolSII": "", "inscripcion": "", "superficieConstruida": "", "superficieTerreno": "", "dormitorios": "", "banos": "", "estacionamientos": "", "bodega": "", "anoConstruccion": "", "avaluoFiscal": "" },
+ "arriendo": { "rentaUF": 0, "rentaCLP": 0, "diaPago": 0, "multaPct": 0, "fechaInicio": "", "fechaTermino": "", "reajuste": "" },
+ "garantia": { "montoCLP": 0, "montoUF": 0, "fecha": "" },
  "arrendatario": { "nombre": "", "rut": "", "email": "", "telefono": "", "profesion": "", "nacionalidad": "" },
  "arrendador": { "nombre": "", "rut": "", "representante": "", "repRut": "" },
  "aval": { "nombre": "", "rut": "" },
  "antecedentes": { "equifaxScore": "", "morosidades": "", "protestos": "", "infocheckPuntaje": "", "rentaLiquida": "" }
 }
-Reglas: montos en números sin puntos ni signos; fechas en formato ISO AAAA-MM-DD; RUT con guion; si la renta está en UF indica rentaUF y calcula rentaCLP solo si el documento lo señala. No inventes datos.`
+No inventes datos. Usa fechas AAAA-MM-DD y montos numéricos sin símbolos.`
+
+async function llamarOpenAI(apiKey: string, payload: any) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  const j: any = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(j?.error?.message || `OpenAI respondió ${r.status}`)
+  return extraerTexto(j)
+}
 
 export default async (req: Request, _context: Context) => {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Método no permitido' }, { status: 405 })
-  }
-  const apiKey = Netlify.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) {
-    return Response.json(
-      { error: 'Falta configurar ANTHROPIC_API_KEY en Netlify (Site settings → Environment variables) y volver a desplegar' },
-      { status: 503 },
-    )
-  }
+  if (req.method !== 'POST') return Response.json({ error: 'Método no permitido' }, { status: 405 })
+
+  const apiKey = Netlify.env.get('OPENAI_API_KEY')
+  if (!apiKey) return Response.json({ error: 'Falta configurar OPENAI_API_KEY en Netlify y volver a desplegar.' }, { status: 503 })
 
   let body: any
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'Cuerpo inválido' }, { status: 400 })
-  }
+  try { body = await req.json() } catch { return Response.json({ error: 'Cuerpo inválido' }, { status: 400 }) }
 
   const files: Archivo[] = Array.isArray(body.files) ? body.files.slice(0, 8) : []
-  const adjuntos = files.filter((f) => f && f.data).map(bloqueArchivo)
+  const adjuntos = files.map(inputArchivo).filter(Boolean)
 
   try {
     if (body.mode === 'extraer') {
-      if (!adjuntos.length) return Response.json({ error: 'No llegaron archivos para analizar' }, { status: 400 })
+      if (!adjuntos.length) return Response.json({ error: 'No llegaron archivos compatibles para analizar' }, { status: 400 })
       const hint = Array.isArray(body.propiedades) && body.propiedades.length
-        ? `\nPropiedades ya existentes en la plataforma (para "coincidenciaId"): ${JSON.stringify(body.propiedades).slice(0, 4000)}`
+        ? `\nPropiedades existentes para coincidenciaId: ${JSON.stringify(body.propiedades).slice(0, 4000)}`
         : ''
-      const r = await fetch(API, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 4096,
-          system: EXTRACCION + hint,
-          messages: [{ role: 'user', content: [...adjuntos, { type: 'text', text: 'Extrae los datos de estos documentos según el formato indicado.' }] }],
-        }),
+      const text = await llamarOpenAI(apiKey, {
+        model: MODEL,
+        instructions: EXTRACCION + hint,
+        input: [{ role: 'user', content: [...adjuntos, { type: 'input_text', text: 'Extrae los datos de los documentos.' }] }],
+        max_output_tokens: 4096,
       })
-      const j: any = await r.json()
-      if (!r.ok) return Response.json({ error: j?.error?.message || 'Error de la API de IA' }, { status: 502 })
-      const texto = (j.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('\n')
-      const limpio = texto.replace(/```json|```/g, '').trim()
+      const limpio = text.replace(/```json|```/g, '').trim()
       let datos: any = null
       try {
-        const ini = limpio.indexOf('{')
-        const fin = limpio.lastIndexOf('}')
+        const ini = limpio.indexOf('{'); const fin = limpio.lastIndexOf('}')
         datos = JSON.parse(limpio.slice(ini, fin + 1))
       } catch {
-        return Response.json({ text: 'Leí el documento pero no pude estructurar los datos. Resumen:\n' + limpio.slice(0, 1200), datos: null })
+        return Response.json({ text: 'Leí el documento, pero no pude estructurar los datos.\n' + limpio.slice(0, 1200), datos: null })
       }
       return Response.json({ text: datos.resumen || 'Documento leído correctamente.', datos })
     }
 
-    // Modo chat normal (con o sin archivos adjuntos)
     const msgs: any[] = Array.isArray(body.messages) ? body.messages.slice(-24) : []
     if (!msgs.length) return Response.json({ error: 'Sin mensajes' }, { status: 400 })
-    const contenido: any[] = msgs.map((m: any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content ?? '') }))
-    if (adjuntos.length) {
-      const ult = contenido[contenido.length - 1]
-      ult.content = [...adjuntos, { type: 'text', text: String(ult.content || 'Analiza los archivos adjuntos.') }]
-    }
-    const r = await fetch(API, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2048,
-        system: String(body.system || 'Eres el asistente experto de la plataforma chilena de administración de propiedades ArriendoPro. Responde en español, claro, concreto y con cifras cuando corresponda.'),
-        messages: contenido,
-      }),
+
+    const input = msgs.map((m: any, i: number) => {
+      const isLast = i === msgs.length - 1
+      const content: any[] = [{ type: 'input_text', text: String(m.content ?? '') }]
+      if (isLast && adjuntos.length) content.unshift(...adjuntos)
+      return { role: m.role === 'assistant' ? 'assistant' : 'user', content }
     })
-    const j: any = await r.json()
-    if (!r.ok) return Response.json({ error: j?.error?.message || 'Error de la API de IA' }, { status: 502 })
-    const texto = (j.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('\n')
-    return Response.json({ text: texto || 'Sin respuesta.' })
+
+    const text = await llamarOpenAI(apiKey, {
+      model: MODEL,
+      instructions: String(body.system || 'Eres el asistente experto de ArriendoPro, plataforma chilena de administración de propiedades. Responde en español claro, concreto y sin inventar datos.'),
+      input,
+      max_output_tokens: 2048,
+    })
+    return Response.json({ text: text || 'Sin respuesta.' })
   } catch (e: any) {
-    return Response.json({ error: 'No se pudo contactar la IA: ' + (e?.message || 'error de red') }, { status: 502 })
+    return Response.json({ error: 'No se pudo contactar OpenAI: ' + (e?.message || 'error de red') }, { status: 502 })
   }
 }
 
-export const config: Config = {
-  path: '/api/asistente',
-  method: ['POST'],
-}
+export const config: Config = { path: '/api/asistente' }
