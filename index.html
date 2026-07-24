@@ -2,8 +2,18 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ArriendoPro — Administración de Propiedades</title>
+<!-- PWA / instalación como aplicación en el celular -->
+<meta name="theme-color" content="#C6A25B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="ArriendoPro" />
+<meta name="application-name" content="ArriendoPro" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<link rel="apple-touch-icon" href="/icon-180.png" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -28,9 +38,10 @@
     --font-head:'Libre Baskerville',Georgia,'Times New Roman',serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:var(--bg)}
-  body{font-family:var(--font);color:var(--text);font-size:15.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  #root{min-height:100vh}
+  html,body{background:var(--bg);overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{font-family:var(--font);color:var(--text);font-size:15.5px;line-height:1.5;-webkit-font-smoothing:antialiased;max-width:100%}
+  #root{min-height:100vh;min-height:100dvh}
+  img,svg,video{max-width:100%}
   ::-webkit-scrollbar{width:11px;height:11px}
   ::-webkit-scrollbar-thumb{background:#C4C8D0;border-radius:6px;border:3px solid var(--bg)}
   a{color:inherit;text-decoration:none}
@@ -98,7 +109,7 @@
 
   .field{display:flex;flex-direction:column;gap:6px}
   .label{font-size:13px;font-weight:700;color:#3A3D44}
-  .input,select,textarea{width:100%;font-family:inherit;font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;outline:none;transition:.12s;min-height:43px}
+  .input,select,textarea{width:100%;font-family:inherit;font-size:16px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;outline:none;transition:.12s;min-height:43px}
   .input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-bg)}
   textarea{resize:vertical;min-height:106px;line-height:1.55}
   .check{display:flex;align-items:center;gap:11px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;font-weight:600;font-size:14.5px}
@@ -259,7 +270,7 @@
     .integ .lg{width:48px;height:48px;font-size:23px;border-radius:12px}
     .field{gap:5px}
     .label{font-size:13px}
-    .input,select,textarea{font-size:15px;padding:10px 12px;min-height:43px}
+    .input,select,textarea{font-size:16px;padding:10px 12px;min-height:44px}
     .qa{padding:14px}
     .qa .qico{width:42px;height:42px;font-size:21px}
     iframe{height:200px !important}
@@ -297,6 +308,21 @@
     .step{min-width:0}
     .step .tl{display:none}
     .qa-grid{grid-template-columns:1fr}
+  }
+
+  /* ============ Instalada como app (PWA) + notch / áreas seguras ============ */
+  @supports (padding:max(0px)){
+    @media(max-width:900px){
+      .topbar{padding-left:max(13px,env(safe-area-inset-left));padding-right:max(13px,env(safe-area-inset-right));padding-top:max(11px,env(safe-area-inset-top))}
+      .content{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+      .indbar{padding-left:max(13px,env(safe-area-inset-left));padding-right:max(13px,env(safe-area-inset-right))}
+      .sidebar{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+    }
+  }
+  /* En modo aplicación (standalone) evitamos el resaltado azul al tocar y el rebote horizontal */
+  @media all and (display-mode:standalone){
+    body{overscroll-behavior-x:none}
+    a,button,.nav-item,.qa,.collapse>.chead{-webkit-tap-highlight-color:transparent}
   }
 
   /* ---- Indicadores en vivo ---- */
@@ -694,7 +720,7 @@ const ESTADOS_INC = ["Abierta","En proceso","Resuelta"];
 const TIPOS_BIT = ["Nota","Contrato","Servicio","Antecedentes","Mantenciones"];
 const blankInc = { titulo:"", descripcion:"", prioridad:"Media", categoria:"Mantención", adjuntos:[] };
 const blankBit = { tipo:"Nota", titulo:"", texto:"", adjuntos:[] };
-const CANALES_COBRO = [ {id:"correo",label:"Correo",ico:""}, {id:"whatsapp",label:"WhatsApp",ico:""}, {id:"sms",label:"SMS",ico:""} ];
+const CANALES_COBRO = [ {id:"correo",label:"Correo",ico:"📧"}, {id:"whatsapp",label:"WhatsApp",ico:"💬"}, {id:"sms",label:"SMS",ico:"📱"} ];
 const defCanales = { correo:true, whatsapp:false, sms:false };
 const getCanales = (p)=> ({ ...defCanales, ...(p.canales||{}) });
 const defRecord = { activo:true, diasAntes:3 };
@@ -815,15 +841,15 @@ function buildTemplates(p, owner, gw){
   return T;
 }
 const TPL_LIST = [
-  {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:""},
-  {id:"recordatorio",label:"Recordatorio de pago",ico:""},
-  {id:"confirmacion",label:"Confirmación de pago",ico:"✓"},
-  {id:"liq_admin",label:"Liquidación (administrador)",ico:""},
-  {id:"liq_prop",label:"Liquidación (propietario)",ico:""},
-  {id:"bienvenida",label:"Bienvenida",ico:""},
-  {id:"reajuste",label:"Reajuste de arriendo",ico:""},
-  {id:"renovacion",label:"Renovación de contrato",ico:""},
-  {id:"serv_basicos",label:"Recordatorio servicios básicos",ico:""}
+  {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:"🧾"},
+  {id:"recordatorio",label:"Recordatorio de pago",ico:"⏰"},
+  {id:"confirmacion",label:"Confirmación de pago",ico:"✅"},
+  {id:"liq_admin",label:"Liquidación (administrador)",ico:"📋"},
+  {id:"liq_prop",label:"Liquidación (propietario)",ico:"💵"},
+  {id:"bienvenida",label:"Bienvenida",ico:"👋"},
+  {id:"reajuste",label:"Reajuste de arriendo",ico:"📈"},
+  {id:"renovacion",label:"Renovación de contrato",ico:"🔄"},
+  {id:"serv_basicos",label:"Recordatorio servicios básicos",ico:"💡"}
 ];
 
 /* ---------- Plantillas editables de comunicación ----------
@@ -833,12 +859,12 @@ const TPL_LIST = [
    {nombre} {propiedad} {direccion} {comuna} {monto} {periodo} {vence} {banco} {pasarela} {email_admin} */
 const TPL_VARS = ["{nombre}","{propiedad}","{direccion}","{comuna}","{monto}","{periodo}","{vence}","{banco}","{pasarela}","{email_admin}"];
 const seedPlantillas = ()=> [
-  {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:"",builtin:true,adjuntos:[],
+  {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:"🧾",builtin:true,adjuntos:[],
     asunto:"Tu arriendo de {periodo} ya está listo · {propiedad}",
     cuerpo:"ArriendoPro: tu arriendo de {periodo} ({monto}) ya está disponible, vence {vence}. ¡Gracias!",
     cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nYa está disponible tu arriendo de *{periodo}* \n{direccion}\n\n*Monto:*  {monto}\n*Vence:*  {vence}\n\n¿Cómo pagar? \nEn línea con {pasarela}\nTransferencia:\n{banco}\n\n¡Gracias por ser parte! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro · Administración de propiedades_",
     cuerpoCorreo:"Hola {nombre}:\n\nEsperamos que te encuentres muy bien. Ya está disponible el detalle de tu arriendo correspondiente a {periodo} para {direccion}.\n\n— Resumen de tu pago —\n•  Monto a pagar:  {monto}\n•  Fecha de vencimiento:  {vence}\n\nPuedes pagar de forma fácil y segura en línea con {pasarela}, o mediante transferencia bancaria a:\n{banco}\n\nSi tienes cualquier consulta, escríbenos a {email_admin}; estaremos encantados de ayudarte.\n\nUn cordial saludo,\nEquipo ArriendoPro\nAdministración de propiedades"},
-  {id:"recordatorio",label:"Recordatorio de pago",ico:"",builtin:true,adjuntos:[],
+  {id:"recordatorio",label:"Recordatorio de pago",ico:"⏰",builtin:true,adjuntos:[],
     asunto:"Recordatorio amable · tu arriendo vence el {vence}",
     cuerpo:"ArriendoPro: recordatorio, tu arriendo de {periodo} ({monto}) vence {vence}. Evita recargos. ¡Gracias!",
     cuerpoWA:"⏰ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nUn recordatorio con cariño: tu arriendo de *{periodo}* vence muy pronto.\n{propiedad}\n\n*Pendiente:*  {monto}\n*Vence:*  {vence}\n\nPara evitar recargos, paga fácil \n{pasarela}\n{banco}\n\nCualquier duda, aquí estamos \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
@@ -848,32 +874,32 @@ const seedPlantillas = ()=> [
     cuerpo:"ArriendoPro: recibimos tu pago de {monto} (arriendo {periodo}). ¡Gracias! Este mensaje es tu comprobante.",
     cuerpoWA:"✓ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nConfirmamos que recibimos tu pago \n{propiedad}\n\n*Pagado:*  {monto}\n*Período:*  {periodo}\n\nGuarda este mensaje como tu *comprobante* \n¡Gracias por tu puntualidad! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Hola {nombre}:\n\n¡Gracias! Confirmamos que hemos recibido correctamente el pago de tu arriendo de {periodo} por {propiedad}.\n\n— Comprobante —\n•  Monto pagado:  {monto}\n•  Período:  {periodo}\n\nPuedes conservar este correo como respaldo de tu pago. Agradecemos mucho tu puntualidad.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
-  {id:"liq_admin",label:"Liquidación (administrador)",ico:"",builtin:true,adjuntos:[],
+  {id:"liq_admin",label:"Liquidación (administrador)",ico:"📋",builtin:true,adjuntos:[],
     asunto:"Liquidación de arriendo {periodo} · {propiedad}",
     cuerpo:"ArriendoPro: liquidación {periodo} de {propiedad}. Recaudado {monto}. Detalle en el panel.",
     cuerpoWA:"*ArriendoPro · Liquidación*\n━━━━━━━━━━━━━\n*Período:*  {periodo}\n{propiedad}\n\n*Recaudado:*  {monto}\n\nEl saldo a transferir al propietario queda disponible en el panel \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Estimado(a):\n\nAdjuntamos la liquidación del arriendo de {periodo} correspondiente a {propiedad}.\n\n— Resumen —\n•  Arriendo recaudado:  {monto}\n\nDescontados los gastos y la comisión, el saldo a transferir al propietario queda disponible en el panel de ArriendoPro, donde podrás revisar el detalle completo.\n\nSaludos cordiales,\nEquipo ArriendoPro"},
-  {id:"liq_prop",label:"Liquidación (propietario)",ico:"",builtin:true,adjuntos:[],
+  {id:"liq_prop",label:"Liquidación (propietario)",ico:"💵",builtin:true,adjuntos:[],
     asunto:"Tu liquidación de arriendo {periodo} está lista",
     cuerpo:"ArriendoPro: tu liquidación de {propiedad} ({periodo}) está lista. Recaudado {monto}. Detalle en el panel.",
     cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola! \n\nTu liquidación ya está lista \n{propiedad} · *{periodo}*\n\n*Recaudado:*  {monto}\n\nDescontados gastos y comisión, el saldo será depositado en tu cuenta \nDetalle completo en tu panel \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Hola:\n\nTu liquidación de {propiedad} correspondiente a {periodo} ya se encuentra disponible.\n\n— Resumen —\n•  Arriendo recaudado:  {monto}\n\nUna vez descontados los gastos y la comisión, el saldo será depositado en tu cuenta registrada. Puedes revisar el detalle completo en tu panel.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
-  {id:"bienvenida",label:"Bienvenida",ico:"",builtin:true,adjuntos:[],
+  {id:"bienvenida",label:"Bienvenida",ico:"👋",builtin:true,adjuntos:[],
     asunto:"¡Bienvenido(a) a tu nuevo hogar, {nombre}!",
     cuerpo:"ArriendoPro: ¡bienvenido(a) {nombre} a {direccion}! Aquí gestionarás tu arriendo y pagos.",
     cuerpoWA:"*¡Bienvenido(a), {nombre}!* \n━━━━━━━━━━━━━\nNos alegra muchísimo recibirte en tu nuevo hogar \n{direccion}, {comuna}\n\nCada mes te avisaremos tu arriendo y podrás pagar:\nEn línea con {pasarela}\nO por transferencia\n\n¿Dudas? Escríbenos \n{email_admin}\n\n¡Que lo disfrutes! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Hola {nombre}:\n\n¡Te damos la más cálida bienvenida a tu nuevo hogar en {direccion}, {comuna}!\n\nCada mes te avisaremos oportunamente el detalle de tu arriendo, que podrás pagar en línea con {pasarela} o por transferencia bancaria, como prefieras.\n\nEstamos para acompañarte: ante cualquier consulta o necesidad, escríbenos a {email_admin}.\n\nEsperamos que disfrutes mucho tu nuevo espacio.\n\nCon un afectuoso saludo,\nEquipo ArriendoPro"},
-  {id:"reajuste",label:"Reajuste de arriendo",ico:"",builtin:true,adjuntos:[],
+  {id:"reajuste",label:"Reajuste de arriendo",ico:"📈",builtin:true,adjuntos:[],
     asunto:"Información sobre tu arriendo · {propiedad}",
     cuerpo:"ArriendoPro: conforme a tu contrato, tu arriendo se reajusta. Nuevo valor: {monto}. Consultas: {email_admin}.",
     cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nConforme a tu contrato, tu arriendo se actualizará a partir del próximo período \n{propiedad}\n\n*Nuevo valor:*  {monto}\n\nAnte cualquier duda, escríbenos \n{email_admin}\n\nGracias por tu confianza \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Hola {nombre}:\n\nQueremos informarte que, conforme a lo establecido en tu contrato, el valor de tu arriendo por {propiedad} se actualizará a partir del próximo período.\n\n— Detalle —\n•  Nuevo valor de arriendo:  {monto}\n\nQuedamos atentos a cualquier consulta que tengas a través de {email_admin}. Agradecemos sinceramente tu confianza.\n\nSaludos cordiales,\nEquipo ArriendoPro"},
-  {id:"renovacion",label:"Renovación de contrato",ico:"",builtin:true,adjuntos:[],
+  {id:"renovacion",label:"Renovación de contrato",ico:"🔄",builtin:true,adjuntos:[],
     asunto:"¡Nos encantaría que sigas con nosotros! · {propiedad}",
     cuerpo:"ArriendoPro: tu contrato de {propiedad} está por vencer. ¿Renovamos? Valor propuesto: {monto}. Escríbenos: {email_admin}.",
     cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nTu contrato por *{propiedad}* está próximo a vencer, y de verdad nos encantaría que sigas con nosotros \n\n*Propuesta de renovación:*  {monto}\n\nEscríbenos y coordinamos la firma \n{email_admin}\n\n¡Gracias por estos meses juntos! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
     cuerpoCorreo:"Hola {nombre}:\n\nTu contrato de arriendo por {propiedad} se encuentra próximo a vencer, y para nosotros sería un gusto que sigas siendo parte.\n\n— Propuesta de renovación —\n•  Valor de arriendo:  {monto}\n\nSi estás de acuerdo, escríbenos a {email_admin} y coordinamos la firma cuando mejor te acomode.\n\nAgradecemos la confianza de estos meses y esperamos seguir acompañándote.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
-  {id:"serv_basicos",label:"Recordatorio servicios básicos",ico:"",builtin:true,adjuntos:[],
+  {id:"serv_basicos",label:"Recordatorio servicios básicos",ico:"💡",builtin:true,adjuntos:[],
     asunto:"Recordatorio de gasto común y servicios · {propiedad}",
     cuerpo:"ArriendoPro: recuerda mantener al día el gasto común y servicios de {propiedad}. Datos de transferencia en el mensaje.",
     cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nUn recordatorio amable sobre el *gasto común* y los servicios básicos de tu propiedad \n{propiedad}\n\nTe pedimos mantenerlos al día para evitar inconvenientes.\n\nDatos para transferencia:\n{banco}\n\n¡Gracias por tu colaboración! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
@@ -1306,7 +1332,7 @@ function ComunicacionesPanel({ p, owner, gw, cuentas, plantillas, onSave, onAdd,
   });
   const guardar = ()=>{ onSave({...draft}); lastId.current=draft.id; note("Plantilla guardada"); };
   const restaurar = ()=>{ const base=seedPlantillas().find(t=>t.id===draft.id); if(base){ setDraft({...base,adjuntos:draft.adjuntos||[]}); onSave({...base,adjuntos:draft.adjuntos||[]}); note("↩ Plantilla restaurada"); } };
-  const nueva = ()=>{ const id="tpl"+Date.now().toString(36); const t={id,label:"Nueva plantilla",ico:"",builtin:false,adjuntos:[],asunto:"Asunto — {propiedad}",cuerpo:"Hola {nombre}, escribe aquí tu mensaje para {propiedad}.",cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nEscribe aquí tu mensaje para {propiedad}.\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",cuerpoCorreo:"Hola {nombre}:\n\nEscribe aquí tu mensaje para {propiedad}.\n\nSaludos cordiales,\nEquipo ArriendoPro"}; onAdd(t); setSelId(id); setDraft(t); lastId.current=id; };
+  const nueva = ()=>{ const id="tpl"+Date.now().toString(36); const t={id,label:"Nueva plantilla",ico:"✉️",builtin:false,adjuntos:[],asunto:"Asunto — {propiedad}",cuerpo:"Hola {nombre}, escribe aquí tu mensaje para {propiedad}.",cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nEscribe aquí tu mensaje para {propiedad}.\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",cuerpoCorreo:"Hola {nombre}:\n\nEscribe aquí tu mensaje para {propiedad}.\n\nSaludos cordiales,\nEquipo ArriendoPro"}; onAdd(t); setSelId(id); setDraft(t); lastId.current=id; };
   const eliminar = ()=>{ if(!confirm("¿Eliminar esta plantilla?")) return; const rest=list.filter(t=>t.id!==draft.id); onDelete(draft.id); const next=rest[0]; if(next){ setSelId(next.id); setDraft(next); lastId.current=next.id; } note("✕ Plantilla eliminada"); };
   const copiar = ()=>{
     const txt = canal==="correo" ? `Asunto: ${asuntoR}\n\n${correoR}` : (canal==="whatsapp" ? waR : cuerpoR);
@@ -2197,7 +2223,9 @@ function App(){
   const [sesion,setSesion]=useState(()=>store.get("ap_sesion",null));
   useEffect(()=>{ store.set("ap_usuarios",usuarios); },[usuarios]);
   useEffect(()=>{ store.set("ap_sesion",sesion); },[sesion]);
-  const usuarioActual = sesion ? (usuarios.find(u=>u.id===sesion.id)||sesion) : null;
+  // Login desactivado por ahora: si no hay sesión iniciada, se entra como propietario principal.
+  const SESION_DEMO = {id:"__owner__", nombre:(defOwner&&defOwner.name)||"Propietario", email:(defOwner&&defOwner.email)||"", rol:"propietario", propiedadId:null};
+  const usuarioActual = sesion ? (usuarios.find(u=>u.id===sesion.id)||sesion) : SESION_DEMO;
   const rolActual = usuarioActual ? (usuarioActual.rol||"propietario") : "propietario";
   const esProp = rolActual==="propietario";
   const soloLectura = rolActual==="invitado";
@@ -3179,27 +3207,27 @@ function App(){
 
   /* ===================== FICHA COMPLETA INTERACTIVA ===================== */
   const FICHA_SECS=[
-    {t:"Datos básicos de la operación",ico:"",f:[["tipoOperacion","Tipo de operación (venta / arriendo / arriendo c/ opción / leasing)"],["alias","Nombre o alias interno"],["tipoPropiedad","Tipo de propiedad"],["condInmueble","Condición (nuevo / como nuevo / usado)"],["uso","¿Para qué se usa?"],["direccion","Dirección (calle)"],["unidad","N° / Depto - Oficina - Local"],["pisoUbica","Piso en que está"],["villaCondominio","Villa / Condominio / Edificio"],["sectorBarrio","Sector / Barrio de referencia"],["comuna","Comuna"],["ciudad","Ciudad"],["region","Región"],["codigoPostal","Código postal"],["coordenadas","Coordenadas / link Google Maps"]]},
-    {t:"Identificación legal y catastral",ico:"",f:[["rolSII","Rol S.I.I."],["fojas","Inscripción CBR — Fojas"],["numeroInsc","Inscripción CBR — N°"],["anoInsc","Inscripción CBR — Año"],["cbr","Conservador de Bienes Raíces"],["propInscrito","Nombre del propietario inscrito"],["propInscritoRut","RUT del propietario inscrito"],["tipoPropietario","Tipo de propietario (persona / sociedad / cooperativa / sucesión)"],["repLegalSoc","Representante legal (si es persona jurídica)"],["repLegalRut","RUT del representante legal"],["anoConstruccion","Año de construcción (aprox.)"],["recepcionFinal","Recepción final de obras municipal"],["regularizacion","Regularización vigente (DFL 2 / Ley / sin / N/A)"],["hipotecaGravamen","Hipoteca o gravamen vigente"],["hipotecaBancoMonto","Si tiene hipoteca: banco y monto aprox."],["prohibiciones","Prohibiciones vigentes"],["servidumbres","Servidumbres"],["litigios","Litigios o juicios"],["reglamentoCopro","Reglamento de copropiedad — Fojas/N°/Año"],["notariaEscritura","Notaría y fecha de la escritura"],["codigoVerif","Código de verificación de la escritura"],["form2890","Formulario 2890 SII — N° / fecha"],["noExpropMuni","Certificado no expropiación municipal — fecha"],["noExpropServiu","Certificado no expropiación SERVIU — fecha"],["certNumero","Certificado de número (DOM) — fecha"],["permisoEdif","Permiso de edificación — N° / fecha"]]},
-    {t:"Superficies",ico:"",f:[["superfTerreno","Superficie de terreno (m²)"],["superfConstruida","Superficie construida total (m²)"],["superfUtil","Superficie útil / vendible (m²)"],["superfTerraza","Superficie terraza o balcón (m²)"],["superfJardin","Superficie jardín privado (m²)"],["superfEstacCubierto","Superficie estacionamiento cubierto (m²)"],["superfBodega","Superficie bodega(s) (m²)"],["superfLocal","Superficie local comercial (m²)"],["fuenteSuperficies","Fuente de superficies (plano / escritura / tasación / medición)"]]},
-    {t:"Programa habitacional y distribución",ico:"",f:[["dormitorios","N° de dormitorios"],["banos","N° de baños completos (ducha/tina)"],["banosWC","N° de baños de agua (WC + lavamanos)"],["banoServicio","N° de baños de servicio"],["dependenciaServicio","Dependencia de servicio (sí indep. / compartida / no)"],["estacionamientos","N° de estacionamientos cubiertos"],["estacDescubiertos","N° de estacionamientos descubiertos"],["bodegas","N° de bodegas"],["pisosTotalesCasa","Pisos totales de la casa"],["totalPisosEdificio","N° total de pisos del edificio"],["orientacion","Orientación principal"],["tipoCirculacion","Circulación (ascensor / escalera / acceso directo)"]]},
-    {t:"Características y terminaciones",ico:"",f:[["tipoCocina","Tipo de cocina (americana / independiente / semi)"],["equipCocina","Equipamiento de cocina incluido"],["mueblesCocina","Tipo de muebles de cocina"],["areaLavanderia","Área de lavandería"],["conexLavadora","Conexiones lavadora/secadora"],["calefaccion","Calefacción"],["aguaCaliente","Agua caliente"],["aireAcond","Aire acondicionado / ventilación"],["conexGas","Conexión de gas"],["pisosPrincipales","Pisos principales (material)"],["ventanas","Ventanas (aluminio / termopanel / madera / PVC)"],["protecciones","Protecciones (rejas / alarma / cortinas)"],["extrasEquip","Otro equipamiento (alarma, cámara, domótica, paneles, piscina, quincho)"],["terminacionesEspeciales","Terminaciones especiales / remodelaciones / elementos de valor"]]},
-    {t:"Estado general y ocupación actual",ico:"",f:[["estadoConserv","Estado general del inmueble"],["ocupacionActual","Ocupación actual"],["dispVisitasDesde","Disponible para visitas desde","date"],["dispEntregaDesde","Disponible para entrega desde","date"],["restriccionVisitas","Restricciones de horario para visitas"],["llavesContacto","Quién tiene las llaves / contacto para acceso"],["visitaSinAviso","¿Se permite visitar sin aviso previo?"]]},
-    {t:"Situación de arriendo",ico:"",f:[["arrendadaActual","¿Arrendada actualmente?"],["desocupadaDesde","Si NO: desocupada desde","date"],["motivoDesocupada","Si NO: motivo"],["arriendoUF","Arriendo mensual (UF)"],["arriendoCLP","Arriendo equivalente (CLP)"],["reajuste","Reajuste"],["diaPago","Día de pago"],["multa","Multa por atraso (%)"],["formaPago","Forma de pago"],["bancoCuenta","Banco y N° de cuenta"],["gastoComunQuienPaga","Gasto común: monto y quién paga"],["serviciosANombre","Servicios a nombre de"]]},
-    {t:"Arrendatario actual",ico:"",f:[["aNombre","Nombre completo"],["aRut","RUT"],["aNacionalidad","Nacionalidad"],["aProfesion","Profesión u ocupación"],["aEmpleador","Empleador o actividad"],["aEmail","Correo"],["aTelefono","Teléfono"],["aWhatsapp","WhatsApp"],["aOcupantes","N° de ocupantes"],["avalNombre","Aval / codeudor — Nombre"],["avalRut","Aval — RUT"],["avalContacto","Aval — contacto"],["estadoPagos","Estado de pagos (al día / atrasos / cobranza)"],["tipoContratoVigente","Tipo de contrato (Residencial Ley 18.101 / Comercial / Verbal)"],["clausulaTermino","Cláusula de término anticipado pactada"],["garantiaMonto","Garantía (CLP)"],["garantiaMeses","Garantía — meses"],["garantiaFecha","Garantía — fecha recibida","date"],["garantiaEstado","Estado de la garantía"],["tipoContrato","Tipo de contrato (formato)"],["contratoInicio","Inicio del contrato","date"],["contratoTermino","Término del contrato","date"],["notariaContrato","Notaría / protocolizado"],["comisionCorretaje","Comisión de corretaje"]]},
-    {t:"Antecedentes (InfoCheck y Equifax)",ico:"",f:[["icPuntaje","Puntaje InfoCheck"],["icCapacidad","Capacidad de pago (CLP)"],["icRenta","Renta líquida (CLP)"],["icDeudaCMF","Deuda directa CMF (CLP)"],["icFuente","Fuente de ingresos"],["icFecha","Fecha informe InfoCheck","date"],["eqScore","Score Equifax"],["eqMorosidades","Morosidades vigentes (Boletín)"],["eqProtestos","N° de protestos"],["eqFecha","Fecha informe Equifax","date"]]},
-    {t:"Información urbanística y normativa",ico:"",f:[["planRegulador","Plan Regulador aplicable"],["zonaSubzona","Zona o subzona (ZM1, R2, ZU-4…)"],["coefConstruct","Coeficiente de constructibilidad"],["coefOcupSuelo","Coeficiente de ocupación de suelo"],["alturaMax","Altura máxima permitida (m / pisos)"],["usosSuelo","Usos de suelo permitidos"],["cip","CIP (Certificado de Informaciones Previas)"],["afectacionesUP","Afectaciones de utilidad pública"],["detalleAfectaciones","Detalle de afectaciones"],["declaratoriaPatrimonial","Declaratoria patrimonial / conservación histórica"],["detalleDeclaratoria","Detalle declaratoria"]]},
-    {t:"Crédito hipotecario",ico:"",f:[["tieneCredito","¿Tiene crédito vigente?"],["banco","Banco o institución"],["tipoCredito","Tipo de crédito"],["nOperacion","N° de operación"],["dividendoUF","Dividendo mensual (UF)"],["dividendoCLP","Dividendo equivalente (CLP)"],["dividendosTotales","N° total de dividendos"],["dividendosPagados","Dividendos pagados"],["creditoInicio","Inicio del crédito","date"],["creditoTermino","Término estimado","date"],["tasaInteres","Tasa de interés (%)"],["segurosDividendo","Seguros incluidos en dividendo"],["ejecutivoBanco","Ejecutivo / contacto"],["alzamiento","Alzamiento de hipoteca (fecha)"]]},
-    {t:"Aspectos financieros (venta / arriendo)",ico:"",f:[["precioPublicadoEn","Precio publicado en (UF / CLP / USD)"],["precioVentaUF","Precio de venta solicitado (UF / CLP)"],["precioArriendoUF","Precio de arriendo mensual (UF / CLP)"],["esNegociable","El precio es (negociable / fijo / a tratar)"],["precioMinInterno","Precio mínimo aceptable (uso interno)"],["tasacionCLP","Tasación comercial (CLP)"],["tasacionUF","Tasación comercial (UF)"],["fechaTasacion","Fecha de la tasación","date"],["tasador","Tasador o banco"],["arriendoMercadoUF","Arriendo de mercado (UF)"],["aceptaHipotecario","Acepta financiamiento hipotecario"],["aceptaLeasing","Acepta leasing habitacional"],["condicionesPago","Condiciones especiales de pago"]]},
-    {t:"Gastos, cargas y seguros",ico:"",f:[["contribucionesAno","Contribuciones SII al año (CLP)"],["contribAlDia","Contribuciones al día — fecha"],["avaluoFiscal","Avalúo fiscal SII (CLP)"],["afectaContrib","¿Afecta o exenta de contribuciones?"],["gastoComun","Gastos comunes mensuales (CLP)"],["gcIncluye","Gastos comunes incluyen (agua/gas/electricidad/seguro…)"],["deudaGC","Deuda de gastos comunes"],["seguroIncendioUF","Seguro incendio+sismo (UF/año)"],["otrosSeguros","Otros seguros"],["vigenciaSeguros","Vigencia de seguros"],["mantenciones","Mantenciones periódicas"]]},
-    {t:"Áreas comunes y amenidades (edificio / condominio)",ico:"",f:[["amenidades","Amenidades (piscina, gimnasio, quincho, portería 24h, cámaras, etc.)"],["nPisosEdificio","N° de pisos del edificio"],["nUnidadesEdificio","N° de unidades del edificio / condominio"],["nTorres","N° de torres"],["administracionEdificio","Administración del edificio"],["adminContacto","Nombre y contacto del administrador"]]},
-    {t:"Propiedad comercial / industrial",ico:"",f:[["usoActualComercial","Uso actual del inmueble"],["usosAnteriores","Usos anteriores relevantes"],["patenteComercial","Patente comercial vigente"],["frenteCalle","Frente a la calle (m lineales)"],["alturaLibre","Altura libre interior (m)"],["accesoCarga","Acceso de carga / descarga"],["potenciaElectrica","Potencia eléctrica instalada (kW) / trifásico"],["instalEspeciales","Instalaciones especiales (extracción, cámara frigorífica…)"],["estacClientes","N° estacionamientos para clientes"],["derechoLlave","Derecho de llave (valor)"],["nombreNegocio","Nombre del negocio actual (venta en marcha)"]]},
-    {t:"Servicios básicos",ico:"",f:[["elecEmpresa","Electricidad — empresa y N° cliente"],["aguaEmpresa","Agua — empresa y N° cliente"],["gasEmpresa","Gas — empresa y N° cliente"],["internetEmpresa","Internet/TV — empresa y N° cliente"],["medidores","N° de medidores (luz / agua / gas)"],["otrosServicios","Otros suministros"]]},
-    {t:"Documentación disponible",ico:"",f:[["documentosDisponibles","Documentos listos para entregar (escritura, dominio vigente, hipotecas y gravámenes, litigios, avalúo, rol, CIP, tasación, planos, permiso, recepción, reglamento, recibos, contrato, fotos, tour 360°…)"]]},
-    {t:"Descripción para publicar y aspectos destacados",ico:"",f:[["descripcionAviso","Descripción principal (para el aviso — máx. 800 caracteres)"],["aspectosPositivos","Aspectos positivos a destacar"],["advertencias","Aspectos a aclarar / advertencias"],["palabrasClave","Palabras clave o etiquetas"],["autorizaDireccion","¿Autoriza publicar dirección exacta? (sí / solo comuna / bajo consulta)"],["autorizaFotosExt","¿Autoriza publicar fotos exteriores?"],["autorizaFotosInt","¿Autoriza publicar fotos interiores?"],["portales","Portales en los que se desea publicar"]]},
-    {t:"Datos del propietario / mandante",ico:"",f:[["propNombre","Nombre completo"],["propRut","RUT"],["propTelPrincipal","Teléfono principal"],["propTelAlt","Teléfono alternativo"],["propEmail","Email"],["propDireccionPostal","Dirección postal (para notificaciones)"],["propApoderado","Representante / apoderado"],["propApoderadoRut","RUT del representante"],["medioContacto","Medio de contacto preferido"],["horarioContacto","Horario de contacto preferido"],["corredora","Corredora o corredor asignado"],["corredorTel","Teléfono corredor/a"],["corredorEmail","Email corredor/a"],["exclusividad","Exclusividad de la corredora (con / sin)"],["comisionAcordada","Comisión acordada"]]},
-    {t:"Otros contactos clave",ico:"",f:[["repLegal","Representante legal de la sociedad"],["adminEdificio","Administración / conserjería"],["abogado","Abogado"],["contador","Contador"]]},
-    {t:"Instrucciones internas y notas (uso interno)",ico:"",f:[["precioMinimoPiso","Precio mínimo aceptable (piso de negociación, UF)"],["urgencia","Urgencia de venta / arriendo (alta / media / baja)"],["otrosInteresados","¿Hay otros interesados conocidos?"],["motivoVenta","Motivo de la venta / arriendo (confidencial)"],["condicionesLimitaciones","Condiciones especiales o limitaciones del propietario"],["historialRelevante","Historial relevante del inmueble"],["fechaRecepcionFicha","Fecha de recepción de la ficha","date"],["ingresadoPor","Ingresado por"],["codigoInterno","Código interno del inmueble"]]}
+    {t:"Datos básicos de la operación",ico:"📋",f:[["tipoOperacion","Tipo de operación (venta / arriendo / arriendo c/ opción / leasing)"],["alias","Nombre o alias interno"],["tipoPropiedad","Tipo de propiedad"],["condInmueble","Condición (nuevo / como nuevo / usado)"],["uso","¿Para qué se usa?"],["direccion","Dirección (calle)"],["unidad","N° / Depto - Oficina - Local"],["pisoUbica","Piso en que está"],["villaCondominio","Villa / Condominio / Edificio"],["sectorBarrio","Sector / Barrio de referencia"],["comuna","Comuna"],["ciudad","Ciudad"],["region","Región"],["codigoPostal","Código postal"],["coordenadas","Coordenadas / link Google Maps"]]},
+    {t:"Identificación legal y catastral",ico:"📜",f:[["rolSII","Rol S.I.I."],["fojas","Inscripción CBR — Fojas"],["numeroInsc","Inscripción CBR — N°"],["anoInsc","Inscripción CBR — Año"],["cbr","Conservador de Bienes Raíces"],["propInscrito","Nombre del propietario inscrito"],["propInscritoRut","RUT del propietario inscrito"],["tipoPropietario","Tipo de propietario (persona / sociedad / cooperativa / sucesión)"],["repLegalSoc","Representante legal (si es persona jurídica)"],["repLegalRut","RUT del representante legal"],["anoConstruccion","Año de construcción (aprox.)"],["recepcionFinal","Recepción final de obras municipal"],["regularizacion","Regularización vigente (DFL 2 / Ley / sin / N/A)"],["hipotecaGravamen","Hipoteca o gravamen vigente"],["hipotecaBancoMonto","Si tiene hipoteca: banco y monto aprox."],["prohibiciones","Prohibiciones vigentes"],["servidumbres","Servidumbres"],["litigios","Litigios o juicios"],["reglamentoCopro","Reglamento de copropiedad — Fojas/N°/Año"],["notariaEscritura","Notaría y fecha de la escritura"],["codigoVerif","Código de verificación de la escritura"],["form2890","Formulario 2890 SII — N° / fecha"],["noExpropMuni","Certificado no expropiación municipal — fecha"],["noExpropServiu","Certificado no expropiación SERVIU — fecha"],["certNumero","Certificado de número (DOM) — fecha"],["permisoEdif","Permiso de edificación — N° / fecha"]]},
+    {t:"Superficies",ico:"📐",f:[["superfTerreno","Superficie de terreno (m²)"],["superfConstruida","Superficie construida total (m²)"],["superfUtil","Superficie útil / vendible (m²)"],["superfTerraza","Superficie terraza o balcón (m²)"],["superfJardin","Superficie jardín privado (m²)"],["superfEstacCubierto","Superficie estacionamiento cubierto (m²)"],["superfBodega","Superficie bodega(s) (m²)"],["superfLocal","Superficie local comercial (m²)"],["fuenteSuperficies","Fuente de superficies (plano / escritura / tasación / medición)"]]},
+    {t:"Programa habitacional y distribución",ico:"🛏️",f:[["dormitorios","N° de dormitorios"],["banos","N° de baños completos (ducha/tina)"],["banosWC","N° de baños de agua (WC + lavamanos)"],["banoServicio","N° de baños de servicio"],["dependenciaServicio","Dependencia de servicio (sí indep. / compartida / no)"],["estacionamientos","N° de estacionamientos cubiertos"],["estacDescubiertos","N° de estacionamientos descubiertos"],["bodegas","N° de bodegas"],["pisosTotalesCasa","Pisos totales de la casa"],["totalPisosEdificio","N° total de pisos del edificio"],["orientacion","Orientación principal"],["tipoCirculacion","Circulación (ascensor / escalera / acceso directo)"]]},
+    {t:"Características y terminaciones",ico:"🎨",f:[["tipoCocina","Tipo de cocina (americana / independiente / semi)"],["equipCocina","Equipamiento de cocina incluido"],["mueblesCocina","Tipo de muebles de cocina"],["areaLavanderia","Área de lavandería"],["conexLavadora","Conexiones lavadora/secadora"],["calefaccion","Calefacción"],["aguaCaliente","Agua caliente"],["aireAcond","Aire acondicionado / ventilación"],["conexGas","Conexión de gas"],["pisosPrincipales","Pisos principales (material)"],["ventanas","Ventanas (aluminio / termopanel / madera / PVC)"],["protecciones","Protecciones (rejas / alarma / cortinas)"],["extrasEquip","Otro equipamiento (alarma, cámara, domótica, paneles, piscina, quincho)"],["terminacionesEspeciales","Terminaciones especiales / remodelaciones / elementos de valor"]]},
+    {t:"Estado general y ocupación actual",ico:"🔎",f:[["estadoConserv","Estado general del inmueble"],["ocupacionActual","Ocupación actual"],["dispVisitasDesde","Disponible para visitas desde","date"],["dispEntregaDesde","Disponible para entrega desde","date"],["restriccionVisitas","Restricciones de horario para visitas"],["llavesContacto","Quién tiene las llaves / contacto para acceso"],["visitaSinAviso","¿Se permite visitar sin aviso previo?"]]},
+    {t:"Situación de arriendo",ico:"🔑",f:[["arrendadaActual","¿Arrendada actualmente?"],["desocupadaDesde","Si NO: desocupada desde","date"],["motivoDesocupada","Si NO: motivo"],["arriendoUF","Arriendo mensual (UF)"],["arriendoCLP","Arriendo equivalente (CLP)"],["reajuste","Reajuste"],["diaPago","Día de pago"],["multa","Multa por atraso (%)"],["formaPago","Forma de pago"],["bancoCuenta","Banco y N° de cuenta"],["gastoComunQuienPaga","Gasto común: monto y quién paga"],["serviciosANombre","Servicios a nombre de"]]},
+    {t:"Arrendatario actual",ico:"👤",f:[["aNombre","Nombre completo"],["aRut","RUT"],["aNacionalidad","Nacionalidad"],["aProfesion","Profesión u ocupación"],["aEmpleador","Empleador o actividad"],["aEmail","Correo"],["aTelefono","Teléfono"],["aWhatsapp","WhatsApp"],["aOcupantes","N° de ocupantes"],["avalNombre","Aval / codeudor — Nombre"],["avalRut","Aval — RUT"],["avalContacto","Aval — contacto"],["estadoPagos","Estado de pagos (al día / atrasos / cobranza)"],["tipoContratoVigente","Tipo de contrato (Residencial Ley 18.101 / Comercial / Verbal)"],["clausulaTermino","Cláusula de término anticipado pactada"],["garantiaMonto","Garantía (CLP)"],["garantiaMeses","Garantía — meses"],["garantiaFecha","Garantía — fecha recibida","date"],["garantiaEstado","Estado de la garantía"],["tipoContrato","Tipo de contrato (formato)"],["contratoInicio","Inicio del contrato","date"],["contratoTermino","Término del contrato","date"],["notariaContrato","Notaría / protocolizado"],["comisionCorretaje","Comisión de corretaje"]]},
+    {t:"Antecedentes (InfoCheck y Equifax)",ico:"📊",f:[["icPuntaje","Puntaje InfoCheck"],["icCapacidad","Capacidad de pago (CLP)"],["icRenta","Renta líquida (CLP)"],["icDeudaCMF","Deuda directa CMF (CLP)"],["icFuente","Fuente de ingresos"],["icFecha","Fecha informe InfoCheck","date"],["eqScore","Score Equifax"],["eqMorosidades","Morosidades vigentes (Boletín)"],["eqProtestos","N° de protestos"],["eqFecha","Fecha informe Equifax","date"]]},
+    {t:"Información urbanística y normativa",ico:"🏙️",f:[["planRegulador","Plan Regulador aplicable"],["zonaSubzona","Zona o subzona (ZM1, R2, ZU-4…)"],["coefConstruct","Coeficiente de constructibilidad"],["coefOcupSuelo","Coeficiente de ocupación de suelo"],["alturaMax","Altura máxima permitida (m / pisos)"],["usosSuelo","Usos de suelo permitidos"],["cip","CIP (Certificado de Informaciones Previas)"],["afectacionesUP","Afectaciones de utilidad pública"],["detalleAfectaciones","Detalle de afectaciones"],["declaratoriaPatrimonial","Declaratoria patrimonial / conservación histórica"],["detalleDeclaratoria","Detalle declaratoria"]]},
+    {t:"Crédito hipotecario",ico:"🏦",f:[["tieneCredito","¿Tiene crédito vigente?"],["banco","Banco o institución"],["tipoCredito","Tipo de crédito"],["nOperacion","N° de operación"],["dividendoUF","Dividendo mensual (UF)"],["dividendoCLP","Dividendo equivalente (CLP)"],["dividendosTotales","N° total de dividendos"],["dividendosPagados","Dividendos pagados"],["creditoInicio","Inicio del crédito","date"],["creditoTermino","Término estimado","date"],["tasaInteres","Tasa de interés (%)"],["segurosDividendo","Seguros incluidos en dividendo"],["ejecutivoBanco","Ejecutivo / contacto"],["alzamiento","Alzamiento de hipoteca (fecha)"]]},
+    {t:"Aspectos financieros (venta / arriendo)",ico:"💰",f:[["precioPublicadoEn","Precio publicado en (UF / CLP / USD)"],["precioVentaUF","Precio de venta solicitado (UF / CLP)"],["precioArriendoUF","Precio de arriendo mensual (UF / CLP)"],["esNegociable","El precio es (negociable / fijo / a tratar)"],["precioMinInterno","Precio mínimo aceptable (uso interno)"],["tasacionCLP","Tasación comercial (CLP)"],["tasacionUF","Tasación comercial (UF)"],["fechaTasacion","Fecha de la tasación","date"],["tasador","Tasador o banco"],["arriendoMercadoUF","Arriendo de mercado (UF)"],["aceptaHipotecario","Acepta financiamiento hipotecario"],["aceptaLeasing","Acepta leasing habitacional"],["condicionesPago","Condiciones especiales de pago"]]},
+    {t:"Gastos, cargas y seguros",ico:"🧾",f:[["contribucionesAno","Contribuciones SII al año (CLP)"],["contribAlDia","Contribuciones al día — fecha"],["avaluoFiscal","Avalúo fiscal SII (CLP)"],["afectaContrib","¿Afecta o exenta de contribuciones?"],["gastoComun","Gastos comunes mensuales (CLP)"],["gcIncluye","Gastos comunes incluyen (agua/gas/electricidad/seguro…)"],["deudaGC","Deuda de gastos comunes"],["seguroIncendioUF","Seguro incendio+sismo (UF/año)"],["otrosSeguros","Otros seguros"],["vigenciaSeguros","Vigencia de seguros"],["mantenciones","Mantenciones periódicas"]]},
+    {t:"Áreas comunes y amenidades (edificio / condominio)",ico:"🏊",f:[["amenidades","Amenidades (piscina, gimnasio, quincho, portería 24h, cámaras, etc.)"],["nPisosEdificio","N° de pisos del edificio"],["nUnidadesEdificio","N° de unidades del edificio / condominio"],["nTorres","N° de torres"],["administracionEdificio","Administración del edificio"],["adminContacto","Nombre y contacto del administrador"]]},
+    {t:"Propiedad comercial / industrial",ico:"🏭",f:[["usoActualComercial","Uso actual del inmueble"],["usosAnteriores","Usos anteriores relevantes"],["patenteComercial","Patente comercial vigente"],["frenteCalle","Frente a la calle (m lineales)"],["alturaLibre","Altura libre interior (m)"],["accesoCarga","Acceso de carga / descarga"],["potenciaElectrica","Potencia eléctrica instalada (kW) / trifásico"],["instalEspeciales","Instalaciones especiales (extracción, cámara frigorífica…)"],["estacClientes","N° estacionamientos para clientes"],["derechoLlave","Derecho de llave (valor)"],["nombreNegocio","Nombre del negocio actual (venta en marcha)"]]},
+    {t:"Servicios básicos",ico:"💡",f:[["elecEmpresa","Electricidad — empresa y N° cliente"],["aguaEmpresa","Agua — empresa y N° cliente"],["gasEmpresa","Gas — empresa y N° cliente"],["internetEmpresa","Internet/TV — empresa y N° cliente"],["medidores","N° de medidores (luz / agua / gas)"],["otrosServicios","Otros suministros"]]},
+    {t:"Documentación disponible",ico:"📁",f:[["documentosDisponibles","Documentos listos para entregar (escritura, dominio vigente, hipotecas y gravámenes, litigios, avalúo, rol, CIP, tasación, planos, permiso, recepción, reglamento, recibos, contrato, fotos, tour 360°…)"]]},
+    {t:"Descripción para publicar y aspectos destacados",ico:"📢",f:[["descripcionAviso","Descripción principal (para el aviso — máx. 800 caracteres)"],["aspectosPositivos","Aspectos positivos a destacar"],["advertencias","Aspectos a aclarar / advertencias"],["palabrasClave","Palabras clave o etiquetas"],["autorizaDireccion","¿Autoriza publicar dirección exacta? (sí / solo comuna / bajo consulta)"],["autorizaFotosExt","¿Autoriza publicar fotos exteriores?"],["autorizaFotosInt","¿Autoriza publicar fotos interiores?"],["portales","Portales en los que se desea publicar"]]},
+    {t:"Datos del propietario / mandante",ico:"🧑‍💼",f:[["propNombre","Nombre completo"],["propRut","RUT"],["propTelPrincipal","Teléfono principal"],["propTelAlt","Teléfono alternativo"],["propEmail","Email"],["propDireccionPostal","Dirección postal (para notificaciones)"],["propApoderado","Representante / apoderado"],["propApoderadoRut","RUT del representante"],["medioContacto","Medio de contacto preferido"],["horarioContacto","Horario de contacto preferido"],["corredora","Corredora o corredor asignado"],["corredorTel","Teléfono corredor/a"],["corredorEmail","Email corredor/a"],["exclusividad","Exclusividad de la corredora (con / sin)"],["comisionAcordada","Comisión acordada"]]},
+    {t:"Otros contactos clave",ico:"📇",f:[["repLegal","Representante legal de la sociedad"],["adminEdificio","Administración / conserjería"],["abogado","Abogado"],["contador","Contador"]]},
+    {t:"Instrucciones internas y notas (uso interno)",ico:"🔒",f:[["precioMinimoPiso","Precio mínimo aceptable (piso de negociación, UF)"],["urgencia","Urgencia de venta / arriendo (alta / media / baja)"],["otrosInteresados","¿Hay otros interesados conocidos?"],["motivoVenta","Motivo de la venta / arriendo (confidencial)"],["condicionesLimitaciones","Condiciones especiales o limitaciones del propietario"],["historialRelevante","Historial relevante del inmueble"],["fechaRecepcionFicha","Fecha de recepción de la ficha","date"],["ingresadoPor","Ingresado por"],["codigoInterno","Código interno del inmueble"]]}
   ];
   const fichaDesdeProp=(p)=>{ const g=p.garantia||{}; const ic=p.tenantInfocheck||{};
     const ant=(p.histArrendatarios||[]).filter(h=>h.hasta!=="vigente").map(h=>({nombre:h.nombre||"",rut:"",desde:h.desde||"",hasta:h.hasta||"",arriendo:h.arriendoFinal?String(h.arriendoFinal):"",motivo:""}));
@@ -3333,23 +3361,23 @@ function App(){
   </div>);
 
   const NAV=[
-    {id:"inicio",ico:"",label:"Inicio"},
-    {id:"sociedades",ico:"",label:"Sociedades"},
-    {id:"props",ico:"",label:"Mis Propiedades"},
-    {id:"arrendatarios",ico:"",label:"Arrendatarios y contactos"},
-    {id:"crm",ico:"",label:"CRM y leads"},
-    {id:"cobros",ico:"",label:"Cobros"},
-    {id:"finanzas",ico:"",label:"Finanzas y Balance"},
-    {id:"incidencias",ico:"",label:"Incidencias"},
-    {id:"bitacora",ico:"",label:"Bitácora"},
-    {id:"comunicaciones",ico:"",label:"Comunicaciones"},
-    {id:"historial",ico:"",label:"Historial"},
-    {id:"legal",ico:"",label:"Documentos Legales"},
-    {id:"informes",ico:"",label:"Informes"},
-    {id:"equipo",ico:"",label:"Equipo y accesos"},
-    {id:"config",ico:"",label:"Configuración"},
-    {id:"ai",ico:"",label:"Asistente"},
-    {id:"faq",ico:"",label:"Preguntas frecuentes"}
+    {id:"inicio",ico:"🏠",label:"Inicio"},
+    {id:"sociedades",ico:"🏢",label:"Sociedades"},
+    {id:"props",ico:"🏘️",label:"Mis Propiedades"},
+    {id:"arrendatarios",ico:"👥",label:"Arrendatarios y contactos"},
+    {id:"crm",ico:"🤝",label:"CRM y leads"},
+    {id:"cobros",ico:"💰",label:"Cobros"},
+    {id:"finanzas",ico:"📊",label:"Finanzas y Balance"},
+    {id:"incidencias",ico:"🛠️",label:"Incidencias"},
+    {id:"bitacora",ico:"📓",label:"Bitácora"},
+    {id:"comunicaciones",ico:"✉️",label:"Comunicaciones"},
+    {id:"historial",ico:"🗂️",label:"Historial"},
+    {id:"legal",ico:"⚖️",label:"Documentos Legales"},
+    {id:"informes",ico:"📈",label:"Informes"},
+    {id:"equipo",ico:"🔐",label:"Equipo y accesos"},
+    {id:"config",ico:"⚙️",label:"Configuración"},
+    {id:"ai",ico:"🤖",label:"Asistente"},
+    {id:"faq",ico:"❓",label:"Preguntas frecuentes"}
   ];
   const navItem=(id)=>NAV.find(n=>n.id===id);
   const NAV_GROUPS=[
@@ -3493,7 +3521,7 @@ function App(){
 
       <NotasBox key={p.id+"-notas"} p={p} onSave={(v)=>patchProp(p.id,x=>({...x,notas:v}))}/>
 
-      <Collapsible icon="" title="Datos de la propiedad" subtitle="Ubicación, características, tasación y antecedentes" defaultOpen={true}>
+      <Collapsible icon="🏠" title="Datos de la propiedad" subtitle="Ubicación, características, tasación y antecedentes" defaultOpen={true}>
       <div className="sub-title">Ubicación</div>
       <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:16}}>
         <div>
@@ -3529,7 +3557,7 @@ function App(){
       </Collapsible>
 
       {/* CRÉDITO HIPOTECARIO */}
-      <Collapsible icon="" title="Crédito hipotecario y dividendos" defaultOpen={false}>
+      <Collapsible icon="🏦" title="Crédito hipotecario y dividendos" defaultOpen={false}>
       {p.hasMortgage ? <>
         <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
           <Data label="Banco" value={p.mortgageBank}/>
@@ -3554,7 +3582,7 @@ function App(){
       </Collapsible>
 
       {/* GASTOS Y UTILIDAD */}
-      <Collapsible icon="" title="Gastos y utilidad mensual" defaultOpen={true}>
+      <Collapsible icon="📊" title="Gastos y utilidad mensual" defaultOpen={true}>
       <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
         <Data label={p.use==="arriendo"?"Ingreso (arriendo)":"Ingreso"} value={CLP(ingresoMes(p))} color="var(--green-d)"/>
         <Data label="− Dividendo" value={CLP(dCLP)} color="var(--red-d)"/>
@@ -3580,7 +3608,7 @@ function App(){
 
       {/* CONTRATO Y ARRIENDO */}
       {p.use==="arriendo" && <>
-        <Collapsible icon="" title="Contrato y arrendatario" defaultOpen={true}>
+        <Collapsible icon="📑" title="Contrato y arrendatario" defaultOpen={true}>
         <div className="sub-title green">Contrato y arriendo</div>
         <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
           <Data label="Arriendo (UF)" value={UFf(p.rentUF)}/><Data label="Equivalente hoy en CLP" value={CLP(p.rent)}/>
@@ -3598,7 +3626,7 @@ function App(){
       </>}
 
       {/* HISTORIAL RESUMIDO */}
-      <Collapsible icon="" title="Historial de esta propiedad" subtitle="Lagunas, arrendatarios anteriores y pagos" defaultOpen={false}>
+      <Collapsible icon="🗂️" title="Historial de esta propiedad" subtitle="Lagunas, arrendatarios anteriores y pagos" defaultOpen={false}>
       <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:14}}>
         <div className="card pad">
           <div style={{fontWeight:800,marginBottom:10}}>Lagunas de arriendo (sin arrendatario)</div>
@@ -3623,7 +3651,7 @@ function App(){
 
       {/* COBRO AUTOMÁTICO Y VOUCHERS */}
       {p.use==="arriendo" && <>
-        <Collapsible icon="" title="Cobro automático y vouchers" defaultOpen={false}>
+        <Collapsible icon="💳" title="Cobro automático y vouchers" defaultOpen={false}>
         <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:14}}>
           <div className="field"><label className="label">Día de generación del voucher</label><input className="input" type="number" min="1" max="31" value={p.diaCobro||1} onChange={e=>setDiaCobro(p.id,e.target.value)}/></div>
           <div className="field"><label className="label">Día límite de pago</label><input className="input" type="number" min="1" max="31" value={p.dueDay} onChange={e=>setDiaVenc(p.id,e.target.value)}/></div>
@@ -3676,7 +3704,7 @@ function App(){
       {/* LIQUIDACIÓN DE GARANTÍA */}
       {p.use==="arriendo" && (()=>{ const desc=(p.garantia&&p.garantia.descuentos)||[]; const total=desc.reduce((a,d)=>a+num(d.monto),0); const saldo=num(p.garantia&&p.garantia.monto)-total;
         return (<>
-        <Collapsible icon="" title="Liquidación de garantía" defaultOpen={false}>
+        <Collapsible icon="🔐" title="Liquidación de garantía" defaultOpen={false}>
         {desc.length>0 && <div style={{marginBottom:10}}>
           {desc.map(d=>(<div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid var(--line2)",padding:"8px 0"}}>
             <span style={{fontSize:15}}>{d.concepto}</span>
@@ -3701,7 +3729,7 @@ function App(){
         </>); })()}
 
       {/* INCIDENCIAS (vista rápida) */}
-      <Collapsible icon="" title="Incidencias" subtitle={((p.incidencias||[]).length)+" registrada(s)"} defaultOpen={false}>
+      <Collapsible icon="🛠️" title="Incidencias" subtitle={((p.incidencias||[]).length)+" registrada(s)"} defaultOpen={false}>
       <div style={{textAlign:"right",marginBottom:8}}><button className="btn btn-out btn-sm" onClick={()=>abrirIncidencia(p)}>+ Nueva incidencia</button></div>
       {(p.incidencias||[]).length===0 ? <div style={{color:"var(--muted)"}}>Sin incidencias registradas.</div> : (
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -3722,7 +3750,7 @@ function App(){
       </Collapsible>
 
       {/* BITÁCORA (vista rápida) */}
-      <Collapsible icon="" title="Bitácora" subtitle={((p.bitacora||[]).length)+" entrada(s)"} defaultOpen={false}>
+      <Collapsible icon="📓" title="Bitácora" subtitle={((p.bitacora||[]).length)+" entrada(s)"} defaultOpen={false}>
       <div style={{textAlign:"right",marginBottom:8}}><button className="btn btn-out btn-sm" onClick={()=>abrirBitacora(p)}>+ Nueva entrada</button></div>
       {(p.bitacora||[]).length===0 ? <div style={{color:"var(--muted)"}}>Sin entradas en la bitácora.</div> : (
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -3740,20 +3768,20 @@ function App(){
       </Collapsible>
 
       {/* ESCRITURAS Y DOCUMENTOS */}
-      <Collapsible icon="" title="Escrituras y documentos de compraventa" defaultOpen={false}>
+      <Collapsible icon="📜" title="Escrituras y documentos de compraventa" defaultOpen={false}>
       <EscriturasBox p={p} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
 
       </Collapsible>
 
       {/* FICHA COMPLETA INTERACTIVA */}
-      <Collapsible icon="" title="Ficha completa de la propiedad" subtitle="Rellenar, previsualizar, exportar y compartir" defaultOpen={false} accent="var(--blue)">
+      <Collapsible icon="📄" title="Ficha completa de la propiedad" subtitle="Rellenar, previsualizar, exportar y compartir" defaultOpen={false} accent="var(--blue)">
       <div className="help" style={{marginBottom:10}}>Reúne <b>toda</b> la información de la propiedad: identificación, legal/registral, características físicas, valores, arriendo, arrendatario, crédito, gastos, servicios y contactos. Incluye <b>arrendatarios y dueños anteriores sin límite</b>, fotos y archivos. Previsualízala y <b>compártela o expórtala</b> en PDF, Word, Excel o HTML, o por WhatsApp, correo y SMS.</div>
       <button className="btn btn-red" onClick={()=>abrirFicha(p)}>Abrir ficha completa</button>
       <LevantamientoBox/>
       </Collapsible>
 
       {/* COMPARTIR PROPIEDAD */}
-      <Collapsible icon="" title="Compartir propiedad" subtitle="Ficha pública de marketing (sin datos del arrendatario)" defaultOpen={false}>
+      <Collapsible icon="📤" title="Compartir propiedad" subtitle="Ficha pública de marketing (sin datos del arrendatario)" defaultOpen={false}>
       <SharePanel p={p}/>
       </Collapsible>
 
@@ -3803,12 +3831,12 @@ function App(){
       {t:"Asistente con IA",kw:"asistente ia chat preguntar",tab:"ai"},
       {t:"Configuración de la cuenta",kw:"configuracion ajustes datos propietario pasarela",tab:"config"},
     ];
-    F.forEach(f=> out.push({cat:"En la plataforma",ico:f.ico||"",title:f.t,sub:f.sub||("Ir a "+((HEAD[f.tab]&&HEAD[f.tab][0])||f.tab)),kw:(f.kw||"")+" "+f.t,run:goB(f.run||(()=>{setTab(f.tab);setSel(null);}))}));
-    props.forEach(p=> out.push({cat:"Propiedades",ico:"",title:p.name,sub:[p.address,p.comuna].filter(Boolean).join(", ")||"Propiedad",kw:[p.name,p.address,p.comuna,p.tenant].filter(Boolean).join(" "),run:goB(()=>{setSel(p);setTab("props");setFilter("todas");})}));
-    props.filter(p=>p.tenant).forEach(p=> out.push({cat:"Arrendatarios",ico:"",title:p.tenant,sub:"Arrendatario · "+p.name,kw:[p.tenant,p.tenantEmail,p.tenantPhone,p.tenantWhatsapp].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
-    (contacts||[]).forEach(c=> out.push({cat:"Arrendatarios",ico:"",title:(c.nombre||c.name||"Contacto"),sub:"Contacto guardado",kw:[c.nombre,c.name,c.email,c.telefono,c.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
-    (leads||[]).forEach(l=>{ var e=CRM_ESTADOS.find(x=>x.id===l.estado); out.push({cat:"Leads (CRM)",ico:"",title:l.nombre,sub:"Lead · "+((e&&e.label)||l.estado)+(l.comuna?(" · "+l.comuna):""),kw:[l.nombre,l.telefono,l.email,l.comuna,l.fuente,l.notas].filter(Boolean).join(" "),run:goB(()=>{setTab("crm");})}); });
-    socs.forEach(so=> out.push({cat:"Sociedades",ico:"",title:so.name,sub:"Sociedad"+(so.rut?(" · "+so.rut):""),kw:[so.name,so.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("sociedades");})}));
+    F.forEach(f=> out.push({cat:"En la plataforma",ico:f.ico||"➡️",title:f.t,sub:f.sub||("Ir a "+((HEAD[f.tab]&&HEAD[f.tab][0])||f.tab)),kw:(f.kw||"")+" "+f.t,run:goB(f.run||(()=>{setTab(f.tab);setSel(null);}))}));
+    props.forEach(p=> out.push({cat:"Propiedades",ico:"🏘️",title:p.name,sub:[p.address,p.comuna].filter(Boolean).join(", ")||"Propiedad",kw:[p.name,p.address,p.comuna,p.tenant].filter(Boolean).join(" "),run:goB(()=>{setSel(p);setTab("props");setFilter("todas");})}));
+    props.filter(p=>p.tenant).forEach(p=> out.push({cat:"Arrendatarios",ico:"👤",title:p.tenant,sub:"Arrendatario · "+p.name,kw:[p.tenant,p.tenantEmail,p.tenantPhone,p.tenantWhatsapp].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
+    (contacts||[]).forEach(c=> out.push({cat:"Arrendatarios",ico:"👤",title:(c.nombre||c.name||"Contacto"),sub:"Contacto guardado",kw:[c.nombre,c.name,c.email,c.telefono,c.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
+    (leads||[]).forEach(l=>{ var e=CRM_ESTADOS.find(x=>x.id===l.estado); out.push({cat:"Leads (CRM)",ico:"🎯",title:l.nombre,sub:"Lead · "+((e&&e.label)||l.estado)+(l.comuna?(" · "+l.comuna):""),kw:[l.nombre,l.telefono,l.email,l.comuna,l.fuente,l.notas].filter(Boolean).join(" "),run:goB(()=>{setTab("crm");})}); });
+    socs.forEach(so=> out.push({cat:"Sociedades",ico:"🏢",title:so.name,sub:"Sociedad"+(so.rut?(" · "+so.rut):""),kw:[so.name,so.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("sociedades");})}));
     _tpls.forEach(t=> out.push({cat:"Plantillas",ico:t.ico||"",title:t.label,sub:"Plantilla de comunicación",kw:[t.label,t.asunto].filter(Boolean).join(" "),run:goB(()=>{setComProp(props[0]||null);setTab("comunicaciones");})}));
     FICHA_SECS.forEach(sec=>{ out.push({cat:"Ficha: secciones",ico:sec.ico,title:sec.t,sub:"Sección de la Ficha completa",kw:"ficha "+sec.t,run:goB(()=>_verFichaSec(sec.t))});
       sec.f.forEach(f=> out.push({cat:"Ficha: campos",ico:sec.ico,title:f[1],sub:"Ficha completa › "+sec.t,kw:"ficha "+f[1]+" "+sec.t,run:goB(()=>_verFichaSec(sec.t))})); });
@@ -3819,25 +3847,24 @@ function App(){
   const _match=(it)=>{ const hay=normTxt(it.title+" "+(it.sub||"")+" "+(it.kw||"")); return _toks.every(t=>hay.includes(t)); };
   let buscaRes = _q ? BUSCABLE.filter(_match) : BUSCABLE.filter(it=>it.cat==="Secciones"||it.cat==="En la plataforma");
   buscaRes = buscaRes.slice().sort((a,b)=>CATORD.indexOf(a.cat)-CATORD.indexOf(b.cat)).slice(0,50);
-  /* ---- Puerta de acceso: sin sesión -> pantalla de ingreso; arrendatario -> portal propio ---- */
-  if(!sesion) return (<AuthScreen usuarios={usuarios} setUsuarios={setUsuarios} onLogin={iniciarSesion}/>);
-  if(rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
+  /* ---- Login desactivado por ahora: se entra directo. Solo el rol arrendatario ve su portal propio. ---- */
+  if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
   return (<div className={"app"+(soloLectura?" solo-lectura":"")}>
     {menuOpen && <div className="nav-overlay" onClick={()=>setMenuOpen(false)}></div>}
     <div className={"sidebar"+(menuOpen?" open":"")}>
       <div className="brand"><div className="brand-logo">A</div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú">✕</button></div>
-      <div className="nav"><div className="nav-item" onClick={()=>{setMBusca(true);setMenuOpen(false);}} style={{marginBottom:4}}><span className="ico"></span>Buscar<span className="kbd" style={{marginLeft:"auto"}}>/</span></div>{NAV_VIS.map(g=>(<React.Fragment key={g.label}>
+      <div className="nav"><div className="nav-item" onClick={()=>{setMBusca(true);setMenuOpen(false);}} style={{marginBottom:4}}><span className="ico">🔍</span>Buscar<span className="kbd" style={{marginLeft:"auto"}}>/</span></div>{NAV_VIS.map(g=>(<React.Fragment key={g.label}>
         <div className="nav-group">{g.label}</div>
         {g.ids.map(id=>{ const n=navItem(id); return n?(<div key={id} className={"nav-item"+(tab===id?" on":"")} onClick={()=>{setTab(id);setSel(null);setMenuOpen(false);}}><span className="ico">{n.ico}</span>{n.label}</div>):null; })}
       </React.Fragment>))}</div>
-      <div className="nav-foot"><div className="av">{(usuarioActual.nombre||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div><div style={{minWidth:0,flex:1}}><div style={{fontWeight:700,color:"var(--side-tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(usuarioActual.nombre||"").split(" ")[0]||usuarioActual.email}</div><div style={{fontSize:12.5,color:"var(--side-mut)"}}>{(ROLES_INFO[rolActual]||{}).label||rolActual}</div></div><button className="btn btn-out btn-sm" style={{padding:"6px 10px",fontSize:12}} onClick={cerrarSesion}>Salir</button></div>
+      <div className="nav-foot"><div className="av">{(usuarioActual.nombre||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div><div style={{minWidth:0,flex:1}}><div style={{fontWeight:700,color:"var(--side-tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(usuarioActual.nombre||"").split(" ")[0]||usuarioActual.email}</div><div style={{fontSize:12.5,color:"var(--side-mut)"}}>{(ROLES_INFO[rolActual]||{}).label||rolActual}</div></div>{sesion&&<button className="btn btn-out btn-sm" style={{padding:"6px 10px",fontSize:12}} onClick={cerrarSesion}>Salir</button>}</div>
     </div>
 
     {mBusca && <div className="modal-bg" style={{alignItems:"flex-start",paddingTop:"8vh",zIndex:300}} onClick={cerrarBusca}>
       <div className="cmdk-card" onClick={e=>e.stopPropagation()}>
         <div className="cmdk-top">
-          <span style={{fontSize:18}}></span>
+          <span style={{fontSize:18}}>🔍</span>
           <input autoFocus value={busca} placeholder="Busca una sección, propiedad, arrendatario, plantilla o campo de la ficha…"
             onChange={e=>{ setBusca(e.target.value); setBusSel(0); }}
             onKeyDown={e=>{ if(e.key==="ArrowDown"){e.preventDefault();setBusSel(x=>Math.min(buscaRes.length-1,x+1));}
@@ -3891,23 +3918,23 @@ function App(){
 
         {/* ============ INICIO ============ */}
         {tab==="inicio" && <>
-          <Collapsible icon="" title="¿Qué quieres hacer hoy?" subtitle="Accesos directos — toca para abrir" defaultOpen={false}>
+          <Collapsible icon="👋" title="¿Qué quieres hacer hoy?" subtitle="Accesos directos — toca para abrir" defaultOpen={false}>
             <div className="help g" style={{marginBottom:16}}>Toca un botón para ir directo a lo que necesitas.</div>
             <div className="qa-grid">
-              <button className="qa" onClick={()=>setTab("props")}><span className="qico"></span><span><span className="qt">Mis propiedades</span><span className="qd">Ver la ficha de cada una</span></span></button>
-              <button className="qa" onClick={()=>{ if(props.length===1){abrirFicha(props[0]);} else {setTab("props"); notify("Abre una propiedad y toca Ficha completa");} }}><span className="qico"></span><span><span className="qt">Ficha completa</span><span className="qd">Rellenar, previsualizar, exportar y compartir</span></span></button>
-              <button className="qa" onClick={abrirLevantamiento}><span className="qico"></span><span><span className="qt">Ficha de Levantamiento</span><span className="qd">Formulario completo para levantar una propiedad</span></span></button>
-              <button className="qa" onClick={()=>setTab("crm")}><span className="qico"></span><span><span className="qt">CRM y leads</span><span className="qd">Prospectos, visitas, seguimiento y conversión</span></span></button>
-              <button className="qa" onClick={()=>setTab("cobros")}><span className="qico"></span><span><span className="qt">Cobrar arriendos</span><span className="qd">Registrar pagos y recordatorios</span></span></button>
-              <button className="qa" onClick={()=>setTab("arrendatarios")}><span className="qico"></span><span><span className="qt">Arrendatarios y contactos</span><span className="qd">Datos, contactos y contratos</span></span></button>
-              <button className="qa" onClick={()=>setTab("finanzas")}><span className="qico"></span><span><span className="qt">Finanzas y balance</span><span className="qd">Gastos, ingresos y balance de cada propiedad</span></span></button>
-              <button className="qa" onClick={()=>setTab("incidencias")}><span className="qico"></span><span><span className="qt">Incidencias</span><span className="qd">Reparaciones y reclamos</span></span></button>
-              <button className="qa" onClick={()=>setTab("informes")}><span className="qico"></span><span><span className="qt">Informes</span><span className="qd">Descargar Word, Excel o PDF</span></span></button>
+              <button className="qa" onClick={()=>setTab("props")}><span className="qico">🏘️</span><span><span className="qt">Mis propiedades</span><span className="qd">Ver la ficha de cada una</span></span></button>
+              <button className="qa" onClick={()=>{ if(props.length===1){abrirFicha(props[0]);} else {setTab("props"); notify("Abre una propiedad y toca Ficha completa");} }}><span className="qico">📄</span><span><span className="qt">Ficha completa</span><span className="qd">Rellenar, previsualizar, exportar y compartir</span></span></button>
+              <button className="qa" onClick={abrirLevantamiento}><span className="qico">📝</span><span><span className="qt">Ficha de Levantamiento</span><span className="qd">Formulario completo para levantar una propiedad</span></span></button>
+              <button className="qa" onClick={()=>setTab("crm")}><span className="qico">🤝</span><span><span className="qt">CRM y leads</span><span className="qd">Prospectos, visitas, seguimiento y conversión</span></span></button>
+              <button className="qa" onClick={()=>setTab("cobros")}><span className="qico">💰</span><span><span className="qt">Cobrar arriendos</span><span className="qd">Registrar pagos y recordatorios</span></span></button>
+              <button className="qa" onClick={()=>setTab("arrendatarios")}><span className="qico">👥</span><span><span className="qt">Arrendatarios y contactos</span><span className="qd">Datos, contactos y contratos</span></span></button>
+              <button className="qa" onClick={()=>setTab("finanzas")}><span className="qico">📊</span><span><span className="qt">Finanzas y balance</span><span className="qd">Gastos, ingresos y balance de cada propiedad</span></span></button>
+              <button className="qa" onClick={()=>setTab("incidencias")}><span className="qico">🛠️</span><span><span className="qt">Incidencias</span><span className="qd">Reparaciones y reclamos</span></span></button>
+              <button className="qa" onClick={()=>setTab("informes")}><span className="qico">📈</span><span><span className="qt">Informes</span><span className="qd">Descargar Word, Excel o PDF</span></span></button>
             </div>
             <div className="help" style={{marginTop:10}}>La <b>Ficha completa</b> de cada propiedad reúne toda su información (legal, física, valores, arriendo, arrendatario, crédito, gastos, servicios y contactos). Puedes <b>rellenarla, agregar fotos y archivos, previsualizarla</b> y <b>compartirla o exportarla</b> en PDF, Word, Excel o HTML, o por WhatsApp, correo y SMS.</div>
           </Collapsible>
 
-          <Collapsible icon="" title="Resumen rápido" subtitle="Ingresos, dividendos, utilidad y patrimonio" defaultOpen={false}>
+          <Collapsible icon="⚡" title="Resumen rápido" subtitle="Ingresos, dividendos, utilidad y patrimonio" defaultOpen={false}>
             <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
               <div className="stat" style={{borderTopColor:"var(--green)"}}><div className="lab">Ingresos por arriendo</div><div className="val">{CLP(ingresos)}</div><div className="sub" style={{color:"var(--green-d)"}}>{rentals.length} en arriendo</div></div>
               <div className="stat" style={{borderTopColor:"var(--red)"}}><div className="lab">Dividendos / mes</div><div className="val">{CLP(dividendos)}</div><div className="sub" style={{color:"var(--red-d)"}}>{props.filter(p=>p.hasMortgage).length} con crédito</div></div>
@@ -3922,14 +3949,14 @@ function App(){
             </div>
           </Collapsible>
 
-          <Collapsible icon="" title="Estado de cobros" subtitle="Cuántas propiedades están al día, pendientes o atrasadas" defaultOpen={false}>
+          <Collapsible icon="💰" title="Estado de cobros" subtitle="Cuántas propiedades están al día, pendientes o atrasadas" defaultOpen={false}>
             {[{l:"Al día",n:paid,c:"var(--green)"},{l:"Pendiente",n:pend,c:"var(--amber)"},{l:"Atrasado",n:late,c:"var(--red)"}].map(s=>(
               <div key={s.l} style={{marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:700,marginBottom:6}}><span style={{color:"#445"}}>{s.l}</span><span style={{color:s.c}}>{s.n} propiedad{s.n!==1?"es":""}</span></div><div className="bar"><div style={{width:(rentals.length?(s.n/rentals.length*100):0)+"%",background:s.c}}></div></div></div>
             ))}
             <div className="help" style={{marginTop:6}}>Tienes <b>{rentals.length}</b> propiedades en arriendo y <b>{personals.length}</b> de uso personal. <b>Al día</b> = ya pagaron el mes · <b>Pendiente</b> = aún no pagan · <b>Atrasado</b> = pasó la fecha de pago.</div>
           </Collapsible>
 
-          <Collapsible icon="" title="Mis sociedades" subtitle={SOCIEDADES.length+" sociedad(es) propietaria(s)"} defaultOpen={false}>
+          <Collapsible icon="🏢" title="Mis sociedades" subtitle={SOCIEDADES.length+" sociedad(es) propietaria(s)"} defaultOpen={false}>
             <div className="help" style={{marginBottom:10}}>Las empresas o personas dueñas de tus propiedades. Aquí ves un resumen; toca “Ver sociedades” para gestionarlas.</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {SOCIEDADES.map(s=>{ const list=bySoc(s.id); const arr=list.filter(p=>p.use==="arriendo"); const util=arr.reduce((a,p)=>a+utilidadMes(p,uf),0);
@@ -3942,7 +3969,7 @@ function App(){
           </Collapsible>
 
           {(()=>{ const allBit=[]; props.forEach(p=>(p.bitacora||[]).forEach(b=>allBit.push({...b, pid:p.id, pname:p.name}))); allBit.sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
-            return (<Collapsible icon="" title="Bitácora" subtitle={allBit.length+" anotación(es) en todas las propiedades"} defaultOpen={false}>
+            return (<Collapsible icon="📓" title="Bitácora" subtitle={allBit.length+" anotación(es) en todas las propiedades"} defaultOpen={false}>
               <div className="help" style={{marginBottom:10}}>Las últimas anotaciones de todas tus propiedades (contratos, servicios, antecedentes, mantenciones, etc.).</div>
               {allBit.length===0 ? <div style={{color:"var(--muted)"}}>Aún no hay anotaciones. Agrégalas desde la pestaña Bitácora o desde cada propiedad.</div> :
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>{allBit.slice(0,12).map(b=>(
@@ -3953,14 +3980,14 @@ function App(){
               <button className="btn btn-out" style={{marginTop:12}} onClick={()=>setTab("bitacora")}>Ver bitácora completa →</button>
             </Collapsible>); })()}
 
-          <Collapsible icon="" title="Resumen de dividendos" defaultOpen={false}>
+          <Collapsible icon="🏦" title="Resumen de dividendos" defaultOpen={false}>
             <Data label="Dividendos totales por pagar (todas)" value={props.reduce((s,p)=>s+divPorPagar(p),0)+" cuotas"} color="var(--red-d)" big/>
             <div style={{height:10}}></div>
             <Data label="Deuda hipotecaria restante (aprox.)" value={UFf(deudaHipTotalUF)+" ≈ "+CLP(deudaHipTotalUF*uf)}/>
             <button className="btn btn-out" style={{marginTop:14}} onClick={()=>setTab("finanzas")}>Ver dividendos, gastos y utilidades →</button>
           </Collapsible>
 
-          <Collapsible icon="" title="Tus propiedades" subtitle={props.length+" inmueble(s) — toca para verlas"} defaultOpen={false}>
+          <Collapsible icon="🏘️" title="Tus propiedades" subtitle={props.length+" inmueble(s) — toca para verlas"} defaultOpen={false}>
             <div style={{textAlign:"right",marginBottom:10}}><button className="btn btn-ghost" onClick={()=>setTab("props")}>Ver todas →</button></div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
               {props.map(p=>(<div key={p.id} className="prop" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}>
@@ -3982,7 +4009,7 @@ function App(){
           {socs.length===0 && <div className="card pad" style={{textAlign:"center",color:"var(--muted)"}}>Aún no tienes sociedades. Crea la primera con <b>＋ Nueva sociedad</b>.</div>}
           {SOCIEDADES.map(s=>{ const list=bySoc(s.id); const arr=list.filter(p=>p.use==="arriendo");
             const ing=arr.reduce((a,p)=>a+num(p.rent),0); const util=arr.reduce((a,p)=>a+utilidadMes(p,uf),0); const pat=list.reduce((a,p)=>a+num(p.tasacion),0);
-            return (<Collapsible key={s.id} accent={s.color} icon="" title={s.name} subtitle={"RUT "+s.rut+" · Rep. "+s.rep+" · "+list.length+" propiedad"+(list.length!==1?"es":"")} defaultOpen={false}>
+            return (<Collapsible key={s.id} accent={s.color} icon="🏢" title={s.name} subtitle={"RUT "+s.rut+" · Rep. "+s.rep+" · "+list.length+" propiedad"+(list.length!==1?"es":"")} defaultOpen={false}>
               <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginBottom:12,flexWrap:"wrap"}}>
                 <button className="btn btn-out btn-sm" onClick={()=>openEditSoc(s)}>Editar sociedad</button>
                 <button className="btn btn-out btn-sm" style={{color:"var(--red-d)",borderColor:"var(--red-soft)"}} onClick={()=>setMSocDel(s)}>✕ Eliminar</button>
@@ -4066,7 +4093,7 @@ function App(){
           <div className="sec-title" style={{marginTop:6}}>Arrendatarios actuales</div>
           {con.length===0 && <div className="help">Aún no tienes arrendatarios activos.</div>}
           {con.map(p=>{ const cobro=num(p.rentUF)>0?Math.round(num(p.rentUF)*ufm.valor):num(p.rent); const venc=p.contractEnd&&daysBetween(todayISO(),p.contractEnd); const porVencer=venc!==""&&venc!=null&&venc<=60&&venc>=0;
-            return (<Collapsible key={p.id} accent="var(--blue)" icon="" title={p.tenant} subtitle={""+p.name+(p.comuna?" · "+p.comuna:"")+" · "+CLP(cobro)+"/mes"} defaultOpen={false}>
+            return (<Collapsible key={p.id} accent="var(--blue)" icon="👤" title={p.tenant} subtitle={""+p.name+(p.comuna?" · "+p.comuna:"")+" · "+CLP(cobro)+"/mes"} defaultOpen={false}>
             <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",flexWrap:"wrap",gap:6,marginBottom:10}}>
               <span className={"pill "+(ST[p.status]?ST[p.status].c:"")}>{ST[p.status]?ST[p.status].t:p.status}</span>
               {porVencer&&<span className="pill amber">Contrato vence en {venc} día(s)</span>}
@@ -4321,7 +4348,7 @@ function App(){
               </div>
             </>);
           })()}
-          <Collapsible icon="" title="Liquidación mensual al propietario" defaultOpen={true}>
+          <Collapsible icon="💵" title="Liquidación mensual al propietario" defaultOpen={true}>
             <div className="help">Genera <b>automáticamente</b> la liquidación del mes para cada propietario: arriendos cobrados, comisión de administración, gastos pagados por su cuenta y el <b>líquido a transferir</b>. Descárgala en PDF o Word y envíala por WhatsApp. Es el documento que más valoran los propietarios.</div>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-end",margin:"12px 0"}}>
               <div className="field" style={{maxWidth:180}}><label className="label">Mes</label><input className="input" type="month" value={liqMes} onChange={e=>setLiqMes(e.target.value)}/></div>
@@ -4341,7 +4368,7 @@ function App(){
             </>); })()}
           </Collapsible>
 
-          <Collapsible icon="" title="Reajuste de arriendo — IPC y UF (contratos en pesos)" defaultOpen={false}>
+          <Collapsible icon="📈" title="Reajuste de arriendo — IPC y UF (contratos en pesos)" defaultOpen={false}>
             <div className="help">Reajusta los <b>contratos pactados en pesos</b> según su índice: <b>IPC</b> o <b>UF</b> (cada uno por separado). Define el índice de cada contrato en su ficha (campo “reajuste”). Abajo ves los contratos, cuánto tiempo llevan desde el último reajuste, la propuesta de nuevo arriendo y aplicas el reajuste con un clic (queda registrado en la bitácora). Los arriendos pactados en UF ya se reajustan solos con el valor diario de la UF.</div>
             <div className="grid c3" style={{gridTemplateColumns:"repeat(3,1fr)",gap:12,margin:"12px 0"}}>
               <div className="field"><label className="label">IPC acumulado del período (%)</label><input className="input" type="number" step="any" value={ipcAcum} onChange={e=>setIpcAcum(num(e.target.value))}/></div>
@@ -4363,7 +4390,7 @@ function App(){
             ) : <div className="help" style={{marginBottom:0}}>No hay contratos en pesos. Los arriendos en <b>UF</b> se reajustan automáticamente con el valor de la UF.</div>; })()}
           </Collapsible>
 
-          <Collapsible icon="" title="Dividendos hipotecarios" defaultOpen={true}>
+          <Collapsible icon="🏦" title="Dividendos hipotecarios" defaultOpen={true}>
             <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Banco</th><th>Dividendo UF</th><th>Dividendo CLP hoy</th><th>Pagados</th><th>Por pagar</th><th>Avance</th></tr></thead><tbody>
               {props.filter(p=>p.hasMortgage).map(p=>{ const pct=Math.round(num(p.dividendosPagados)/Math.max(1,num(p.dividendosTotales))*100); return (<tr key={p.id}>
                 <td style={{fontWeight:700}}>{p.name}{p.use==="personal"&&<span className="pill blue" style={{marginLeft:6}}>Personal</span>}</td><td>{p.mortgageBank}</td><td style={{fontWeight:700}}>{UFf(p.dividendoUF)}</td>
@@ -4374,7 +4401,7 @@ function App(){
             </tbody></table></div>
           </Collapsible>
 
-          <Collapsible icon="" title="Utilidad por propiedad (ingresos − todos los gastos)" defaultOpen={true}>
+          <Collapsible icon="📊" title="Utilidad por propiedad (ingresos − todos los gastos)" defaultOpen={true}>
             <div className="help" style={{marginBottom:12}}>La utilidad usa <b>todos los ingresos</b> (arriendo + ingresos extra) y <b>todos los gastos</b> de cada propiedad. Edita los ingresos y gastos abajo y la utilidad mensual y anual se actualizan solas.</div>
             <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Ingreso/mes</th><th>Dividendo</th><th>Contrib./mes</th><th>Seguro/mes</th><th>Otros gastos/mes</th><th>Utilidad / mes</th><th>Utilidad / año</th></tr></thead><tbody>
               {props.map(p=>{ const u=utilidadMes(p,uf); const ua=utilidadAnual(p,uf); return (<tr key={p.id}>
@@ -4394,7 +4421,7 @@ function App(){
           </Collapsible>
 
           {/* Utilidad por año */}
-          <Collapsible icon="" title="Utilidad de la propiedad por año" defaultOpen={false}>
+          <Collapsible icon="📅" title="Utilidad de la propiedad por año" defaultOpen={false}>
             <div className="help" style={{marginBottom:12}}>Elige un año para ver la utilidad de cada propiedad. Se muestran los <b>ingresos realmente cobrados</b> de ese año (según el historial de pagos) y los gastos estimados anuales. Para el año en curso también ves cuánta utilidad llevas <b>acumulada hasta la fecha</b>.</div>
             {(()=>{ const anioActual=new Date().getFullYear();
               const anios=[]; for(let y=anioActual-4;y<=anioActual+1;y++) anios.push(y);
@@ -4434,7 +4461,7 @@ function App(){
           </Collapsible>
 
           {/* Ingresos editables por propiedad */}
-          <Collapsible icon="" title="Ingresos editables por propiedad" defaultOpen={false}>
+          <Collapsible icon="💵" title="Ingresos editables por propiedad" defaultOpen={false}>
             <div className="help" style={{marginBottom:14}}>Agrega <b>otros ingresos</b> de cada propiedad además del arriendo (estacionamiento o bodega arrendados aparte, publicidad, paneles solares, etc.). Cada ingreso puede ser en <b>CLP o UF</b>, repetirse <b>cada 1/2/3/6 meses, anual o en una fecha exacta</b>, y llevar <b>nota, archivos y subítems</b>. Se suma automáticamente a la utilidad.</div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
               {props.map(p=>{ const totMes=ingresosExtraMes(p,uf); const base=p.use==="arriendo"?num(p.rent):0; return (
@@ -4449,7 +4476,7 @@ function App(){
             </div>
           </Collapsible>
 
-          <Collapsible icon="" title="Gastos editables por propiedad" defaultOpen={false}>
+          <Collapsible icon="🧾" title="Gastos editables por propiedad" defaultOpen={false}>
             <div className="help" style={{marginBottom:14}}>Agrega y edita libremente los gastos de cada propiedad (gasto común, internet, luz, agua, asesora del hogar, reparaciones u <b>otros servicios</b>). Cada gasto puede ir en <b>CLP o UF</b>, repetirse <b>cada 1/2/3/6 meses, anual o en una fecha exacta</b>, y llevar <b>nota, archivos y subítems</b> (ej: Div. · Gas. · Útil., cada uno con su comprobante). Se descuenta automáticamente de la utilidad.</div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
               {props.map(p=>{ const totMes=gastosExtraMes(p,uf); return (
@@ -4464,7 +4491,7 @@ function App(){
           </Collapsible>
 
 
-          <Collapsible icon="" title="Contribuciones y seguros" defaultOpen={false}>
+          <Collapsible icon="🛡️" title="Contribuciones y seguros" defaultOpen={false}>
             <div className="help" style={{marginBottom:14}}>Contribuciones: se pagan en <b>4 cuotas al año</b> (abril, junio, septiembre, noviembre). El <b>seguro de incendio + sismo va incluido en el dividendo</b> mientras el crédito esté vigente; al terminar de pagarlo, debes contratar uno aparte. Aquí puedes guardar boletas y pólizas, agregar comentarios y archivos, y editar todo.</div>
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               {props.map(p=>(<div key={p.id} className="card pad" style={{background:"var(--panel2)",border:"1px solid var(--line)"}}>
@@ -4761,13 +4788,13 @@ function App(){
         </>}
 
         {tab==="config" && <>
-          <Collapsible icon="" title="Mis datos" defaultOpen={true}>
+          <Collapsible icon="🧑‍💼" title="Mis datos" defaultOpen={true}>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               {[["Nombre completo","name"],["RUT","rut"],["Correo","email"],["Teléfono","phone"],["WhatsApp","whatsapp"]].map(f=>(
                 <div key={f[1]} className="field"><label className="label">{f[0]}</label><input className="input" value={ownerEdit[f[1]]} onChange={e=>setOwnerEdit(o=>({...o,[f[1]]:e.target.value}))}/></div>))}
             </div>
           </Collapsible>
-          <Collapsible icon="" title="Datos bancarios para transferencias" defaultOpen={false}>
+          <Collapsible icon="🏦" title="Datos bancarios para transferencias" defaultOpen={false}>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               {[["Banco","bank"],["Tipo de cuenta","accountType"],["N° de cuenta","accountNumber"],["Alias (opcional)","alias"]].map(f=>(
                 <div key={f[1]} className="field"><label className="label">{f[0]}</label><input className="input" value={ownerEdit[f[1]]} onChange={e=>setOwnerEdit(o=>({...o,[f[1]]:e.target.value}))}/></div>))}
@@ -4775,14 +4802,14 @@ function App(){
             <div className="card pad" style={{marginTop:14,background:"var(--green-bg)",border:"none"}}><div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:6}}>VISTA PREVIA — lo que ven tus arrendatarios</div>
               <div style={{fontSize:15,lineHeight:1.8}}>Banco: <b>{ownerEdit.bank}</b> · {ownerEdit.accountType} <b>{ownerEdit.accountNumber}</b><br/>RUT: <b>{ownerEdit.rut}</b> · Nombre: <b>{ownerEdit.name}</b></div></div>
           </Collapsible>
-          <Collapsible icon="" title="Valor de la UF" defaultOpen={false}>
+          <Collapsible icon="📐" title="Valor de la UF" defaultOpen={false}>
             <div className="help" style={{marginBottom:12}}>Se actualiza solo desde <b>mindicador.cl</b>. Si no carga, puedes escribirlo a mano. Este valor reajusta automáticamente todos los dividendos en UF.</div>
             <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
               <div className="field" style={{maxWidth:240}}><label className="label">1 UF = (CLP)</label><input className="input" type="number" value={uf} onChange={e=>{setUf(parseInt(num(e.target.value))||uf);setUfManual(true);}}/></div>
               {ufManual && <span className="pill amber">Valor editado manualmente</span>}
             </div>
           </Collapsible>
-          <Collapsible icon="" title="Otros indicadores" defaultOpen={false}>
+          <Collapsible icon="📉" title="Otros indicadores" defaultOpen={false}>
             <div className="help" style={{marginBottom:12}}>UTM, Dólar e IPC se actualizan solos desde <b>mindicador.cl</b> (datos de Banco Central / INE). UTA se calcula como UTM × 12. El IPC corresponde a la variación mensual del Índice de Precios al Consumidor.</div>
             <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
               <Data label="UTM" value={CLP(utm)}/>
@@ -4792,7 +4819,7 @@ function App(){
             </div>
             <button className="btn btn-out btn-sm" style={{marginTop:14}} onClick={refrescarIndicadores} disabled={indLoading}>{indLoading?"Actualizando…":"Actualizar UF, UTM, Dólar e IPC"}</button>
           </Collapsible>
-          <Collapsible icon="" title="Plataforma de pago con tarjeta" defaultOpen={false}>
+          <Collapsible icon="💳" title="Plataforma de pago con tarjeta" defaultOpen={false}>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               {gateways.map(g=>{ const on=ownerEdit.gateway===g.id; return (<div key={g.id} onClick={()=>setOwnerEdit(o=>({...o,gateway:g.id}))} style={{border:`2px solid ${on?"var(--green)":"var(--line)"}`,background:on?"var(--green-bg)":"#fff",borderRadius:14,padding:16,cursor:"pointer"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><span style={{fontSize:17,fontWeight:800,flex:1}}>{g.name}</span>{g.rec&&<span className="pill green">Recomendado</span>}<div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${on?"var(--green)":"#bcc4d1"}`,background:on?"var(--green)":"#fff",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>{on?"✓":""}</div></div>
@@ -4800,7 +4827,7 @@ function App(){
               </div>); })}
             </div>
           </Collapsible>
-          <Collapsible icon="" title="Khipu — transferencia bancaria automatizada" defaultOpen={false}>
+          <Collapsible icon="🏦" title="Khipu — transferencia bancaria automatizada" defaultOpen={false}>
             <div className="help" style={{marginBottom:12}}>Khipu deposita directo en tu cuenta bancaria. Tu clave de cuenta de cobro <b>nunca se guarda en esta app</b> (ni en el navegador ni en este historial): vive solo como variable de entorno en Netlify, igual que la clave del asistente IA.</div>
             <ol style={{margin:"0 0 14px 20px",fontSize:14.5,lineHeight:1.9}}>
               <li>Crea o abre tu cuenta de cobro en <b>khipu.com</b> y genera una API Key (sección "Para integrar Khipu a tu sitio web").</li>
@@ -4879,7 +4906,7 @@ function App(){
           <div className="help">Aquí respondemos las dudas más comunes sobre la plataforma. Toca cualquier pregunta para ver la respuesta.</div>
           {FAQ.map(g=>(<div key={g.cat}>
             <div className="sub-title dark" style={{marginTop:6}}>{g.cat}</div>
-            {g.items.map((it,i)=>(<Collapsible key={i} icon="" title={it.q} defaultOpen={false}>
+            {g.items.map((it,i)=>(<Collapsible key={i} icon="❓" title={it.q} defaultOpen={false}>
               <div style={{fontSize:15,lineHeight:1.75,color:"var(--text)"}}>{it.a}</div>
             </Collapsible>))}
           </div>))}
