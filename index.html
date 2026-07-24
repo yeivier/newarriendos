@@ -413,6 +413,33 @@
   .eq-user{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 
   .app.solo-lectura .btn-red,.app.solo-lectura .btn-danger{display:none!important}
+
+  /* ===== Chatbot IA flotante ===== */
+  .ai-fab{position:fixed;right:22px;bottom:22px;z-index:180;width:60px;height:60px;border:none;border-radius:19px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 16px 40px rgba(34,28,15,.28);cursor:pointer;font-size:27px;display:flex;align-items:center;justify-content:center;transition:.18s}
+  .ai-fab:hover{transform:translateY(-2px) scale(1.02)}
+  .ai-fab .ai-dot{position:absolute;right:5px;top:5px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--green)}
+  .ai-float{position:fixed;right:22px;bottom:94px;z-index:179;width:min(410px,calc(100vw - 24px));height:min(650px,calc(100vh - 125px));background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 80px rgba(16,24,40,.24);display:flex;flex-direction:column;overflow:hidden;transform-origin:bottom right;animation:aiPop .18s ease-out}
+  @keyframes aiPop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+  .ai-float-head{padding:15px 16px;background:linear-gradient(135deg,#17171d,#29272a);color:#fff;display:flex;align-items:center;gap:11px}
+  .ai-avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;flex-shrink:0}
+  .ai-float-head .title{font-weight:800;font-size:15.5px}.ai-float-head .sub{font-size:11.5px;opacity:.72;margin-top:1px}
+  .ai-close{margin-left:auto;border:none;background:rgba(255,255,255,.1);color:#fff;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:18px}
+  .ai-quick{display:flex;gap:7px;padding:10px 12px;border-bottom:1px solid var(--line2);overflow-x:auto;background:var(--panel2)}
+  .ai-quick button{white-space:nowrap;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 10px;font:700 11.5px var(--font);cursor:pointer;color:var(--muted)}
+  .ai-quick button:hover{border-color:var(--brand);color:var(--brand-d)}
+  .ai-messages{flex:1;overflow:auto;padding:15px 13px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,#fff,#fafbfc)}
+  .ai-empty{margin:auto;text-align:center;padding:20px;color:var(--muted)}
+  .ai-empty .big{font-size:34px;margin-bottom:7px}.ai-empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:5px}
+  .ai-row{display:flex}.ai-row.user{justify-content:flex-end}
+  .ai-bubble{max-width:88%;border-radius:15px;padding:10px 12px;font-size:13.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+  .ai-row.user .ai-bubble{background:#1f2937;color:#fff;border-bottom-right-radius:5px}
+  .ai-row.bot .ai-bubble{background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-bottom-left-radius:5px}
+  .ai-compose{padding:11px;border-top:1px solid var(--line);background:var(--card)}
+  .ai-compose-row{display:flex;align-items:flex-end;gap:7px}
+  .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:13.5px}
+  .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
+  .ai-disclaimer{font-size:10.5px;color:var(--faint);text-align:center;margin-top:6px}
+  @media(max-width:560px){.ai-fab{right:14px;bottom:14px;width:56px;height:56px}.ai-float{right:8px;bottom:78px;width:calc(100vw - 16px);height:calc(100vh - 90px);border-radius:17px}}
 </style>
 </head>
 <body>
@@ -2240,7 +2267,11 @@ function App(){
   const [mContact,setMContact]=useState(false), [newContact,setNewContact]=useState(blankContact), [contactTarget,setContactTarget]=useState("arrendatarioId"), [pickFor,setPickFor]=useState(null);
   const [cEdit,setCEdit]=useState(null); // editor general de contactos / arrendatarios anteriores
   const [mFicha,setMFicha]=useState(null), [fForm,setFForm]=useState(null), [fichaPreview,setFichaPreview]=useState(null), [fichaPubURL,setFichaPubURL]=useState("");
-  const [ai,setAi]=useState([]), [aiIn,setAiIn]=useState(""), [aiLoad,setAiLoad]=useState(false);
+  const [ai,setAi]=useState(()=>store.get("ap_ai_chat",[])), [aiIn,setAiIn]=useState(""), [aiLoad,setAiLoad]=useState(false);
+  const [aiOpen,setAiOpen]=useState(false);
+  const aiFloatEnd=useRef(null);
+  useEffect(()=>{ store.set("ap_ai_chat",ai.slice(-40)); },[ai]);
+  useEffect(()=>{ if(aiOpen) setTimeout(()=>aiFloatEnd.current&&aiFloatEnd.current.scrollIntoView({behavior:"smooth"}),40); },[ai,aiLoad,aiOpen]);
   const chatRef=useRef(null);
 
   /* ---- Nuevas funciones: incidencias, bitácora, indicadores ---- */
@@ -5457,6 +5488,32 @@ function App(){
       </div>
       <div className="modal-foot"><button className="btn btn-out" style={{flex:1}} onClick={()=>setMInfo(false)}>Cerrar</button></div>
     </div></div>}
+
+    {/* Asistente IA flotante global */}
+    {aiOpen && <div className="ai-float" role="dialog" aria-label="Asistente IA de ArriendoPro">
+      <div className="ai-float-head">
+        <div className="ai-avatar">A</div>
+        <div><div className="title">Asistente ArriendoPro</div><div className="sub">Conectado a los datos actuales de tu cartera</div></div>
+        <button className="ai-close" onClick={()=>setAiOpen(false)} aria-label="Cerrar">×</button>
+      </div>
+      <div className="ai-quick">
+        {["Resume mi cartera","¿Quién está atrasado?","Calcula la utilidad mensual","¿Qué contratos vencen pronto?"].map(q=><button key={q} onClick={()=>{setAiIn(q);setTimeout(()=>document.getElementById("aiFloatInput")?.focus(),0)}}>{q}</button>)}
+      </div>
+      <div className="ai-messages">
+        {!ai.length && !aiLoad && <div className="ai-empty"><div className="big">✦</div><b>¿Qué necesitas revisar?</b><span>Pregunta por cobros, dividendos, utilidad, contratos o cualquier propiedad.</span></div>}
+        {ai.map((m,i)=><div key={i} className={"ai-row "+(m.r==="user"?"user":"bot")}><div className="ai-bubble">{m.c}</div></div>)}
+        {aiLoad && <div className="ai-row bot"><div className="ai-bubble">Analizando tu cartera…</div></div>}
+        <div ref={aiFloatEnd}></div>
+      </div>
+      <div className="ai-compose">
+        <div className="ai-compose-row">
+          <textarea id="aiFloatInput" className="input" value={aiIn} onChange={e=>setAiIn(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendAi();}}} placeholder="Escribe tu consulta…" />
+          <button className="btn btn-red ai-send" onClick={sendAi} disabled={aiLoad||!aiIn.trim()} aria-label="Enviar">➤</button>
+        </div>
+        <div className="ai-disclaimer">La IA puede equivocarse. Verifica decisiones legales o financieras importantes.</div>
+      </div>
+    </div>}
+    <button className="ai-fab" onClick={()=>setAiOpen(o=>!o)} aria-label="Abrir asistente IA" title="Asistente IA">✦<span className="ai-dot"></span></button>
 
     {notif && <div className={"notif"+(notif.err?" err":"")}>{notif.msg}</div>}
   </div>);
