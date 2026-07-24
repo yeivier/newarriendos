@@ -1,0 +1,10 @@
+# Configuración de Netlify para ArriendoPro
+# Asegura que las funciones (carpeta netlify/functions) se detecten y se
+# desplieguen, incluso en despliegues manuales (drag & drop).
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

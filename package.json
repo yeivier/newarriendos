@@ -1,0 +1,9 @@
+{
+  "name": "arriendopro",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@netlify/blobs": "^9.0.0",
+    "@netlify/functions": "^3.0.0"
+  }
+}

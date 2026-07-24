@@ -1,0 +1,3988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha de Levantamiento de Propiedad — Formulario</title>
+<style>
+  :root{
+    --navy:#1F3A5C; --navy-dark:#152A44; --navy-light:#2E4F78;
+    --bg:#F4F6F9; --card:#FFFFFF; --border:#DDE3EA; --border-light:#EAEEF3;
+    --text:#20293A; --text-muted:#6B7280; --text-faint:#9AA1AB;
+    --accent-fill:#E9EFF6; --ok:#2E7D46; --ok-bg:#E8F5EC;
+    --danger:#B3261E; --danger-bg:#FBEAE9;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); font-size:14.5px; line-height:1.45;
+  }
+  #topbar{
+    position:sticky; top:0; z-index:50; background:var(--navy); color:#fff;
+    padding:10px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  #topbar h1{font-size:15px; margin:0; font-weight:700; letter-spacing:.2px; flex:1 1 auto; min-width:180px;}
+  #progressWrap{display:flex; align-items:center; gap:8px; font-size:12px; color:#DCE6F1;}
+  #progressBarOuter{width:120px; height:7px; background:rgba(255,255,255,.25); border-radius:4px; overflow:hidden;}
+  #progressBarInner{height:100%; width:0%; background:#7FD79A; transition:width .25s ease;}
+  #mobileNavWrap{display:none; padding:8px 12px; background:#fff; border-bottom:1px solid var(--border); position:sticky; top:48px; z-index:40;}
+  #mobileNavSelect{width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--border); font-size:13.5px; background:#fff;}
+  #layout{display:flex; align-items:flex-start; max-width:1180px; margin:0 auto;}
+  #sidebar{
+    width:270px; flex:0 0 270px; position:sticky; top:52px; align-self:flex-start;
+    max-height:calc(100vh - 60px); overflow-y:auto; padding:16px 8px 40px 16px;
+  }
+  #sidebar a{
+    display:block; padding:6px 10px; border-radius:7px; color:var(--text-muted);
+    text-decoration:none; font-size:12.8px; margin-bottom:1px; border-left:3px solid transparent;
+  }
+  #sidebar a:hover{background:var(--accent-fill); color:var(--navy);}
+  #sidebar a.active{background:var(--accent-fill); color:var(--navy); font-weight:700; border-left:3px solid var(--navy);}
+  #content{flex:1 1 auto; padding:20px 20px 120px 16px; min-width:0;}
+  .hero{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:18px;}
+  .hero h2{margin:0 0 4px; color:var(--navy); font-size:21px;}
+  .hero .sub{color:var(--text-muted); font-style:italic; font-size:13px; margin:0 0 10px;}
+  .hero .legend{color:var(--text-muted); font-size:12px; margin:0;}
+  .instructions{background:var(--accent-fill); border:1px solid #C9D8EA; border-radius:var(--radius); padding:14px 16px; margin-bottom:22px; font-size:12.8px;}
+  .instructions b{color:var(--navy);}
+  .instructions ul{margin:6px 0 0; padding-left:18px;}
+  .instructions li{margin-bottom:3px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px; scroll-margin-top:60px; overflow:hidden;}
+  .card-header{background:var(--navy); color:#fff; padding:10px 16px; font-weight:700; font-size:14px; display:flex; align-items:baseline; gap:8px;}
+  .card-header .num{opacity:.75; font-weight:700;}
+  .card-note{padding:8px 16px 0; font-size:11.8px; color:var(--text-muted); font-style:italic;}
+  .card-body{padding:6px 16px 16px;}
+  .field{padding:10px 0; border-bottom:1px solid var(--border-light);}
+  .field:last-child{border-bottom:none;}
+  .field label.flabel{display:block; font-weight:700; font-size:12.6px; color:#33465E; margin-bottom:5px;}
+  .field label.flabel .req{color:var(--danger);}
+  .field .fnote{font-size:11px; color:var(--text-faint); font-style:italic; margin-top:3px;}
+  input[type=text], input[type=date], textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:7px;
+    font-size:13.5px; font-family:inherit; color:var(--text); background:#fff;
+  }
+  input[type=text]:focus, input[type=date]:focus, textarea:focus{
+    outline:none; border-color:var(--navy-light); box-shadow:0 0 0 3px rgba(46,79,120,.12);
+  }
+  textarea{min-height:70px; resize:vertical;}
+  textarea.big{min-height:140px;}
+  .unit-suffix{font-size:11.5px; color:var(--text-faint); margin-left:4px;}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--border);
+    border-radius:20px; font-size:12.6px; cursor:pointer; user-select:none; background:#fff; color:var(--text);
+  }
+  .chip:hover{border-color:var(--navy-light);}
+  .chip.on{background:var(--navy); border-color:var(--navy); color:#fff;}
+  .choice-group{display:flex; flex-wrap:wrap; gap:7px;}
+  .grid-options{display:grid; grid-template-columns:repeat(var(--gcols,3),1fr); gap:6px 10px;}
+  @media (max-width:700px){.grid-options{grid-template-columns:repeat(2,1fr);}}
+  .grid-check{display:flex; align-items:center; gap:7px; font-size:12.8px; padding:4px 2px;}
+  .grid-check input{width:15px; height:15px; accent-color:var(--navy); flex:0 0 auto;}
+  .other-row{display:flex; align-items:center; gap:8px; margin-top:8px;}
+  .other-row input[type=text]{flex:1 1 auto;}
+  table.htable{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.htable th{background:var(--navy); color:#fff; text-align:left; padding:7px 8px; font-size:11.5px;}
+  table.htable td{border:1px solid var(--border-light); padding:5px 6px;}
+  table.htable input{border:none; width:100%; padding:4px; font-size:12.5px; background:transparent;}
+  table.htable input:focus{outline:1px solid var(--navy-light); border-radius:4px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px; border:1px solid var(--border);
+    background:#fff; color:var(--navy); font-size:12.8px; font-weight:600; cursor:pointer;
+  }
+  .btn:hover{border-color:var(--navy-light); background:var(--accent-fill);}
+  .btn.small{padding:5px 10px; font-size:11.8px;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.primary:hover{background:var(--navy-light);}
+  .attach-group-title{font-weight:700; color:var(--navy); font-size:13px; margin:14px 0 8px;}
+  .attach-group-title:first-child{margin-top:2px;}
+  .attach-row{
+    display:flex; gap:12px; align-items:flex-start; padding:10px; border:1px dashed #B9C6D6;
+    border-radius:8px; margin-bottom:8px; background:#FBFCFD;
+  }
+  .attach-row.has-files{border-style:solid; border-color:#BFE0C8; background:#F5FBF6;}
+  .attach-label{flex:0 0 190px; font-weight:700; font-size:12.3px; color:#33465E; padding-top:6px;}
+  .attach-main{flex:1 1 auto; min-width:0;}
+  .file-chip-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .file-chip{
+    display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border);
+    border-radius:7px; padding:4px 6px 4px 4px; font-size:11.3px; max-width:220px;
+  }
+  .file-chip img{width:26px; height:26px; object-fit:cover; border-radius:4px;}
+  .file-chip .fx{width:26px; height:26px; border-radius:4px; background:var(--accent-fill); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--navy); font-weight:700;}
+  .file-chip .fname{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;}
+  .file-chip .rm{cursor:pointer; color:var(--danger); font-weight:700; padding:0 3px;}
+  .sig-pad-wrap{border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;}
+  canvas.sigpad{display:block; width:100%; height:130px; touch-action:none; background:#fff;}
+  .sig-actions{margin-top:6px; display:flex; gap:8px;}
+  #actionbar{
+    position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--border);
+    padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; z-index:60;
+    box-shadow:0 -2px 8px rgba(0,0,0,.06);
+  }
+  #toast{
+    position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff;
+    padding:9px 16px; border-radius:8px; font-size:13px; z-index:80; opacity:0; pointer-events:none;
+    transition:opacity .25s ease; max-width:90vw; text-align:center;
+  }
+  #toast.show{opacity:1;}
+  @media (max-width:900px){
+    #sidebar{display:none;}
+    #mobileNavWrap{display:block;}
+    #content{padding:16px 12px 120px;}
+  }
+
+  #searchBtn{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:18px;width:38px;height:38px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  #searchBtn:hover{background:rgba(255,255,255,.15);}
+  #ufBar{max-width:940px;margin:0 auto;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#E9EFF6;border-bottom:1px solid var(--border);}
+  .uf-lbl{font-size:12px;font-weight:700;color:var(--navy);} .uf-btn{border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;}
+  .uf-mini{font-size:11px;color:var(--text-muted);} .uf-input{width:90px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;}
+  .money-wrap{display:flex;gap:6px;align-items:stretch;} .money-wrap input{flex:1;min-width:120px;}
+  .cur-tog{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+  .cur-tog button{border:none;background:#fff;padding:0 10px;font-size:11px;font-weight:700;color:var(--text-muted);cursor:pointer;} .cur-tog button.on{background:var(--navy);color:#fff;}
+  .conv-line{margin-top:5px;font-size:12px;color:var(--navy);font-weight:600;display:none;}
+  .fx-bar{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+  .fx-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:3px;}
+  .fx-btn:hover{border-color:var(--navy-light);color:var(--navy);} .fx-btn.on{background:var(--accent-fill);border-color:var(--navy-light);color:var(--navy);}
+  .fx-btn .cnt{background:var(--navy);color:#fff;border-radius:99px;font-size:9px;padding:0 4px;min-width:14px;text-align:center;}
+  .fx-panel{margin-top:6px;border:1px solid var(--border-light);border-radius:8px;padding:10px;background:#FAFBFC;}
+  .fx-panel textarea{width:100%;min-height:50px;border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-family:inherit;font-size:13px;resize:vertical;}
+  .fx-drop{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px dashed var(--border);border-radius:8px;background:#FAFBFC;color:var(--text-muted);font-size:12px;cursor:pointer;}
+  .fx-drop:hover{border-color:var(--navy);color:var(--navy);background:var(--accent-fill);}
+  .attach-inline .file-chip-list{margin-top:6px;}
+  .addfield-bar{padding:8px 0 4px;} .addfield-row{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0;}
+  .addfield-row input{flex:1;min-width:140px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;}
+  .addfield-row select{border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;}
+  .field.flash{background:#FFFDE6;box-shadow:0 0 0 2px #F5D97B inset;border-radius:6px;transition:background .3s;}
+  #searchOverlay{position:fixed;inset:0;z-index:100;background:rgba(20,22,26,.55);backdrop-filter:blur(3px);display:none;justify-content:center;align-items:flex-start;padding:50px 12px 20px;}
+  #searchOverlay.on{display:flex;}
+  .search-box{width:100%;max-width:620px;background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden;display:flex;flex-direction:column;max-height:80vh;}
+  .search-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);}
+  .sicon{display:flex;align-items:center;} .search-head input{flex:1;border:none;outline:none;font-size:16px;background:transparent;}
+  .sclose{border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--text-muted);font-weight:600;cursor:pointer;}
+  .search-results{overflow-y:auto;padding:6px;} .sr-note{padding:20px 14px;text-align:center;color:var(--text-muted);font-size:12.5px;}
+  .sr-item{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:8px;cursor:pointer;} .sr-item:hover{background:var(--accent-fill);}
+  .sr-lbl{font-size:13px;font-weight:600;color:var(--text);} .sr-sec{font-size:11px;color:var(--text-muted);}
+  .sr-val{font-size:11.5px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sr-fuzzy{padding:6px 12px;font-size:11.5px;color:#9A6A12;font-weight:600;}
+
+
+  .card-header-toggle{cursor:pointer;user-select:none;}
+  .card-header-toggle:hover{background:var(--navy-light);}
+  .card-header .chev{margin-left:auto;display:flex;align-items:center;transition:transform .18s;color:#fff;opacity:.85;}
+  .card-header .chev.open{transform:rotate(90deg);}
+  #backTop{position:fixed;right:14px;bottom:86px;z-index:95;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s;}
+  #backTop.show{opacity:1;pointer-events:auto;}
+  #backTop:hover{background:var(--navy-light);}
+
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <button id="searchBtn" type="button" title="Buscar" onclick="openSearch()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+  <h1>Ficha de Levantamiento de Propiedad</h1>
+  <div id="progressWrap">
+    <span id="progressLabel">0%</span>
+    <div id="progressBarOuter"><div id="progressBarInner"></div></div>
+  </div>
+</div>
+
+<div id="ufBar"></div>
+<div id="mobileNavWrap">
+  <select id="mobileNavSelect"></select>
+</div>
+
+<div id="layout">
+  <nav id="sidebar"></nav>
+  <main id="content"></main>
+</div>
+
+<div id="actionbar">
+  <button class="btn" id="btnSave">Guardar avance (.json)</button>
+  <label class="btn" for="loadInput">Cargar avance</label>
+  <input type="file" id="loadInput" accept="application/json" style="display:none;">
+  <button class="btn primary" id="btnDocx">Descargar Word (.docx)</button>
+  <button class="btn primary" id="btnPdf">Descargar PDF</button>
+  <button class="btn" id="btnZip">Descargar adjuntos (.zip)</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* SCHEMA — misma fuente unica que el documento Word */
+const SCHEMA = {
+ "title": "FICHA DE LEVANTAMIENTO DE PROPIEDAD",
+ "subtitle": "Formulario completo de recopilación de datos — para propietarios y corredoras",
+ "legend": "Complete con la mayor cantidad de información disponible. Los campos sin dato pueden dejarse en blanco. Los campos marcados con * son los mínimos recomendados para publicar la propiedad.",
+ "sections": [
+  {
+   "num": 1,
+   "title": "DATOS BÁSICOS DE LA OPERACIÓN",
+   "fields": [
+    {
+     "id": "tipo_operacion",
+     "label": "Tipo de operación",
+     "type": "choice",
+     "required": true,
+     "options": [
+      "Venta",
+      "Arriendo",
+      "Arriendo con opción de compra",
+      "Leasing"
+     ]
+    },
+    {
+     "id": "nombre_alias",
+     "label": "Nombre o alias interno de la propiedad",
+     "type": "text"
+    },
+    {
+     "id": "tipo_propiedad",
+     "label": "Tipo de propiedad",
+     "type": "choice",
+     "required": true,
+     "options": [
+      "Casa",
+      "Departamento",
+      "Local comercial",
+      "Oficina",
+      "Terreno",
+      "Parcela",
+      "Bodega",
+      "Galpón",
+      "Estacionamiento",
+      "Sitio"
+     ],
+     "other": true
+    },
+    {
+     "id": "condicion",
+     "label": "Condición del inmueble",
+     "type": "choice",
+     "options": [
+      "Nuevo (sin uso)",
+      "Como nuevo",
+      "Usado",
+      "En construcción",
+      "En blanco (obra nueva por entregar)"
+     ]
+    },
+    {
+     "id": "uso_actual",
+     "label": "¿Para qué se usa actualmente?",
+     "type": "text",
+     "note": "habitacional, oficina, bodega, comercial, etc."
+    },
+    {
+     "id": "valor_arriendo_uf",
+     "label": "Valor de arriendo (UF)",
+     "type": "text",
+     "unit": "UF",
+     "money": true,
+     "note": "Ingrese en UF — se convierte a CLP automáticamente"
+    },
+    {
+     "id": "direccion_calle",
+     "label": "Dirección (calle)",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "numero",
+     "label": "Número",
+     "type": "text"
+    },
+    {
+     "id": "unidad",
+     "label": "Depto / Oficina / Local N°",
+     "type": "text"
+    },
+    {
+     "id": "piso_ubicacion",
+     "label": "Piso en que está",
+     "type": "text"
+    },
+    {
+     "id": "villa_condominio",
+     "label": "Villa / Condominio / Edificio",
+     "type": "text"
+    },
+    {
+     "id": "sector_barrio",
+     "label": "Sector / Barrio de referencia",
+     "type": "text"
+    },
+    {
+     "id": "comuna",
+     "label": "Comuna",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "ciudad",
+     "label": "Ciudad",
+     "type": "text"
+    },
+    {
+     "id": "region",
+     "label": "Región",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "codigo_postal",
+     "label": "Código postal",
+     "type": "text"
+    },
+    {
+     "id": "coordenadas",
+     "label": "Coordenadas o link de Google Maps",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 2,
+   "title": "IDENTIFICACIÓN LEGAL Y CATASTRAL",
+   "fields": [
+    {
+     "id": "rol_sii",
+     "label": "Rol S.I.I.",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "cbr_fojas",
+     "label": "Inscripción CBR — Fojas",
+     "type": "text"
+    },
+    {
+     "id": "cbr_numero",
+     "label": "Inscripción CBR — N°",
+     "type": "text"
+    },
+    {
+     "id": "cbr_anio",
+     "label": "Inscripción CBR — Año",
+     "type": "text"
+    },
+    {
+     "id": "conservador_cbr",
+     "label": "Conservador de Bienes Raíces",
+     "type": "text"
+    },
+    {
+     "id": "propietario_inscrito_nombre",
+     "label": "Nombre del propietario inscrito",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "propietario_inscrito_rut",
+     "label": "RUT del propietario inscrito",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "tipo_propietario",
+     "label": "Tipo de propietario",
+     "type": "choice",
+     "options": [
+      "Persona natural",
+      "Sociedad / SpA / SA / Ltda.",
+      "Cooperativa",
+      "Sucesión"
+     ]
+    },
+    {
+     "id": "representante_legal",
+     "label": "Representante legal (si es persona jurídica)",
+     "type": "text"
+    },
+    {
+     "id": "representante_legal_rut",
+     "label": "RUT del representante legal",
+     "type": "text"
+    },
+    {
+     "id": "anio_construccion",
+     "label": "Año de construcción (aprox.)",
+     "type": "text"
+    },
+    {
+     "id": "recepcion_final",
+     "label": "Recepción final de obras municipal",
+     "type": "choice",
+     "options": [
+      "Sí, tiene recepción",
+      "No, sin recepción",
+      "En trámite",
+      "No aplica (terreno)"
+     ]
+    },
+    {
+     "id": "regularizacion",
+     "label": "Regularización vigente",
+     "type": "choice",
+     "options": [
+      "DFL 2 (beneficio tributario)",
+      "Ley de regularización / otra",
+      "Sin regularización",
+      "No aplica"
+     ]
+    },
+    {
+     "id": "hipoteca_gravamen",
+     "label": "Crédito hipotecario o gravamen vigente",
+     "type": "choice",
+     "options": [
+      "Sin crédito hipotecario ni gravamen",
+      "Crédito hipotecario vigente",
+      "Prohibición vigente",
+      "No verificado"
+     ]
+    },
+    {
+     "id": "hipoteca_banco_monto",
+     "label": "Si tiene crédito hipotecario: banco y monto aproximado",
+     "type": "text"
+    },
+    {
+     "id": "prohibiciones",
+     "label": "Prohibiciones vigentes (detalle)",
+     "type": "text"
+    },
+    {
+     "id": "servidumbres",
+     "label": "Servidumbres",
+     "type": "text"
+    },
+    {
+     "id": "litigios",
+     "label": "Litigios o juicios",
+     "type": "choice",
+     "options": [
+      "Sin litigios ni juicios conocidos",
+      "Sí, existen (detallar abajo)",
+      "No verificado"
+     ]
+    },
+    {
+     "id": "litigios_detalle",
+     "label": "Detalle de litigios (si aplica)",
+     "type": "textarea"
+    },
+    {
+     "id": "reglamento_copropiedad_insc",
+     "label": "Reglamento de copropiedad — Fojas / N° / Año",
+     "type": "text"
+    },
+    {
+     "id": "notaria_fecha_escritura",
+     "label": "Notaría y fecha de la escritura",
+     "type": "text"
+    },
+    {
+     "id": "codigo_verificacion_escritura",
+     "label": "Código de verificación de la escritura",
+     "type": "text"
+    },
+    {
+     "id": "formulario_2890",
+     "label": "Formulario 2890 SII — N° / fecha",
+     "type": "text"
+    },
+    {
+     "id": "cert_no_expropiacion_municipal",
+     "label": "Certificado no expropiación municipal — fecha",
+     "type": "text"
+    },
+    {
+     "id": "cert_no_expropiacion_serviu",
+     "label": "Certificado no expropiación SERVIU — fecha",
+     "type": "text"
+    },
+    {
+     "id": "certificado_numero_dom",
+     "label": "Certificado de número (DOM) — fecha",
+     "type": "text"
+    },
+    {
+     "id": "permiso_edificacion_num",
+     "label": "Permiso de edificación — N° / fecha",
+     "type": "text"
+    },
+    {
+     "id": "rol_estacionamiento_bodega",
+     "label": "Rol(es) SII de estacionamiento / bodega (si son independientes)",
+     "type": "text"
+    },
+    {
+     "id": "deuda_fiscal_tgr",
+     "label": "Certificado de deuda fiscal TGR (contribuciones)",
+     "type": "choice",
+     "options": [
+      "Sin deuda",
+      "Con deuda pendiente",
+      "No verificado"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 3,
+   "title": "SUPERFICIES",
+   "fields": [
+    {
+     "id": "superficie_terreno",
+     "label": "Superficie de terreno",
+     "type": "text",
+     "required": true,
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_construida",
+     "label": "Superficie construida total",
+     "type": "text",
+     "required": true,
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_util",
+     "label": "Superficie útil / vendible",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_terraza",
+     "label": "Superficie de terraza o balcón",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_jardin",
+     "label": "Superficie de jardín privado",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_estacionamiento",
+     "label": "Superficie de estacionamiento cubierto",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_bodega",
+     "label": "Superficie de bodega(s)",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "superficie_local",
+     "label": "Superficie de local comercial (si aplica)",
+     "type": "text",
+     "unit": "m²"
+    },
+    {
+     "id": "fuente_superficies",
+     "label": "Fuente de las superficies indicadas",
+     "type": "choice",
+     "options": [
+      "Plano",
+      "Escritura",
+      "Tasación",
+      "Medición propia",
+      "Estimación"
+     ],
+     "other": true
+    }
+   ]
+  },
+  {
+   "num": 4,
+   "title": "PROGRAMA HABITACIONAL Y DISTRIBUCIÓN",
+   "note": "Aplica principalmente a casas, departamentos y edificios habitacionales",
+   "fields": [
+    {
+     "id": "dormitorios",
+     "label": "N° de dormitorios",
+     "type": "text"
+    },
+    {
+     "id": "banos_completos",
+     "label": "N° de baños completos (ducha o tina)",
+     "type": "text"
+    },
+    {
+     "id": "banos_agua",
+     "label": "N° de baños de agua (solo WC + lavamanos)",
+     "type": "text"
+    },
+    {
+     "id": "banos_servicio",
+     "label": "N° de baños de servicio",
+     "type": "text"
+    },
+    {
+     "id": "dependencia_servicio",
+     "label": "Dependencia de servicio",
+     "type": "choice",
+     "options": [
+      "Sí, independiente",
+      "Sí, compartida",
+      "No tiene"
+     ]
+    },
+    {
+     "id": "estacionamientos_cubiertos",
+     "label": "N° de estacionamientos cubiertos",
+     "type": "text"
+    },
+    {
+     "id": "estacionamientos_descubiertos",
+     "label": "N° de estacionamientos descubiertos",
+     "type": "text"
+    },
+    {
+     "id": "num_bodegas",
+     "label": "N° de bodegas",
+     "type": "text"
+    },
+    {
+     "id": "pisos_casa",
+     "label": "Pisos totales de la casa",
+     "type": "text"
+    },
+    {
+     "id": "piso_depto_de",
+     "label": "Piso en que se ubica el departamento / de N° pisos del edificio",
+     "type": "text"
+    },
+    {
+     "id": "pisos_edificio_total_prog",
+     "label": "N° total de pisos del edificio",
+     "type": "text"
+    },
+    {
+     "id": "orientacion",
+     "label": "Orientación principal",
+     "type": "choice",
+     "options": [
+      "Norte",
+      "Sur",
+      "Oriente",
+      "Poniente",
+      "Nor-Oriente",
+      "Nor-Poniente",
+      "Sur-Oriente",
+      "Sur-Poniente"
+     ]
+    },
+    {
+     "id": "circulacion",
+     "label": "Circulación (departamentos)",
+     "type": "choice",
+     "options": [
+      "Ascensor",
+      "Solo escalera",
+      "Escalera + ascensor",
+      "Acceso directo"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 5,
+   "title": "CARACTERÍSTICAS Y TERMINACIONES",
+   "fields": [
+    {
+     "id": "tipo_cocina",
+     "label": "Tipo de cocina",
+     "type": "choice",
+     "options": [
+      "Americana (abierta)",
+      "Independiente",
+      "Semi-independiente"
+     ]
+    },
+    {
+     "id": "equipamiento_cocina",
+     "label": "Equipamiento incluido en cocina",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Encimera",
+      "Horno empotrado",
+      "Lavavajillas",
+      "Refrigerador",
+      "Microondas",
+      "Campana extractora",
+      "Sin equipamiento"
+     ]
+    },
+    {
+     "id": "muebles_cocina",
+     "label": "Tipo de muebles de cocina",
+     "type": "choice",
+     "options": [
+      "Madera maciza",
+      "MDF / melamina",
+      "Postformados",
+      "Sin muebles"
+     ]
+    },
+    {
+     "id": "area_lavanderia",
+     "label": "Área de lavandería",
+     "type": "choice",
+     "options": [
+      "Sí, independiente interior",
+      "Sí, en área de servicio",
+      "Sí, en balcón / terraza",
+      "No tiene"
+     ]
+    },
+    {
+     "id": "conexiones_lavado",
+     "label": "Conexiones lavadora / secadora",
+     "type": "choice",
+     "options": [
+      "Empotradas en muro",
+      "Externas visibles",
+      "Solo conexión de agua"
+     ]
+    },
+    {
+     "id": "calefaccion",
+     "label": "Calefacción",
+     "type": "choice",
+     "options": [
+      "Centralizada (edificio)",
+      "Individual a gas",
+      "Eléctrica",
+      "Piso radiante",
+      "Calefactor eléctrico",
+      "Leña / combustión lenta",
+      "Sin calefacción"
+     ]
+    },
+    {
+     "id": "agua_caliente",
+     "label": "Agua caliente",
+     "type": "choice",
+     "options": [
+      "Calefón a gas",
+      "Termostato eléctrico",
+      "Caldera centralizada",
+      "Panel solar",
+      "Bomba de calor"
+     ]
+    },
+    {
+     "id": "aire_acondicionado",
+     "label": "Aire acondicionado / ventilación",
+     "type": "choice",
+     "options": [
+      "Split frío-calor",
+      "Solo frío",
+      "Ventilación mecánica",
+      "No tiene"
+     ]
+    },
+    {
+     "id": "conexion_gas",
+     "label": "Conexión de gas",
+     "type": "choice",
+     "options": [
+      "Red de gas natural",
+      "Gas licuado (cilindro)",
+      "Sin gas"
+     ]
+    },
+    {
+     "id": "pisos_principales",
+     "label": "Pisos principales (material)",
+     "type": "choice",
+     "options": [
+      "Madera maciza",
+      "Parquet",
+      "Laminado flotante",
+      "Cerámico",
+      "Porcelanato",
+      "Alfombra",
+      "Cemento pulido",
+      "Vinílico"
+     ]
+    },
+    {
+     "id": "ventanas",
+     "label": "Ventanas",
+     "type": "choice",
+     "options": [
+      "Aluminio simple",
+      "Termopanel (DVH)",
+      "Madera",
+      "PVC"
+     ]
+    },
+    {
+     "id": "protecciones",
+     "label": "Protecciones",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Rejas interiores",
+      "Rejas exteriores",
+      "Sin rejas",
+      "Alarma",
+      "Cortinas roller / blackout"
+     ]
+    },
+    {
+     "id": "otro_equipamiento",
+     "label": "Otro equipamiento o instalaciones incluidas",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Alarma",
+      "Cámara de seguridad",
+      "Domótica",
+      "Paneles solares",
+      "Piscina privada",
+      "Quincho / parrilla",
+      "Jardín con riego automático"
+     ]
+    },
+    {
+     "id": "terminaciones_especiales",
+     "label": "Terminaciones especiales, remodelaciones recientes o elementos de valor",
+     "type": "textarea"
+    },
+    {
+     "id": "calificacion_energetica",
+     "label": "Calificación Energética de Viviendas (CEV / MINVU)",
+     "type": "text"
+    },
+    {
+     "id": "accesibilidad",
+     "label": "Accesibilidad universal",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Rampa de acceso",
+      "Ascensor apto silla de ruedas",
+      "Baño adaptado",
+      "Sin adaptaciones"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 6,
+   "title": "ESTADO GENERAL Y OCUPACIÓN ACTUAL",
+   "fields": [
+    {
+     "id": "estado_general",
+     "label": "Estado general del inmueble",
+     "type": "choice",
+     "required": true,
+     "options": [
+      "Excelente",
+      "Bueno",
+      "Regular",
+      "Requiere reparaciones menores",
+      "Requiere renovación completa"
+     ]
+    },
+    {
+     "id": "ocupacion_actual",
+     "label": "Ocupación actual",
+     "type": "choice",
+     "required": true,
+     "options": [
+      "Desocupada (lista para visitar)",
+      "Ocupada por propietario",
+      "Arrendada (con inquilino)",
+      "Con cuidador / guardería",
+      "Abandonada"
+     ]
+    },
+    {
+     "id": "disponible_visitas_desde",
+     "label": "Disponible para visitas desde",
+     "type": "date"
+    },
+    {
+     "id": "disponible_entrega_desde",
+     "label": "Disponible para entrega desde",
+     "type": "date"
+    },
+    {
+     "id": "restricciones_horario_visitas",
+     "label": "Restricciones de horario para visitas",
+     "type": "text"
+    },
+    {
+     "id": "contacto_llaves",
+     "label": "Quién tiene las llaves / contacto para acceso",
+     "type": "text"
+    },
+    {
+     "id": "visitar_sin_aviso",
+     "label": "¿Se permite visitar sin aviso previo?",
+     "type": "choice",
+     "options": [
+      "Sí, sin restricción",
+      "No, se debe avisar con anticipación",
+      "Solo en horario específico (detallar)"
+     ]
+    },
+    {
+     "id": "visitar_sin_aviso_detalle",
+     "label": "Detalle de horario específico (si aplica)",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 7,
+   "title": "SITUACIÓN DE ARRIENDO Y ARRENDATARIO ACTUAL",
+   "note": "Completar si la propiedad está o estuvo arrendada",
+   "fields": [
+    {
+     "id": "arrendada_actualmente",
+     "label": "¿Arrendada actualmente?",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No"
+     ]
+    },
+    {
+     "id": "desocupada_desde",
+     "label": "Si NO: desocupada desde",
+     "type": "date"
+    },
+    {
+     "id": "motivo_desocupada",
+     "label": "Si NO: motivo",
+     "type": "text"
+    },
+    {
+     "id": "arriendo_mensual_uf",
+     "label": "Arriendo mensual",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "arriendo_mensual_clp",
+     "label": "Arriendo equivalente",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "reajuste",
+     "label": "Reajuste",
+     "type": "text",
+     "note": "UF, IPC, fijo, etc."
+    },
+    {
+     "id": "dia_pago",
+     "label": "Día de pago",
+     "type": "text"
+    },
+    {
+     "id": "multa_atraso",
+     "label": "Multa por atraso",
+     "type": "text",
+     "unit": "%"
+    },
+    {
+     "id": "forma_pago",
+     "label": "Forma de pago",
+     "type": "choice",
+     "options": [
+      "Transferencia",
+      "Depósito",
+      "Efectivo",
+      "Cheque",
+      "Khipu / pago en línea"
+     ],
+     "other": true
+    },
+    {
+     "id": "banco_cuenta_arriendo",
+     "label": "Banco y N° de cuenta (para pago del arriendo)",
+     "type": "text"
+    },
+    {
+     "id": "gasto_comun_monto_quien_paga",
+     "label": "Gasto común: monto y quién paga",
+     "type": "text"
+    },
+    {
+     "id": "servicios_a_nombre_de",
+     "label": "Servicios a nombre de",
+     "type": "choice",
+     "options": [
+      "Propietario",
+      "Arrendatario",
+      "Comunidad / edificio"
+     ]
+    },
+    {
+     "id": "arr_nombre",
+     "label": "Nombre completo del arrendatario",
+     "type": "text"
+    },
+    {
+     "id": "arr_rut",
+     "label": "RUT del arrendatario",
+     "type": "text"
+    },
+    {
+     "id": "arr_nacionalidad",
+     "label": "Nacionalidad",
+     "type": "text"
+    },
+    {
+     "id": "arr_profesion",
+     "label": "Profesión u ocupación",
+     "type": "text"
+    },
+    {
+     "id": "arr_empleador",
+     "label": "Empleador o actividad",
+     "type": "text"
+    },
+    {
+     "id": "arr_correo",
+     "label": "Correo",
+     "type": "text"
+    },
+    {
+     "id": "arr_telefono",
+     "label": "Teléfono",
+     "type": "text"
+    },
+    {
+     "id": "arr_whatsapp",
+     "label": "WhatsApp",
+     "type": "text"
+    },
+    {
+     "id": "arr_num_ocupantes",
+     "label": "N° de ocupantes",
+     "type": "text"
+    },
+    {
+     "id": "aval_nombre",
+     "label": "Aval / codeudor — Nombre",
+     "type": "text"
+    },
+    {
+     "id": "aval_rut",
+     "label": "Aval — RUT",
+     "type": "text"
+    },
+    {
+     "id": "aval_contacto",
+     "label": "Aval — contacto",
+     "type": "text"
+    },
+    {
+     "id": "estado_pagos",
+     "label": "Estado de pagos",
+     "type": "choice",
+     "options": [
+      "Al día",
+      "Con atrasos menores",
+      "Con atrasos mayores",
+      "En cobranza / juicio"
+     ]
+    },
+    {
+     "id": "tipo_contrato_vigente",
+     "label": "Tipo de contrato vigente",
+     "type": "choice",
+     "options": [
+      "Residencial (Ley 18.101)",
+      "Comercial (Código Civil)",
+      "Verbal (sin contrato escrito)"
+     ]
+    },
+    {
+     "id": "clausula_termino_anticipado",
+     "label": "Cláusula de término anticipado pactada",
+     "type": "choice",
+     "options": [
+      "Sí, con plazo de aviso (detallar)",
+      "No",
+      "No especificado"
+     ]
+    },
+    {
+     "id": "clausula_termino_plazo",
+     "label": "Plazo de aviso pactado (si aplica)",
+     "type": "text"
+    },
+    {
+     "id": "garantia_clp",
+     "label": "Garantía",
+     "type": "text",
+     "unit": "UF",
+     "note": "La garantía se expresa en UF"
+    },
+    {
+     "id": "garantia_meses",
+     "label": "Garantía — meses",
+     "type": "text"
+    },
+    {
+     "id": "garantia_fecha_recibida",
+     "label": "Garantía — fecha recibida",
+     "type": "date"
+    },
+    {
+     "id": "estado_garantia",
+     "label": "Estado de la garantía",
+     "type": "choice",
+     "options": [
+      "Retenida",
+      "En liquidación",
+      "Devuelta",
+      "Aplicada a deuda"
+     ]
+    },
+    {
+     "id": "tipo_contrato_formato",
+     "label": "Tipo de contrato (formato / plantilla usada)",
+     "type": "text"
+    },
+    {
+     "id": "inicio_contrato",
+     "label": "Inicio del contrato",
+     "type": "date"
+    },
+    {
+     "id": "termino_contrato",
+     "label": "Término del contrato",
+     "type": "date"
+    },
+    {
+     "id": "notaria_protocolizado",
+     "label": "Notaría / protocolizado",
+     "type": "text"
+    },
+    {
+     "id": "comision_corretaje_arriendo",
+     "label": "Comisión de corretaje pactada",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 8,
+   "title": "ANTECEDENTES FINANCIEROS DEL ARRENDATARIO (INFOCHECK)",
+   "fields": [
+    {
+     "id": "puntaje_infocheck",
+     "label": "Puntaje InfoCheck",
+     "type": "text"
+    },
+    {
+     "id": "capacidad_pago",
+     "label": "Capacidad de pago",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "renta_liquida",
+     "label": "Renta líquida",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "deuda_directa_cmf",
+     "label": "Deuda directa CMF",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "fuente_ingresos",
+     "label": "Fuente de ingresos",
+     "type": "text"
+    },
+    {
+     "id": "fecha_informe_infocheck",
+     "label": "Fecha del informe",
+     "type": "date"
+    }
+   ]
+  },
+  {
+   "num": 9,
+   "title": "INFORMACIÓN URBANÍSTICA Y NORMATIVA",
+   "fields": [
+    {
+     "id": "plan_regulador",
+     "label": "Plan Regulador aplicable",
+     "type": "text"
+    },
+    {
+     "id": "zona_subzona",
+     "label": "Zona o subzona",
+     "type": "text",
+     "note": "ej. ZM1, R2, ZU-4..."
+    },
+    {
+     "id": "coef_constructibilidad",
+     "label": "Coeficiente de constructibilidad",
+     "type": "text"
+    },
+    {
+     "id": "coef_ocupacion_suelo",
+     "label": "Coeficiente de ocupación de suelo",
+     "type": "text"
+    },
+    {
+     "id": "altura_maxima",
+     "label": "Altura máxima permitida (m / pisos)",
+     "type": "text"
+    },
+    {
+     "id": "usos_suelo_permitidos",
+     "label": "Usos de suelo permitidos",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Residencial",
+      "Comercio",
+      "Servicios",
+      "Equipamiento",
+      "Hospedaje / hotel",
+      "Industria inofensiva",
+      "Bodega inofensiva"
+     ]
+    },
+    {
+     "id": "cip",
+     "label": "CIP (Certificado de Informaciones Previas)",
+     "type": "choice",
+     "options": [
+      "Disponible para adjuntar",
+      "Vigente pero no disponible",
+      "Pendiente de solicitar",
+      "No aplica"
+     ]
+    },
+    {
+     "id": "afectaciones_utilidad_publica",
+     "label": "Afectaciones de utilidad pública",
+     "type": "choice",
+     "options": [
+      "Sin afectaciones",
+      "Sí tiene afectación (detallar abajo)",
+      "No verificado"
+     ]
+    },
+    {
+     "id": "afectaciones_detalle",
+     "label": "Detalle de afectaciones (si las hay)",
+     "type": "textarea"
+    },
+    {
+     "id": "declaratoria_patrimonial",
+     "label": "Declaratoria patrimonial / conservación histórica",
+     "type": "choice",
+     "options": [
+      "No tiene",
+      "Sí tiene (detallar abajo)",
+      "No verificado"
+     ]
+    },
+    {
+     "id": "declaratoria_detalle",
+     "label": "Detalle de la declaratoria (si aplica)",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 10,
+   "title": "CRÉDITO HIPOTECARIO",
+   "fields": [
+    {
+     "id": "tiene_credito_vigente",
+     "label": "¿Tiene crédito vigente?",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No"
+     ]
+    },
+    {
+     "id": "banco_credito",
+     "label": "Banco o institución",
+     "type": "text"
+    },
+    {
+     "id": "tipo_credito",
+     "label": "Tipo de crédito",
+     "type": "text"
+    },
+    {
+     "id": "numero_operacion",
+     "label": "N° de operación",
+     "type": "text"
+    },
+    {
+     "id": "dividendo_mensual_uf",
+     "label": "Dividendo mensual",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "dividendo_mensual_clp",
+     "label": "Dividendo equivalente",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "total_dividendos",
+     "label": "N° total de dividendos",
+     "type": "text"
+    },
+    {
+     "id": "dividendos_pagados",
+     "label": "Dividendos pagados",
+     "type": "text"
+    },
+    {
+     "id": "inicio_credito",
+     "label": "Inicio del crédito",
+     "type": "date"
+    },
+    {
+     "id": "termino_estimado_credito",
+     "label": "Término estimado",
+     "type": "date"
+    },
+    {
+     "id": "tasa_interes",
+     "label": "Tasa de interés",
+     "type": "text",
+     "unit": "%"
+    },
+    {
+     "id": "seguros_incluidos_dividendo",
+     "label": "Seguros incluidos en dividendo",
+     "type": "text"
+    },
+    {
+     "id": "ejecutivo_contacto",
+     "label": "Ejecutivo / contacto",
+     "type": "text"
+    },
+    {
+     "id": "alzamiento_hipoteca_fecha",
+     "label": "Alzamiento de crédito hipotecario (fecha)",
+     "type": "date"
+    }
+   ]
+  },
+  {
+   "num": 11,
+   "title": "SEGUROS DE LA PROPIEDAD",
+   "fields": [
+    {
+     "id": "tiene_seguro",
+     "label": "¿La propiedad tiene seguro contratado?",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No"
+     ]
+    },
+    {
+     "id": "modalidad_seguro",
+     "label": "Modalidad del seguro",
+     "type": "choice",
+     "options": [
+      "Incluido en el dividendo del crédito hipotecario",
+      "Contratado aparte",
+      "Sin seguro"
+     ]
+    },
+    {
+     "id": "incluido_en_dividendo",
+     "label": "¿El seguro va incluido en el pago del dividendo?",
+     "type": "choice",
+     "options": [
+      "Sí, aplica mientras el crédito esté vigente",
+      "No aplica"
+     ]
+    },
+    {
+     "id": "contratado_aparte_desde",
+     "label": "Si es aparte: contratado desde (al quedar pagado el crédito)",
+     "type": "date"
+    },
+    {
+     "id": "compania_aseguradora",
+     "label": "Compañía aseguradora",
+     "type": "text"
+    },
+    {
+     "id": "tipo_cobertura",
+     "label": "Tipo y cobertura",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Incendio",
+      "Incendio + sismo",
+      "Contenido",
+      "Responsabilidad civil",
+      "Hogar integral"
+     ]
+    },
+    {
+     "id": "prima_seguro",
+     "label": "Prima seguro incendio + sismo (UF / periodicidad)",
+     "type": "text"
+    },
+    {
+     "id": "otros_seguros",
+     "label": "Otros seguros contratados",
+     "type": "text"
+    },
+    {
+     "id": "valor_asegurado",
+     "label": "Valor asegurado",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "numero_poliza",
+     "label": "N° de póliza",
+     "type": "text"
+    },
+    {
+     "id": "vigencia_poliza",
+     "label": "Vigencia de la póliza (desde / hasta)",
+     "type": "text"
+    },
+    {
+     "id": "beneficiario_acreedor",
+     "label": "Beneficiario / acreedor endosado (banco, si el crédito está vigente)",
+     "type": "text"
+    },
+    {
+     "id": "corredor_seguros",
+     "label": "Corredor de seguros / contacto",
+     "type": "text"
+    },
+    {
+     "id": "observaciones_seguro",
+     "label": "Observaciones del seguro",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 12,
+   "title": "ASPECTOS FINANCIEROS (VENTA / ARRIENDO)",
+   "fields": [
+    {
+     "id": "precio_publicado_en",
+     "label": "Precio publicado en",
+     "type": "choice",
+     "options": [
+      "UF",
+      "Pesos CLP",
+      "Dólares USD"
+     ]
+    },
+    {
+     "id": "precio_venta_uf",
+     "label": "Precio de venta solicitado",
+     "type": "text",
+     "unit": "UF",
+     "required": true
+    },
+    {
+     "id": "precio_venta_clp",
+     "label": "Precio de venta solicitado (equivalente)",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "precio_arriendo_uf",
+     "label": "Precio de arriendo mensual solicitado",
+     "type": "text",
+     "unit": "UF",
+     "required": true
+    },
+    {
+     "id": "precio_arriendo_clp",
+     "label": "Precio de arriendo mensual (equivalente)",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "precio_es",
+     "label": "El precio es",
+     "type": "choice",
+     "options": [
+      "Negociable",
+      "Fijo / no negociable",
+      "A tratar"
+     ]
+    },
+    {
+     "id": "precio_minimo_aceptable",
+     "label": "Precio mínimo aceptable (uso interno, no publicar)",
+     "type": "text"
+    },
+    {
+     "id": "tasacion_comercial_clp",
+     "label": "Tasación comercial",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "tasacion_comercial_uf",
+     "label": "Tasación comercial",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "fecha_tasacion",
+     "label": "Fecha de la tasación",
+     "type": "date"
+    },
+    {
+     "id": "tasador_banco",
+     "label": "Tasador o banco",
+     "type": "text"
+    },
+    {
+     "id": "arriendo_mercado_uf",
+     "label": "Arriendo de mercado (referencia)",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "acepta_financiamiento_hipotecario",
+     "label": "Acepta financiamiento hipotecario del comprador",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No, solo contado",
+      "A evaluar caso a caso"
+     ]
+    },
+    {
+     "id": "acepta_leasing_habitacional",
+     "label": "Acepta leasing habitacional",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No",
+      "A evaluar"
+     ]
+    },
+    {
+     "id": "condiciones_especiales_pago",
+     "label": "Condiciones especiales de pago",
+     "type": "textarea"
+    },
+    {
+     "id": "subsidio_habitacional",
+     "label": "¿Vivienda con subsidio habitacional?",
+     "type": "choice",
+     "options": [
+      "DS1",
+      "DS19",
+      "DS49",
+      "No aplica"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 13,
+   "title": "GASTOS Y CARGAS",
+   "fields": [
+    {
+     "id": "contribuciones_anuales",
+     "label": "Contribuciones SII al año",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "contribuciones_al_dia_fecha",
+     "label": "Contribuciones al día — fecha de verificación",
+     "type": "date"
+    },
+    {
+     "id": "avaluo_fiscal",
+     "label": "Avalúo fiscal SII",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "afecta_exenta_contribuciones",
+     "label": "¿Afecta o exenta de contribuciones?",
+     "type": "choice",
+     "options": [
+      "Afecta",
+      "Exenta"
+     ]
+    },
+    {
+     "id": "gastos_comunes_mensuales",
+     "label": "Gastos comunes mensuales",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "gastos_comunes_incluye",
+     "label": "Gastos comunes incluyen",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Agua",
+      "Gas",
+      "Electricidad áreas comunes",
+      "Seguro",
+      "Conserjería"
+     ],
+     "other": true
+    },
+    {
+     "id": "deuda_gastos_comunes",
+     "label": "Deuda de gastos comunes",
+     "type": "choice",
+     "options": [
+      "Sin deuda",
+      "Con deuda (detallar monto)"
+     ]
+    },
+    {
+     "id": "deuda_gastos_comunes_monto",
+     "label": "Monto de deuda de gastos comunes (si aplica)",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "deudas_servicios_basicos",
+     "label": "Deudas pendientes de servicios básicos",
+     "type": "choice",
+     "options": [
+      "Sin deudas",
+      "Con deudas (detallar)"
+     ]
+    },
+    {
+     "id": "deudas_servicios_detalle",
+     "label": "Detalle de deudas de servicios (luz / agua / gas)",
+     "type": "text"
+    },
+    {
+     "id": "mantenciones_periodicas",
+     "label": "Mantenciones periódicas",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 14,
+   "title": "ÁREAS COMUNES Y AMENIDADES (EDIFICIO / CONDOMINIO)",
+   "fields": [
+    {
+     "id": "amenidades",
+     "label": "Amenidades disponibles",
+     "type": "grid",
+     "multi": true,
+     "cols": 3,
+     "options": [
+      "Piscina",
+      "Piscina temperada",
+      "Jacuzzi / tina",
+      "Gimnasio",
+      "Sala de deporte",
+      "Cancha multiuso",
+      "Quincho / parrilla",
+      "Sala de eventos",
+      "Sala de reuniones",
+      "Portería / conserjería 24h",
+      "Control de acceso",
+      "Cámaras de seguridad",
+      "Estacionamiento de visitas",
+      "Bodega común",
+      "Sala de bicicletas",
+      "Áreas verdes / jardín",
+      "Juegos infantiles",
+      "Parque para mascotas",
+      "Terraza común",
+      "Solárium",
+      "Sala de cine",
+      "Sala de juegos",
+      "Salón de belleza",
+      "Minimarket",
+      "Coworking / sala de estudio",
+      "Lavandería común"
+     ]
+    },
+    {
+     "id": "pisos_edificio",
+     "label": "N° de pisos del edificio",
+     "type": "text"
+    },
+    {
+     "id": "unidades_edificio",
+     "label": "N° de unidades del edificio / condominio",
+     "type": "text"
+    },
+    {
+     "id": "torres",
+     "label": "N° de torres (si aplica)",
+     "type": "text"
+    },
+    {
+     "id": "administracion_edificio",
+     "label": "Administración del edificio",
+     "type": "choice",
+     "options": [
+      "Administrador externo contratado",
+      "Autogestión de copropietarios",
+      "Sin administración formal"
+     ]
+    },
+    {
+     "id": "admin_contacto",
+     "label": "Nombre y contacto del administrador",
+     "type": "text"
+    },
+    {
+     "id": "permite_mascotas",
+     "label": "¿El reglamento de copropiedad permite mascotas?",
+     "type": "choice",
+     "options": [
+      "Sí, sin restricciones",
+      "Sí, con restricciones de tamaño o tipo",
+      "No permite mascotas",
+      "No especificado en el reglamento"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 15,
+   "title": "PROPIEDAD COMERCIAL / INDUSTRIAL",
+   "note": "Completar solo si es local comercial, oficina, bodega, galpón o similar",
+   "fields": [
+    {
+     "id": "uso_actual_inmueble_com",
+     "label": "Uso actual del inmueble",
+     "type": "text"
+    },
+    {
+     "id": "usos_anteriores",
+     "label": "Usos anteriores relevantes",
+     "type": "text"
+    },
+    {
+     "id": "patente_comercial_vigente",
+     "label": "Patente comercial vigente en el local",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No",
+      "No aplica"
+     ]
+    },
+    {
+     "id": "frente_calle",
+     "label": "Frente a la calle",
+     "type": "text",
+     "unit": "m lineales"
+    },
+    {
+     "id": "altura_libre_interior",
+     "label": "Altura libre interior",
+     "type": "text",
+     "unit": "m"
+    },
+    {
+     "id": "acceso_carga_descarga",
+     "label": "Acceso de carga / descarga",
+     "type": "choice",
+     "options": [
+      "Sí, portón vehicular",
+      "Sí, portón peatonal",
+      "Solo acceso por veredas",
+      "No tiene"
+     ]
+    },
+    {
+     "id": "potencia_electrica",
+     "label": "Potencia eléctrica instalada",
+     "type": "text",
+     "unit": "kW"
+    },
+    {
+     "id": "trifasico",
+     "label": "¿Trifásico?",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No"
+     ]
+    },
+    {
+     "id": "instalaciones_especiales",
+     "label": "Instalaciones especiales",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Extracción industrial",
+      "Instalación de gas industrial",
+      "Cámara frigorífica",
+      "Grúa puente",
+      "Andén de carga"
+     ]
+    },
+    {
+     "id": "estacionamientos_clientes",
+     "label": "N° de estacionamientos para clientes",
+     "type": "text"
+    },
+    {
+     "id": "derecho_llave",
+     "label": "Derecho de llave",
+     "type": "choice",
+     "options": [
+      "Sí (indicar valor)",
+      "No"
+     ]
+    },
+    {
+     "id": "derecho_llave_valor",
+     "label": "Valor del derecho de llave",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "nombre_negocio_actual",
+     "label": "Nombre del negocio actual (si se vende en marcha)",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 16,
+   "title": "SERVICIOS BÁSICOS",
+   "fields": [
+    {
+     "id": "electricidad_empresa_cliente",
+     "label": "Electricidad — empresa y N° cliente",
+     "type": "text"
+    },
+    {
+     "id": "agua_empresa_cliente",
+     "label": "Agua — empresa y N° cliente",
+     "type": "text"
+    },
+    {
+     "id": "gas_empresa_cliente",
+     "label": "Gas — empresa y N° cliente",
+     "type": "text"
+    },
+    {
+     "id": "internet_tv_empresa_cliente",
+     "label": "Internet / TV — empresa y N° cliente",
+     "type": "text"
+    },
+    {
+     "id": "num_medidores",
+     "label": "N° de medidores (luz / agua / gas)",
+     "type": "text"
+    },
+    {
+     "id": "otros_suministros",
+     "label": "Otros suministros",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 17,
+   "title": "DOCUMENTACIÓN DISPONIBLE (CHECKLIST)",
+   "note": "Marque los documentos que están listos para entregar a la corredora",
+   "fields": [
+    {
+     "id": "documentos_disponibles",
+     "label": "Documentos disponibles",
+     "type": "grid",
+     "multi": true,
+     "cols": 3,
+     "options": [
+      "Escritura de compraventa vigente",
+      "Certificado de dominio vigente (CBR)",
+      "Certificado de hipotecas y gravámenes",
+      "Certificado de litigios",
+      "Certificado de avalúo SII (contribuciones)",
+      "Rol de avalúo SII",
+      "CIP (Cert. Informaciones Previas)",
+      "Tasación comercial",
+      "Planos arquitectónicos",
+      "Plano de subdivisión / mensura",
+      "Permiso de edificación",
+      "Recepción final de obras",
+      "Reglamento de copropiedad",
+      "Últimos 3 recibos de luz",
+      "Últimos 3 recibos de agua",
+      "Últimos 3 recibos de gas",
+      "Contrato de arriendo vigente",
+      "Fotos profesionales del inmueble",
+      "Video / tour virtual 360°",
+      "Plano de ubicación georreferenciado",
+      "Cédula de identidad del propietario",
+      "Formulario 2890 SII",
+      "Certificado de no expropiación"
+     ]
+    }
+   ]
+  },
+  {
+   "num": 18,
+   "title": "ANEXOS Y ARCHIVOS ADJUNTOS",
+   "is_attachment_section": true,
+   "note": "Adjunte aquí los archivos de cada documento marcado en la sección anterior. En Word: arrastre el archivo dentro del recuadro punteado (Word lo incrusta automáticamente). En el formulario web: use el botón «Adjuntar archivo» de cada fila.",
+   "groups": [
+    {
+     "group": "Documentos legales y catastrales",
+     "attachments": [
+      {
+       "id": "att_escritura",
+       "label": "Escritura de compraventa"
+      },
+      {
+       "id": "att_dominio_vigente",
+       "label": "Certificado de dominio vigente (CBR)"
+      },
+      {
+       "id": "att_hipotecas_gravamenes",
+       "label": "Certificado de hipotecas y gravámenes"
+      },
+      {
+       "id": "att_litigios",
+       "label": "Certificado de litigios"
+      },
+      {
+       "id": "att_avaluo_sii",
+       "label": "Certificado de avalúo SII"
+      },
+      {
+       "id": "att_cip",
+       "label": "CIP — Certificado de Informaciones Previas"
+      },
+      {
+       "id": "att_tasacion",
+       "label": "Tasación comercial"
+      },
+      {
+       "id": "att_planos",
+       "label": "Planos arquitectónicos"
+      },
+      {
+       "id": "att_plano_subdivision",
+       "label": "Plano de subdivisión / mensura"
+      },
+      {
+       "id": "att_permiso_edificacion",
+       "label": "Permiso de edificación"
+      },
+      {
+       "id": "att_recepcion_final",
+       "label": "Recepción final de obras"
+      },
+      {
+       "id": "att_reglamento_copropiedad",
+       "label": "Reglamento de copropiedad"
+      },
+      {
+       "id": "att_formulario_2890",
+       "label": "Formulario 2890 SII"
+      }
+     ]
+    },
+    {
+     "group": "Comprobantes y contratos",
+     "attachments": [
+      {
+       "id": "att_recibo_luz",
+       "label": "Últimos 3 recibos de luz"
+      },
+      {
+       "id": "att_recibo_agua",
+       "label": "Últimos 3 recibos de agua"
+      },
+      {
+       "id": "att_recibo_gas",
+       "label": "Últimos 3 recibos de gas"
+      },
+      {
+       "id": "att_contrato_arriendo",
+       "label": "Contrato de arriendo vigente"
+      },
+      {
+       "id": "att_comprobante_gc",
+       "label": "Comprobante de gastos comunes"
+      }
+     ]
+    },
+    {
+     "group": "Material fotográfico y audiovisual",
+     "attachments": [
+      {
+       "id": "att_foto_fachada",
+       "label": "Foto de fachada"
+      },
+      {
+       "id": "att_foto_living",
+       "label": "Foto living / comedor"
+      },
+      {
+       "id": "att_foto_cocina",
+       "label": "Foto cocina"
+      },
+      {
+       "id": "att_foto_dormitorios",
+       "label": "Fotos dormitorios"
+      },
+      {
+       "id": "att_foto_banos",
+       "label": "Fotos baños"
+      },
+      {
+       "id": "att_foto_terraza",
+       "label": "Foto terraza / balcón"
+      },
+      {
+       "id": "att_foto_estacionamiento",
+       "label": "Foto estacionamiento / bodega"
+      },
+      {
+       "id": "att_foto_areas_comunes",
+       "label": "Fotos áreas comunes del edificio"
+      },
+      {
+       "id": "att_foto_aerea",
+       "label": "Vista aérea / dron"
+      },
+      {
+       "id": "att_video_tour",
+       "label": "Video / tour virtual 360°"
+      }
+     ]
+    },
+    {
+     "group": "Otros archivos",
+     "attachments": [
+      {
+       "id": "att_cedula_propietario",
+       "label": "Cédula de identidad del propietario"
+      },
+      {
+       "id": "att_poder_mandato",
+       "label": "Poder o mandato (si aplica)"
+      },
+      {
+       "id": "att_otros_1",
+       "label": "Otro archivo 1"
+      },
+      {
+       "id": "att_otros_2",
+       "label": "Otro archivo 2"
+      },
+      {
+       "id": "att_otros_3",
+       "label": "Otro archivo 3"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "num": 19,
+   "title": "DESCRIPCIÓN PARA PUBLICAR Y ASPECTOS DESTACADOS",
+   "fields": [
+    {
+     "id": "descripcion_principal",
+     "label": "Descripción principal para el aviso",
+     "type": "textarea",
+     "note": "máx. 800 caracteres"
+    },
+    {
+     "id": "aspectos_positivos",
+     "label": "Aspectos positivos a destacar",
+     "type": "textarea"
+    },
+    {
+     "id": "aspectos_aclarar",
+     "label": "Aspectos a aclarar o advertencias",
+     "type": "textarea"
+    },
+    {
+     "id": "palabras_clave",
+     "label": "Palabras clave o etiquetas",
+     "type": "text"
+    },
+    {
+     "id": "autoriza_direccion_exacta",
+     "label": "¿Autoriza publicar la dirección exacta?",
+     "type": "choice",
+     "options": [
+      "Sí, publicar dirección completa",
+      "Solo comuna / sector, sin número",
+      "Solo bajo consulta"
+     ]
+    },
+    {
+     "id": "autoriza_fotos_exterior",
+     "label": "¿Autoriza publicar fotos del exterior?",
+     "type": "choice",
+     "options": [
+      "Sí",
+      "No",
+      "Solo interiores"
+     ]
+    },
+    {
+     "id": "autoriza_fotos_interior",
+     "label": "¿Autoriza publicar fotos del interior?",
+     "type": "choice",
+     "options": [
+      "Sí, todas las habitaciones",
+      "Solo algunas áreas",
+      "No por ahora"
+     ]
+    },
+    {
+     "id": "portales_publicar",
+     "label": "Portales en los que se desea publicar",
+     "type": "grid",
+     "multi": true,
+     "options": [
+      "Portal Inmobiliario",
+      "Yapo",
+      "TocToc",
+      "TuInmueble",
+      "Mercado Libre",
+      "Facebook Marketplace"
+     ],
+     "other": true
+    }
+   ]
+  },
+  {
+   "num": 20,
+   "title": "DATOS BANCARIOS DEL PROPIETARIO (PARA PAGOS Y LIQUIDACIONES)",
+   "fields": [
+    {
+     "id": "banco_propietario",
+     "label": "Banco",
+     "type": "text"
+    },
+    {
+     "id": "tipo_cuenta",
+     "label": "Tipo de cuenta",
+     "type": "choice",
+     "options": [
+      "Cuenta corriente",
+      "Cuenta vista",
+      "Cuenta de ahorro",
+      "Cuenta RUT"
+     ]
+    },
+    {
+     "id": "numero_cuenta_propietario",
+     "label": "N° de cuenta",
+     "type": "text"
+    },
+    {
+     "id": "titular_cuenta",
+     "label": "Titular de la cuenta",
+     "type": "text"
+    },
+    {
+     "id": "rut_titular_cuenta",
+     "label": "RUT del titular",
+     "type": "text"
+    },
+    {
+     "id": "email_comprobantes",
+     "label": "Email para envío de comprobantes",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 21,
+   "title": "DATOS DEL PROPIETARIO / MANDANTE",
+   "fields": [
+    {
+     "id": "mandante_nombre",
+     "label": "Nombre completo",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "mandante_rut",
+     "label": "RUT",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "mandante_telefono",
+     "label": "Teléfono principal",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "mandante_telefono_alt",
+     "label": "Teléfono alternativo",
+     "type": "text"
+    },
+    {
+     "id": "mandante_email",
+     "label": "Email",
+     "type": "text",
+     "required": true
+    },
+    {
+     "id": "mandante_direccion_postal",
+     "label": "Dirección postal (para notificaciones)",
+     "type": "text"
+    },
+    {
+     "id": "mandante_representante",
+     "label": "Representante / apoderado",
+     "type": "text"
+    },
+    {
+     "id": "mandante_representante_rut",
+     "label": "RUT del representante",
+     "type": "text"
+    },
+    {
+     "id": "medio_contacto_preferido",
+     "label": "Medio de contacto preferido",
+     "type": "choice",
+     "options": [
+      "WhatsApp",
+      "Llamada telefónica",
+      "Email",
+      "Presencial"
+     ]
+    },
+    {
+     "id": "horario_contacto_preferido",
+     "label": "Horario de contacto preferido",
+     "type": "choice",
+     "options": [
+      "Mañana (8-12)",
+      "Tarde (12-18)",
+      "Noche (18-21)",
+      "Cualquier horario"
+     ]
+    },
+    {
+     "id": "corredora_asignada",
+     "label": "Corredora o corredor asignado",
+     "type": "text"
+    },
+    {
+     "id": "telefono_corredora",
+     "label": "Teléfono corredor/a",
+     "type": "text"
+    },
+    {
+     "id": "email_corredora",
+     "label": "Email corredor/a",
+     "type": "text"
+    },
+    {
+     "id": "exclusividad_corredora",
+     "label": "Exclusividad de la corredora",
+     "type": "choice",
+     "options": [
+      "Con exclusividad (solo esta corredora)",
+      "Sin exclusividad (puede haber varias)"
+     ]
+    },
+    {
+     "id": "comision_acordada_venta",
+     "label": "Comisión acordada — % sobre precio de venta",
+     "type": "text",
+     "unit": "%"
+    },
+    {
+     "id": "comision_acordada_arriendo",
+     "label": "Comisión acordada — meses de arriendo",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 22,
+   "title": "OTROS CONTACTOS CLAVE",
+   "fields": [
+    {
+     "id": "representante_legal_sociedad",
+     "label": "Representante legal de la sociedad",
+     "type": "text"
+    },
+    {
+     "id": "administracion_conserjeria",
+     "label": "Administración / conserjería",
+     "type": "text"
+    },
+    {
+     "id": "abogado_contacto",
+     "label": "Abogado",
+     "type": "text"
+    },
+    {
+     "id": "contador_contacto",
+     "label": "Contador",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 23,
+   "title": "ESCRITURA DE COMPRAVENTA",
+   "fields": [
+    {
+     "id": "esc_notaria",
+     "label": "Notaría",
+     "type": "text"
+    },
+    {
+     "id": "esc_fecha",
+     "label": "Fecha de la escritura",
+     "type": "date"
+    },
+    {
+     "id": "esc_repertorio",
+     "label": "N° de repertorio",
+     "type": "text"
+    },
+    {
+     "id": "esc_numero",
+     "label": "N° de escritura",
+     "type": "text"
+    },
+    {
+     "id": "esc_vendedores",
+     "label": "Vendedor(es)",
+     "type": "textarea"
+    },
+    {
+     "id": "esc_compradores",
+     "label": "Comprador(es)",
+     "type": "textarea"
+    },
+    {
+     "id": "esc_precio_escriturado",
+     "label": "Precio escriturado (UF / CLP)",
+     "type": "text"
+    },
+    {
+     "id": "esc_forma_pago",
+     "label": "Forma de pago en la escritura",
+     "type": "text"
+    },
+    {
+     "id": "esc_cbr_fojas",
+     "label": "Inscripción CBR — Fojas",
+     "type": "text"
+    },
+    {
+     "id": "esc_cbr_numero",
+     "label": "Inscripción CBR — N°",
+     "type": "text"
+    },
+    {
+     "id": "esc_cbr_anio",
+     "label": "Inscripción CBR — Año",
+     "type": "text"
+    },
+    {
+     "id": "esc_estado",
+     "label": "Estado",
+     "type": "choice",
+     "options": [
+      "Firmada",
+      "En trámite",
+      "Borrador"
+     ]
+    },
+    {
+     "id": "esc_alzamientos_prohibiciones",
+     "label": "Alzamientos / prohibiciones incluidas",
+     "type": "text"
+    },
+    {
+     "id": "esc_observaciones",
+     "label": "Observaciones de la escritura",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 24,
+   "title": "LIQUIDACIÓN DE GARANTÍA",
+   "fields": [
+    {
+     "id": "liq_monto_garantia",
+     "label": "Monto de la garantía recibida (CLP / UF)",
+     "type": "text"
+    },
+    {
+     "id": "liq_fecha_recibida",
+     "label": "Fecha en que se recibió la garantía",
+     "type": "date"
+    },
+    {
+     "id": "liq_estado",
+     "label": "Estado",
+     "type": "choice",
+     "options": [
+      "Retenida",
+      "En liquidación",
+      "Devuelta",
+      "Aplicada"
+     ]
+    },
+    {
+     "id": "liq_descuentos_aplicados",
+     "label": "Descuentos aplicados",
+     "type": "choice",
+     "options": [
+      "Sin descuentos",
+      "Con descuentos (daños, cuentas impagas, arriendo pendiente)"
+     ]
+    },
+    {
+     "id": "liq_detalle_descuentos",
+     "label": "Detalle / motivo de los descuentos",
+     "type": "textarea"
+    },
+    {
+     "id": "liq_monto_devuelto",
+     "label": "Monto devuelto al arrendatario",
+     "type": "text",
+     "unit": "CLP"
+    },
+    {
+     "id": "liq_fecha_devolucion",
+     "label": "Fecha de devolución",
+     "type": "date"
+    },
+    {
+     "id": "liq_num_comprobante",
+     "label": "N° de comprobante / transferencia",
+     "type": "text"
+    },
+    {
+     "id": "liq_observaciones",
+     "label": "Observaciones de la liquidación",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 25,
+   "title": "HISTORIAL DE LA PROPIEDAD",
+   "fields": [
+    {
+     "id": "historial_arriendos",
+     "label": "Historial de arriendos (periodos, rentas, arrendatarios)",
+     "type": "textarea"
+    },
+    {
+     "id": "historial_ventas",
+     "label": "Historial de ventas / cambios de dueño",
+     "type": "textarea"
+    },
+    {
+     "id": "reparaciones_mantenciones",
+     "label": "Reparaciones y mantenciones realizadas",
+     "type": "textarea"
+    },
+    {
+     "id": "remodelaciones_ampliaciones",
+     "label": "Remodelaciones o ampliaciones",
+     "type": "textarea"
+    },
+    {
+     "id": "siniestros",
+     "label": "Siniestros (incendios, inundaciones, robos) y seguros usados",
+     "type": "textarea"
+    },
+    {
+     "id": "deudas_morosidades_historicas",
+     "label": "Deudas o morosidades históricas (contribuciones, GC, servicios)",
+     "type": "textarea"
+    },
+    {
+     "id": "antecedentes_legales_historicos",
+     "label": "Antecedentes legales (juicios, disputas, servidumbres)",
+     "type": "textarea"
+    },
+    {
+     "id": "otros_eventos_relevantes",
+     "label": "Otros eventos relevantes del inmueble",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 26,
+   "title": "ARRENDATARIOS ANTERIORES (HISTORIAL)",
+   "type": "table",
+   "columns": [
+    "Nombre",
+    "RUT",
+    "Desde",
+    "Hasta",
+    "Arriendo",
+    "Motivo de término"
+   ],
+   "rows": 6
+  },
+  {
+   "num": 27,
+   "title": "PROPIETARIOS ANTERIORES (CADENA DE DOMINIO)",
+   "type": "table",
+   "columns": [
+    "Propietario",
+    "RUT",
+    "Desde",
+    "Hasta",
+    "Forma de adquisición",
+    "Fojas / N° / Año"
+   ],
+   "rows": 6
+  },
+  {
+   "num": 28,
+   "title": "NOTAS Y COMENTARIOS",
+   "fields": [
+    {
+     "id": "notas_generales",
+     "label": "Notas generales de la propiedad",
+     "type": "textarea"
+    },
+    {
+     "id": "comentarios_cliente",
+     "label": "Comentarios para el cliente / interesado",
+     "type": "textarea"
+    },
+    {
+     "id": "notas_visitas",
+     "label": "Notas de visitas",
+     "type": "textarea"
+    },
+    {
+     "id": "comentarios_internos",
+     "label": "Comentarios internos (uso corredora, no publicar)",
+     "type": "textarea"
+    },
+    {
+     "id": "notas_seguimiento",
+     "label": "Notas de seguimiento / pendientes",
+     "type": "textarea"
+    }
+   ]
+  },
+  {
+   "num": 29,
+   "title": "INSTRUCCIONES INTERNAS Y NOTAS (USO INTERNO)",
+   "fields": [
+    {
+     "id": "precio_minimo_piso",
+     "label": "Precio mínimo aceptable (piso de negociación)",
+     "type": "text",
+     "unit": "UF"
+    },
+    {
+     "id": "urgencia",
+     "label": "Urgencia de venta / arriendo",
+     "type": "choice",
+     "options": [
+      "Alta (necesito cerrar pronto)",
+      "Media",
+      "Baja (puedo esperar el mejor precio)"
+     ]
+    },
+    {
+     "id": "otros_interesados",
+     "label": "¿Hay otros interesados conocidos?",
+     "type": "text"
+    },
+    {
+     "id": "motivo_venta_arriendo_confidencial",
+     "label": "Motivo de la venta / arriendo (confidencial)",
+     "type": "textarea"
+    },
+    {
+     "id": "condiciones_especiales_propietario",
+     "label": "Condiciones especiales o limitaciones del propietario",
+     "type": "textarea"
+    },
+    {
+     "id": "historial_relevante_interno",
+     "label": "Historial relevante del inmueble (uso interno)",
+     "type": "textarea"
+    },
+    {
+     "id": "fecha_recepcion_ficha",
+     "label": "Fecha de recepción de la ficha",
+     "type": "date"
+    },
+    {
+     "id": "ingresado_por",
+     "label": "Ingresado por",
+     "type": "text"
+    },
+    {
+     "id": "codigo_interno_inmueble",
+     "label": "Código interno del inmueble",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "num": 30,
+   "title": "OBSERVACIONES Y NOTAS LIBRES",
+   "fields": [
+    {
+     "id": "observaciones_libres",
+     "label": "Observaciones y notas libres",
+     "type": "textarea",
+     "big": true
+    }
+   ]
+  },
+  {
+   "num": 32,
+   "title": "DOCUMENTACIÓN DEL ARRENDATARIO",
+   "note": "Documentos de respaldo financiero y legal del arrendatario.",
+   "is_attachment_section": true,
+   "groups": [
+    {"group": "Información comercial y antecedentes", "attachments": [
+      {"id": "arr_boletin", "label": "Boletín comercial (Equifax / Dicom / Infocheck)"},
+      {"id": "arr_equifax", "label": "Informe Equifax (Dicom Full)"},
+      {"id": "arr_antecedentes", "label": "Certificado de antecedentes (Registro Civil)"},
+      {"id": "arr_maat", "label": "Informe Maat (maat.cl)"}
+    ]},
+    {"group": "Ingresos y actividad laboral", "attachments": [
+      {"id": "arr_liquidaciones_3m", "label": "Liquidaciones de sueldo — últimos 3 meses"},
+      {"id": "arr_liquidaciones_6m", "label": "Liquidaciones de sueldo — últimos 6 meses"},
+      {"id": "arr_contrato_trabajo", "label": "Contrato de trabajo"},
+      {"id": "arr_cotizaciones_12m", "label": "Cotizaciones previsionales — últimos 12 meses (AFP / PreviRed)"}
+    ]},
+    {"group": "Información tributaria", "attachments": [
+      {"id": "arr_f29", "label": "Declaración mensual y pago simultáneo — Formulario 29 (F29)"},
+      {"id": "arr_carpeta_trib", "label": "Carpeta Tributaria Electrónica (SII)"}
+    ]},
+    {"group": "Si es dueño/a de empresa o sociedad", "attachments": [
+      {"id": "arr_emp_vigencia", "label": "Certificado de vigencia de la sociedad (RES / CBR)"},
+      {"id": "arr_emp_escritura", "label": "Escritura de constitución de la sociedad"},
+      {"id": "arr_emp_estados", "label": "Estados financieros (Balance General y Estado de Resultados)"},
+      {"id": "arr_emp_carpeta", "label": "Carpeta Tributaria de la empresa (SII)"}
+    ]}
+   ]
+  },
+  {
+   "num": 33,
+   "title": "DOCUMENTACIÓN DEL AVAL / CODEUDOR SOLIDARIO",
+   "note": "Documentos de respaldo financiero y legal del aval.",
+   "is_attachment_section": true,
+   "groups": [
+    {"group": "Información comercial y antecedentes", "attachments": [
+      {"id": "aval_boletin", "label": "Boletín comercial (Equifax / Dicom / Infocheck)"},
+      {"id": "aval_equifax", "label": "Informe Equifax (Dicom Full)"},
+      {"id": "aval_antecedentes", "label": "Certificado de antecedentes (Registro Civil)"},
+      {"id": "aval_maat", "label": "Informe Maat (maat.cl)"}
+    ]},
+    {"group": "Ingresos y actividad laboral", "attachments": [
+      {"id": "aval_liquidaciones_3m", "label": "Liquidaciones de sueldo — últimos 3 meses"},
+      {"id": "aval_liquidaciones_6m", "label": "Liquidaciones de sueldo — últimos 6 meses"},
+      {"id": "aval_contrato_trabajo", "label": "Contrato de trabajo"},
+      {"id": "aval_cotizaciones_12m", "label": "Cotizaciones previsionales — últimos 12 meses (AFP / PreviRed)"}
+    ]},
+    {"group": "Información tributaria", "attachments": [
+      {"id": "aval_f29", "label": "Declaración mensual y pago simultáneo — Formulario 29 (F29)"},
+      {"id": "aval_carpeta_trib", "label": "Carpeta Tributaria Electrónica (SII)"}
+    ]},
+    {"group": "Si es dueño/a de empresa o sociedad", "attachments": [
+      {"id": "aval_emp_vigencia", "label": "Certificado de vigencia de la sociedad (RES / CBR)"},
+      {"id": "aval_emp_escritura", "label": "Escritura de constitución de la sociedad"},
+      {"id": "aval_emp_estados", "label": "Estados financieros (Balance General y Estado de Resultados)"},
+      {"id": "aval_emp_carpeta", "label": "Carpeta Tributaria de la empresa (SII)"}
+    ]}
+   ]
+  },
+  {
+   "num": 34,
+   "title": "AUTORIZACIÓN, DECLARACIÓN Y FIRMAS",
+   "type": "signature",
+   "declaracion": "Quien suscribe declara que la información contenida en esta ficha es fidedigna y ha sido proporcionada de buena fe para efectos de la administración, publicación y/o corretaje de la propiedad. Toda inexactitud detectada debe informarse de inmediato a la corredora responsable.",
+   "fields": [
+    {
+     "id": "nombre_corredora_levanto",
+     "label": "Nombre de quien levantó la ficha",
+     "type": "text"
+    },
+    {
+     "id": "fecha_levantamiento",
+     "label": "Fecha",
+     "type": "date"
+    }
+   ],
+   "signers": [
+    "Firma de la corredora / corredor",
+    "Firma del propietario / mandante"
+   ]
+  }
+ ]
+};
+
+/* ESTADO */
+const state = {
+  values: {}, choices: {}, choiceOther: {}, grids: {}, gridOther: {},
+  files: {}, signatures: {corredora:null, propietario:null},
+  notes: {}, comments: {}, moneyCur: {}, customFields: {},
+};
+
+function toast(msg, ms=2600){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+function el(tag, attrs={}, children=[]){
+  const e = document.createElement(tag);
+  for(const k in attrs){
+    if(attrs[k]==null) continue;
+    if(k==='class') e.className = attrs[k];
+    else if(k.startsWith('on') && typeof attrs[k]==='function') e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  (Array.isArray(children)?children:[children]).forEach(c=>{
+    if(c==null || c==='') return;
+    e.appendChild(typeof c==='string' ? document.createTextNode(c) : c);
+  });
+  return e;
+}
+function extShort(name){ const m=/\.([a-zA-Z0-9]+)$/.exec(name||''); return m? m[1].toUpperCase().slice(0,4):'ARC'; }
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+
+
+function expandSection(num){
+  const card=document.getElementById('sec-'+num); if(!card) return;
+  const inner=card.querySelector('.card-inner'); const chev=card.querySelector('.chev');
+  if(inner && inner.style.display==='none'){ inner.style.display='block'; if(chev)chev.classList.add('open'); if(!state.openSecs)state.openSecs={}; state.openSecs[num]=true; }
+}
+
+/* ===== NAVEGACION ===== */
+function renderNav(){
+  const sidebar=document.getElementById('sidebar'), mobileSel=document.getElementById('mobileNavSelect');
+  sidebar.innerHTML=''; mobileSel.innerHTML='';
+  SCHEMA.sections.forEach(s=>{
+    const a=el('a',{href:'#sec-'+s.num}, s.num+'. '+s.title);
+    a.addEventListener('click',(e)=>{ e.preventDefault(); expandSection(s.num); document.getElementById('sec-'+s.num).scrollIntoView({behavior:'smooth',block:'start'}); });
+    sidebar.appendChild(a);
+    mobileSel.appendChild(el('option',{value:s.num}, s.num+'. '+s.title));
+  });
+  mobileSel.addEventListener('change',()=>{
+    expandSection(mobileSel.value);
+    document.getElementById('sec-'+mobileSel.value).scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
+/* ===== CONTENIDO PRINCIPAL ===== */
+function renderContent(){
+  const root=document.getElementById('content');
+  root.innerHTML='';
+  root.appendChild(el('div',{class:'hero'},[
+    el('h2',{},SCHEMA.title),
+    el('p',{class:'sub'},SCHEMA.subtitle),
+    el('p',{class:'legend'},SCHEMA.legend),
+  ]));
+  const instr=el('div',{class:'instructions'});
+  instr.innerHTML='<b>Cómo completar este formulario</b><ul>'+
+    '<li><b>Campos de texto:</b> escriba directamente.</li>'+
+    '<li><b>Opciones:</b> toque para seleccionar.</li>'+
+    '<li><b>Archivos:</b> use «Adjuntar archivo» en la sección 18 — fotos, PDF, Word, planos, cualquier tipo.</li>'+
+    '<li><b>Firmas:</b> dibuje con el dedo o el mouse en la sección 31.</li>'+
+    '<li><b>Al terminar:</b> descargue en Word o PDF; los archivos adjuntos se descargan aparte en un ZIP.</li></ul>';
+  root.appendChild(instr);
+  SCHEMA.sections.forEach(s=>root.appendChild(renderSection(s)));
+}
+
+function renderSection(s){
+  const card=el('div',{class:'card',id:'sec-'+s.num});
+  const head=el('div',{class:'card-header card-header-toggle'},[el('span',{class:'num'},s.num+'.'), ' '+s.title]);
+  const chev=el('span',{class:'chev'});
+  chev.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+  head.appendChild(chev);
+  card.appendChild(head);
+  const inner=el('div',{class:'card-inner'});
+  if(!state.openSecs) state.openSecs={};
+  const isOpen = !!state.openSecs[s.num];
+  inner.style.display = isOpen ? 'block' : 'none';
+  chev.classList.toggle('open', isOpen);
+  head.addEventListener('click',()=>{
+    const open = inner.style.display==='none';
+    inner.style.display = open ? 'block' : 'none';
+    chev.classList.toggle('open', open);
+    state.openSecs[s.num]=open;
+  });
+  card.appendChild(inner);
+  if(s.note) inner.appendChild(el('div',{class:'card-note'}, s.note));
+  const body=el('div',{class:'card-body'});
+  inner.appendChild(body);
+  if(s.type==='table') renderHistoryTable(body,s);
+  else if(s.type==='signature') renderSignatureSection(body,s);
+  else if(s.is_attachment_section) renderAttachmentSection(body,s);
+  else { sectionFields(s).forEach(f=>renderField(body,f)); renderAddFieldUI(body, s); }
+  return card;
+}
+
+/* ===== CAMPOS ===== */
+function renderField(container, f){
+  const wrap=el('div',{class:'field',id:'fld-'+f.id});
+  const lbl=el('label',{class:'flabel'});
+  lbl.appendChild(document.createTextNode(f.label));
+  if(f.required) lbl.appendChild(el('span',{class:'req'},' *'));
+  wrap.appendChild(lbl);
+  if(f.type==='text' && isMoney(f)){
+    wrap.appendChild(renderMoney(f));
+  } else if(f.type==='text' && f.unit==='%' && /multa/i.test(f.id)){
+    wrap.appendChild(renderMulta(f));
+  } else if(f.type==='text'){
+    const row=el('div',{style:'display:flex;align-items:center;'});
+    const inp=el('input',{type:'text',placeholder:'Escriba aquí'});
+    inp.value=state.values[f.id]||'';
+    inp.addEventListener('input',()=>{state.values[f.id]=inp.value; updateProgress();});
+    row.appendChild(inp);
+    if(f.unit) row.appendChild(el('span',{class:'unit-suffix'}, f.unit));
+    wrap.appendChild(row);
+  } else if(f.type==='date'){
+    const inp=el('input',{type:'date'});
+    inp.value=state.values[f.id]||'';
+    inp.addEventListener('input',()=>{state.values[f.id]=inp.value; updateProgress();});
+    wrap.appendChild(inp);
+  } else if(f.type==='textarea'){
+    const ta=el('textarea',{class:f.big?'big':''});
+    ta.value=state.values[f.id]||'';
+    ta.addEventListener('input',()=>{state.values[f.id]=ta.value; updateProgress();});
+    wrap.appendChild(ta);
+  } else if(f.type==='choice'){
+    wrap.appendChild(renderChoice(f));
+  } else if(f.type==='grid'){
+    wrap.appendChild(renderGrid(f));
+  }
+  if(f.note) wrap.appendChild(el('div',{class:'fnote'}, f.note));
+  attachFieldExtras(wrap, f);
+  container.appendChild(wrap);
+}
+
+function renderChoice(f){
+  const box=el('div');
+  const group=el('div',{class:'choice-group'});
+  const otherInput=el('input',{type:'text',placeholder:'Especificar…',style:'display:none;margin-top:8px;'});
+  function refresh(){
+    Array.from(group.children).forEach(chip=>chip.classList.toggle('on', chip.dataset.val===state.choices[f.id]));
+    otherInput.style.display=(state.choices[f.id]==='__other__')?'block':'none';
+  }
+  f.options.forEach(opt=>{
+    const chip=el('div',{class:'chip'}, opt); chip.dataset.val=opt;
+    chip.addEventListener('click',()=>{ state.choices[f.id]=(state.choices[f.id]===opt)?undefined:opt; refresh(); updateProgress(); });
+    group.appendChild(chip);
+  });
+  if(f.other){
+    const chip=el('div',{class:'chip'}, 'Otro'); chip.dataset.val='__other__';
+    chip.addEventListener('click',()=>{ state.choices[f.id]=(state.choices[f.id]==='__other__')?undefined:'__other__'; refresh(); updateProgress(); });
+    group.appendChild(chip);
+  }
+  box.appendChild(group);
+  otherInput.value=state.choiceOther[f.id]||'';
+  otherInput.addEventListener('input',()=>{state.choiceOther[f.id]=otherInput.value;});
+  if(f.other) box.appendChild(otherInput);
+  refresh();
+  return box;
+}
+
+function renderGrid(f){
+  const box=el('div');
+  if(!state.grids[f.id]) state.grids[f.id]=new Set();
+  const cols=f.cols || (f.options.length<=8?2:3);
+  const grid=el('div',{class:'grid-options'});
+  grid.style.setProperty('--gcols',cols);
+  f.options.forEach(opt=>{
+    const label=el('label',{class:'grid-check'});
+    const cb=el('input',{type:'checkbox'});
+    cb.checked=state.grids[f.id].has(opt);
+    cb.addEventListener('change',()=>{
+      if(cb.checked) state.grids[f.id].add(opt); else state.grids[f.id].delete(opt);
+      updateProgress();
+    });
+    label.appendChild(cb); label.appendChild(document.createTextNode(opt));
+    grid.appendChild(label);
+  });
+  box.appendChild(grid);
+  if(f.other){
+    const row=el('div',{class:'other-row'});
+    row.appendChild(el('span',{},'Otro:'));
+    const inp=el('input',{type:'text',placeholder:'especificar'});
+    inp.value=state.gridOther[f.id]||'';
+    inp.addEventListener('input',()=>{state.gridOther[f.id]=inp.value;});
+    row.appendChild(inp);
+    box.appendChild(row);
+  }
+  return box;
+}
+
+/* ===== TABLAS HISTORICAS ===== */
+function renderHistoryTable(container, s){
+  const key='t_'+s.num;
+  if(!state.values[key]) state.values[key]=Array.from({length:s.rows},()=>s.columns.map(()=>''));
+  const rowsData=state.values[key];
+  const table=el('table',{class:'htable'});
+  const thead=el('tr'); s.columns.forEach(c=>thead.appendChild(el('th',{},c))); table.appendChild(thead);
+  const tbody=el('tbody');
+  function renderRows(){
+    tbody.innerHTML='';
+    rowsData.forEach((row,ri)=>{
+      const tr=el('tr');
+      row.forEach((val,ci)=>{
+        const td=el('td');
+        const inp=el('input',{type:'text',placeholder:s.columns[ci]});
+        inp.value=val;
+        inp.addEventListener('input',()=>{rowsData[ri][ci]=inp.value;});
+        td.appendChild(inp); tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+  renderRows(); table.appendChild(tbody); container.appendChild(table);
+  const addBtn=el('button',{class:'btn small',style:'margin-top:8px;'},'+ Agregar fila');
+  addBtn.addEventListener('click',(e)=>{ e.preventDefault(); rowsData.push(s.columns.map(()=>'')); renderRows(); });
+  container.appendChild(addBtn);
+}
+
+/* ===== ANEXOS / ARCHIVOS ADJUNTOS ===== */
+function renderAttachmentSection(container, s){
+  s.groups.forEach(g=>{
+    container.appendChild(el('div',{class:'attach-group-title'}, g.group));
+    g.attachments.forEach(att=>renderAttachmentRow(container, att));
+  });
+}
+function renderAttachmentRow(container, att){
+  if(!state.files[att.id]) state.files[att.id]=[];
+  const row=el('div',{class:'attach-row'});
+  row.appendChild(el('div',{class:'attach-label'}, att.label));
+  const main=el('div',{class:'attach-main'});
+  const picker=el('div',{class:'attach-filepicker'});
+  const inputId='file_'+att.id;
+  const fileInput=el('input',{type:'file',multiple:'multiple',id:inputId,style:'display:none;'});
+  picker.appendChild(el('label',{class:'btn small',for:inputId},'Adjuntar archivo'));
+  picker.appendChild(fileInput);
+  main.appendChild(picker);
+  const chipList=el('div',{class:'file-chip-list'});
+  main.appendChild(chipList);
+  row.appendChild(main);
+  container.appendChild(row);
+  function refreshChips(){
+    chipList.innerHTML='';
+    row.classList.toggle('has-files', state.files[att.id].length>0);
+    state.files[att.id].forEach((fobj,idx)=>{
+      const chip=el('div',{class:'file-chip'});
+      if(fobj.isImage && fobj.previewUrl) chip.appendChild(el('img',{src:fobj.previewUrl}));
+      else chip.appendChild(el('div',{class:'fx'}, extShort(fobj.name)));
+      chip.appendChild(el('span',{class:'fname'}, fobj.name));
+      const rm=el('span',{class:'rm'},'✕');
+      rm.addEventListener('click',()=>{ state.files[att.id].splice(idx,1); refreshChips(); updateProgress(); });
+      chip.appendChild(rm);
+      chipList.appendChild(chip);
+    });
+  }
+  fileInput.addEventListener('change', async ()=>{
+    const list=Array.from(fileInput.files);
+    for(const file of list){
+      const isImage=/^image\//.test(file.type);
+      const previewUrl = isImage ? await fileToDataUrl(file) : null;
+      state.files[att.id].push({name:file.name,type:file.type,size:file.size,file,isImage,previewUrl});
+    }
+    fileInput.value=''; refreshChips(); updateProgress();
+  });
+  refreshChips();
+}
+
+/* ===== FIRMAS ===== */
+function renderSignatureSection(container, s){
+  container.appendChild(el('p',{style:'font-style:italic;color:var(--text-muted);font-size:12.8px;'}, s.declaracion));
+  (s.fields||[]).forEach(f=>renderField(container,f));
+  const sigWrap=el('div',{style:'display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;'});
+  s.signers.forEach((label,idx)=>{
+    const key = idx===0?'corredora':'propietario';
+    const col=el('div',{style:'flex:1 1 260px;min-width:220px;'});
+    col.appendChild(el('div',{class:'flabel'}, label));
+    const padWrap=el('div',{class:'sig-pad-wrap'});
+    const canvas=el('canvas',{class:'sigpad'});
+    padWrap.appendChild(canvas); col.appendChild(padWrap);
+    const actions=el('div',{class:'sig-actions'});
+    const clearBtn=el('button',{class:'btn small'},'Borrar firma');
+    actions.appendChild(clearBtn); col.appendChild(actions);
+    sigWrap.appendChild(col);
+    setupSignaturePad(canvas,key,clearBtn);
+  });
+  container.appendChild(sigWrap);
+}
+function setupSignaturePad(canvas, key, clearBtn){
+  const ctx = canvas.getContext('2d');
+  let sized = false;
+  function fit(){
+    if(sized || !ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    if(!rect.width || !rect.height) return;
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width*ratio);
+    canvas.height = Math.round(rect.height*ratio);
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#20293A';
+    sized = true;
+  }
+  if(window.ResizeObserver){ new ResizeObserver(fit).observe(canvas); }
+  else { setTimeout(fit,60); window.addEventListener('resize', fit); }
+  let drawing=false, last=null;
+  function pos(e){ const rect=canvas.getBoundingClientRect(); const p=e.touches?e.touches[0]:e; return {x:p.clientX-rect.left, y:p.clientY-rect.top}; }
+  function start(e){ drawing=true; last=pos(e); e.preventDefault(); }
+  function move(e){
+    if(!drawing) return;
+    const p=pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    last=p; state.signatures[key]=canvas.toDataURL('image/png'); e.preventDefault();
+  }
+  function end(){ drawing=false; updateProgress(); }
+  canvas.addEventListener('mousedown',start);
+  canvas.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  canvas.addEventListener('touchstart',start,{passive:false});
+  canvas.addEventListener('touchmove',move,{passive:false});
+  canvas.addEventListener('touchend',end);
+  clearBtn.addEventListener('click',(e)=>{
+    e.preventDefault(); ctx.clearRect(0,0,canvas.width,canvas.height); state.signatures[key]=null; updateProgress();
+  });
+}
+
+/* ===== GUARDAR / CARGAR AVANCE (JSON) ===== */
+function serializeState(){
+  const grids={};
+  for(const k in state.grids) grids[k]=Array.from(state.grids[k]);
+  const tables={};
+  for(const k in state.values) if(k.startsWith('t_')) tables[k]=state.values[k];
+  const values={};
+  for(const k in state.values) if(!k.startsWith('t_')) values[k]=state.values[k];
+  const fileNames={};
+  for(const k in state.files) if(state.files[k].length) fileNames[k]=state.files[k].map(f=>f.name);
+  return {
+    savedAt:new Date().toISOString(), values, tables, choices:state.choices, choiceOther:state.choiceOther,
+    grids, gridOther:state.gridOther, signatures:state.signatures,
+    fileNamesReminder:fileNames,
+    notes:state.notes, comments:state.comments, customFields:state.customFields,
+  };
+}
+function restoreState(data){
+  state.values={}; state.choices=data.choices||{}; state.choiceOther=data.choiceOther||{};
+  state.gridOther=data.gridOther||{}; state.grids={};
+  Object.assign(state.values, data.values||{});
+  Object.assign(state.values, data.tables||{});
+  for(const k in (data.grids||{})) state.grids[k]=new Set(data.grids[k]);
+  state.signatures = data.signatures || {corredora:null, propietario:null};
+  state.notes = data.notes || {};
+  state.comments = data.comments || {};
+  state.customFields = data.customFields || {};
+}
+function downloadBlob(blob, filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function niceFileBase(){
+  const dir = (state.values['direccion_calle']||'').trim();
+  const com = (state.values['comuna']||'').trim();
+  const base = [dir,com].filter(Boolean).join('_') || 'propiedad';
+  return 'Ficha_'+base.replace(/[^a-zA-Z0-9_\-]+/g,'_').slice(0,60);
+}
+function saveProgress(){
+  const data=serializeState();
+  const blob=new Blob([JSON.stringify(data,null,1)], {type:'application/json'});
+  downloadBlob(blob, niceFileBase()+'_avance.json');
+  toast('Avance guardado. Los archivos adjuntos deben volver a adjuntarse al cargar este archivo.', 4500);
+}
+function loadProgress(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      restoreState(data);
+      renderContent();
+      updateProgress();
+      toast('Avance cargado. Vuelva a adjuntar los archivos si corresponde.', 4000);
+    }catch(err){
+      toast('No se pudo leer el archivo de avance: '+err.message, 4000);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ===== PROGRESO ===== */
+function updateProgress(){
+  let total=0, filled=0;
+  getAllSections().forEach(s=>{
+    sectionFields(s).forEach(f=>{
+      total++;
+      if(fieldIsFilled(f)) filled++;
+    });
+  });
+  const pct = total ? Math.round(filled/total*100) : 0;
+  document.getElementById('progressBarInner').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=pct+'%';
+}
+
+/* ============================================================
+   EXPORTAR WORD (.docx) — OOXML crudo + JSZip, con fotos y firmas incrustadas
+   ============================================================ */
+const TWIPS_CM = 566.929133858;
+const EMU_CM = 360000;
+const USABLE_W = 17.4;
+
+function xmlEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+function rXml(text, o){
+  o=o||{};
+  const props=[];
+  if(o.bold) props.push('<w:b/>');
+  if(o.italic) props.push('<w:i/>');
+  if(o.color) props.push('<w:color w:val="'+o.color+'"/>');
+  props.push('<w:sz w:val="'+Math.round((o.size||10)*2)+'"/>');
+  const rpr = '<w:rPr>'+props.join('')+'</w:rPr>';
+  return '<w:r>'+rpr+'<w:t xml:space="preserve">'+xmlEsc(text)+'</w:t></w:r>';
+}
+function pXml(innerRuns, o){
+  o=o||{};
+  const props=[];
+  if(o.border) props.push('<w:pBdr><w:top w:val="single" w:sz="6" w:space="4" w:color="333333"/></w:pBdr>');
+  if(o.shade) props.push('<w:shd w:val="clear" w:color="auto" w:fill="'+o.shade+'"/>');
+  if(o.spaceBefore!=null) props.push('<w:spacing w:before="'+Math.round(o.spaceBefore*20)+'"/>');
+  if(o.center) props.push('<w:jc w:val="center"/>');
+  const ppr = props.length? '<w:pPr>'+props.join('')+'</w:pPr>' : '';
+  return '<w:p>'+ppr+innerRuns+'</w:p>';
+}
+function checkRun(checked, label){ return rXml((checked?'\u2612':'\u2610')+' '+label+'    ', {size:9.5}); }
+function tableXml(colWidthsCm, rowsXml){
+  const grid = colWidthsCm.map(w=>'<w:gridCol w:w="'+Math.round(w*TWIPS_CM)+'"/>').join('');
+  return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>'+
+    '<w:top w:val="single" w:sz="4" w:color="C9D2DC"/><w:left w:val="single" w:sz="4" w:color="C9D2DC"/>'+
+    '<w:bottom w:val="single" w:sz="4" w:color="C9D2DC"/><w:right w:val="single" w:sz="4" w:color="C9D2DC"/>'+
+    '<w:insideH w:val="single" w:sz="4" w:color="C9D2DC"/><w:insideV w:val="single" w:sz="4" w:color="C9D2DC"/>'+
+    '</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'+grid+'</w:tblGrid>'+rowsXml+'</w:tbl>';
+}
+function trXml(cellsXml){ return '<w:tr>'+cellsXml+'</w:tr>'; }
+function tcXml(widthCm, innerXml, opts){
+  opts=opts||{};
+  const shd = opts.shade ? '<w:shd w:val="clear" w:color="auto" w:fill="'+opts.shade+'"/>' : '';
+  return '<w:tc><w:tcPr><w:tcW w:w="'+Math.round(widthCm*TWIPS_CM)+'" w:type="dxa"/>'+shd+'</w:tcPr>'+(innerXml||pXml(''))+'</w:tc>';
+}
+function formatDateEs(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); return m ? (m[3]+'/'+m[2]+'/'+m[1]) : (iso||'—'); }
+
+function sectionHeaderXml(num, title, note){
+  let out = pXml(rXml('  '+num+'.  '+title, {bold:true,color:'FFFFFF',size:11.5}), {shade:'1F3A5C'});
+  if(note) out += pXml(rXml(note, {italic:true,color:'6B7078',size:8.7}));
+  return out;
+}
+function fieldRowXml(label, required, valueInnerXml){
+  const lc = tcXml(5.3, pXml(rXml(label+(required?' *':''), {bold:true,size:9,color:'1F3A5C'})), {shade:'F1F4F8'});
+  const vc = tcXml(USABLE_W-5.3, valueInnerXml);
+  return trXml(lc+vc);
+}
+function fieldValueXml(f){
+  const v = state.values[f.id];
+  if(f.type==='text'){
+    let txt = (v && v.trim()) ? v : '—';
+    if(f.unit && v && v.trim()) txt += '  ('+f.unit+')';
+    return pXml(rXml(txt,{size:9.5}));
+  }
+  if(f.type==='date') return pXml(rXml(v?formatDateEs(v):'—',{size:9.5}));
+  if(f.type==='textarea'){
+    const txt=(v&&v.trim())?v:'—';
+    return txt.split(/\r?\n/).map(line=>pXml(rXml(line,{size:9.5}))).join('');
+  }
+  if(f.type==='choice'){
+    let runs = f.options.map(opt=>checkRun(state.choices[f.id]===opt, opt)).join('');
+    if(f.other) runs += checkRun(state.choices[f.id]==='__other__', 'Otro: '+(state.choiceOther[f.id]||''));
+    return pXml(runs);
+  }
+  return pXml(rXml('—',{size:9.5}));
+}
+function gridFieldXml(f){
+  let out = pXml(rXml(f.label,{bold:true,size:9.3,color:'1F3A5C'}),{spaceBefore:8});
+  const cols = f.cols || (f.options.length<=8?2:3);
+  const colw = USABLE_W/cols;
+  let rows='';
+  for(let i=0;i<f.options.length;i+=cols){
+    let cells='';
+    for(let c=0;c<cols;c++){
+      const opt=f.options[i+c];
+      const inner = opt ? pXml(checkRun(!!(state.grids[f.id] && state.grids[f.id].has(opt)), opt)) : pXml('');
+      cells += tcXml(colw, inner);
+    }
+    rows += trXml(cells);
+  }
+  out += tableXml(Array(cols).fill(colw), rows);
+  if(f.other) out += pXml(rXml('Otro: '+(state.gridOther[f.id]||'—'), {size:9.3}));
+  return out;
+}
+function fieldsBlockXml(fields){
+  let out=''; let rows='';
+  function flush(){ if(rows){ out+=tableXml([5.3,USABLE_W-5.3], rows); rows=''; } }
+  (fields||[]).forEach(f=>{
+    if(f.type==='grid'){ flush(); out+=gridFieldXml(f); }
+    else rows += fieldRowXml(f.label, f.required, fieldValueXml(f));
+  });
+  flush();
+  return out;
+}
+function historyTableXml(s){
+  const rowsData = state.values['t_'+s.num] || [];
+  const n=s.columns.length, colw=USABLE_W/n;
+  let rows = trXml(s.columns.map(c=>tcXml(colw, pXml(rXml(c,{bold:true,color:'FFFFFF',size:8.7})), {shade:'1F3A5C'})).join(''));
+  rowsData.forEach(row=>{ rows += trXml(row.map(val=>tcXml(colw, pXml(rXml(val||'—',{size:9})))).join('')); });
+  return tableXml(Array(n).fill(colw), rows);
+}
+
+/* ---- imagenes incrustadas ---- */
+function newImgCtx(){ return {mediaFiles:[], relCounter:10}; }
+function computeDisplayEmu(pxW,pxH,maxWcm,maxHcm){
+  maxWcm=maxWcm||8; maxHcm=maxHcm||11;
+  let wEmu=maxWcm*EMU_CM, hEmu=Math.round(wEmu*(pxH/pxW));
+  if(hEmu > maxHcm*EMU_CM){ hEmu=maxHcm*EMU_CM; wEmu=Math.round(hEmu*(pxW/pxH)); }
+  return {wEmu,hEmu};
+}
+async function addImageToCtx(ctx, file, maxWcm, maxHcm){
+  try{
+    const bmp = await createImageBitmap(file);
+    const {wEmu,hEmu} = computeDisplayEmu(bmp.width, bmp.height, maxWcm, maxHcm);
+    if(bmp.close) bmp.close();
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const ext = (file.type==='image/png') ? 'png' : 'jpeg';
+    const relId = 'rIdImg'+(ctx.relCounter++);
+    const filename = 'image'+ctx.mediaFiles.length+'.'+ext;
+    ctx.mediaFiles.push({relId, filename, buf});
+    return {relId, wEmu, hEmu};
+  }catch(err){ console.warn('No se pudo incrustar imagen', file && file.name, err); return null; }
+}
+async function addDataUrlImageToCtx(ctx, dataUrl, maxWcm, maxHcm){
+  try{
+    const res = await fetch(dataUrl); const blob = await res.blob();
+    const bmp = await createImageBitmap(blob);
+    const {wEmu,hEmu} = computeDisplayEmu(bmp.width, bmp.height, maxWcm, maxHcm);
+    if(bmp.close) bmp.close();
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    const relId = 'rIdImg'+(ctx.relCounter++);
+    const filename = 'image'+ctx.mediaFiles.length+'.png';
+    ctx.mediaFiles.push({relId, filename, buf});
+    return {relId, wEmu, hEmu};
+  }catch(err){ console.warn('No se pudo incrustar firma', err); return null; }
+}
+function drawingRunXml(rel){
+  const id = Math.floor(Math.random()*1000000)+1;
+  return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'+
+    '<wp:extent cx="'+rel.wEmu+'" cy="'+rel.hEmu+'"/>'+
+    '<wp:docPr id="'+id+'" name="Picture'+id+'"/>'+
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'+
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+    '<pic:nvPicPr><pic:cNvPr id="'+id+'" name="img"/><pic:cNvPicPr/></pic:nvPicPr>'+
+    '<pic:blipFill><a:blip r:embed="'+rel.relId+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+rel.wEmu+'" cy="'+rel.hEmu+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'+
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+}
+async function attachmentSectionXml(s, ctx){
+  let out='';
+  for(const g of s.groups){
+    out += pXml(rXml(g.group,{bold:true,color:'1F3A5C',size:10}),{spaceBefore:10});
+    let rows='';
+    for(const att of g.attachments){
+      const files = state.files[att.id]||[];
+      const images = files.filter(f=>f.isImage), others = files.filter(f=>!f.isImage);
+      let cellInner='';
+      if(!files.length){
+        cellInner = pXml(rXml('(sin archivo adjunto)',{italic:true,size:8.5,color:'9AA1AB'}));
+      } else {
+        for(const img of images){
+          const rel = await addImageToCtx(ctx, img.file);
+          if(rel) cellInner += pXml(drawingRunXml(rel));
+        }
+        if(others.length) cellInner += pXml(rXml('Ver en ZIP adjunto: '+others.map(o=>o.name).join(', '),{italic:true,size:8.5,color:'6B7078'}));
+      }
+      rows += trXml(tcXml(6.5, pXml(rXml(att.label,{bold:true,size:8.8,color:'1F3A5C'})), {shade:'F1F4F8'}) + tcXml(USABLE_W-6.5, cellInner));
+    }
+    out += tableXml([6.5,USABLE_W-6.5], rows);
+  }
+  return out;
+}
+async function signatureSectionXml(s, ctx){
+  let out = pXml(rXml(s.declaracion,{italic:true,color:'6B7078',size:9}));
+  out += fieldsBlockXml(s.fields);
+  const colw = USABLE_W/2;
+  let imgCells='', lineCells='';
+  for(let i=0;i<s.signers.length;i++){
+    const key = i===0?'corredora':'propietario';
+    const dataUrl = state.signatures[key];
+    let inner = pXml(rXml(' ')) + pXml(rXml(' ')) + pXml(rXml(' '));
+    if(dataUrl){
+      const rel = await addDataUrlImageToCtx(ctx, dataUrl, 6, 2.3);
+      if(rel) inner = pXml(drawingRunXml(rel));
+    }
+    imgCells += tcXml(colw, inner);
+    lineCells += tcXml(colw, pXml(rXml(s.signers[i],{size:9,color:'6B7078'}), {border:true, center:true}));
+  }
+  out += tableXml([colw,colw], trXml(imgCells)+trXml(lineCells));
+  return out;
+}
+function titleBlockXml(){
+  let out = pXml(rXml(SCHEMA.title,{bold:true,size:19,color:'1F3A5C'}), {center:true});
+  out += pXml(rXml(SCHEMA.subtitle,{italic:true,size:10.5,color:'6B7078'}), {center:true});
+  out += pXml(rXml('Documento generado desde el formulario web el '+new Date().toLocaleDateString('es-CL')+'.',{italic:true,size:8.8,color:'9AA1AB'}));
+  return out;
+}
+
+/* ---- paquete OOXML minimo ---- */
+function contentTypesXml(){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Default Extension="png" ContentType="image/png"/>'+
+    '<Default Extension="jpeg" ContentType="image/jpeg"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'+
+    '</Types>';
+}
+function relsRootXml(){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
+    '</Relationships>';
+}
+function stylesXml(){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
+    '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>'+
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>'+
+    '</w:styles>';
+}
+function documentRelsXml(mediaFiles){
+  let rels = '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+  mediaFiles.forEach(m=>{ rels += '<Relationship Id="'+m.relId+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/'+m.filename+'"/>'; });
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels+'</Relationships>';
+}
+const DOC_XML_NS = 'xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 wp14"';
+
+async function buildDocxBlob(){
+  const ctx = newImgCtx();
+  let body = titleBlockXml();
+  for(const s of SCHEMA.sections){
+    body += sectionHeaderXml(s.num, s.title, s.note);
+    if(s.type==='table') body += historyTableXml(s);
+    else if(s.type==='signature') body += await signatureSectionXml(s, ctx);
+    else if(s.is_attachment_section) body += await attachmentSectionXml(s, ctx);
+    else body += fieldsBlockXml(s.fields);
+    body += pXml('');
+  }
+  body += '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="907" w:right="1020" w:bottom="907" w:left="1020" w:header="454" w:footer="454" w:gutter="0"/></w:sectPr>';
+  const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document '+DOC_XML_NS+'><w:body>'+body+'</w:body></w:document>';
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', contentTypesXml());
+  zip.folder('_rels').file('.rels', relsRootXml());
+  const word = zip.folder('word');
+  word.file('document.xml', documentXml);
+  word.file('styles.xml', stylesXml());
+  word.folder('_rels').file('document.xml.rels', documentRelsXml(ctx.mediaFiles));
+  if(ctx.mediaFiles.length){
+    const media = word.folder('media');
+    ctx.mediaFiles.forEach(m=>media.file(m.filename, m.buf));
+  }
+  return zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+async function buildAndDownloadDocx(){
+  toast('Generando Word… puede tardar si hay muchas fotos.', 5000);
+  try{
+    const blob = await buildDocxBlob();
+    downloadBlob(blob, niceFileBase()+'.docx');
+    toast('Word descargado correctamente.');
+  }catch(err){ console.error(err); toast('Error generando el Word: '+err.message, 5000); }
+}
+
+/* ============================================================
+   EXPORTAR PDF (jsPDF)
+   ============================================================ */
+function imgFormatFromDataUrl(durl){ return /^data:image\/png/.test(durl) ? 'PNG' : 'JPEG'; }
+function loadImageEl(src){
+  return new Promise((resolve,reject)=>{ const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=src; });
+}
+async function addImagePdf(doc, dataUrl, x, y, maxWmm, maxHmm){
+  const img = await loadImageEl(dataUrl);
+  let w=maxWmm, h=w*(img.height/img.width);
+  if(h>maxHmm){ h=maxHmm; w=h*(img.width/img.height); }
+  doc.addImage(dataUrl, imgFormatFromDataUrl(dataUrl), x, y, w, h);
+  return h;
+}
+async function buildAndDownloadPdf(){
+  if(!window.jspdf){ toast('La librería de PDF no cargó (revise la conexión a internet).', 5000); return; }
+  toast('Generando PDF… puede tardar si hay fotos.', 5000);
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4'});
+    const pageW=210, pageH=297, marginX=15, topStart=18, bottomLimit=18;
+    const contentW = pageW - marginX*2;
+    let y = topStart;
+    function ensure(h){ if(y+h > pageH-bottomLimit){ doc.addPage(); y=topStart; } }
+    function title(){
+      doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(31,58,92);
+      doc.text(SCHEMA.title, pageW/2, y, {align:'center'}); y+=7;
+      doc.setFont('helvetica','italic'); doc.setFontSize(10); doc.setTextColor(110,115,120);
+      doc.text(SCHEMA.subtitle, pageW/2, y, {align:'center'}); y+=6;
+      doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,155,160);
+      doc.text('Generado el '+new Date().toLocaleDateString('es-CL'), pageW/2, y, {align:'center'}); y+=8;
+      doc.setTextColor(20,25,35);
+    }
+    function band(num,txt){
+      ensure(10);
+      doc.setFillColor(31,58,92); doc.rect(marginX,y,contentW,7.2,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+      doc.text(num+'.  '+txt, marginX+3, y+5); y+=7.2+3; doc.setTextColor(20,25,35);
+    }
+    function noteTxt(t){
+      doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+      doc.splitTextToSize(t,contentW).forEach(l=>{ ensure(4); doc.text(l,marginX,y); y+=4; });
+      y+=1.5; doc.setTextColor(20,25,35);
+    }
+    function fieldTxt(label, value, required){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.4); doc.setTextColor(40,55,75);
+      doc.splitTextToSize(label+(required?' *':''), contentW).forEach(l=>{ ensure(3.8); doc.text(l,marginX,y); y+=3.8; });
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.8); doc.setTextColor(20,25,35);
+      doc.splitTextToSize(value||'—', contentW-3).forEach(l=>{ ensure(4); doc.text(l,marginX+2,y); y+=4; });
+      y+=1.4;
+    }
+    function flowChecklist(items){
+      const lineH = 4.3;
+      let cx = marginX;
+      ensure(lineH);
+      items.forEach(item=>{
+        const w = doc.getTextWidth(item);
+        if(cx > marginX && cx + w > marginX + contentW){
+          y += lineH; cx = marginX; ensure(lineH);
+        }
+        doc.text(item, cx, y);
+        cx += w + 3.5;
+      });
+      y += lineH + 1.3;
+    }
+    function choiceTxt(f){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.4); doc.setTextColor(40,55,75);
+      ensure(4); doc.text(f.label+(f.required?' *':''), marginX, y); y+=4.2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(20,25,35);
+      const items=f.options.map(o=>(state.choices[f.id]===o?'[x] ':'[ ] ')+o);
+      if(f.other) items.push((state.choices[f.id]==='__other__'?'[x] ':'[ ] ')+'Otro: '+(state.choiceOther[f.id]||''));
+      flowChecklist(items);
+    }
+    function gridTxt(f){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.6); doc.setTextColor(31,58,92);
+      ensure(4.2); doc.text(f.label, marginX, y); y+=4.2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(20,25,35);
+      const items=f.options.map(o=>((state.grids[f.id]&&state.grids[f.id].has(o))?'[x] ':'[ ] ')+o);
+      flowChecklist(items);
+      if(f.other){ ensure(4); doc.text('Otro: '+(state.gridOther[f.id]||'—'), marginX, y); y+=4; }
+      y+=1.5;
+    }
+    function fieldsBlockPdf(fields){
+      (fields||[]).forEach(f=>{
+        if(f.type==='grid') gridTxt(f);
+        else if(f.type==='choice') choiceTxt(f);
+        else if(f.type==='date') fieldTxt(f.label, formatDateEs(state.values[f.id]), f.required);
+        else fieldTxt(f.label, (state.values[f.id]||'')+((f.unit && state.values[f.id])?(' ('+f.unit+')'):''), f.required);
+      });
+    }
+    function historyTablePdf(s){
+      const rowsData = state.values['t_'+s.num] || [];
+      const colw = contentW/s.columns.length;
+      ensure(6);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.6); doc.setFillColor(31,58,92); doc.setTextColor(255,255,255);
+      doc.rect(marginX,y,contentW,5.2,'F');
+      s.columns.forEach((c,i)=>doc.text(c, marginX+i*colw+1.5, y+3.6));
+      y+=5.2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(20,25,35);
+      rowsData.forEach(row=>{
+        ensure(5);
+        row.forEach((val,i)=>doc.text((val||'—').slice(0,28), marginX+i*colw+1.5, y+3.4));
+        doc.setDrawColor(220,225,230); doc.line(marginX,y+5,marginX+contentW,y+5);
+        y+=5;
+      });
+      y+=3;
+    }
+    async function attachmentsSectionPdf(s){
+      for(const g of s.groups){
+        ensure(6); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(31,58,92);
+        doc.text(g.group, marginX, y); y+=5;
+        for(const att of g.attachments){
+          const files = state.files[att.id]||[];
+          ensure(5);
+          doc.setFont('helvetica','bold'); doc.setFontSize(8.2); doc.setTextColor(40,55,75);
+          doc.text(att.label, marginX, y); y+=4.2;
+          if(!files.length){
+            doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,155,160);
+            doc.text('(sin archivo adjunto)', marginX+3, y); y+=4.5;
+          } else {
+            const images=files.filter(f=>f.isImage), others=files.filter(f=>!f.isImage);
+            for(const img of images){
+              try{
+                const durl = img.previewUrl || await fileToDataUrl(img.file);
+                ensure(45);
+                const h = await addImagePdf(doc, durl, marginX+3, y, 55, 42);
+                y += h+3;
+              }catch(e){}
+            }
+            if(others.length){
+              doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(110,115,120);
+              doc.text('Ver en ZIP: '+others.map(o=>o.name).join(', '), marginX+3, y); y+=4.5;
+            }
+          }
+          doc.setTextColor(20,25,35);
+        }
+        y+=2;
+      }
+    }
+    async function signatureSectionPdf(s){
+      doc.setFont('helvetica','italic'); doc.setFontSize(8.3); doc.setTextColor(110,115,120);
+      doc.splitTextToSize(s.declaracion, contentW).forEach(l=>{ ensure(4); doc.text(l,marginX,y); y+=4; });
+      y+=2; doc.setTextColor(20,25,35);
+      fieldsBlockPdf(s.fields);
+      ensure(40);
+      const colw=contentW/2, startY=y;
+      for(let i=0;i<s.signers.length;i++){
+        const key = i===0?'corredora':'propietario';
+        const durl = state.signatures[key];
+        const cx = marginX + i*colw;
+        if(durl){ try{ await addImagePdf(doc, durl, cx+5, startY, colw-10, 22); }catch(e){} }
+        doc.setDrawColor(60,60,60);
+        doc.line(cx+5, startY+26, cx+colw-5, startY+26);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110,115,120);
+        doc.text(s.signers[i], cx+colw/2, startY+30, {align:'center'});
+      }
+      y = startY+36; doc.setTextColor(20,25,35);
+    }
+
+    title();
+    for(const s of SCHEMA.sections){
+      band(s.num, s.title);
+      if(s.note) noteTxt(s.note);
+      if(s.type==='table') historyTablePdf(s);
+      else if(s.type==='signature') await signatureSectionPdf(s);
+      else if(s.is_attachment_section) await attachmentsSectionPdf(s);
+      else fieldsBlockPdf(s.fields);
+      y+=2;
+    }
+    doc.save(niceFileBase()+'.pdf');
+    toast('PDF descargado correctamente.');
+  }catch(err){ console.error(err); toast('Error generando el PDF: '+err.message, 5000); }
+}
+
+/* ============================================================
+   EXPORTAR ARCHIVOS ADJUNTOS (.zip)
+   ============================================================ */
+async function buildAndDownloadZip(){
+  try{
+    const zip = new JSZip();
+    let count = 0;
+    for(const key in state.files){
+      for(const f of state.files[key]){
+        try{
+          const buf = await f.file.arrayBuffer();
+          zip.file(key+'__'+f.name, buf);
+          count++;
+        }catch(e){ console.warn('No se pudo leer el archivo para el ZIP:', f.name, e); }
+      }
+    }
+    if(state.signatures.corredora){
+      try{ const b=await (await fetch(state.signatures.corredora)).blob(); zip.file('firma_corredora.png', await b.arrayBuffer()); count++; }catch(e){}
+    }
+    if(state.signatures.propietario){
+      try{ const b=await (await fetch(state.signatures.propietario)).blob(); zip.file('firma_propietario.png', await b.arrayBuffer()); count++; }catch(e){}
+    }
+    if(count===0){ toast('No hay archivos adjuntos ni firmas para descargar todavía.', 3800); return; }
+    toast('Empaquetando '+count+' archivo(s)…', 3000);
+    const blob = await zip.generateAsync({type:'blob'});
+    downloadBlob(blob, niceFileBase()+'_adjuntos.zip');
+    toast(count+' archivo(s) descargados en ZIP.');
+  }catch(err){ console.error(err); toast('Error empaquetando los adjuntos: '+err.message, 5000); }
+}
+
+/* ============================================================
+   FUNCIONES NUEVAS: UF en vivo, montos, adjuntos/notas/comentarios
+   por campo, campos editables y buscador con tolerancia a errores.
+   ============================================================ */
+
+/* ----- Secciones y campos (incluye campos agregados) ----- */
+function getAllSections(){ return SCHEMA.sections; }
+function sectionFields(s){ return (s.fields||[]).concat(state.customFields[s.num]||[]); }
+
+/* ----- UF en vivo (mindicador.cl) ----- */
+const UF = { value: 0, loaded: false };
+const moneyRefreshers = [];
+function getUF(){ return UF.value; }
+function parseNum(x){ if(x==null) return NaN; return parseFloat(String(x).replace(/\./g,'').replace(',', '.').replace(/[^0-9.\-]/g,'')); }
+function fmtCLP(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
+function fmtUF(n){ return Number(n).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})+' UF'; }
+function fetchUF(){
+  fetch('https://mindicador.cl/api/uf').then(r=>r.json()).then(j=>{
+    const v = j && j.serie && j.serie[0] ? j.serie[0].valor : 0;
+    if(v){ UF.value = v; UF.loaded = true; try{ localStorage.setItem('ficha_uf', JSON.stringify({v:v,d:Date.now()})); }catch(e){} }
+    updateUFBadge(); moneyRefreshers.forEach(fn=>{ try{ fn(); }catch(e){} });
+  }).catch(()=>{ updateUFBadge(); });
+}
+function updateUFBadge(){
+  const bar = document.getElementById('ufBar'); if(!bar) return;
+  bar.innerHTML='';
+  bar.appendChild(el('span',{class:'uf-lbl'}, UF.value ? ('UF de hoy: '+fmtCLP(UF.value)) : 'UF: cargando…'));
+  const ref = el('button',{class:'uf-btn',type:'button'}, 'Actualizar');
+  ref.addEventListener('click', fetchUF);
+  bar.appendChild(ref);
+  bar.appendChild(el('span',{class:'uf-mini'}, 'Ajustar:'));
+  const man = el('input',{type:'text',class:'uf-input',placeholder:'manual'});
+  man.addEventListener('change', ()=>{ const v=parseNum(man.value); if(v>0){ UF.value=v; moneyRefreshers.forEach(fn=>fn()); updateUFBadge(); } });
+  bar.appendChild(man);
+}
+
+/* ----- Montos con conversión UF <-> CLP en vivo ----- */
+const MONEY_UNITS = { UF:1, CLP:1 };
+function isMoney(f){ return f.type==='text' && (f.money===true || MONEY_UNITS[f.unit]); }
+function moneyCurOf(f){ return state.moneyCur[f.id] || (f.unit==='CLP' ? 'CLP' : 'UF'); }
+function moneyText(f){
+  const raw = state.values[f.id]; if(raw==null || String(raw).trim()==='') return '—';
+  const a = parseNum(raw); if(isNaN(a)) return String(raw);
+  const cur = moneyCurOf(f), uf = getUF();
+  if(cur==='UF') return fmtUF(a) + (uf ? (' (≈ '+fmtCLP(a*uf)+')') : '');
+  return fmtCLP(a) + (uf ? (' (≈ '+fmtUF(a/uf)+')') : '');
+}
+function renderMoney(f){
+  const box = el('div');
+  const wrap = el('div',{class:'money-wrap'});
+  const inp = el('input',{type:'text',inputmode:'decimal',placeholder:'0'});
+  inp.value = state.values[f.id]||'';
+  const tog = el('div',{class:'cur-tog'});
+  const bUF = el('button',{type:'button'},'UF');
+  const bCLP = el('button',{type:'button'},'CLP');
+  const conv = el('div',{class:'conv-line'});
+  function refresh(){
+    bUF.classList.toggle('on', moneyCurOf(f)==='UF');
+    bCLP.classList.toggle('on', moneyCurOf(f)==='CLP');
+    const a = parseNum(state.values[f.id]), uf = getUF();
+    if(!isNaN(a) && String(state.values[f.id]||'').trim()!=='' && uf){
+      conv.style.display='block';
+      conv.textContent = moneyCurOf(f)==='UF'
+        ? ('≈ '+fmtCLP(a*uf)+' CLP   ·   UF '+fmtCLP(uf))
+        : ('≈ '+fmtUF(a/uf)+'   ·   UF '+fmtCLP(uf));
+    } else if(!uf){ conv.style.display='block'; conv.textContent='(cargando valor UF…)'; }
+    else conv.style.display='none';
+  }
+  inp.addEventListener('input', ()=>{ state.values[f.id]=inp.value; moneyRefreshers.forEach(fn=>{try{fn();}catch(e){}}); updateProgress(); });
+  bUF.addEventListener('click', ()=>{ state.moneyCur[f.id]='UF'; refresh(); });
+  bCLP.addEventListener('click', ()=>{ state.moneyCur[f.id]='CLP'; refresh(); });
+  tog.appendChild(bUF); tog.appendChild(bCLP);
+  wrap.appendChild(inp); wrap.appendChild(tog);
+  box.appendChild(wrap); box.appendChild(conv);
+  moneyRefreshers.push(refresh); refresh();
+  return box;
+}
+
+
+/* ----- Multa %: equivalencia en UF/CLP sobre el arriendo mensual ----- */
+function renderMulta(f){
+  const box = el('div');
+  const row = el('div',{style:'display:flex;align-items:center;'});
+  const inp = el('input',{type:'text',inputmode:'decimal',placeholder:'0'});
+  inp.value = state.values[f.id]||'';
+  row.appendChild(inp);
+  row.appendChild(el('span',{class:'unit-suffix'},'%'));
+  const conv = el('div',{class:'conv-line'});
+  function refresh(){
+    const pct = parseNum(state.values[f.id]);
+    const arr = parseNum(state.values['arriendo_mensual_uf']);
+    const uf = getUF();
+    if(!isNaN(pct) && !isNaN(arr) && arr>0){
+      const ufVal = arr*pct/100;
+      conv.style.display='block';
+      conv.textContent = '≈ '+fmtUF(ufVal)+(uf?(' ('+fmtCLP(ufVal*uf)+')'):'')+' — '+pct+'% del arriendo mensual de '+fmtUF(arr);
+    } else if(!isNaN(pct) && pct>0){
+      conv.style.display='block';
+      conv.textContent = 'Ingrese el arriendo mensual (UF) para calcular la equivalencia.';
+    } else conv.style.display='none';
+  }
+  inp.addEventListener('input',()=>{ state.values[f.id]=inp.value; refresh(); updateProgress(); });
+  box.appendChild(row); box.appendChild(conv);
+  moneyRefreshers.push(refresh); refresh();
+  return box;
+}
+
+/* ----- Adjuntar archivos en un campo (inline) ----- */
+function renderInlineAttach(f){
+  if(!state.files[f.id]) state.files[f.id]=[];
+  const box = el('div',{class:'attach-inline'});
+  const inputId = 'inl_'+f.id;
+  const input = el('input',{type:'file',multiple:'multiple',id:inputId,style:'display:none;'});
+  const drop = el('label',{class:'fx-drop',for:inputId},'Adjuntar archivo(s)');
+  const list = el('div',{class:'file-chip-list'});
+  function refresh(){
+    list.innerHTML='';
+    state.files[f.id].forEach((fobj,idx)=>{
+      const chip = el('div',{class:'file-chip'});
+      if(fobj.isImage && fobj.previewUrl) chip.appendChild(el('img',{src:fobj.previewUrl}));
+      else chip.appendChild(el('div',{class:'fx'}, extShort(fobj.name)));
+      chip.appendChild(el('span',{class:'fname'}, fobj.name));
+      const rm = el('span',{class:'rm'},'✕');
+      rm.addEventListener('click', ()=>{ state.files[f.id].splice(idx,1); refresh(); updateProgress(); });
+      chip.appendChild(rm); list.appendChild(chip);
+    });
+  }
+  input.addEventListener('change', async ()=>{
+    for(const file of Array.from(input.files)){
+      const isImage = /^image\//.test(file.type);
+      const previewUrl = isImage ? await fileToDataUrl(file) : null;
+      state.files[f.id].push({name:file.name,type:file.type,size:file.size,file,isImage,previewUrl});
+    }
+    input.value=''; refresh(); updateProgress();
+  });
+  box.appendChild(drop); box.appendChild(input); box.appendChild(list); refresh();
+  return box;
+}
+
+/* ----- Barra por campo: Adjuntar / Notas / Comentarios ----- */
+function attachFieldExtras(wrap, f){
+  const bar = el('div',{class:'fx-bar'});
+  const host = el('div');
+  let openKey = null;
+  const bAdj = (f.type!=='attach') ? el('button',{class:'fx-btn',type:'button'}) : null;
+  const bNote = el('button',{class:'fx-btn',type:'button'});
+  const bCom = el('button',{class:'fx-btn',type:'button'});
+  function counts(){
+    if(bAdj) bAdj.innerHTML = 'Adjuntar archivo' + ((state.files[f.id]||[]).length ? ' <span class="cnt">'+(state.files[f.id]).length+'</span>' : '');
+    bNote.innerHTML = 'Notas' + ((state.notes[f.id]||'').trim() ? ' <span class="cnt">•</span>' : '');
+    bCom.innerHTML = 'Comentarios' + ((state.comments[f.id]||'').trim() ? ' <span class="cnt">•</span>' : '');
+  }
+  function render(){
+    host.innerHTML='';
+    if(bAdj) bAdj.classList.toggle('on', openKey==='adj');
+    bNote.classList.toggle('on', openKey==='note');
+    bCom.classList.toggle('on', openKey==='com');
+    if(openKey==='adj'){ const p=el('div',{class:'fx-panel'}); p.appendChild(renderInlineAttach(f)); host.appendChild(p); }
+    if(openKey==='note'){ const p=el('div',{class:'fx-panel'}); const ta=el('textarea',{placeholder:'Notas internas de este campo…'}); ta.value=state.notes[f.id]||''; ta.addEventListener('input',()=>{ state.notes[f.id]=ta.value; counts(); }); p.appendChild(ta); host.appendChild(p); }
+    if(openKey==='com'){ const p=el('div',{class:'fx-panel'}); const ta=el('textarea',{placeholder:'Comentarios / seguimiento…'}); ta.value=state.comments[f.id]||''; ta.addEventListener('input',()=>{ state.comments[f.id]=ta.value; counts(); }); p.appendChild(ta); host.appendChild(p); }
+    counts();
+  }
+  function toggle(k){ openKey = openKey===k ? null : k; render(); }
+  if(bAdj){ bAdj.addEventListener('click',()=>toggle('adj')); bar.appendChild(bAdj); }
+  bNote.addEventListener('click',()=>toggle('note'));
+  bCom.addEventListener('click',()=>toggle('com'));
+  bar.appendChild(bNote); bar.appendChild(bCom);
+  if(f.custom){
+    const bDel = el('button',{class:'fx-btn',type:'button',style:'color:var(--danger);border-color:#f0c9c6;'},'✕ Quitar campo');
+    bDel.addEventListener('click', ()=>{ for(const k in state.customFields){ state.customFields[k]=state.customFields[k].filter(x=>x.id!==f.id); } delete state.values[f.id]; rerenderPreserveScroll(); });
+    bar.appendChild(bDel);
+  }
+  counts();
+  wrap.appendChild(bar); wrap.appendChild(host);
+}
+
+/* ----- Agregar campo a una sección ----- */
+function renderAddFieldUI(body, s){
+  const bar = el('div',{class:'addfield-bar'});
+  const toggle = el('button',{class:'btn small',type:'button'},'+ Agregar campo a esta sección');
+  const host = el('div');
+  toggle.addEventListener('click', ()=>{
+    if(host.childNodes.length){ host.innerHTML=''; return; }
+    const row = el('div',{class:'addfield-row'});
+    const name = el('input',{type:'text',placeholder:'Nombre del campo'});
+    const sel = el('select');
+    [['text','Texto'],['textarea','Texto largo'],['date','Fecha'],['money','Monto (UF/CLP)'],['attach','Archivo']].forEach(o=>sel.appendChild(el('option',{value:o[0]},o[1])));
+    const add = el('button',{class:'btn primary small',type:'button'},'Agregar');
+    add.addEventListener('click', ()=>{
+      const label = name.value.trim(); if(!label) return;
+      const f = { id:'cf_'+s.num+'_'+Date.now(), label:label, type:sel.value, custom:true };
+      if(f.type==='money'){ f.type='text'; f.money=true; f.unit='UF'; }
+      if(!state.customFields[s.num]) state.customFields[s.num]=[];
+      state.customFields[s.num].push(f);
+      rerenderPreserveScroll();
+    });
+    row.appendChild(name); row.appendChild(sel); row.appendChild(add);
+    host.appendChild(row);
+  });
+  bar.appendChild(toggle); bar.appendChild(host);
+  body.appendChild(bar);
+}
+function rerenderPreserveScroll(){ const y=window.scrollY; renderNav(); renderContent(); updateProgress(); window.scrollTo(0,y); }
+
+/* ----- Progreso (incluye campos nuevos) ----- */
+function fieldIsFilled(f){
+  if(f.type==='choice') return !!state.choices[f.id];
+  if(f.type==='grid') return !!(state.grids[f.id] && state.grids[f.id].size>0);
+  if(f.type==='attach') return !!(state.files[f.id] && state.files[f.id].length);
+  return !!((state.values[f.id]||'').toString().trim());
+}
+
+/* ----- Persistencia local (autoguardado) ----- */
+function saveLocal(){ try{ localStorage.setItem('ficha_state', JSON.stringify(serializeState())); }catch(e){} }
+function loadLocal(){ try{ const r=localStorage.getItem('ficha_state'); if(r){ restoreState(JSON.parse(r)); return true; } }catch(e){} return false; }
+
+/* ----- Buscador con tolerancia a errores ----- */
+function norms(s){ return (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function levd(a,b){ const m=a.length,n=b.length; if(!m)return n; if(!n)return m; let p=Array.from({length:n+1},(_,i)=>i); for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+function buildSearchIndex(){
+  const idx=[];
+  getAllSections().forEach(s=>{
+    sectionFields(s).forEach(f=>{
+      let val='';
+      if(f.type==='choice') val = (state.choices[f.id]==='__other__') ? ('Otro: '+(state.choiceOther[f.id]||'')) : (state.choices[f.id]||'');
+      else if(f.type==='grid') val = state.grids[f.id] ? Array.from(state.grids[f.id]).join(', ') : '';
+      else if(f.type==='attach') val = (state.files[f.id]||[]).map(x=>x.name).join(', ');
+      else if(f.type==='text' && isMoney(f)){ const m=moneyText(f); val = m==='—'?'':m; }
+      else val = state.values[f.id]||'';
+      const files=(state.files[f.id]||[]).map(x=>x.name).join(' ');
+      const note=state.notes[f.id]||'', com=state.comments[f.id]||'';
+      idx.push({ sec:s.num+'. '+s.title, num:s.num, id:f.id, label:f.label, val:String(val), text:[f.label,val,files,note,com,s.title].join(' ') });
+    });
+    if(s.is_attachment_section){ (s.groups||[]).forEach(g=>g.attachments.forEach(att=>{ const files=(state.files[att.id]||[]).map(x=>x.name).join(', '); idx.push({ sec:s.num+'. '+s.title, num:s.num, id:att.id, label:att.label, val:files, text:[att.label,files,g.group,s.title].join(' ') }); })); }
+  });
+  return idx;
+}
+function doSearch(q){
+  const nq=norms(q); if(nq.length<2) return {exact:[],fuzzy:[]};
+  const toks=nq.split(/\s+/).filter(t=>t.length>=2);
+  const idx=buildSearchIndex(), ex=[], fz=[];
+  idx.forEach(e=>{
+    const hay=norms(e.text); let score=0,isEx=false,isFz=false;
+    if(hay.includes(nq)){ isEx=true; score+=1000-Math.min(hay.indexOf(nq),400); }
+    const words=hay.split(/\s+/);
+    toks.forEach(t=>{ let best=0,bf=false; words.forEach(w=>{ if(!w)return; if(w===t)best=Math.max(best,300); else if(w.startsWith(t))best=Math.max(best,220); else if(w.includes(t))best=Math.max(best,150); else{ const d=levd(t,w), sim=1-d/Math.max(t.length,w.length); if(sim>=0.66){ const sc=Math.round(140*sim); if(sc>best){ best=sc; bf=true; } } } }); if(best>0){ score+=best; if(bf)isFz=true; else isEx=true; } });
+    if(score>0){ if(isEx)ex.push({e,score}); else if(isFz)fz.push({e,score}); }
+  });
+  ex.sort((a,b)=>b.score-a.score); fz.sort((a,b)=>b.score-a.score);
+  return { exact:ex.slice(0,40), fuzzy:fz.slice(0,12) };
+}
+function ensureSearchOverlay(){
+  if(document.getElementById('searchOverlay')) return;
+  const ov = el('div',{id:'searchOverlay'});
+  const box = el('div',{class:'search-box'});
+  const head = el('div',{class:'search-head'});
+  const sic=el('span',{class:'sicon'}); sic.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'; head.appendChild(sic);
+  const inp = el('input',{type:'text',id:'searchInput',placeholder:'Buscar en toda la ficha: campos, valores, notas, adjuntos…'});
+  head.appendChild(inp);
+  const cl = el('span',{class:'sclose'},'ESC'); cl.addEventListener('click', closeSearch); head.appendChild(cl);
+  const res = el('div',{class:'search-results',id:'searchResults'});
+  box.appendChild(head); box.appendChild(res); ov.appendChild(box);
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeSearch(); });
+  inp.addEventListener('input', ()=>renderSearch(inp.value));
+  document.body.appendChild(ov);
+  renderSearch('');
+}
+function renderSearch(q){
+  const res=document.getElementById('searchResults'); if(!res) return; res.innerHTML='';
+  if((q||'').trim().length<2){ res.appendChild(el('div',{class:'sr-note'},'Escribe al menos 2 letras. El buscador tolera errores de tipeo y muestra resultados similares.')); return; }
+  const {exact,fuzzy}=doSearch(q);
+  if(!exact.length && !fuzzy.length){ res.appendChild(el('div',{class:'sr-note'},'Sin coincidencias para “'+q+'”.')); return; }
+  function item(r){
+    const it=el('div',{class:'sr-item'});
+    it.appendChild(el('div',{class:'sr-lbl'}, r.e.label));
+    it.appendChild(el('div',{class:'sr-sec'}, r.e.sec));
+    if(r.e.val) it.appendChild(el('div',{class:'sr-val'}, String(r.e.val).slice(0,120)));
+    it.addEventListener('click', ()=>{ closeSearch(); goToField(r.e.num, r.e.id); });
+    return it;
+  }
+  exact.forEach(r=>res.appendChild(item(r)));
+  if(fuzzy.length){ res.appendChild(el('div',{class:'sr-fuzzy'},'Resultados similares (¿quisiste decir algo parecido?)')); fuzzy.forEach(r=>res.appendChild(item(r))); }
+}
+function openSearch(){ ensureSearchOverlay(); document.getElementById('searchOverlay').classList.add('on'); const i=document.getElementById('searchInput'); if(i){ i.value=''; renderSearch(''); setTimeout(()=>i.focus(),40); } }
+function closeSearch(){ const o=document.getElementById('searchOverlay'); if(o) o.classList.remove('on'); }
+function goToField(num,id){
+  expandSection(num);
+  const target = document.getElementById('fld-'+id) || document.getElementById('sec-'+num);
+  if(target){ target.scrollIntoView({behavior:'smooth',block:'center'}); if(target.classList.contains('field')){ target.classList.add('flash'); setTimeout(()=>target.classList.remove('flash'),2600); } }
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeSearch(); });
+
+
+/* ============================================================
+   INICIALIZACION
+   ============================================================ */
+function init(){
+  loadLocal();
+  renderNav();
+  renderContent();
+  updateProgress();
+  fetchUF();
+  setInterval(saveLocal, 8000);
+
+  
+  // Botón volver arriba
+  const topBtn = el('button',{id:'backTop',type:'button','title':'Volver al inicio'});
+  topBtn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+  topBtn.addEventListener('click',()=>{ window.scrollTo({top:0,behavior:'smooth'}); });
+  document.body.appendChild(topBtn);
+  window.addEventListener('scroll',()=>{ topBtn.classList.toggle('show', window.scrollY>400); },{passive:true});
+
+  document.getElementById('btnSave').addEventListener('click', saveProgress);
+  document.getElementById('loadInput').addEventListener('change', (e)=>{
+    const f = e.target.files[0];
+    if(f) loadProgress(f);
+    e.target.value='';
+  });
+  document.getElementById('btnDocx').addEventListener('click', buildAndDownloadDocx);
+  document.getElementById('btnPdf').addEventListener('click', buildAndDownloadPdf);
+  document.getElementById('btnZip').addEventListener('click', buildAndDownloadZip);
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
