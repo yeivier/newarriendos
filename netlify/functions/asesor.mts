@@ -65,9 +65,31 @@ Interpreta el lenguaje natural chileno:
 - "900 lucas", "900 mil" = 900000. "1,2 palos" = 1200000.
 - "2D" = 2 dormitorios. "2D2B" = 2 dormitorios, 2 baños.
 - "depto", "depa" = Departamento.
-- "cerca del metro", "buena locomoción" = no hay dato de metro; no lo inventes,
-  búscalo por comuna y acláralo con naturalidad.
 - Presupuesto sin más contexto en arriendo = valor mensual.
+
+## Buscar en internet
+Tienes búsqueda web. Úsala para ampliar la ayuda más allá del catálogo propio:
+
+- **Siempre parte por buscar_propiedades (el catálogo propio).** Es lo que
+  administramos y lo que podemos mostrar, agendar y arrendar de inmediato.
+- **Después usa la web** cuando aporte de verdad: si el catálogo no tiene nada
+  que calce, si preguntan por el precio de mercado de una comuna, por el
+  entorno (metro, colegios, supermercados, seguridad), o si piden derechamente
+  ver otras opciones publicadas.
+- Para "cerca del metro", "buena locomoción" o preguntas del barrio, búscalo en
+  la web en vez de decir que no tienes el dato.
+- Si te pasan el enlace de una publicación, léelo con web_fetch y compáralo con
+  lo nuestro.
+
+**Sé transparente sobre el origen.** Distingue siempre entre "esta es nuestra"
+y "esta la encontré publicada en internet". Nunca presentes una propiedad de
+otro portal como si fuera de la cartera propia, y no ofrezcas agendar visitas
+ni prometer condiciones sobre propiedades que no son nuestras: para esas,
+entrega la referencia y ofrece buscar algo equivalente en nuestro catálogo o
+derivar a un asesor.
+
+Cuando cites precios de mercado sacados de internet, di de dónde salen y de
+cuándo son, porque cambian.
 
 Si la búsqueda no arroja nada, no te quedes ahí: vuelve a buscar ampliando el
 presupuesto un 15-20% o sumando comunas vecinas, y ofrécelo como alternativa
@@ -219,6 +241,26 @@ const TOOLS = [
   },
 ]
 
+// Herramientas de Anthropic que corren en su servidor (no las ejecuta el
+// navegador). Dan al asesor acceso a internet: buscar publicaciones y precios
+// de mercado, y leer un aviso concreto si el usuario pega el enlace.
+//
+// Ojo: la búsqueda web se puede deshabilitar a nivel de organización desde la
+// consola de Anthropic. Si está apagada, la petición completa falla con 400;
+// por eso más abajo reintentamos una vez sin estas herramientas, para que el
+// asesor siga funcionando con el catálogo propio.
+const WEB_TOOLS = [
+  {
+    type: 'web_search_20260318',
+    name: 'web_search',
+    max_uses: 5, // Tope de búsquedas por respuesta, para acotar el costo.
+    user_location: { type: 'approximate', country: 'CL', timezone: 'America/Santiago' },
+  },
+  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 },
+]
+
+const esErrorDeWeb = (msg: string) => /web[ _-]?(search|fetch)/i.test(String(msg || ''))
+
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Método no permitido' }, { status: 405 })
@@ -264,8 +306,8 @@ export default async (req: Request, _context: Context) => {
     .filter(Boolean)
     .join('\n')
 
-  try {
-    const r = await fetch(API, {
+  const pedir = (tools: any[]) =>
+    fetch(API, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -279,12 +321,22 @@ export default async (req: Request, _context: Context) => {
         max_tokens: 8192,
         output_config: { effort: EFFORT },
         system: PERSONALIDAD + contexto,
-        tools: TOOLS,
+        tools,
         messages,
       }),
     })
 
-    const j: any = await r.json()
+  try {
+    let r = await pedir([...TOOLS, ...WEB_TOOLS])
+    let j: any = await r.json()
+
+    // Si la organización tiene la búsqueda web deshabilitada, reintentamos solo
+    // con las herramientas propias en lugar de dejar caído al asesor.
+    if (!r.ok && r.status === 400 && esErrorDeWeb(j?.error?.message)) {
+      r = await pedir(TOOLS)
+      j = await r.json()
+    }
+
     if (!r.ok) {
       return Response.json({ error: j?.error?.message || 'Error de la API de IA' }, { status: 502 })
     }
