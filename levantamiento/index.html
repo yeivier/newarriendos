@@ -177,6 +177,28 @@
   #backTop.show{opacity:1;pointer-events:auto;}
   #backTop:hover{background:var(--navy-light);}
 
+
+  .ai-card .card-header{background:linear-gradient(90deg,var(--navy),#2E4F78);}
+  .ai-badge{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:var(--navy);font-weight:800;font-size:10px;border-radius:5px;padding:2px 6px;margin-right:8px;letter-spacing:.5px;}
+  .ai-row{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;}
+  .ai-lbl{font-size:12px;font-weight:700;color:var(--navy);min-width:78px;}
+  .ai-inp{flex:1;min-width:160px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;background:#fff;}
+  .ai-file{flex:1;min-width:160px;font-size:13px;}
+  .ai-hint{font-size:11.5px;color:var(--text-muted);margin:-2px 0 6px 88px;}
+  @media(max-width:560px){.ai-hint{margin-left:0;}}
+  .ai-btn{margin-top:4px;background:var(--navy);color:#fff;border:none;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
+  .ai-btn:hover{background:var(--navy-light);} .ai-btn:disabled{opacity:.6;cursor:default;}
+  .ai-status{font-size:12.5px;color:var(--text-muted);margin-top:8px;min-height:16px;}
+  .ai-err{margin-top:10px;background:var(--red-bg,#FBEAE9);color:var(--red,#B3261E);border:1px solid #F0C9C4;border-radius:8px;padding:10px 12px;font-size:13px;}
+  .ai-res{margin-top:12px;border:1px solid var(--border);border-radius:10px;padding:12px;background:#F4F8FC;}
+  .ai-res-t{font-weight:700;color:var(--navy);font-size:13.5px;margin-bottom:6px;}
+  .ai-res-sum{font-size:12.5px;color:var(--text-muted);margin-bottom:8px;line-height:1.45;}
+  .ai-res-it{padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line2);}
+  .ai-res-it:hover{background:var(--brand-bg,#E9EFF6);}
+  .ai-res-lbl{font-weight:600;color:var(--text);}
+  .ai-res-val{color:var(--navy);}
+  .ai-res-sec{color:var(--text-muted);font-size:11px;}
+
 </style>
 </head>
 <body>
@@ -2813,6 +2835,171 @@ function expandSection(num){
   if(inner && inner.style.display==='none'){ inner.style.display='block'; if(chev)chev.classList.add('open'); if(!state.openSecs)state.openSecs={}; state.openSecs[num]=true; }
 }
 
+
+/* ================= LECTOR CON IA (autocompletar) ================= */
+var aiState = { summary:'', filled:[], error:'' };
+
+function aiCatalog(){
+  const out=[];
+  SCHEMA.sections.forEach(s=>{
+    (s.fields||[]).concat(state.customFields[s.num]||[]).forEach(f=>{
+      if(['attach','signature','table'].indexOf(f.type)>=0) return;
+      const o={id:f.id, label:f.label, sec:s.num, type:f.type};
+      if(f.options) o.opciones=f.options;
+      if(f.unit) o.unidad=f.unit;
+      out.push(o);
+    });
+  });
+  return out;
+}
+function aiImageToJpeg(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=()=>{ let w=img.width,h=img.height; const mx=1400,sc=Math.min(1,mx/Math.max(w,h));
+      w=Math.round(w*sc); h=Math.round(h*sc);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h); URL.revokeObjectURL(url);
+      res({media:'image/jpeg', data:cv.toDataURL('image/jpeg',0.8).split(',')[1]}); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('No se pudo leer la imagen')); };
+    img.src=url;
+  });
+}
+function aiFileB64(file){ return fileToDataUrl(file).then(u=>u.split(',')[1]); }
+
+function aiApply(campos){
+  const defById={};
+  SCHEMA.sections.forEach(s=>(s.fields||[]).concat(state.customFields[s.num]||[]).forEach(f=>{ defById[f.id]={f:f,sec:s.num}; }));
+  const norm=x=>String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const filled=[];
+  for(const id in campos){
+    const d=defById[id]; if(!d) continue; const f=d.f; let v=campos[id];
+    if(v==null||String(v).trim()==='') continue;
+    if(f.type==='choice'){
+      const opt=(f.options||[]).find(o=>norm(o)===norm(v)) || (f.options||[]).find(o=>norm(o).indexOf(norm(v))>=0||norm(v).indexOf(norm(o))>=0);
+      if(opt){ state.choices[id]=opt; } else if(f.other){ state.choices[id]='__other__'; state.choiceOther[id]=String(v); } else continue;
+    } else if(f.type==='grid'){
+      if(!state.grids[id]) state.grids[id]=new Set();
+      const vals=Array.isArray(v)?v:String(v).split(/[,;]+/);
+      vals.forEach(val=>{ const opt=(f.options||[]).find(o=>norm(o)===norm(val)||norm(o).indexOf(norm(val))>=0); if(opt) state.grids[id].add(opt); });
+    } else { state.values[id]=String(v); }
+    if(!state.openSecs) state.openSecs={}; state.openSecs[d.sec]=true;
+    filled.push({id:id, sec:d.sec, label:f.label, value:Array.isArray(v)?v.join(', '):String(v)});
+  }
+  return filled;
+}
+
+async function aiRun(files, model, statusEl, runBtn){
+  if(!files.length){ statusEl.textContent='Selecciona al menos un documento.'; return; }
+  localStorage.setItem('ficha_ai_model', model);
+  runBtn.disabled=true; runBtn.textContent='Leyendo…'; statusEl.textContent='Enviando documentos a la IA…'; aiState.error='';
+  try{
+    const content=[];
+    for(const f of files){
+      if(/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name)){
+        const im=await aiImageToJpeg(f); content.push({type:'image',source:{type:'base64',media_type:im.media,data:im.data}});
+      } else if(/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){
+        const b=await aiFileB64(f); content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});
+      }
+    }
+    if(!content.length){ throw new Error('Formatos no soportados. Usa imágenes o PDF.'); }
+    content.push({type:'text', text:
+      'Eres un asistente experto en documentos inmobiliarios chilenos (escrituras, certificados del CBR/SII, cédulas de identidad, '+
+      'liquidaciones de sueldo, boletines comerciales Equifax/Dicom, contratos, etc.). Extrae los datos del/los documento(s) y '+
+      'mapéalos al catálogo de campos de esta ficha. Devuelve SOLO un JSON válido, sin markdown ni texto extra, con la forma: '+
+      '{"campos": {"<id>": "<valor>"}, "resumen": "<breve descripción de lo que encontraste>"}. '+
+      'Reglas: usa únicamente los "id" del catálogo; para type "choice" el valor debe COINCIDIR EXACTO con una de sus "opciones"; '+
+      'para montos entrega solo el número sin puntos ni símbolos; para fechas usa AAAA-MM-DD; '+
+      'omite los campos que no aparezcan en el documento; no inventes datos. Catálogo de campos: '+JSON.stringify(aiCatalog()) });
+    const resp=await fetch('/.netlify/functions/leer-documento',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({model:model||'claude-sonnet-5', content:content})
+    });
+    const rawTxt=await resp.text();
+    let data;
+    try{ data=JSON.parse(rawTxt); }catch(e){ throw new Error('El servidor no devolvió JSON (código '+resp.status+'). '+(rawTxt||'').slice(0,200)); }
+    if(!resp.ok){
+      let em='El lector respondió '+resp.status+'.';
+      if(data && data.error){ em = (typeof data.error==='string') ? data.error : (data.error.message || JSON.stringify(data.error)); }
+      throw new Error(em);
+    }
+    if(data.error){ throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error)); }
+    if(data.type==='error' && data.error){ throw new Error(data.error.message||JSON.stringify(data.error)); }
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    let clean=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const a=clean.indexOf('{'), z=clean.lastIndexOf('}'); if(a>=0&&z>a) clean=clean.slice(a,z+1);
+    const parsed=JSON.parse(clean);
+    const filled=aiApply(parsed.campos||{});
+    aiState.summary=(parsed.resumen||''); aiState.filled=filled; aiState.error='';
+    renderContent(); updateProgress();
+    toast('IA: '+filled.length+' campos completados');
+    if(filled.length){ const first=filled[0].sec; setTimeout(()=>{ const c=document.getElementById('sec-'+first); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); },250); }
+  }catch(e){
+    let msg;
+    if(e && e.message) msg=e.message;
+    else if(typeof e==='string') msg=e;
+    else { try{ msg=JSON.stringify(e); }catch(_){ msg='Error desconocido'; } }
+    aiState.error=msg; aiState.filled=[];
+    if(runBtn){ runBtn.disabled=false; runBtn.textContent='Leer documentos y rellenar'; }
+    renderContent();
+  }finally{
+    if(runBtn){ runBtn.disabled=false; runBtn.textContent='Leer documentos y rellenar'; }
+  }
+}
+
+function buildAIPanel(){
+  const card=el('div',{class:'card ai-card'});
+  const head=el('div',{class:'card-header card-header-toggle'},[el('span',{class:'ai-badge'},'IA'),' AUTOCOMPLETAR CON IA — leer documentos']);
+  const chev=el('span',{class:'chev'});
+  chev.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+  head.appendChild(chev); card.appendChild(head);
+  const inner=el('div',{class:'card-inner'});
+  if(!state.openSecs) state.openSecs={};
+  const open = state.openSecs.ai!==false;
+  inner.style.display=open?'block':'none'; chev.classList.toggle('open',open);
+  head.addEventListener('click',()=>{ const o=inner.style.display==='none'; inner.style.display=o?'block':'none'; chev.classList.toggle('open',o); state.openSecs.ai=o; });
+  card.appendChild(inner);
+  inner.appendChild(el('div',{class:'card-note'},'Sube fotos, escaneos o PDF (cédula, escritura, certificados, liquidaciones, boletín comercial, etc.). La IA los lee y completa automáticamente los campos que reconoce en su sección. Revisa siempre antes de descargar.'));
+  const body=el('div',{class:'card-body'});
+
+  const hint=el('div',{class:'ai-hint'}); hint.innerHTML='La lectura la procesa el servidor de la ficha de forma segura. No necesitas ingresar ninguna clave.';
+  body.appendChild(hint);
+
+  const r2=el('div',{class:'ai-row'});
+  r2.appendChild(el('label',{class:'ai-lbl'},'Modelo'));
+  const model=el('select',{class:'ai-inp'});
+  [['claude-sonnet-5','Sonnet 5 (recomendado)'],['claude-opus-4-8','Opus 4.8 (máxima calidad)'],['claude-haiku-4-5-20251001','Haiku 4.5 (rápido)']].forEach(m=>{ const op=el('option',{value:m[0]},m[1]); model.appendChild(op); });
+  model.value=localStorage.getItem('ficha_ai_model')||'claude-sonnet-5';
+  r2.appendChild(model); body.appendChild(r2);
+
+  const r3=el('div',{class:'ai-row'});
+  r3.appendChild(el('label',{class:'ai-lbl'},'Documentos'));
+  const fin=el('input',{type:'file',accept:'image/*,application/pdf',multiple:'multiple',class:'ai-file'});
+  r3.appendChild(fin); body.appendChild(r3);
+
+  const status=el('div',{class:'ai-status'});
+  const run=el('button',{class:'ai-btn',type:'button'},'Leer documentos y rellenar');
+  run.addEventListener('click',()=>{ aiRun(Array.from(fin.files), model.value, status, run); });
+  body.appendChild(run); body.appendChild(status);
+
+  if(aiState.error) body.appendChild(el('div',{class:'ai-err'}, String(aiState.error).indexOf('⚠')===0?String(aiState.error):('⚠ '+String(aiState.error))));
+  if(aiState.filled && aiState.filled.length){
+    const res=el('div',{class:'ai-res'});
+    res.appendChild(el('div',{class:'ai-res-t'},'Se completaron '+aiState.filled.length+' campos:'));
+    if(aiState.summary) res.appendChild(el('div',{class:'ai-res-sum'},aiState.summary));
+    aiState.filled.forEach(x=>{ const it=el('div',{class:'ai-res-it'});
+      it.appendChild(el('span',{class:'ai-res-lbl'},x.label+': '));
+      it.appendChild(el('span',{class:'ai-res-val'},x.value));
+      it.appendChild(el('span',{class:'ai-res-sec'},' · sección '+x.sec));
+      it.addEventListener('click',()=>{ expandSection(x.sec); const c=document.getElementById('sec-'+x.sec); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); });
+      res.appendChild(it);
+    });
+    body.appendChild(res);
+  }
+  inner.appendChild(body);
+  return card;
+}
+
 /* ===== NAVEGACION ===== */
 function renderNav(){
   const sidebar=document.getElementById('sidebar'), mobileSel=document.getElementById('mobileNavSelect');
@@ -2846,6 +3033,7 @@ function renderContent(){
     '<li><b>Firmas:</b> dibuje con el dedo o el mouse en la sección 31.</li>'+
     '<li><b>Al terminar:</b> descargue en Word o PDF; los archivos adjuntos se descargan aparte en un ZIP.</li></ul>';
   root.appendChild(instr);
+  root.appendChild(buildAIPanel());
   SCHEMA.sections.forEach(s=>root.appendChild(renderSection(s)));
 }
 

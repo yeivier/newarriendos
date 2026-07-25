@@ -140,8 +140,8 @@
   .collapse>.chead:hover{background:var(--panel2)}
   .collapse>.chead .cico{font-size:20px;width:30px;text-align:center;flex-shrink:0}
   .collapse>.chead .ctxt{flex:1;min-width:0}
-  .collapse>.chead .ctitle{font-family:var(--font-head);font-size:16.5px;font-weight:700;color:var(--ink);line-height:1.25}
-  .collapse>.chead .csub{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+  .collapse>.chead .ctitle{display:block;font-family:var(--font-head);font-size:16.5px;font-weight:700;color:var(--ink);line-height:1.25}
+  .collapse>.chead .csub{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
   .collapse>.chead .chev{margin-left:auto;font-size:13px;color:var(--brand-d);background:var(--brand-bg);width:29px;height:29px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.18s;flex-shrink:0}
   .collapse.open>.chead .chev{transform:rotate(180deg)}
   .collapse>.cbody{padding:2px 18px 18px;border-top:1px solid var(--line2)}
@@ -240,7 +240,12 @@
     .topbar h2{font-size:18px}
     .topbar .desc{font-size:12.5px}
     .topbar-row{gap:9px}
-    .grid.c4,.grid.c3,.grid.c2{grid-template-columns:1fr 1fr !important}
+    /* Muchas tarjetas fijan gridTemplateColumns en línea (4 y 3 columnas, o
+       anchos en píxeles). En tablet las bajamos a 2 columnas; el !important es
+       necesario para ganarle al estilo en línea, y minmax(0,...) permite que
+       las columnas se encojan en vez de desbordarse y cortar el contenido. */
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+    .grid>*{min-width:0}
     .pad{padding:15px}
     .stat{padding:14px}
     .stat .val{font-size:22px;margin:5px 0 2px}
@@ -279,7 +284,8 @@
   /* ============ RESPONSIVO: celular (≤560px) ============ */
   @media(max-width:560px){
     body{font-size:15px}
-    .grid.c4,.grid.c3,.grid.c2{grid-template-columns:1fr !important}
+    /* En el celular todo va en una sola columna para que nada quede cortado. */
+    .grid{grid-template-columns:minmax(0,1fr) !important}
     .content{padding:11px 10px;gap:11px}
     .topbar{padding:10px 12px}
     .topbar h2{font-size:17px}
@@ -465,7 +471,14 @@
   .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:13.5px}
   .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
   .ai-disclaimer{font-size:10.5px;color:var(--faint);text-align:center;margin-top:6px}
-  @media(max-width:560px){.ai-fab{right:14px;bottom:14px;width:56px;height:56px}.ai-float{right:8px;bottom:78px;width:calc(100vw - 16px);height:calc(100vh - 90px);border-radius:17px}}
+  /* En el celular usamos 100dvh (alto real visible): con 100vh el panel queda
+     tapado por la barra del navegador y el campo de escribir no se alcanza.
+     El env(safe-area-inset-bottom) lo sube sobre la barra de gestos al usarla
+     como aplicación instalada. */
+  @media(max-width:560px){
+    .ai-fab{right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:56px;height:56px}
+    .ai-float{right:8px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:calc(100vw - 16px);height:calc(100dvh - 90px - env(safe-area-inset-bottom,0px));border-radius:17px}
+  }
 </style>
 </head>
 <body>
@@ -1627,7 +1640,8 @@ function EscriturasBox({ p, onChange }){
 
 /* ---------- Sección desplegable (acordeón) — para ordenar y no aglomerar ---------- */
 function Collapsible({ title, icon, subtitle, children, defaultOpen, flush, accent }){
-  const [open,setOpen]=React.useState(defaultOpen!==false);
+  // Todas las secciones parten cerradas: el usuario las despliega una a una.
+  const [open,setOpen]=React.useState(false);
   const style = accent ? {borderLeft:"5px solid "+accent} : undefined;
   return (<div className={"collapse"+(open?" open":"")+(flush?" flush":"")} style={style}>
     <button type="button" className="chead" onClick={()=>setOpen(o=>!o)} aria-expanded={open}>
@@ -2637,10 +2651,13 @@ function App(){
     try{
       const ctx=`Eres un asistente experto en administración de propiedades en Chile dentro de la plataforma ArriendoPro. Datos actuales (UF=${CLP(uf)}): ${props.length} propiedades (${rentals.length} en arriendo, ${personals.length} de uso personal). Ingresos por arriendo: ${CLP(ingresos)}/mes. Dividendos hipotecarios totales: ${CLP(dividendos)}/mes. Utilidad neta de arriendos: ${CLP(utilidadTotal)}/mes. Detalle: ${props.map(p=>`${p.name} [${p.use}] arriendo ${UFf(p.rentUF)} (${CLP(num(p.rent))}), dividendo ${p.hasMortgage?UFf(num(p.dividendoUF))+" ("+CLP(divCLP(p,uf))+")":"sin crédito"}, seguro ${UFf(p.seguroUF)} (${CLP(num(p.seguroIncendioSismo))}/año), contribuciones ${CLP(num(p.contribucionesAnuales))}/año, utilidad mensual ${CLP(utilidadMes(p,uf))}`).join("; ")}. Responde en español, claro y conciso. Si haces cálculos, muéstralos.`;
       const r=await fetch("/api/asistente",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ system:ctx, messages:[...ai.map(m=>({role:m.r==="user"?"user":"assistant",content:m.c})),{role:"user",content:q}], files:adj.map(f=>({media_type:f.media,data:f.b64,name:f.name})) }) });
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      const d=await r.json(); const t=d.text||"No pude procesar la consulta.";
+      // Mostramos el motivo real que devuelve el servidor (por ejemplo, que falta
+      // configurar la clave de la IA en Netlify) en vez de un mensaje genérico.
+      const d=await r.json().catch(()=>null);
+      if(!r.ok){ setAi(a=>[...a,{r:"ai",c:(d&&d.error)?("No pude responder: "+d.error):("No pude responder (error "+r.status+"). Revisa el registro de funciones en Netlify.")}]); setAiLoad(false); return; }
+      const t=(d&&d.text)||"No pude procesar la consulta.";
       setAi(a=>[...a,{r:"ai",c:t}]);
-    }catch(e){ setAi(a=>[...a,{r:"ai",c:"No pude conectar con el asistente. Si estás en la vista previa local, recuerda que el asistente funciona una vez publicado el sitio en Netlify."}]); }
+    }catch(e){ setAi(a=>[...a,{r:"ai",c:"No pude conectar con el asistente ("+(e&&e.message?e.message:"error de red")+"). Si estás en la vista previa local, recuerda que el asistente funciona una vez publicado el sitio en Netlify."}]); }
     setAiLoad(false); };
 
   /* ---- Comandos rápidos del asistente: responden al instante con datos locales ---- */
@@ -3372,8 +3389,9 @@ function App(){
   const compartirFichaCompletaSMS=(p,f)=>{ window.location.href="sms:?&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
 
   /* ---------- Ficha de Levantamiento (formulario completo alojado en /levantamiento/) ---------- */
-  const LEV_URL="/levantamiento/";
-  const levLink=()=> ((typeof location!=="undefined" && location.origin && location.origin!=="null") ? location.origin : "https://10julioplat.netlify.app") + LEV_URL;
+  // La Ficha de Levantamiento vive en su propio sitio, con su lector de documentos.
+  const LEV_URL="https://fichacompletapropiedadescgvd.com";
+  const levLink=()=> LEV_URL;
   const abrirLevantamiento=()=> window.open(LEV_URL,"_blank","noopener");
   const compartirLevWA=()=> window.open("https://wa.me/?text="+encodeURIComponent("Completa la Ficha de Levantamiento de la propiedad aquí: "+levLink()),"_blank","noopener");
   const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
