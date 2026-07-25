@@ -8,7 +8,7 @@ import type { Context, Config } from '@netlify/functions'
 //   { mode:"extraer", files:[{media_type,data,name}], propiedades?:[{id,nombre,direccion}] } -> { text, datos }
 
 const API = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-sonnet-4-6'
+const MODEL = 'claude-opus-5'
 
 type Archivo = { media_type?: string; data?: string; name?: string }
 
@@ -69,7 +69,9 @@ export default async (req: Request, _context: Context) => {
         headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: 4096,
+          // El modelo razona dentro de este mismo tope, así que dejamos holgura
+          // para que el JSON de salida no se corte a la mitad.
+          max_tokens: 16000,
           system: EXTRACCION + hint,
           messages: [{ role: 'user', content: [...adjuntos, { type: 'text', text: 'Extrae los datos de estos documentos según el formato indicado.' }] }],
         }),
@@ -102,13 +104,17 @@ export default async (req: Request, _context: Context) => {
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2048,
+        // Incluye el razonamiento del modelo, por eso el tope es holgado.
+        max_tokens: 8192,
         system: String(body.system || 'Eres el asistente experto de la plataforma chilena de administración de propiedades ArriendoPro. Responde en español, claro, concreto y con cifras cuando corresponda.'),
         messages: contenido,
       }),
     })
     const j: any = await r.json()
     if (!r.ok) return Response.json({ error: j?.error?.message || 'Error de la API de IA' }, { status: 502 })
+    if (j.stop_reason === 'refusal') {
+      return Response.json({ text: 'No puedo responder esa consulta. Reformúlala o pregunta algo distinto sobre tus propiedades.' })
+    }
     const texto = (j.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('\n')
     return Response.json({ text: texto || 'Sin respuesta.' })
   } catch (e: any) {
