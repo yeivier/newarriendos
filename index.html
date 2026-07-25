@@ -471,6 +471,53 @@
   .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:13.5px}
   .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
   .ai-disclaimer{font-size:10.5px;color:var(--faint);text-align:center;margin-top:6px}
+
+  /* ---- Asesor inmobiliario: tarjetas, comparación y estados ---- */
+  .ai-online{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:6px;vertical-align:middle}
+  .ai-bubble.err{background:var(--red-bg);border-color:var(--red-soft);color:var(--red-d)}
+  .ai-empty .ai-ejemplos{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+  .ai-empty .ai-ejemplos button{border:1px solid var(--line);background:var(--card);border-radius:11px;padding:9px 11px;font:600 12.5px var(--font);color:var(--muted);cursor:pointer;text-align:left;line-height:1.4}
+  .ai-empty .ai-ejemplos button:hover{border-color:var(--brand);color:var(--brand-d);background:var(--brand-bg)}
+
+  /* Tarjetas de propiedad: se desplazan en horizontal dentro del chat. */
+  .ai-cards{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 6px;scroll-snap-type:x mandatory}
+  .pcard{flex:0 0 205px;scroll-snap-align:start;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:0 3px 12px rgba(16,24,40,.07);display:flex;flex-direction:column}
+  .pcard-img{height:112px;background:var(--panel2) center/cover no-repeat;position:relative;display:flex;align-items:center;justify-content:center}
+  .pcard-ph{font-size:34px;opacity:.35}
+  .pcard-tag{position:absolute;left:8px;top:8px;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:.2px}
+  .pcard-tag.ok{background:var(--green-bg);color:var(--green-d);border:1px solid var(--green-soft)}
+  .pcard-tag.busy{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .pcard-body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:3px;flex:1}
+  .pcard-price{font-size:16.5px;font-weight:800;color:var(--ink);line-height:1.2}
+  .pcard-price small{font-size:11.5px;font-weight:600;color:var(--muted)}
+  .pcard-name{font-size:12.5px;font-weight:700;color:var(--text);line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .pcard-loc{font-size:11.5px;color:var(--muted)}
+  .pcard-specs{display:flex;flex-wrap:wrap;gap:7px;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px}
+  .pcard-libre{font-size:11px;color:var(--amber);font-weight:700;margin-top:2px}
+  .pcard-gc{font-size:11px;color:var(--faint);font-weight:600}
+  .pcard-btn{margin-top:9px;border:none;border-radius:9px;background:var(--brand);color:#141419;font:800 12.5px var(--font);padding:9px;cursor:pointer;width:100%}
+  .pcard-btn:hover{background:var(--brand-d);color:#fff}
+
+  .ai-compare{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card)}
+  .ai-compare table{width:100%;border-collapse:collapse;font-size:12px}
+  .ai-compare th,.ai-compare td{padding:7px 9px;border-bottom:1px solid var(--line2);text-align:left}
+  .ai-compare th{background:var(--panel2);font-size:11px;font-weight:800;color:var(--ink)}
+  .ai-compare td:first-child{color:var(--muted);font-weight:700;white-space:nowrap}
+  .ai-compare-btns{display:flex;gap:6px;padding:9px;flex-wrap:wrap}
+  .ai-compare-btns button{flex:1;min-width:110px;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px;font:700 11.5px var(--font);cursor:pointer;color:var(--ink)}
+  .ai-compare-btns button:hover{border-color:var(--brand);background:var(--brand-bg)}
+
+  .ai-derivar{border:1px solid var(--brand-soft);background:var(--brand-bg);border-radius:13px;padding:13px 14px}
+  .ai-derivar-t{font-weight:800;color:var(--ink);font-size:13.5px}
+  .ai-derivar-d{font-size:12.5px;color:var(--brand-d);margin-top:3px}
+  .ai-derivar-wa{display:inline-block;margin-top:9px;background:#25D366;color:#fff;font:800 12.5px var(--font);padding:9px 14px;border-radius:9px}
+
+  /* Puntos animados mientras el asesor piensa. */
+  .ai-typing{display:flex;gap:4px;align-items:center;padding:13px 14px}
+  .ai-typing span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:aiDot 1.1s infinite}
+  .ai-typing span:nth-child(2){animation-delay:.15s}
+  .ai-typing span:nth-child(3){animation-delay:.3s}
+  @keyframes aiDot{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
   /* En el celular usamos 100dvh (alto real visible): con 100vh el panel queda
      tapado por la barra del navegador y el campo de escribir no se alcanza.
      El env(safe-area-inset-bottom) lo sube sobre la barra de gestos al usarla
@@ -1742,6 +1789,117 @@ const FAQ=[
 /* ============================ APP ============================ */
 /* ============================ CRM / LEADS ============================ */
 const isoInDays=(n)=>{ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+
+/* ==================== ASESOR INMOBILIARIO DIGITAL ====================
+   Motor que consultan las herramientas del asesor. Trabaja siempre sobre el
+   estado vivo de la aplicación, así que nunca entrega precios ni
+   disponibilidad desactualizados. */
+
+const ASESOR_CHAT_KEY="ap_asesor_chat", ASESOR_MET_KEY="ap_asesor_metricas";
+
+/* Se puede arrendar ahora: está en el catálogo de arriendo y sin arrendatario. */
+const asDisponible=(p)=> p.use==="arriendo" && !String(p.tenant||"").trim();
+const asPrecio=(p,op)=> op==="venta" ? num(p.tasacion) : num(p.rent);
+const asFoto=(p)=>{ const f=(p.fotos||[])[0]; return (f&&(f.url||f))||""; };
+
+/* Ficha compacta: es a la vez lo que lee el modelo y lo que dibuja la tarjeta. */
+const asFicha=(p,op)=>{
+  const precio=asPrecio(p,op), libre=asDisponible(p);
+  return { id:String(p.id), nombre:p.name||"Propiedad", tipo:p.type||"", operacion:op||"arriendo",
+    comuna:p.comuna||"", region:p.region||"", direccion:p.address||"",
+    precio, precio_texto: precio?CLP(precio):"A consultar",
+    dormitorios:num(p.bedrooms), banos:num(p.bathrooms),
+    estacionamientos:num(p.parking), bodegas:num(p.bodega),
+    superficie:num(p.surfaceBuilt), superficie_terreno:num(p.surfaceTerrain),
+    gasto_comun:num(p.gastoComun), orientacion:p.orientation||"", piso:p.floor||"",
+    anio:p.constructionYear||"", estado_conservacion:p.condition||"",
+    disponible:libre, disponible_desde: libre?"ahora":(p.contractEnd||"por confirmar"),
+    foto:asFoto(p) };
+};
+
+/* Búsqueda. Devuelve también las ocupadas (con la fecha en que se liberan)
+   porque en una cartera en administración casi todo está arrendado: filtrar
+   solo lo disponible dejaría al asesor sin nada que mostrar. Lo disponible
+   va primero. */
+const asBuscar=(props,f)=>{
+  f=f||{};
+  const op = f.operacion==="venta" ? "venta" : "arriendo";
+  const comunas=String(f.comuna||"").toLowerCase().split(",").map(s=>s.trim()).filter(Boolean);
+  const tipo=String(f.tipo||"").toLowerCase().trim();
+  const base=props.filter(p=> op==="venta" ? true : p.use==="arriendo");
+  const out=base.filter(p=>{
+    const precio=asPrecio(p,op);
+    if(comunas.length && !comunas.some(c=>String(p.comuna||"").toLowerCase().includes(c))) return false;
+    if(f.region && !String(p.region||"").toLowerCase().includes(String(f.region).toLowerCase())) return false;
+    if(tipo && !String(p.type||"").toLowerCase().includes(tipo)) return false;
+    if(f.precio_max && precio && precio>num(f.precio_max)) return false;
+    if(f.precio_min && precio && precio<num(f.precio_min)) return false;
+    if(f.dormitorios_min && num(p.bedrooms)<num(f.dormitorios_min)) return false;
+    if(f.banos_min && num(p.bathrooms)<num(f.banos_min)) return false;
+    if(f.estacionamiento && num(p.parking)<1) return false;
+    if(f.bodega && num(p.bodega)<1) return false;
+    if(f.superficie_min && num(p.surfaceBuilt)<num(f.superficie_min)) return false;
+    if(f.solo_disponibles && !asDisponible(p)) return false;
+    return true;
+  }).sort((a,b)=>{ const d=(asDisponible(b)?1:0)-(asDisponible(a)?1:0); return d || (asPrecio(a,op)-asPrecio(b,op)); });
+  const lim=Math.max(1,Math.min(6,num(f.limite)||4));
+  return { total_encontradas:out.length, disponibles_ahora:out.filter(asDisponible).length,
+    resultados:out.slice(0,lim).map(p=>asFicha(p,op)) };
+};
+
+/* Similares: cercanía por comuna, tipo, dormitorios y distancia de precio. */
+const asSimilares=(props,id,masBarata)=>{
+  const base=props.find(p=>String(p.id)===String(id));
+  if(!base) return { error:"No encontré esa propiedad en el catálogo." };
+  const op = base.use==="arriendo" ? "arriendo" : "venta";
+  const pBase=asPrecio(base,op);
+  const cand=props.filter(p=>String(p.id)!==String(id) && p.use===base.use)
+    .filter(p=> masBarata ? (asPrecio(p,op)>0 && asPrecio(p,op)<pBase) : true)
+    .map(p=>({ p, d:
+      Math.abs(num(p.bedrooms)-num(base.bedrooms))*2 +
+      (String(p.comuna||"")===String(base.comuna||"") ? 0 : 3) +
+      (String(p.type||"")===String(base.type||"") ? 0 : 2) +
+      (pBase ? Math.abs(asPrecio(p,op)-pBase)/Math.max(pBase,1)*4 : 0) }))
+    .sort((a,b)=>a.d-b.d).slice(0,4).map(x=>asFicha(x.p,op));
+  return { referencia:asFicha(base,op), resultados:cand };
+};
+
+const asComparar=(props,ids)=>{
+  const sel=(ids||[]).map(id=>props.find(p=>String(p.id)===String(id))).filter(Boolean);
+  if(sel.length<2) return { error:"Necesito al menos dos propiedades válidas para comparar." };
+  return { comparacion: sel.slice(0,3).map(p=>asFicha(p, p.use==="arriendo"?"arriendo":"venta")) };
+};
+
+/* Cuánto cuesta entrar: primer mes, garantía y renta líquida sugerida. */
+const asCostos=(props,id,montoManual)=>{
+  const p = id ? props.find(x=>String(x.id)===String(id)) : null;
+  const arriendo = p ? num(p.rent) : num(montoManual);
+  if(!arriendo) return { error:"Necesito el arriendo mensual o el id de una propiedad." };
+  const gc = p ? num(p.gastoComun) : 0;
+  const garantia = p ? (num(p.deposit)||arriendo) : arriendo;
+  const inicial = arriendo+garantia+gc, mensual = arriendo+gc;
+  return { propiedad: p?p.name:null,
+    arriendo_mensual:arriendo, arriendo_texto:CLP(arriendo),
+    gasto_comun:gc, gasto_comun_texto: gc?CLP(gc):"no informado",
+    garantia, garantia_texto:CLP(garantia),
+    total_primer_mes:inicial, total_primer_mes_texto:CLP(inicial),
+    costo_mensual_total:mensual, costo_mensual_texto:CLP(mensual),
+    renta_liquida_sugerida:arriendo*3, renta_liquida_texto:CLP(arriendo*3) };
+};
+
+/* Resumen liviano del catálogo: le da criterio al asesor sin que tenga que
+   buscar en cada turno. El detalle exacto siempre sale de las herramientas. */
+const asResumenCatalogo=(props,uf,empresa,contacto,lead)=>{
+  const arr=props.filter(p=>p.use==="arriendo");
+  const precios=arr.map(p=>num(p.rent)).filter(n=>n>0);
+  return { fecha:new Date().toLocaleDateString("es-CL"), empresa, contacto, uf:Math.round(num(uf)),
+    total:props.length, disponibles:arr.filter(asDisponible).length,
+    comunas:[...new Set(props.map(p=>p.comuna).filter(Boolean))].slice(0,20),
+    tipos:[...new Set(props.map(p=>p.type).filter(Boolean))],
+    rango: precios.length ? { min:Math.min(...precios), max:Math.max(...precios) } : null,
+    lead: lead || null };
+};
+
 const CRM_ESTADOS=[
   {id:"nuevo",label:"Nuevo",color:"#64748b"},
   {id:"contactado",label:"Contactado",color:"#1F3A5C"},
@@ -2310,11 +2468,33 @@ function App(){
   const [cEdit,setCEdit]=useState(null); // editor general de contactos / arrendatarios anteriores
   const [mFicha,setMFicha]=useState(null), [fForm,setFForm]=useState(null), [fichaPreview,setFichaPreview]=useState(null), [fichaPubURL,setFichaPubURL]=useState("");
   const [ai,setAi]=useState(()=>store.get("ap_ai_chat",[])), [aiIn,setAiIn]=useState(""), [aiLoad,setAiLoad]=useState(false);
-  const [aiOpen,setAiOpen]=useState(false);
-  const aiFloatEnd=useRef(null);
   useEffect(()=>{ store.set("ap_ai_chat",ai.slice(-40)); },[ai]);
-  useEffect(()=>{ if(aiOpen) setTimeout(()=>aiFloatEnd.current&&aiFloatEnd.current.scrollIntoView({behavior:"smooth"}),40); },[ai,aiLoad,aiOpen]);
   const chatRef=useRef(null);
+
+  /* ---- Asesor inmobiliario digital (chat flotante con herramientas) ---- */
+  const [asOpen,setAsOpen]=useState(false);
+  // Historial visible (burbujas + tarjetas) y transcripción para el modelo.
+  const [asChat,setAsChat]=useState(()=>store.get(ASESOR_CHAT_KEY,[]));
+  const [asMsgs,setAsMsgs]=useState(()=>store.get(ASESOR_CHAT_KEY+"_raw",[]));
+  const [asIn,setAsIn]=useState(""), [asBusy,setAsBusy]=useState(false);
+  const [asLeadId,setAsLeadId]=useState(()=>store.get("ap_asesor_lead",""));
+  const [asMet,setAsMet]=useState(()=>store.get(ASESOR_MET_KEY,{consultas:0,busquedas:0,leads:0,visitas:0,derivaciones:0,propiedades:{}}));
+  const asEnd=useRef(null);
+  useEffect(()=>{ store.set(ASESOR_CHAT_KEY,asChat.slice(-60)); },[asChat]);
+  useEffect(()=>{ store.set(ASESOR_CHAT_KEY+"_raw",asMsgs.slice(-40)); },[asMsgs]);
+  useEffect(()=>{ store.set("ap_asesor_lead",asLeadId); },[asLeadId]);
+  useEffect(()=>{ store.set(ASESOR_MET_KEY,asMet); },[asMet]);
+  useEffect(()=>{ if(asOpen) setTimeout(()=>asEnd.current&&asEnd.current.scrollIntoView({behavior:"smooth"}),50); },[asChat,asBusy,asOpen]);
+  const asMetrica=(campo,propId)=>setAsMet(m=>{
+    const n={...m,propiedades:{...(m.propiedades||{})}};
+    if(campo) n[campo]=(m[campo]||0)+1;
+    if(propId) n.propiedades[propId]=(n.propiedades[propId]||0)+1;
+    return n;
+  });
+  // El id del contacto recién creado debe estar disponible en el mismo turno
+  // (el modelo puede registrar y agendar en una sola respuesta), y el estado de
+  // React todavía no se ha actualizado a esa altura.
+  const asLeadRef=useRef(store.get("ap_asesor_lead",""));
 
   /* ---- Nuevas funciones: incidencias, bitácora, indicadores ---- */
   const [mInc,setMInc]=useState(null), [incForm,setIncForm]=useState(blankInc);
@@ -2659,6 +2839,144 @@ function App(){
       setAi(a=>[...a,{r:"ai",c:t}]);
     }catch(e){ setAi(a=>[...a,{r:"ai",c:"No pude conectar con el asistente ("+(e&&e.message?e.message:"error de red")+"). Si estás en la vista previa local, recuerda que el asistente funciona una vez publicado el sitio en Netlify."}]); }
     setAiLoad(false); };
+
+  /* ==================== Herramientas del asesor inmobiliario ====================
+     El modelo pide una herramienta; se ejecuta aquí, contra el estado vivo de la
+     aplicación, y se le devuelve el resultado. Por eso nunca entrega precios ni
+     disponibilidad desactualizados. */
+
+  const asEmpresa=()=> (socs[0]&&socs[0].name)||(owner&&owner.name)||"New Arriendos";
+  const asContacto=()=> [owner&&owner.name, owner&&owner.phone, owner&&owner.email].filter(Boolean).join(" · ");
+  const asLeadId2=()=> asLeadRef.current||asLeadId;
+  const asLeadActual=()=>{ const id=asLeadId2(); return id?(leads.find(l=>l.id===id)||null):null; };
+
+  /* Crea o actualiza el contacto en el CRM (el mismo embudo que ya usas). */
+  const asGuardarLead=(d)=>{
+    const previo=asLeadActual();
+    const campos={
+      nombre:d.nombre||(previo&&previo.nombre)||"Contacto del asesor",
+      telefono:d.telefono||(previo&&previo.telefono)||"",
+      email:d.email||(previo&&previo.email)||"",
+      comuna:d.comuna||(previo&&previo.comuna)||"",
+      presupuesto:d.presupuesto?String(Math.round(num(d.presupuesto))):((previo&&previo.presupuesto)||""),
+      dorms:d.dormitorios?String(d.dormitorios):((previo&&previo.dorms)||""),
+      tipoBusqueda:d.tipo_busqueda||(previo&&previo.tipoBusqueda)||"arriendo",
+      propInteres:d.propiedad_id||(previo&&previo.propInteres)||"",
+      notas:d.notas||(previo&&previo.notas)||"" };
+    const idPrevio=asLeadId2();
+    if(idPrevio){
+      setLeads(ls=>ls.map(l=>l.id===idPrevio?{...l,...campos,actualizado:Date.now()}:l));
+      return { ok:true, actualizado:true, lead_id:idPrevio, mensaje:"Datos actualizados en el CRM." };
+    }
+    const id="ld"+Date.now().toString(36);
+    asLeadRef.current=id; setAsLeadId(id);
+    setLeads(ls=>[{ id, ...campos, fuente:"Web", estado:"calificado", valorUF:"",
+      creado:Date.now(), actualizado:Date.now(),
+      interacciones:[{id:"i"+Date.now().toString(36),fecha:Date.now(),canal:"Otro",texto:"Conversación con el asesor digital de la web."}],
+      visitas:[], tareas:[] }, ...ls]);
+    asMetrica("leads");
+    notify("Nuevo contacto capturado por el asesor: "+campos.nombre);
+    return { ok:true, creado:true, lead_id:id, mensaje:"Contacto registrado en el CRM como lead calificado." };
+  };
+
+  const asAgendar=(d)=>{
+    const id=asLeadId2();
+    if(!id) return { error:"Todavía no tengo los datos de la persona. Usa registrar_lead antes de agendar." };
+    const prop=d.propiedad_id?props.find(p=>String(p.id)===String(d.propiedad_id)):null;
+    const v={ id:"v"+Date.now().toString(36), fecha:d.fecha||isoInDays(1), hora:d.hora||"",
+      propId:prop?String(prop.id):"", estado:"agendada", notas:d.notas||"" };
+    setLeads(ls=>ls.map(l=>l.id===id?{...l, estado:"visita", actualizado:Date.now(), visitas:[...(l.visitas||[]),v]}:l));
+    asMetrica("visitas", prop?String(prop.id):null);
+    notify("Visita agendada por el asesor para el "+v.fecha);
+    return { ok:true, mensaje:"Visita agendada y registrada en el CRM.", fecha:v.fecha, hora:v.hora||"por confirmar",
+      propiedad: prop?prop.name:"por definir" };
+  };
+
+  const asDerivar=(motivo)=>{
+    const id=asLeadId2();
+    const tel=String((owner&&owner.whatsapp)||(owner&&owner.phone)||"").replace(/[^\d]/g,"");
+    if(id) setLeads(ls=>ls.map(l=>l.id===id?{...l,
+      estado:l.estado==="visita"?l.estado:"contactado", actualizado:Date.now(),
+      notas:(l.notas?l.notas+" · ":"")+"Derivado por el asesor: "+motivo,
+      interacciones:[...(l.interacciones||[]),{id:"i"+Date.now().toString(36),fecha:Date.now(),canal:"Otro",texto:"Derivado a un asesor humano: "+motivo}]}:l));
+    asMetrica("derivaciones");
+    notify("El asesor derivó una conversación a un ejecutivo");
+    return { ok:true, mensaje:"Conversación derivada. Un ejecutivo continuará el contacto.",
+      asesor:(owner&&owner.name)||"Equipo "+asEmpresa(), telefono:(owner&&owner.phone)||"",
+      email:(owner&&owner.email)||"",
+      whatsapp: tel?("https://wa.me/"+(tel.indexOf("56")===0?tel:"56"+tel)):"" };
+  };
+
+  const asEjecutar=(nombre,input)=>{
+    const i=input||{};
+    try{
+      if(nombre==="buscar_propiedades"){
+        const r=asBuscar(props,i); asMetrica("busquedas");
+        (r.resultados||[]).forEach(f=>asMetrica(null,f.id));
+        return r;
+      }
+      if(nombre==="ver_propiedad"){
+        const p=props.find(x=>String(x.id)===String(i.id));
+        if(!p) return { error:"No encontré esa propiedad en el catálogo." };
+        asMetrica(null,String(p.id));
+        return { propiedad: asFicha(p, p.use==="arriendo"?"arriendo":"venta") };
+      }
+      if(nombre==="propiedades_similares"){ const r=asSimilares(props,i.id,!!i.mas_barata); asMetrica("busquedas"); return r; }
+      if(nombre==="comparar_propiedades") return asComparar(props,i.ids);
+      if(nombre==="calcular_costos") return asCostos(props,i.id,i.monto_arriendo);
+      if(nombre==="registrar_lead") return asGuardarLead(i);
+      if(nombre==="agendar_visita") return asAgendar(i);
+      if(nombre==="derivar_asesor") return asDerivar(i.motivo||"Solicitud del usuario");
+      return { error:"Herramienta desconocida: "+nombre };
+    }catch(e){ return { error:"No pude ejecutar esa acción: "+((e&&e.message)||"error") }; }
+  };
+
+  /* Bucle de conversación: el modelo puede pedir varias herramientas seguidas
+     (buscar, luego comparar, luego registrar) antes de dar su respuesta final. */
+  const asEnviar=async(textoUsuario)=>{
+    const q=String(textoUsuario||"").trim();
+    if(!q||asBusy) return;
+    setAsIn(""); setAsBusy(true); asMetrica("consultas");
+    setAsChat(c=>[...c,{r:"user",c:q}]);
+    let msgs=[...asMsgs,{role:"user",content:q}];
+    const l=asLeadActual();
+    const contexto=asResumenCatalogo(props,uf,asEmpresa(),asContacto(),
+      l?(l.nombre+(l.telefono?" · "+l.telefono:"")+(l.email?" · "+l.email:"")):null);
+    try{
+      for(let paso=0; paso<6; paso++){
+        const r=await fetch("/api/asesor",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({messages:msgs,contexto})});
+        const d=await r.json().catch(()=>null);
+        if(!r.ok){
+          setAsChat(c=>[...c,{r:"ai",c:(d&&d.error)?d.error:("No pude responder (error "+r.status+")."),err:true}]);
+          break;
+        }
+        const bloques=d.content||[];
+        msgs=[...msgs,{role:"assistant",content:bloques}];
+        const usos=bloques.filter(b=>b.type==="tool_use");
+        const dicho=bloques.filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+        if(dicho) setAsChat(c=>[...c,{r:"ai",c:dicho}]);
+        if(!usos.length){ setAsMsgs(msgs); break; }
+        const resultados=usos.map(u=>{
+          const salida=asEjecutar(u.name,u.input);
+          // Lo que se puede mostrar visualmente se dibuja como tarjeta o tabla.
+          if(salida&&salida.resultados&&salida.resultados.length) setAsChat(c=>[...c,{r:"ai",fichas:salida.resultados}]);
+          else if(salida&&salida.propiedad) setAsChat(c=>[...c,{r:"ai",fichas:[salida.propiedad]}]);
+          else if(salida&&salida.comparacion) setAsChat(c=>[...c,{r:"ai",comparacion:salida.comparacion}]);
+          else if(salida&&salida.whatsapp!==undefined) setAsChat(c=>[...c,{r:"ai",derivacion:salida}]);
+          return { type:"tool_result", tool_use_id:u.id, content:JSON.stringify(salida).slice(0,12000) };
+        });
+        msgs=[...msgs,{role:"user",content:resultados}];
+        setAsMsgs(msgs);
+      }
+    }catch(e){
+      setAsChat(c=>[...c,{r:"ai",c:"No pude conectar con el asesor ("+((e&&e.message)||"error de red")+"). Revisa tu conexión.",err:true}]);
+    }
+    setAsBusy(false);
+  };
+
+  const asReiniciar=()=>{ setAsChat([]); setAsMsgs([]); setAsLeadId(""); asLeadRef.current=""; };
+  const asVerPropiedad=(id)=>{ const p=props.find(x=>String(x.id)===String(id)); if(p){ setSel(p); setTab("props"); setFilter("todas"); setAsOpen(false); asMetrica(null,String(id)); } };
 
   /* ---- Comandos rápidos del asistente: responden al instante con datos locales ---- */
   const fmtLista = (arr)=> arr.length ? arr.map(s=>"• "+s).join("\n") : "—";
@@ -5534,31 +5852,101 @@ function App(){
       <div className="modal-foot"><button className="btn btn-out" style={{flex:1}} onClick={()=>setMInfo(false)}>Cerrar</button></div>
     </div></div>}
 
-    {/* Asistente IA flotante global */}
-    {aiOpen && <div className="ai-float" role="dialog" aria-label="Asistente IA de ArriendoPro">
+    {/* Asesor inmobiliario digital (flotante, disponible en toda la plataforma) */}
+    {asOpen && <div className="ai-float" role="dialog" aria-label="Asesor inmobiliario de New Arriendos">
       <div className="ai-float-head">
-        <div className="ai-avatar">A</div>
-        <div><div className="title">Asistente ArriendoPro</div><div className="sub">Conectado a los datos actuales de tu cartera</div></div>
-        <button className="ai-close" onClick={()=>setAiOpen(false)} aria-label="Cerrar">×</button>
+        <div className="ai-avatar">✦</div>
+        <div style={{minWidth:0,flex:1}}>
+          <div className="title">Asesor {asEmpresa()}</div>
+          <div className="sub"><span className="ai-online"></span>En línea · responde al instante</div>
+        </div>
+        {asChat.length>0 && <button className="ai-close" onClick={asReiniciar} aria-label="Nueva conversación" title="Nueva conversación">⟲</button>}
+        <button className="ai-close" onClick={()=>setAsOpen(false)} aria-label="Cerrar">×</button>
       </div>
+
       <div className="ai-quick">
-        {["Resume mi cartera","¿Quién está atrasado?","Calcula la utilidad mensual","¿Qué contratos vencen pronto?"].map(q=><button key={q} onClick={()=>{setAiIn(q);setTimeout(()=>document.getElementById("aiFloatInput")?.focus(),0)}}>{q}</button>)}
+        {[["🏠","Busco arriendo"],["📅","Agendar visita"],["💰","¿Qué requisitos piden?"],["📞","Hablar con un asesor"],["📝","Quiero publicar mi propiedad"]]
+          .map(([ico,q])=><button key={q} onClick={()=>asEnviar(q)} disabled={asBusy}>{ico} {q}</button>)}
       </div>
+
       <div className="ai-messages">
-        {!ai.length && !aiLoad && <div className="ai-empty"><div className="big">✦</div><b>¿Qué necesitas revisar?</b><span>Pregunta por cobros, dividendos, utilidad, contratos o cualquier propiedad.</span></div>}
-        {ai.map((m,i)=><div key={i} className={"ai-row "+(m.r==="user"?"user":"bot")}><div className="ai-bubble">{m.c}</div></div>)}
-        {aiLoad && <div className="ai-row bot"><div className="ai-bubble">Analizando tu cartera…</div></div>}
-        <div ref={aiFloatEnd}></div>
+        {!asChat.length && !asBusy && <div className="ai-empty">
+          <div className="big">👋</div>
+          <b>Hola, soy tu asesor de {asEmpresa()}</b>
+          <span>Cuéntame qué buscas y te muestro opciones al tiro.<br/>Puedo <b>buscar propiedades</b>, <b>agendar una visita</b>, resolver dudas o <b>derivarte a un ejecutivo</b>.</span>
+          <div className="ai-ejemplos">
+            {["Busco depto de 2D en Las Condes hasta 900 lucas","¿Qué documentos necesito para arrendar?","Muéstrame casas en Ñuñoa"]
+              .map(e=><button key={e} onClick={()=>asEnviar(e)}>“{e}”</button>)}
+          </div>
+        </div>}
+
+        {asChat.map((m,i)=>{
+          if(m.fichas) return (<div key={i} className="ai-cards">
+            {m.fichas.map(f=>(<div key={f.id} className="pcard">
+              <div className="pcard-img" style={f.foto?{backgroundImage:"url("+f.foto+")"}:undefined}>
+                {!f.foto && <span className="pcard-ph">🏠</span>}
+                <span className={"pcard-tag "+(f.disponible?"ok":"busy")}>{f.disponible?"Disponible":"Arrendada"}</span>
+              </div>
+              <div className="pcard-body">
+                <div className="pcard-price">{f.precio_texto}{f.operacion==="arriendo"&&f.precio?<small>/mes</small>:null}</div>
+                <div className="pcard-name">{f.nombre}</div>
+                <div className="pcard-loc">{[f.comuna,f.region].filter(Boolean).join(", ")||f.direccion}</div>
+                <div className="pcard-specs">
+                  {f.dormitorios>0 && <span>🛏 {f.dormitorios}D</span>}
+                  {f.banos>0 && <span>🚿 {f.banos}B</span>}
+                  {f.superficie>0 && <span>📐 {f.superficie} m²</span>}
+                  {f.estacionamientos>0 && <span>🚗 {f.estacionamientos}</span>}
+                </div>
+                {!f.disponible && f.disponible_desde && <div className="pcard-libre">Se libera: {f.disponible_desde}</div>}
+                {f.gasto_comun>0 && <div className="pcard-gc">Gasto común {CLP(f.gasto_comun)}</div>}
+                <button className="pcard-btn" onClick={()=>asVerPropiedad(f.id)}>Ver propiedad</button>
+              </div>
+            </div>))}
+          </div>);
+
+          if(m.comparacion) return (<div key={i} className="ai-compare">
+            <table>
+              <thead><tr><th></th>{m.comparacion.map(f=><th key={f.id}>{f.nombre}</th>)}</tr></thead>
+              <tbody>
+                <tr><td>Precio</td>{m.comparacion.map(f=><td key={f.id}><b>{f.precio_texto}</b></td>)}</tr>
+                <tr><td>Comuna</td>{m.comparacion.map(f=><td key={f.id}>{f.comuna||"—"}</td>)}</tr>
+                <tr><td>Dormitorios</td>{m.comparacion.map(f=><td key={f.id}>{f.dormitorios||"—"}</td>)}</tr>
+                <tr><td>Baños</td>{m.comparacion.map(f=><td key={f.id}>{f.banos||"—"}</td>)}</tr>
+                <tr><td>Superficie</td>{m.comparacion.map(f=><td key={f.id}>{f.superficie?f.superficie+" m²":"—"}</td>)}</tr>
+                <tr><td>Estac.</td>{m.comparacion.map(f=><td key={f.id}>{f.estacionamientos||"—"}</td>)}</tr>
+                <tr><td>Gasto común</td>{m.comparacion.map(f=><td key={f.id}>{f.gasto_comun?CLP(f.gasto_comun):"—"}</td>)}</tr>
+                <tr><td>Estado</td>{m.comparacion.map(f=><td key={f.id}>{f.disponible?"Disponible":"Arrendada"}</td>)}</tr>
+              </tbody>
+            </table>
+            <div className="ai-compare-btns">{m.comparacion.map(f=><button key={f.id} onClick={()=>asVerPropiedad(f.id)}>Ver {f.nombre}</button>)}</div>
+          </div>);
+
+          if(m.derivacion) return (<div key={i} className="ai-derivar">
+            <div className="ai-derivar-t">📞 Te derivo con un asesor</div>
+            <div className="ai-derivar-d">{m.derivacion.asesor}{m.derivacion.telefono?" · "+m.derivacion.telefono:""}</div>
+            {m.derivacion.whatsapp && <a className="ai-derivar-wa" href={m.derivacion.whatsapp} target="_blank" rel="noopener">Escribir por WhatsApp</a>}
+          </div>);
+
+          return (<div key={i} className={"ai-row "+(m.r==="user"?"user":"bot")}>
+            <div className={"ai-bubble"+(m.err?" err":"")}>{m.c}</div>
+          </div>);
+        })}
+
+        {asBusy && <div className="ai-row bot"><div className="ai-bubble ai-typing"><span></span><span></span><span></span></div></div>}
+        <div ref={asEnd}></div>
       </div>
+
       <div className="ai-compose">
         <div className="ai-compose-row">
-          <textarea id="aiFloatInput" className="input" value={aiIn} onChange={e=>setAiIn(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendAi();}}} placeholder="Escribe tu consulta…" />
-          <button className="btn btn-red ai-send" onClick={sendAi} disabled={aiLoad||!aiIn.trim()} aria-label="Enviar">➤</button>
+          <textarea id="asesorInput" className="input" value={asIn} onChange={e=>setAsIn(e.target.value)}
+            onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); asEnviar(asIn); } }}
+            placeholder="Ej: busco depto 2D en Providencia…" />
+          <button className="btn btn-red ai-send" onClick={()=>asEnviar(asIn)} disabled={asBusy||!asIn.trim()} aria-label="Enviar">➤</button>
         </div>
-        <div className="ai-disclaimer">La IA puede equivocarse. Verifica decisiones legales o financieras importantes.</div>
+        <div className="ai-disclaimer">Asesor con IA · puede equivocarse. Confirma valores y condiciones antes de decidir.</div>
       </div>
     </div>}
-    <button className="ai-fab" onClick={()=>setAiOpen(o=>!o)} aria-label="Abrir asistente IA" title="Asistente IA">✦<span className="ai-dot"></span></button>
+    <button className="ai-fab" onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario">✦<span className="ai-dot"></span></button>
 
     {notif && <div className={"notif"+(notif.err?" err":"")}>{notif.msg}</div>}
   </div>);
