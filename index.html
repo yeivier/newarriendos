@@ -2171,6 +2171,61 @@ const asTexto=(t)=>String(t||"").split(/(\*\*[^*]+\*\*)/g).map((p,i)=>
     ? React.createElement("b",{key:i},p.slice(2,-2))
     : p);
 
+/* La API exige que cada bloque de herramienta viaje con su resultado. Si una
+   búsqueda en internet queda a medias (se corta el tiempo, se acaba el tope de
+   texto), el turno queda con una llamada suelta y TODAS las respuestas
+   siguientes fallan con "tool use ... without a corresponding tool_result".
+   Como el historial se guarda en el navegador, ese turno roto se arrastra
+   entre sesiones, así que lo limpiamos antes de enviar. */
+const asEsResultado=(b)=>typeof b.type==="string"&&/_tool_result$/.test(b.type);
+const asSanearBloques=(lista)=>{
+  const bl=(Array.isArray(lista)?lista:[]).filter(b=>b&&typeof b.type==="string");
+  const conResultado=new Set(bl.filter(asEsResultado).map(b=>b.tool_use_id));
+  const llamadas=new Set(bl.filter(b=>b.type==="server_tool_use").map(b=>b.id));
+  return bl.filter(b=>{
+    if(b.type==="server_tool_use") return conResultado.has(b.id);
+    if(asEsResultado(b)&&b.type!=="tool_result") return llamadas.has(b.tool_use_id);
+    return true;
+  });
+};
+const asSanearHistorial=(hist)=>{
+  const out=[]; const pendientes=new Set();
+  (Array.isArray(hist)?hist:[]).forEach(m=>{
+    if(!m||!m.content) return;
+    let bl=typeof m.content==="string"
+      ? (m.content.trim()?[{type:"text",text:m.content}]:[])
+      : (Array.isArray(m.content)?m.content:[]);
+    if(m.role==="assistant"){
+      bl=asSanearBloques(bl);
+      bl.filter(b=>b.type==="tool_use").forEach(b=>pendientes.add(b.id));
+    }else{
+      // Un resultado sin su llamada también invalida la conversación.
+      bl=bl.filter(b=>b&&(b.type!=="tool_result"||pendientes.has(b.tool_use_id)));
+      bl.forEach(b=>pendientes.delete(b.tool_use_id));
+    }
+    if(!bl.length) return;
+    // Si al limpiar quedaron dos turnos seguidos del mismo lado, se juntan:
+    // la API espera que se vayan alternando.
+    const prev=out[out.length-1];
+    if(prev&&prev.role===m.role){
+      const enBloques=(c)=>Array.isArray(c)?c:[{type:"text",text:String(c)}];
+      prev.content=[...enBloques(prev.content),...bl];
+      return;
+    }
+    out.push({role:m.role,content:bl});
+  });
+  // No puede quedar una llamada del asistente esperando respuesta al final.
+  while(out.length){
+    const u=out[out.length-1];
+    const abierta=u.role==="assistant"&&Array.isArray(u.content)&&
+      u.content.some(b=>b.type==="tool_use"&&pendientes.has(b.id));
+    if(!abierta) break;
+    out.pop();
+  }
+  while(out.length&&out[0].role!=="user") out.shift();
+  return out;
+};
+
 const asResumenCatalogo=(props,uf,empresa,contacto,lead)=>{
   const arr=props.filter(p=>p.use==="arriendo");
   const precios=arr.map(p=>num(p.rent)).filter(n=>n>0);
@@ -3266,7 +3321,7 @@ function App(){
               : { type:"image", source:{ type:"base64", media_type:f.media, data:f.b64 } })),
          { type:"text", text:texto }]
       : texto;
-    let msgs=[...asMsgs,{role:"user",content:contenido}];
+    let msgs=[...asSanearHistorial(asMsgs),{role:"user",content:contenido}];
     const l=asLeadActual();
     const contexto=asResumenCatalogo(props,uf,asEmpresa(),asContacto(),
       l?(l.nombre+(l.telefono?" · "+l.telefono:"")+(l.email?" · "+l.email:"")):null);
@@ -3276,12 +3331,20 @@ function App(){
           body:JSON.stringify({messages:msgs,contexto})});
         const d=await r.json().catch(()=>null);
         if(!r.ok){
-          setAsChat(c=>[...c,{r:"ai",c:(d&&d.error)?d.error:("No pude responder (error "+r.status+")."),err:true}]);
+          const agotado=r.status===504||r.status===502||r.status===408;
+          setAsChat(c=>[...c,{r:"ai",err:true,c:(d&&d.error)?d.error
+            :(agotado?"Se me alargó la búsqueda y no alcancé a responder 😅 Pídemelo otra vez acotando la comuna o el presupuesto y lo reviso al tiro."
+                    :("No pude responder (error "+r.status+")."))}]);
           break;
         }
-        // Se reenvía tal cual: los resultados de internet vienen cifrados y
-        // modificarlos hace fallar la siguiente llamada.
-        const bloques=d.content||[];
+        // Los resultados de internet vienen cifrados y modificarlos hace fallar
+        // la siguiente llamada, así que solo sacamos las llamadas que quedaron
+        // sin su resultado (una búsqueda cortada envenena todo el historial).
+        const bloques=asSanearBloques(d.content||[]);
+        if(!bloques.length){
+          setAsChat(c=>[...c,{r:"ai",err:true,c:"La búsqueda quedó a medias. Vuelve a pedírmela, si puede ser más acotada, y la retomo."}]);
+          break;
+        }
         msgs=[...msgs,{role:"assistant",content:bloques}];
         const usos=bloques.filter(b=>b.type==="tool_use");
         const textos=bloques.filter(b=>b.type==="text");

@@ -85,6 +85,14 @@ Cruza lo que encuentres: si dos portales muestran precios muy distintos para lo
 mismo, dilo. Cuando des un precio de mercado, apóyalo en más de una fuente y
 señala el rango (desde–hasta), no un número suelto.
 
+**Busca por tandas cortas.** Cada respuesta tuya tiene que llegar en pocos
+segundos, así que haz como máximo 3 búsquedas por respuesta, cuenta lo que
+encontraste y ofrece seguir revisando más portales en el siguiente mensaje
+("Estos son los que encontré en Portal Inmobiliario y Yapo; ¿reviso también
+TocToc y Goplaceit?"). Barrer el mercado completo es un trabajo de varios
+turnos, no de uno solo: es mejor entregar algo útil ahora y seguir, que
+quedarte buscando tanto rato que la respuesta se caiga.
+
 Cuándo usarla:
 
 - **Siempre parte por buscar_propiedades (el catálogo propio).** Es lo que
@@ -270,14 +278,20 @@ const WEB_TOOLS = [
   {
     type: 'web_search_20260318',
     name: 'web_search',
-    // Barrer varios portales exige varias búsquedas por respuesta. Cada una se
-    // cobra aparte de los tokens, así que el tope acota el costo sin impedir
-    // que compare fuentes.
-    max_uses: 12,
+    // Las funciones de Netlify se cortan a los ~10 segundos y cada búsqueda
+    // suma varios de esos segundos. Con un tope bajo la respuesta alcanza a
+    // llegar; el barrido de varios portales se reparte entre turnos (el
+    // sistema le pide al asesor que busque por tandas cortas y ofrezca seguir).
+    max_uses: 3,
     user_location: { type: 'approximate', country: 'CL', timezone: 'America/Santiago' },
   },
-  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 },
+  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 1 },
 ]
+
+// Margen para responder antes de que Netlify corte la función con un 504 sin
+// cuerpo: preferimos avisar en español a que el navegador reciba una página de
+// error del gateway.
+const TOPE_MS = 8500
 
 const esErrorDeWeb = (msg: string) => /web[ _-]?(search|fetch)/i.test(String(msg || ''))
 
@@ -326,9 +340,10 @@ export default async (req: Request, _context: Context) => {
     .filter(Boolean)
     .join('\n')
 
-  const pedir = (tools: any[]) =>
+  const pedir = (tools: any[], ms: number) =>
     fetch(API, {
       method: 'POST',
+      signal: AbortSignal.timeout(ms),
       headers: {
         'content-type': 'application/json',
         'x-api-key': apiKey,
@@ -346,14 +361,17 @@ export default async (req: Request, _context: Context) => {
       }),
     })
 
+  const inicio = Date.now()
+  const resta = () => Math.max(1500, TOPE_MS - (Date.now() - inicio))
+
   try {
-    let r = await pedir([...TOOLS, ...WEB_TOOLS])
+    let r = await pedir([...TOOLS, ...WEB_TOOLS], resta())
     let j: any = await r.json()
 
     // Si la organización tiene la búsqueda web deshabilitada, reintentamos solo
     // con las herramientas propias en lugar de dejar caído al asesor.
     if (!r.ok && r.status === 400 && esErrorDeWeb(j?.error?.message)) {
-      r = await pedir(TOOLS)
+      r = await pedir(TOOLS, resta())
       j = await r.json()
     }
 
@@ -374,6 +392,20 @@ export default async (req: Request, _context: Context) => {
 
     return Response.json({ stop_reason: j.stop_reason, content: j.content || [] })
   } catch (e: any) {
+    // Se acabó el tiempo: casi siempre es una búsqueda en internet que se
+    // alargó. Respondemos como asesor, no como error técnico, para que la
+    // conversación pueda seguir.
+    if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
+      return Response.json({
+        stop_reason: 'end_turn',
+        content: [
+          {
+            type: 'text',
+            text: 'Se me alargó la búsqueda en internet y no alcancé a responder a tiempo 😅 Pídemelo de nuevo acotando un poco (comuna, presupuesto o un portal en particular) y te lo traigo al tiro.',
+          },
+        ],
+      })
+    }
     return Response.json(
       { error: 'No se pudo contactar la IA: ' + (e?.message || 'error de red') },
       { status: 502 },
