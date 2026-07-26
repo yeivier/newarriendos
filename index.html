@@ -893,6 +893,39 @@ const mapaConsulta = (p)=>{
 };
 const tieneCoords = (p)=>{ const a=parseFloat(p.lat), b=parseFloat(p.lng); return !isNaN(a)&&!isNaN(b)&&(a||b); };
 
+/* Convierte la dirección escrita en coordenadas.
+   Street View de Google solo se puede abrir con coordenadas: con una dirección
+   de texto abre un mapa normal, nunca la vista de calle. Por eso, sin
+   coordenadas, no basta con arreglar el enlace: hay que ubicar la propiedad.
+   Se usa el geocodificador de OpenStreetMap, que es abierto y no pide clave. */
+const geocodificar = async (dir)=>{
+  const q=String(dir||"").trim();
+  if(!q) return null;
+  const url="https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=cl&q="+encodeURIComponent(q);
+  const r=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  if(!Array.isArray(j)||!j.length) return null;
+  const lat=parseFloat(j[0].lat), lng=parseFloat(j[0].lon);
+  return (isNaN(lat)||isNaN(lng)) ? null : { lat, lng };
+};
+
+/* Busca la dirección completa y, si no aparece, reintenta sin el número: en
+   pueblos chicos muchas veces solo está mapeada la calle. */
+const ubicarDireccion = async (p)=>{
+  const cola=[p.comuna,p.region,"Chile"].filter(Boolean).join(", ");
+  const calle=String(p.address||"").trim();
+  const intentos=[];
+  if(calle) intentos.push([calle,cola].filter(Boolean).join(", "));
+  if(calle&&/\d/.test(calle)) intentos.push([calle.replace(/\s*\d.*$/,"").trim(),cola].filter(Boolean).join(", "));
+  if(cola) intentos.push(cola);
+  for(const q of intentos){
+    const r=await geocodificar(q);
+    if(r) return r;
+  }
+  return null;
+};
+
 /* ============ Lectura universal de archivos para la IA ============
    La IA lee imágenes y PDF de forma nativa. Word, Excel y planillas no: son
    archivos ZIP con XML adentro, así que les extraemos el texto aquí, en el
@@ -2686,6 +2719,36 @@ function App(){
   // Instrucción libre para el lector: "guárdalo como gasto de la casa de Ñuñoa", etc.
   const [aiOrden,setAiOrden]=useState("");
   const [aiDocPaso,setAiDocPaso]=useState(""); // "Leyendo 2 de 3…"
+
+  /* ---- Ubicar propiedades en el mapa (para que Street View funcione) ---- */
+  const [geoBusy,setGeoBusy]=useState("");
+  const geoIntentadas=useRef(new Set());
+  const ubicarPropiedad=async(p,silencioso)=>{
+    if(geoBusy) return;
+    setGeoBusy(String(p.id));
+    try{
+      const r=await ubicarDireccion(p);
+      if(r){
+        patchProp(p.id, x=>({...x, lat:r.lat, lng:r.lng}));
+        if(!silencioso) notify("Ubicación encontrada: el mapa y Street View ya apuntan bien");
+      } else if(!silencioso){
+        notify("No encontré esa dirección. Puedes pegar la latitud y longitud a mano en Editar.",true);
+      }
+    }catch(e){ if(!silencioso) notify("No se pudo ubicar la dirección: "+((e&&e.message)||"error"),true); }
+    setGeoBusy("");
+  };
+  // Al abrir una propiedad con dirección pero sin coordenadas, se ubica sola
+  // una vez. Así Street View deja de caer en cualquier parte sin que el usuario
+  // tenga que hacer nada.
+  useEffect(()=>{
+    if(!sel) return;
+    const p=props.find(x=>String(x.id)===String(sel.id))||sel;
+    if(tieneCoords(p)||!String(p.address||"").trim()) return;
+    const k=String(p.id);
+    if(geoIntentadas.current.has(k)) return;
+    geoIntentadas.current.add(k);
+    ubicarPropiedad(p,true);
+  },[sel&&sel.id]);
   const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
   const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
   SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
@@ -4328,9 +4391,17 @@ function App(){
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Data label="Dirección" value={p.address}/>
           <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:10}}><Data label="Comuna" value={p.comuna}/><Data label="Región" value={p.region}/></div>
+          {/* Street View necesita coordenadas sí o sí. Sin ellas se ofrece
+              ubicar la propiedad en vez de abrir un enlace que caería mal. */}
+          {!tieneCoords(p) && <div className="help" style={{margin:0,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{flex:1,minWidth:150}}>Esta propiedad aún no está ubicada en el mapa, por eso Street View no puede abrirse en la dirección exacta.</span>
+            <button className="btn btn-red btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)}>
+              {geoBusy===String(p.id)?"Ubicando…":"Ubicar en el mapa"}</button>
+          </div>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <a className="btn btn-out btn-sm" href={tieneCoords(p)?`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Street View</a>
+            {tieneCoords(p) && <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`} target="_blank" rel="noopener">Street View</a>}
             <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Google Maps</a>
+            {tieneCoords(p) && <button className="btn btn-out btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)} title="Vuelve a calcular las coordenadas desde la dirección">{geoBusy===String(p.id)?"Ubicando…":"Recalcular ubicación"}</button>}
             {!!(p.panoramas&&p.panoramas.length) && <button className="btn btn-out btn-sm" onClick={()=>setPanoProp(p)}>Recorrido 360°</button>}
             {p.virtualTour && <a className="btn btn-out btn-sm" href={p.virtualTour} target="_blank" rel="noopener">Recorrido externo</a>}
           </div>
