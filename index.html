@@ -48,7 +48,10 @@
 
   /* Layout */
   .app{display:flex;min-height:100vh}
-  .sidebar{width:250px;background:var(--side);color:var(--side-tx);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0;border-right:1px solid var(--line)}
+  /* 100dvh, no 100vh: en el celular 100vh incluye la zona que tapa la barra del
+     navegador, así que el final del menú (Asistente, Preguntas frecuentes)
+     quedaba fuera de la pantalla y no se podía tocar. */
+  .sidebar{width:250px;background:var(--side);color:var(--side-tx);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;height:100dvh;flex-shrink:0;border-right:1px solid var(--line)}
   .brand{padding:18px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:11px}
   .brand-logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0}
   .brand h1{font-size:18px;font-weight:800;color:#141419;letter-spacing:-.2px}
@@ -231,7 +234,10 @@
 
   /* ============ RESPONSIVO: tablet / celular (≤900px) ============ */
   @media(max-width:900px){
-    .sidebar{position:fixed;left:0;top:0;height:100vh;width:284px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;box-shadow:0 0 50px rgba(0,0,0,.45);display:flex}
+    .sidebar{position:fixed;left:0;top:0;height:100vh;height:100dvh;width:284px;transform:translateX(-100%);transition:transform .25s ease;z-index:60;box-shadow:0 0 50px rgba(0,0,0,.45);display:flex}
+    /* El pie del menú (usuario y salir) no debe comerse el espacio de scroll. */
+    .sidebar .nav{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:14px}
+    .sidebar .nav-foot{flex-shrink:0;padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}
     .sidebar.open{transform:translateX(0)}
     .drawer-x{display:inline-flex}
     .menu-btn{display:inline-flex}
@@ -474,6 +480,9 @@
      campo y deja toda la página ampliada, sin volver atrás sola. */
   .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:16px}
   .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
+  .ai-clip{width:40px;height:44px;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;flex-shrink:0;border-radius:11px;background:var(--panel2);border:1px solid var(--line)}
+  .ai-clip:hover{background:var(--brand-bg);border-color:var(--brand-soft)}
+  .ai-adj{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
   .ai-disclaimer{font-size:10.5px;color:var(--faint);text-align:center;margin-top:6px}
 
   /* ---- Asesor inmobiliario: tarjetas, comparación y estados ---- */
@@ -865,6 +874,17 @@ const portalURL = ()=>{ try{ if(window.location && /^https?:/.test(window.locati
 // y no saturan el almacenamiento. Luego se guardan en el servidor (Netlify Blobs) y
 // quedan disponibles desde cualquier dispositivo y para quien abra la ficha pública.
 const readFileDataURL = (file)=> new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+
+/* Consulta para Google Maps. Las propiedades nuevas no traen coordenadas, y
+   pedirle el mapa con "q=," hace que Google caiga en un lugar cualquiera: por
+   eso, sin coordenadas, se busca por la dirección escrita. */
+const mapaConsulta = (p)=>{
+  const lat=parseFloat(p.lat), lng=parseFloat(p.lng);
+  if(!isNaN(lat)&&!isNaN(lng)&&(lat||lng)) return lat+","+lng;
+  const dir=[p.address,p.comuna,p.region,"Chile"].filter(Boolean).join(", ");
+  return encodeURIComponent(dir||"Chile");
+};
+const tieneCoords = (p)=>{ const a=parseFloat(p.lat), b=parseFloat(p.lng); return !isNaN(a)&&!isNaN(b)&&(a||b); };
 
 /* ============ Lectura universal de archivos para la IA ============
    La IA lee imágenes y PDF de forma nativa. Word, Excel y planillas no: son
@@ -2683,6 +2703,7 @@ function App(){
   const [asChat,setAsChat]=useState(()=>store.get(ASESOR_CHAT_KEY,[]));
   const [asMsgs,setAsMsgs]=useState(()=>store.get(ASESOR_CHAT_KEY+"_raw",[]));
   const [asIn,setAsIn]=useState(""), [asBusy,setAsBusy]=useState(false);
+  const [asAdj,setAsAdj]=useState([]); // archivos adjuntos del chat
   const [asLeadId,setAsLeadId]=useState(()=>store.get("ap_asesor_lead",""));
   const [asMet,setAsMet]=useState(()=>store.get(ASESOR_MET_KEY,{consultas:0,busquedas:0,leads:0,visitas:0,derivaciones:0,propiedades:{}}));
   const asEnd=useRef(null);
@@ -3141,10 +3162,22 @@ function App(){
      (buscar, luego comparar, luego registrar) antes de dar su respuesta final. */
   const asEnviar=async(textoUsuario)=>{
     const q=String(textoUsuario||"").trim();
-    if(!q||asBusy) return;
-    setAsIn(""); setAsBusy(true); asMetrica("consultas");
-    setAsChat(c=>[...c,{r:"user",c:q}]);
-    let msgs=[...asMsgs,{role:"user",content:q}];
+    const adj=asAdj;
+    if((!q&&!adj.length)||asBusy) return;
+    setAsIn(""); setAsAdj([]); setAsBusy(true); asMetrica("consultas");
+    const texto=q||"Revisa los archivos que te adjunto y dime qué son.";
+    setAsChat(c=>[...c,{r:"user",c:texto+(adj.length?"\n📎 "+adj.map(f=>f.name).join(", "):"")}]);
+    // Los adjuntos van en el primer turno: imágenes y PDF nativos, el resto como
+    // texto ya extraído en el navegador.
+    const contenido = adj.length
+      ? [...adj.map(f=>f.texto
+          ? { type:"text", text:'--- Contenido de "'+f.name+'" ---\n'+f.texto }
+          : (f.media==="application/pdf"
+              ? { type:"document", source:{ type:"base64", media_type:"application/pdf", data:f.b64 } }
+              : { type:"image", source:{ type:"base64", media_type:f.media, data:f.b64 } })),
+         { type:"text", text:texto }]
+      : texto;
+    let msgs=[...asMsgs,{role:"user",content:contenido}];
     const l=asLeadActual();
     const contexto=asResumenCatalogo(props,uf,asEmpresa(),asContacto(),
       l?(l.nombre+(l.telefono?" · "+l.telefono:"")+(l.email?" · "+l.email:"")):null);
@@ -3295,9 +3328,47 @@ function App(){
     if(!nCampos){ notify("Este documento no trae datos de propiedad. Mira las acciones que te propone la IA más abajo.",true); return; }
     setNP(prev=>({ ...prev, ...c, rentedNow: c.tenant?true:prev.rentedNow,
       garantia:{ ...(prev.garantia||blank.garantia), ...g } }));
-    setAiDocRes(null); setAiDocs([]);
+    setAiDocRes(null); setAiDocs([]); setAiOrden("");
     notify(nCampos+" campos completados. Revísalos antes de guardar.");
   };
+
+  /* Igual que la anterior, pero sobre la propiedad que se está editando: la IA
+     corrige o completa lo que ya existe sin borrar el resto. */
+  const rellenarFormEdicion=()=>{
+    const { c, g, nCampos }=datosACampos();
+    if(!nCampos){ notify("Este documento no trae datos de propiedad. Mira las acciones que te propone la IA más abajo.",true); return; }
+    setEP(prev=>({ ...prev, ...c, garantia:{ ...(prev.garantia||blank.garantia), ...g } }));
+    setAiDocRes(null); setAiDocs([]); setAiOrden("");
+    notify(nCampos+" campos actualizados. Revísalos y guarda los cambios.");
+  };
+
+  /* El bloque del lector se usa igual en crear y en editar. */
+  const LectorIA=({ titulo, ayuda, onAplicar })=>(
+    <div className="lector-ia">
+      <div className="lector-t">✨ {titulo}</div>
+      <div className="lector-d">{ayuda}</div>
+      <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
+        placeholder="Opcional: dile a la IA qué hacer. Ej: “corrige la dirección y la comuna según la escritura”." />
+      <div className="lector-btns">
+        <label className="btn btn-out" style={{cursor:"pointer"}}>
+          {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
+          <input type="file" multiple style={{display:"none"}}
+            accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf"
+            onChange={async e=>{ const fs=[...e.target.files]; e.target.value="";
+              const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
+              if(ok.length) setAiDocs(d=>[...d,...ok]); }}/>
+        </label>
+        <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo…":"Leer y completar"}</button>
+        {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
+      </div>
+      {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
+      {aiDocRes&&<div className="lector-res">
+        <div className="lector-resumen">{aiDocRes.text||"Documento leído."}</div>
+        {aiDocRes.datos&&datosACampos().nCampos>0&&<button className="btn btn-red" style={{width:"100%",marginTop:10}} onClick={onAplicar}>Aplicar estos datos al formulario</button>}
+        <Sugerencias res={aiDocRes} props={props} onEjecutar={ejecutarSugerencia}/>
+      </div>}
+    </div>
+  );
 
   /* Ejecuta una de las acciones que propuso la IA cuando el documento no
      encaja en los campos de una propiedad (una declaración de impuestos, una
@@ -3825,7 +3896,7 @@ function App(){
     +'<div class="sec"><h2>Descripción</h2><div class="desc">'+esc(desc)+'</div></div>'
     +(showInfo?('<div class="sec" style="padding-top:0"><h2>Características</h2><div class="grid2">'+dataRow("Tipo",tipoTxt(p))+dataRow("Año de construcción",p.constructionYear)+dataRow("Piso",p.floor)+dataRow("Orientación",p.orientation)+dataRow("Dormitorios",p.bedrooms)+dataRow("Baños",p.bathrooms)+dataRow("Superficie construida",p.surfaceBuilt?(p.surfaceBuilt+" m²"):"")+dataRow("Superficie terreno",p.surfaceTerrain?(p.surfaceTerrain+" m²"):"")+dataRow("Estacionamientos",p.parking)+dataRow("Bodegas",p.bodega)+(showGC?dataRow("Gasto común",CLP(p.gastoComun)):"")+'</div></div>'):"")
     +(gal.length?('<div class="sec" style="padding-top:0"><h2>Galería</h2><div class="gallery">'+gal.map(function(u){return '<div class="g" style="background-image:url(\''+u+'\')"></div>';}).join("")+'</div></div>'):"")
-    +'<div class="sec" style="padding-top:0"><h2>Ubicación</h2><div class="desc" style="margin-bottom:10px">'+((showInfo&&p.address)?(esc(p.address)+(p.comuna?(", "+esc(p.comuna)):"")):esc(loc))+'</div><div class="mapwrap"><iframe loading="lazy" src="https://maps.google.com/maps?q='+p.lat+','+p.lng+'&hl=es&z=15&output=embed"></iframe></div></div>'
+    +'<div class="sec" style="padding-top:0"><h2>Ubicación</h2><div class="desc" style="margin-bottom:10px">'+((showInfo&&p.address)?(esc(p.address)+(p.comuna?(", "+esc(p.comuna)):"")):esc(loc))+'</div><div class="mapwrap"><iframe loading="lazy" src="https://maps.google.com/maps?q='+mapaConsulta(p)+'&hl=es&z=15&output=embed"></iframe></div></div>'
     +'<div class="contact"><div><div class="cn">'+esc(soc.name||"Contáctanos")+'</div><div class="cd">'+([soc.telefono,soc.email].filter(Boolean).map(esc).join(" · ")||"Solicita más información")+'</div></div>'+(waHref?('<a class="wa" href="'+waHref+'">Escríbenos por WhatsApp</a>'):"")+'</div>'
     +'<div class="foot">Ficha generada con ArriendoPro · '+esc(fecha)+' · Este documento no contiene datos personales del arrendatario.</div>'
     +'</div></body></html>';
@@ -4160,15 +4231,15 @@ function App(){
       <div className="sub-title">Ubicación</div>
       <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:16}}>
         <div>
-          <iframe title={p.name} src={`https://maps.google.com/maps?q=${p.lat},${p.lng}&hl=es&z=16&output=embed`} loading="lazy" style={{width:"100%",height:260,border:"none",borderRadius:12,background:"var(--panel2)"}}></iframe>
+          <iframe title={p.name} src={`https://maps.google.com/maps?q=${mapaConsulta(p)}&hl=es&z=16&output=embed`} loading="lazy" style={{width:"100%",height:260,border:"none",borderRadius:12,background:"var(--panel2)"}}></iframe>
 
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Data label="Dirección" value={p.address}/>
           <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:10}}><Data label="Comuna" value={p.comuna}/><Data label="Región" value={p.region}/></div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`} target="_blank" rel="noopener">Street View</a>
-            <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`} target="_blank" rel="noopener">Google Maps</a>
+            <a className="btn btn-out btn-sm" href={tieneCoords(p)?`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Street View</a>
+            <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Google Maps</a>
             {!!(p.panoramas&&p.panoramas.length) && <button className="btn btn-out btn-sm" onClick={()=>setPanoProp(p)}>Recorrido 360°</button>}
             {p.virtualTour && <a className="btn btn-out btn-sm" href={p.virtualTour} target="_blank" rel="noopener">Recorrido externo</a>}
           </div>
@@ -4526,7 +4597,10 @@ function App(){
       <div className="topbar"><div className="topbar-row">
         <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
           <button className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-          <button className="gs-top" title="Buscar en toda la plataforma" aria-label="Buscar en toda la plataforma" onClick={()=>{ if(window.__gsOpen) window.__gsOpen(); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+          {/* Apunta al buscador que navega. El buscador global antiguo listaba
+              campos internos de los datos (id, builtin, cuerpoWA…) que no
+              llevaban a ninguna parte al tocarlos. */}
+          <button className="gs-top" title="Buscar en toda la plataforma" aria-label="Buscar en toda la plataforma" onClick={()=>setMBusca(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
           <div style={{minWidth:0}}><h2>{HEAD[tab][0]}</h2><div className="desc">{HEAD[tab][1]}</div></div>
         </div>
         <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -5560,30 +5634,10 @@ function App(){
     {mAdd && <div className="modal-bg" onClick={()=>setMAdd(false)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Nueva propiedad</h3><p>Sube los documentos y deja que la IA complete el formulario, o llénalo a mano.</p></div>
       <div className="modal-body">
-        <div className="lector-ia">
-          <div className="lector-t">✨ Completar con IA desde tus archivos</div>
-          <div className="lector-d">Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</div>
-          <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
-            placeholder="Opcional: dile a la IA qué hacer. Ej: “es el contrato del depto de Vitacura, complétame el arrendatario y la renta”." />
-          <div className="lector-btns">
-            <label className="btn btn-out" style={{cursor:"pointer"}}>
-              {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
-              <input type="file" multiple style={{display:"none"}}
-                accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf"
-                onChange={async e=>{ const fs=[...e.target.files]; e.target.value="";
-                  const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
-                  if(ok.length) setAiDocs(d=>[...d,...ok]); }}/>
-            </label>
-            <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo…":"Leer y completar"}</button>
-            {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
-          </div>
-          {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
-          {aiDocRes&&<div className="lector-res">
-            <div className="lector-resumen">{aiDocRes.text||"Documento leído."}</div>
-            {aiDocRes.datos&&datosACampos().nCampos>0&&<button className="btn btn-red" style={{width:"100%",marginTop:10}} onClick={rellenarFormNueva}>Completar el formulario con estos datos</button>}
-            <Sugerencias res={aiDocRes} props={props} onEjecutar={ejecutarSugerencia}/>
-          </div>}
-        </div>
+        <LectorIA
+          titulo="Completar con IA desde tus archivos"
+          ayuda={<>Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</>}
+          onAplicar={rellenarFormNueva}/>
         <PropForm d={nP} set={setNP}/>
       </div>
       <div className="modal-foot"><button className="btn btn-red" style={{flex:1}} onClick={addProp}>Agregar y guardar</button><button className="btn btn-out" onClick={()=>setMAdd(false)}>Cancelar</button></div>
@@ -5591,7 +5645,13 @@ function App(){
 
     {mEdit && eP && <div className="modal-bg" onClick={()=>setMEdit(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Editar — {mEdit.name}</h3><p>Modifica ficha, arrendatario, crédito o gastos.</p></div>
-      <div className="modal-body"><PropForm d={eP} set={setEP}/></div>
+      <div className="modal-body">
+        <LectorIA
+          titulo="Corregir o completar con IA"
+          ayuda={<>Sube la <b>escritura, el certificado de dominio, el contrato o una foto</b> y la IA corrige lo que esté mal y completa lo que falte. Solo toca los campos que encuentre; el resto queda igual.</>}
+          onAplicar={rellenarFormEdicion}/>
+        <PropForm d={eP} set={setEP}/>
+      </div>
       <div className="modal-foot"><button className="btn btn-green" style={{flex:1}} onClick={saveEdit}>Guardar cambios</button><button className="btn btn-out" style={{color:"var(--red-d)",borderColor:"var(--red-soft)"}} onClick={()=>{setMEdit(null);setMDel(eP);}}>✕ Eliminar</button><button className="btn btn-out" onClick={()=>setMEdit(null)}>Cancelar</button></div>
     </div></div>}
 
@@ -6244,11 +6304,19 @@ function App(){
       </div>
 
       <div className="ai-compose">
+        {asAdj.length>0&&<div className="ai-adj">{asAdj.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAsAdj(a=>a.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
         <div className="ai-compose-row">
+          <label className="ai-clip" title="Adjuntar archivo">📎
+            <input type="file" multiple style={{display:"none"}}
+              accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf"
+              onChange={async e=>{ const fs=[...e.target.files]; e.target.value="";
+                const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
+                if(ok.length) setAsAdj(a=>[...a,...ok]); }}/>
+          </label>
           <textarea id="asesorInput" className="input" value={asIn} onChange={e=>setAsIn(e.target.value)}
             onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); asEnviar(asIn); } }}
             placeholder="Ej: busco depto 2D en Providencia…" />
-          <button className="btn btn-red ai-send" onClick={()=>asEnviar(asIn)} disabled={asBusy||!asIn.trim()} aria-label="Enviar">➤</button>
+          <button className="btn btn-red ai-send" onClick={()=>asEnviar(asIn)} disabled={asBusy||(!asIn.trim()&&!asAdj.length)} aria-label="Enviar">➤</button>
         </div>
         <div className="ai-disclaimer">Asesor con IA · puede equivocarse. Confirma valores y condiciones antes de decidir.</div>
       </div>
