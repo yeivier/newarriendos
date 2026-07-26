@@ -10,9 +10,15 @@ import type { Context, Config } from '@netlify/functions'
 const API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-opus-5'
 
-type Archivo = { media_type?: string; data?: string; name?: string }
+// Un archivo llega de dos formas: como adjunto nativo (imagen o PDF, en base64)
+// o como texto ya extraído en el navegador (Word, Excel, planillas), porque la
+// API no lee esos formatos directamente.
+type Archivo = { media_type?: string; data?: string; name?: string; texto?: string }
 
 const bloqueArchivo = (f: Archivo) => {
+  if (f.texto) {
+    return { type: 'text', text: `--- Contenido de "${f.name || 'archivo'}" ---\n${f.texto}` }
+  }
   const media = String(f.media_type || 'image/jpeg')
   const data = String(f.data || '')
   if (media === 'application/pdf') {
@@ -56,7 +62,7 @@ export default async (req: Request, _context: Context) => {
   }
 
   const files: Archivo[] = Array.isArray(body.files) ? body.files.slice(0, 8) : []
-  const adjuntos = files.filter((f) => f && f.data).map(bloqueArchivo)
+  const adjuntos = files.filter((f) => f && (f.data || f.texto)).map(bloqueArchivo)
 
   try {
     if (body.mode === 'extraer') {

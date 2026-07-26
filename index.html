@@ -460,6 +460,8 @@
   .ai-quick button{white-space:nowrap;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 10px;font:700 11.5px var(--font);cursor:pointer;color:var(--muted)}
   .ai-quick button:hover{border-color:var(--brand);color:var(--brand-d)}
   .ai-messages{flex:1;overflow:auto;padding:15px 13px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,#fff,#fafbfc)}
+  /* Ningún mensaje debe encogerse: el chat scrollea, no comprime su contenido. */
+  .ai-messages>*{flex-shrink:0}
   .ai-empty{margin:auto;text-align:center;padding:20px;color:var(--muted)}
   .ai-empty .big{font-size:34px;margin-bottom:7px}.ai-empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:5px}
   .ai-row{display:flex}.ai-row.user{justify-content:flex-end}
@@ -468,7 +470,9 @@
   .ai-row.bot .ai-bubble{background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-bottom-left-radius:5px}
   .ai-compose{padding:11px;border-top:1px solid var(--line);background:var(--card)}
   .ai-compose-row{display:flex;align-items:flex-end;gap:7px}
-  .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:13.5px}
+  /* 16px es obligatorio: por debajo de eso iOS hace zoom automático al tocar el
+     campo y deja toda la página ampliada, sin volver atrás sola. */
+  .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:16px}
   .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
   .ai-disclaimer{font-size:10.5px;color:var(--faint);text-align:center;margin-top:6px}
 
@@ -480,7 +484,11 @@
   .ai-empty .ai-ejemplos button:hover{border-color:var(--brand);color:var(--brand-d);background:var(--brand-bg)}
 
   /* Tarjetas de propiedad: se desplazan en horizontal dentro del chat. */
-  .ai-cards{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 6px;scroll-snap-type:x mandatory}
+  /* flex-shrink:0 es imprescindible. Al tener overflow, esta fila deja de
+     respetar su altura mínima dentro del chat (que es un flex en columna) y se
+     va aplastando a medida que crecen los mensajes, hasta que las tarjetas
+     desaparecen. */
+  .ai-cards{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 6px;scroll-snap-type:x mandatory;flex-shrink:0}
   .pcard{flex:0 0 205px;scroll-snap-align:start;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:0 3px 12px rgba(16,24,40,.07);display:flex;flex-direction:column}
   .pcard-img{height:112px;background:var(--panel2) center/cover no-repeat;position:relative;display:flex;align-items:center;justify-content:center}
   .pcard-ph{font-size:34px;opacity:.35}
@@ -511,6 +519,18 @@
   .ai-derivar-t{font-weight:800;color:var(--ink);font-size:13.5px}
   .ai-derivar-d{font-size:12.5px;color:var(--brand-d);margin-top:3px}
   .ai-derivar-wa{display:inline-block;margin-top:9px;background:#25D366;color:#fff;font:800 12.5px var(--font);padding:9px 14px;border-radius:9px}
+
+  /* ---- Lector de documentos con IA dentro del formulario ---- */
+  .lector-ia{border:1px solid var(--brand-soft);background:var(--brand-bg);border-radius:13px;padding:14px 15px;margin-bottom:18px}
+  .lector-t{font-weight:800;font-size:15px;color:var(--ink)}
+  .lector-d{font-size:13px;color:var(--brand-d);margin:5px 0 11px;line-height:1.5}
+  .lector-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .lector-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .lector-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:600;max-width:100%}
+  .lector-chip button{border:none;background:var(--panel2);color:var(--muted);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;flex-shrink:0}
+  .lector-chip button:hover{background:var(--red-bg);color:var(--red-d)}
+  .lector-res{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+  .lector-resumen{font-size:13px;color:var(--text);line-height:1.55;white-space:pre-wrap}
 
   /* Aviso mientras consulta internet, y fuentes citadas bajo la respuesta. */
   .ai-buscando{font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:9px;padding:7px 10px;align-self:flex-start}
@@ -830,6 +850,127 @@ const portalURL = ()=>{ try{ if(window.location && /^https?:/.test(window.locati
 // y no saturan el almacenamiento. Luego se guardan en el servidor (Netlify Blobs) y
 // quedan disponibles desde cualquier dispositivo y para quien abra la ficha pública.
 const readFileDataURL = (file)=> new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+
+/* ============ Lectura universal de archivos para la IA ============
+   La IA lee imágenes y PDF de forma nativa. Word, Excel y planillas no: son
+   archivos ZIP con XML adentro, así que les extraemos el texto aquí, en el
+   navegador, y se lo mandamos como texto. Así el usuario sube "cualquier
+   cosa" y funciona igual.
+   El descomprimido usa DecompressionStream, que ya viene en los navegadores
+   modernos; no hace falta ninguna librería externa. */
+
+const _dv=(b,o)=>b[o]|(b[o+1]<<8);
+const _dw=(b,o)=>(b[o]|(b[o+1]<<8)|(b[o+2]<<16))+(b[o+3]*16777216);
+
+/* Recorre las entradas de un ZIP y devuelve {nombre: texto} de las que pidamos.
+   Se lee el directorio central (al final del archivo) y no las cabeceras
+   locales: Word y Excel escriben en streaming y ahí el tamaño puede venir en
+   cero, con lo que la entrada se perdería. */
+const zipLeerEntradas = async (buffer, quiero)=>{
+  const b=new Uint8Array(buffer), out={}, dec=new TextDecoder();
+  // Fin del directorio central: PK\5\6, buscándolo desde el final.
+  let eocd=-1;
+  for(let i=b.length-22;i>=0 && i>b.length-70000;i--){
+    if(b[i]===0x50&&b[i+1]===0x4b&&b[i+2]===0x05&&b[i+3]===0x06){ eocd=i; break; }
+  }
+  if(eocd<0) return out;
+  const total=_dv(b,eocd+10);
+  let p=_dw(b,eocd+16);
+  for(let n=0;n<total;n++){
+    if(b[p]!==0x50||b[p+1]!==0x4b||b[p+2]!==0x01||b[p+3]!==0x02) break;
+    const metodo=_dv(b,p+10), compSize=_dw(b,p+20);
+    const nameLen=_dv(b,p+28), extraLen=_dv(b,p+30), comLen=_dv(b,p+32);
+    const local=_dw(b,p+42);
+    const nombre=dec.decode(b.subarray(p+46,p+46+nameLen));
+    p+=46+nameLen+extraLen+comLen;
+    if(!quiero(nombre)) continue;
+    // El tamaño de los campos variables se relee en la cabecera local.
+    const ini=local+30+_dv(b,local+26)+_dv(b,local+28);
+    const datos=b.subarray(ini,ini+compSize);
+    try{
+      if(metodo===0) out[nombre]=dec.decode(datos);
+      else if(metodo===8){
+        const ds=new DecompressionStream("deflate-raw");
+        out[nombre]=await new Response(new Blob([datos]).stream().pipeThrough(ds)).text();
+      }
+    }catch(e){ /* entrada ilegible: se ignora y seguimos con las demás */ }
+  }
+  return out;
+};
+
+const _xmlATexto=(xml)=>String(xml||"")
+  .replace(/<\/w:p>|<\/a:p>|<\/text:p>/g,"\n")   // fin de párrafo en Word
+  .replace(/<[^>]+>/g," ")                        // fuera las etiquetas
+  .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
+  .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&")
+  .replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+  .replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
+
+const docxATexto = async (buffer)=>{
+  const e=await zipLeerEntradas(buffer,n=>/^word\/(document|header\d*|footer\d*)\.xml$/.test(n));
+  return Object.keys(e).sort().map(k=>_xmlATexto(e[k])).filter(Boolean).join("\n\n");
+};
+
+const xlsxATexto = async (buffer)=>{
+  const e=await zipLeerEntradas(buffer,n=>/^xl\/(sharedStrings\.xml|worksheets\/sheet\d+\.xml)$/.test(n));
+  // Las celdas de texto guardan un índice a la tabla compartida de cadenas.
+  const compartidas=(e["xl/sharedStrings.xml"]||"").split(/<si[\s>]/).slice(1)
+    .map(s=>_xmlATexto(s.split("</si>")[0]));
+  const hojas=Object.keys(e).filter(k=>k.indexOf("worksheets/")>=0).sort();
+  return hojas.map(k=>{
+    const filas=e[k].split(/<row[\s>]/).slice(1);
+    return filas.map(fila=>{
+      const celdas=fila.split(/<c[\s>]/).slice(1);
+      return celdas.map(c=>{
+        const attrs=c.split(">")[0];
+        // Hay dos maneras válidas de guardar texto y conviven según el programa
+        // que generó la planilla: en línea, o apuntando a la tabla compartida.
+        if(/t="inlineStr"/.test(attrs)){
+          const t=c.match(/<t[^>]*>[\s\S]*?<\/t>/g);
+          return t ? t.map(x=>_xmlATexto(x)).join(" ") : "";
+        }
+        const v=(c.match(/<v>([\s\S]*?)<\/v>/)||[])[1];
+        if(v==null) return "";
+        return /t="s"/.test(attrs) ? (compartidas[+v]||"") : v;
+      }).filter(x=>x!=="").join("\t");
+    }).filter(Boolean).join("\n");
+  }).filter(Boolean).join("\n\n");
+};
+
+/* Devuelve el archivo listo para la IA: como adjunto nativo (imagen/PDF) o
+   como texto ya extraído. */
+const leerArchivoParaIA = async (file)=>{
+  const nombre=file.name||"archivo";
+  const ext=(nombre.split(".").pop()||"").toLowerCase();
+  const tipo=String(file.type||"");
+  const esImagen=tipo.indexOf("image/")===0 || ["jpg","jpeg","png","gif","webp","bmp","heic","heif","avif"].indexOf(ext)>=0;
+  const esPdf=tipo==="application/pdf"||ext==="pdf";
+
+  if(esImagen||esPdf){
+    const dataUrl=await readFileDataURL(file);
+    let media=tipo;
+    if(esPdf) media="application/pdf";
+    // La IA solo acepta estos formatos de imagen; el resto lo declaramos como
+    // JPEG, que es lo que entrega iOS al subir una foto desde la galería.
+    else if(["image/jpeg","image/png","image/gif","image/webp"].indexOf(media)<0) media="image/jpeg";
+    return { name:nombre, media, b64:String(dataUrl).split(",")[1]||"", size:file.size };
+  }
+
+  let texto="";
+  if(ext==="docx") texto=await docxATexto(await file.arrayBuffer());
+  else if(ext==="xlsx"||ext==="xlsm") texto=await xlsxATexto(await file.arrayBuffer());
+  else if(["txt","csv","md","json","xml","html","htm","rtf"].indexOf(ext)>=0 || tipo.indexOf("text/")===0){
+    texto=await file.text();
+    if(ext==="rtf"||ext==="html"||ext==="htm") texto=_xmlATexto(texto);
+  }
+  else if(["doc","xls","ppt","pages","numbers"].indexOf(ext)>=0){
+    throw new Error("“"+nombre+"” está en un formato antiguo que no se puede leer. Ábrelo y guárdalo como PDF o .docx y vuelve a subirlo.");
+  }
+  else throw new Error("No sé leer “"+nombre+"”. Sirven fotos, PDF, Word, Excel y archivos de texto.");
+
+  if(!texto.trim()) throw new Error("“"+nombre+"” no tiene texto que se pueda leer. Si es un escaneo, súbelo como PDF o foto.");
+  return { name:nombre, texto:texto.slice(0,120000), size:file.size };
+};
 function optimizeImage(file, maxDim, quality){
   return new Promise(async (resolve)=>{
     try{
@@ -1897,6 +2038,13 @@ const asCostos=(props,id,montoManual)=>{
 
 /* Resumen liviano del catálogo: le da criterio al asesor sin que tenga que
    buscar en cada turno. El detalle exacto siempre sale de las herramientas. */
+/* El modelo escribe en negrita con **asteriscos**. Los convertimos a <b> sin
+   inyectar HTML: se parte el texto y se devuelven nodos de React. */
+const asTexto=(t)=>String(t||"").split(/(\*\*[^*]+\*\*)/g).map((p,i)=>
+  (p.startsWith("**")&&p.endsWith("**")&&p.length>4)
+    ? React.createElement("b",{key:i},p.slice(2,-2))
+    : p);
+
 const asResumenCatalogo=(props,uf,empresa,contacto,lead)=>{
   const arr=props.filter(p=>p.use==="arriendo");
   const precios=arr.map(p=>num(p.rent)).filter(n=>n>0);
@@ -3062,7 +3210,8 @@ function App(){
   const analizarDocs=async()=>{ if(!aiDocs.length){ notify("Adjunta al menos un archivo",true); return; } setAiDocBusy(true); setAiDocRes(null);
     try{
       const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
-      const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ mode:"extraer", files:aiDocs.map(f=>({media_type:f.media,data:f.b64,name:f.name})), propiedades:hint })});
+      // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
+      const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ mode:"extraer", files:aiDocs.map(f=>f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name})), propiedades:hint })});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
       setAiDocRes(j);
@@ -3070,7 +3219,9 @@ function App(){
       setAiDocDest(co&&props.some(p=>String(p.id)===String(co))?String(co):"nueva");
     }catch(e){ notify("No se pudo analizar el documento: "+(e.message||"error")+". Verifica ANTHROPIC_API_KEY en Netlify.",true); }
     setAiDocBusy(false); };
-  const aplicarDatos=()=>{ const d=(aiDocRes&&aiDocRes.datos)||{}; const P=d.propiedad||{}, A=d.arriendo||{}, T=d.arrendatario||{}, G=d.garantia||{};
+  /* Traduce lo que leyó la IA a los campos de una propiedad. Se usa tanto para
+     crear la propiedad de una vez como para rellenar el formulario abierto. */
+  const datosACampos=()=>{ const d=(aiDocRes&&aiDocRes.datos)||{}; const P=d.propiedad||{}, A=d.arriendo||{}, T=d.arrendatario||{}, G=d.garantia||{};
     const pon=(o,k,v)=>{ if(v!==undefined&&v!==null&&String(v).trim()!==""){ o[k]=v; } };
     const c={};
     pon(c,"name",P.nombre); pon(c,"address",P.direccion); pon(c,"comuna",P.comuna); pon(c,"region",P.region);
@@ -3084,7 +3235,22 @@ function App(){
     pon(c,"contractStart",A.fechaInicio); pon(c,"contractEnd",A.fechaTermino);
     const g={}; const gM=num(G.montoCLP)||(num(G.montoUF)>0?Math.round(num(G.montoUF)*uf):0);
     if(gM>0) g.monto=gM; if(G.fecha) g.fechaRecibida=G.fecha;
-    const nCampos=Object.keys(c).length+Object.keys(g).length;
+    return { c, g, nCampos:Object.keys(c).length+Object.keys(g).length };
+  };
+
+  /* Rellena el formulario de "Nueva propiedad" que está abierto, para que el
+     usuario revise y corrija antes de guardar. */
+  const rellenarFormNueva=()=>{
+    const { c, g, nCampos }=datosACampos();
+    if(!nCampos){ notify("La IA no encontró campos aplicables en el documento",true); return; }
+    setNP(prev=>({ ...prev, ...c, rentedNow: c.tenant?true:prev.rentedNow,
+      garantia:{ ...(prev.garantia||blank.garantia), ...g } }));
+    setAiDocRes(null); setAiDocs([]);
+    notify(nCampos+" campos completados. Revísalos antes de guardar.");
+  };
+
+  const aplicarDatos=()=>{
+    const { c, g, nCampos }=datosACampos();
     if(!nCampos){ notify("La IA no encontró campos aplicables en el documento",true); return; }
     if(aiDocDest==="nueva"){
       const nueva={...blank, id:Date.now(), use:"arriendo", status:"pendiente", rentedNow:!!c.tenant, gastosExtra:SEED_GASTOS(), ...c, garantia:{...blank.garantia,...g}};
@@ -5242,9 +5408,9 @@ function App(){
           </div>
           <div className="card pad" style={{marginBottom:14}}>
             <div className="sec-title">Lector de documentos con IA</div>
-            <div className="help" style={{marginBottom:10}}>Sube <b>fotos o PDF</b> (contrato de arriendo, escritura, certificado de dominio, informe Equifax o InfoCheck, liquidaciones…). La IA los lee con precisión, te muestra un resumen y <b>completa automáticamente</b> los datos de la propiedad y del arrendatario en las secciones correspondientes.</div>
+            <div className="help" style={{marginBottom:10}}>Sube <b>fotos, pantallazos, PDF, Word, Excel o texto</b> (contrato de arriendo, escritura, certificado de dominio, informe Equifax o InfoCheck, liquidaciones…). La IA los lee con precisión, te muestra un resumen y <b>completa automáticamente</b> los datos de la propiedad y del arrendatario en las secciones correspondientes.</div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
-              <label className="btn btn-out" style={{cursor:"pointer"}}>Elegir archivos<input type="file" accept="image/*,.pdf,application/pdf" multiple style={{display:"none"}} onChange={async e=>{ const fs=[...e.target.files]; e.target.value=""; try{ const ls=await Promise.all(fs.map(leerArchivoB64)); setAiDocs(d=>[...d,...ls]); }catch(err){ notify(err.message,true); } }}/></label>
+              <label className="btn btn-out" style={{cursor:"pointer"}}>Elegir archivos<input type="file" accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" multiple style={{display:"none"}} onChange={async e=>{ const fs=[...e.target.files]; e.target.value=""; const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } } if(ok.length) setAiDocs(d=>[...d,...ok]); }}/></label>
               <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo con IA…":"Analizar y completar"}</button>
               {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
             </div>
@@ -5308,8 +5474,31 @@ function App(){
 
     {/* ============ MODALES ============ */}
     {mAdd && <div className="modal-bg" onClick={()=>setMAdd(false)}><div className="modal" onClick={e=>e.stopPropagation()}>
-      <div className="modal-head"><h3>Nueva propiedad</h3><p>Completa los datos. Si tiene crédito hipotecario, marca la casilla y aparecerán los campos del dividendo.</p></div>
-      <div className="modal-body"><PropForm d={nP} set={setNP}/></div>
+      <div className="modal-head"><h3>Nueva propiedad</h3><p>Sube los documentos y deja que la IA complete el formulario, o llénalo a mano.</p></div>
+      <div className="modal-body">
+        <div className="lector-ia">
+          <div className="lector-t">✨ Completar con IA desde tus archivos</div>
+          <div className="lector-d">Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</div>
+          <div className="lector-btns">
+            <label className="btn btn-out" style={{cursor:"pointer"}}>
+              {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
+              <input type="file" multiple style={{display:"none"}}
+                accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf"
+                onChange={async e=>{ const fs=[...e.target.files]; e.target.value="";
+                  const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
+                  if(ok.length) setAiDocs(d=>[...d,...ok]); }}/>
+            </label>
+            <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo…":"Leer y completar"}</button>
+            {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
+          </div>
+          {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
+          {aiDocRes&&<div className="lector-res">
+            <div className="lector-resumen">{aiDocRes.text||"Documento leído."}</div>
+            {aiDocRes.datos&&<button className="btn btn-red" style={{width:"100%",marginTop:10}} onClick={rellenarFormNueva}>Completar el formulario con estos datos</button>}
+          </div>}
+        </div>
+        <PropForm d={nP} set={setNP}/>
+      </div>
       <div className="modal-foot"><button className="btn btn-red" style={{flex:1}} onClick={addProp}>Agregar y guardar</button><button className="btn btn-out" onClick={()=>setMAdd(false)}>Cancelar</button></div>
     </div></div>}
 
@@ -5954,7 +6143,7 @@ function App(){
 
           return (<div key={i} className={"ai-row "+(m.r==="user"?"user":"bot")}>
             <div className={"ai-bubble"+(m.err?" err":"")}>
-              {m.c}
+              {m.r==="user"?m.c:asTexto(m.c)}
               {m.fuentes && <div className="ai-fuentes">
                 <span>Fuentes:</span>
                 {m.fuentes.slice(0,4).map((f,k)=>(<a key={k} href={f.url} target="_blank" rel="noopener noreferrer">{f.titulo}</a>))}
