@@ -70,9 +70,14 @@ Cuándo usar cada acción:
 - "ninguna": el documento no tiene relación con la administración de
   propiedades. Igual explica en "porque" qué es y qué haría el usuario con él.
 
-Propón entre 1 y 3 sugerencias, la más útil primero. Si el documento sí trae
-datos de propiedad o arrendatario, las sugerencias son opcionales y
-complementarias.`
+Propón entre 1 y 5 sugerencias, la más útil primero. El usuario puede marcar
+varias y ejecutarlas juntas, así que si el documento da pie a más de una cosa
+útil (por ejemplo, registrar el gasto Y dejar constancia en la bitácora, o una
+acción por cada archivo adjunto), propónlas todas por separado en vez de
+juntarlas en una sola. No repitas la misma acción dos veces.
+
+Si el documento sí trae datos de propiedad o arrendatario, las sugerencias son
+opcionales y complementarias.`
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {

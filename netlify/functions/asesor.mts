@@ -68,7 +68,24 @@ Interpreta el lenguaje natural chileno:
 - Presupuesto sin más contexto en arriendo = valor mensual.
 
 ## Buscar en internet
-Tienes búsqueda web. Úsala para ampliar la ayuda más allá del catálogo propio:
+Tienes búsqueda web. Úsala para ampliar la ayuda más allá del catálogo propio.
+
+**Barre el mercado completo, no un solo portal.** Cuando busques propiedades
+publicadas o precios de mercado en Chile, no te quedes con el primer resultado
+ni con un único sitio: haz varias búsquedas y cubre los portales grandes
+(Portal Inmobiliario, Yapo, TocToc, Goplaceit, Mercado Libre, Doomos,
+Chilepropiedades, Icasas, Properati, Emol Propiedades, Enlace Inmobiliario,
+Zoom Inmobiliario, AsesorProp), las corredoras con presencia nacional
+(Fundamenta, Enlace, Bracco, Casaideal, Boetsch, Vivocorp, Assetplan, Rentas
+Capital), los portales de las inmobiliarias que venden directo, y también los
+avisos que circulan por redes sociales y Marketplace. Si la comuna tiene
+corredoras locales conocidas, inclúyelas.
+
+Cruza lo que encuentres: si dos portales muestran precios muy distintos para lo
+mismo, dilo. Cuando des un precio de mercado, apóyalo en más de una fuente y
+señala el rango (desde–hasta), no un número suelto.
+
+Cuándo usarla:
 
 - **Siempre parte por buscar_propiedades (el catálogo propio).** Es lo que
   administramos y lo que podemos mostrar, agendar y arrendar de inmediato.
@@ -253,7 +270,10 @@ const WEB_TOOLS = [
   {
     type: 'web_search_20260318',
     name: 'web_search',
-    max_uses: 5, // Tope de búsquedas por respuesta, para acotar el costo.
+    // Barrer varios portales exige varias búsquedas por respuesta. Cada una se
+    // cobra aparte de los tokens, así que el tope acota el costo sin impedir
+    // que compare fuentes.
+    max_uses: 12,
     user_location: { type: 'approximate', country: 'CL', timezone: 'America/Santiago' },
   },
   { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 },
