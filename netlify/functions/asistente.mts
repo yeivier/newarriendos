@@ -10,9 +10,15 @@ import type { Context, Config } from '@netlify/functions'
 const API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-opus-5'
 
-type Archivo = { media_type?: string; data?: string; name?: string }
+// Un archivo llega de dos formas: como adjunto nativo (imagen o PDF, en base64)
+// o como texto ya extraído en el navegador (Word, Excel, planillas), porque la
+// API no lee esos formatos directamente.
+type Archivo = { media_type?: string; data?: string; name?: string; texto?: string }
 
 const bloqueArchivo = (f: Archivo) => {
+  if (f.texto) {
+    return { type: 'text', text: `--- Contenido de "${f.name || 'archivo'}" ---\n${f.texto}` }
+  }
   const media = String(f.media_type || 'image/jpeg')
   const data = String(f.data || '')
   if (media === 'application/pdf') {
@@ -34,7 +40,39 @@ Lee los archivos adjuntos con máxima precisión y devuelve SOLO un objeto JSON 
  "aval": { "nombre": "", "rut": "" },
  "antecedentes": { "equifaxScore": "", "morosidades": "", "protestos": "", "infocheckPuntaje": "", "rentaLiquida": "" }
 }
-Reglas: montos en números sin puntos ni signos; fechas en formato ISO AAAA-MM-DD; RUT con guion; si la renta está en UF indica rentaUF y calcula rentaCLP solo si el documento lo señala. No inventes datos.`
+Reglas: montos en números sin puntos ni signos; fechas en formato ISO AAAA-MM-DD; RUT con guion; si la renta está en UF indica rentaUF y calcula rentaCLP solo si el documento lo señala. No inventes datos.
+
+Además, SIEMPRE incluye la clave "sugerencias": una lista de acciones concretas
+que la plataforma puede ejecutar con este documento. Es especialmente
+importante cuando el documento NO trae datos de propiedad ni de arrendatario
+(por ejemplo una declaración de impuestos, una boleta o un comprobante): en ese
+caso el usuario no debe quedarse sin nada que hacer, así que propón dónde
+guardar la información y por qué.
+
+"sugerencias": [
+  {
+    "accion": "gasto" | "bitacora" | "incidencia" | "ninguna",
+    "propiedadId": "id de la propiedad de la lista de existentes, o null si no aplica a una sola",
+    "titulo": "título corto de la anotación, gasto o incidencia",
+    "detalle": "texto que quedará guardado, con las cifras y fechas relevantes",
+    "monto": 0,
+    "periodo": "mes" | "año" | "una vez",
+    "porque": "una frase explicando por qué propones esto"
+  }
+]
+
+Cuándo usar cada acción:
+- "gasto": el documento implica un pago o costo recurrente o puntual asociado a
+  una propiedad (contribuciones, gasto común, seguro, mantención, impuestos).
+- "bitacora": conviene dejar constancia de algo con fecha (una declaración
+  presentada, un trámite, una comunicación, un certificado emitido).
+- "incidencia": el documento reporta un problema, daño o reclamo.
+- "ninguna": el documento no tiene relación con la administración de
+  propiedades. Igual explica en "porque" qué es y qué haría el usuario con él.
+
+Propón entre 1 y 3 sugerencias, la más útil primero. Si el documento sí trae
+datos de propiedad o arrendatario, las sugerencias son opcionales y
+complementarias.`
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
@@ -56,13 +94,17 @@ export default async (req: Request, _context: Context) => {
   }
 
   const files: Archivo[] = Array.isArray(body.files) ? body.files.slice(0, 8) : []
-  const adjuntos = files.filter((f) => f && f.data).map(bloqueArchivo)
+  const adjuntos = files.filter((f) => f && (f.data || f.texto)).map(bloqueArchivo)
 
   try {
     if (body.mode === 'extraer') {
       if (!adjuntos.length) return Response.json({ error: 'No llegaron archivos para analizar' }, { status: 400 })
       const hint = Array.isArray(body.propiedades) && body.propiedades.length
-        ? `\nPropiedades ya existentes en la plataforma (para "coincidenciaId"): ${JSON.stringify(body.propiedades).slice(0, 4000)}`
+        ? `\nPropiedades ya existentes en la plataforma (para "coincidenciaId" y "propiedadId"): ${JSON.stringify(body.propiedades).slice(0, 4000)}`
+        : ''
+      // Instrucción libre del usuario: manda por sobre el criterio por defecto.
+      const orden = String(body.instruccion || '').trim()
+        ? `\n\nINSTRUCCIÓN DEL USUARIO (tiene prioridad, síguela al pie de la letra): ${String(body.instruccion).slice(0, 2000)}`
         : ''
       const r = await fetch(API, {
         method: 'POST',
@@ -72,7 +114,7 @@ export default async (req: Request, _context: Context) => {
           // El modelo razona dentro de este mismo tope, así que dejamos holgura
           // para que el JSON de salida no se corte a la mitad.
           max_tokens: 16000,
-          system: EXTRACCION + hint,
+          system: EXTRACCION + hint + orden,
           messages: [{ role: 'user', content: [...adjuntos, { type: 'text', text: 'Extrae los datos de estos documentos según el formato indicado.' }] }],
         }),
       })

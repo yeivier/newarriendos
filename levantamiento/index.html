@@ -2866,6 +2866,69 @@ function aiImageToJpeg(file){
 }
 function aiFileB64(file){ return fileToDataUrl(file).then(u=>u.split(',')[1]); }
 
+/* ---- Lectura de Word, Excel y texto ----
+   La IA lee imágenes y PDF de forma nativa, pero no Word ni Excel: esos son
+   archivos ZIP con XML adentro, así que les sacamos el texto aquí mismo y se
+   lo mandamos como texto. Se usa DecompressionStream, que ya viene en los
+   navegadores modernos: no hace falta ninguna librería. */
+const _zdv=(b,o)=>b[o]|(b[o+1]<<8);
+const _zdw=(b,o)=>(b[o]|(b[o+1]<<8)|(b[o+2]<<16))+(b[o+3]*16777216);
+
+async function zipEntradas(buffer, quiero){
+  const b=new Uint8Array(buffer), out={}, dec=new TextDecoder();
+  let eocd=-1;
+  for(let i=b.length-22;i>=0 && i>b.length-70000;i--){
+    if(b[i]===0x50&&b[i+1]===0x4b&&b[i+2]===0x05&&b[i+3]===0x06){ eocd=i; break; }
+  }
+  if(eocd<0) return out;
+  const total=_zdv(b,eocd+10); let p=_zdw(b,eocd+16);
+  for(let n=0;n<total;n++){
+    if(b[p]!==0x50||b[p+1]!==0x4b||b[p+2]!==0x01||b[p+3]!==0x02) break;
+    const metodo=_zdv(b,p+10), compSize=_zdw(b,p+20);
+    const nameLen=_zdv(b,p+28), extraLen=_zdv(b,p+30), comLen=_zdv(b,p+32), local=_zdw(b,p+42);
+    const nombre=dec.decode(b.subarray(p+46,p+46+nameLen));
+    p+=46+nameLen+extraLen+comLen;
+    if(!quiero(nombre)) continue;
+    const ini=local+30+_zdv(b,local+26)+_zdv(b,local+28);
+    const datos=b.subarray(ini,ini+compSize);
+    try{
+      if(metodo===0) out[nombre]=dec.decode(datos);
+      else if(metodo===8){
+        const ds=new DecompressionStream('deflate-raw');
+        out[nombre]=await new Response(new Blob([datos]).stream().pipeThrough(ds)).text();
+      }
+    }catch(e){}
+  }
+  return out;
+}
+function _zxml(x){ return String(x||'')
+  .replace(/<\/w:p>|<\/a:p>|<\/text:p>/g,'\n').replace(/<[^>]+>/g,' ')
+  .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
+  .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+  .replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+  .replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim(); }
+
+async function docxTexto(buf){
+  const e=await zipEntradas(buf,n=>/^word\/(document|header\d*|footer\d*)\.xml$/.test(n));
+  return Object.keys(e).sort().map(k=>_zxml(e[k])).filter(Boolean).join('\n\n');
+}
+async function xlsxTexto(buf){
+  const e=await zipEntradas(buf,n=>/^xl\/(sharedStrings\.xml|worksheets\/sheet\d+\.xml)$/.test(n));
+  const comp=(e['xl/sharedStrings.xml']||'').split(/<si[\s>]/).slice(1).map(s=>_zxml(s.split('</si>')[0]));
+  return Object.keys(e).filter(k=>k.indexOf('worksheets/')>=0).sort().map(k=>
+    e[k].split(/<row[\s>]/).slice(1).map(fila=>
+      fila.split(/<c[\s>]/).slice(1).map(c=>{
+        const a=c.split('>')[0];
+        // El texto puede ir en línea o apuntando a la tabla compartida.
+        if(/t="inlineStr"/.test(a)){ const t=c.match(/<t[^>]*>[\s\S]*?<\/t>/g); return t?t.map(_zxml).join(' '):''; }
+        const v=(c.match(/<v>([\s\S]*?)<\/v>/)||[])[1];
+        if(v==null) return '';
+        return /t="s"/.test(a) ? (comp[+v]||'') : v;
+      }).filter(x=>x!=='').join('\t')
+    ).filter(Boolean).join('\n')
+  ).filter(Boolean).join('\n\n');
+}
+
 function aiApply(campos){
   const defById={};
   SCHEMA.sections.forEach(s=>(s.fields||[]).concat(state.customFields[s.num]||[]).forEach(f=>{ defById[f.id]={f:f,sec:s.num}; }));
@@ -2899,9 +2962,23 @@ async function aiRun(files, model, statusEl, runBtn){
         const im=await aiImageToJpeg(f); content.push({type:'image',source:{type:'base64',media_type:im.media,data:im.data}});
       } else if(/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){
         const b=await aiFileB64(f); content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});
+      } else {
+        // Word, Excel y texto: se extrae el contenido aquí y viaja como texto.
+        const ext=(f.name.split('.').pop()||'').toLowerCase();
+        let txt='';
+        if(ext==='docx') txt=await docxTexto(await f.arrayBuffer());
+        else if(ext==='xlsx'||ext==='xlsm') txt=await xlsxTexto(await f.arrayBuffer());
+        else if(['txt','csv','md','json','xml','html','htm','rtf'].indexOf(ext)>=0 || /^text\//.test(f.type)){
+          txt=await f.text();
+          if(['rtf','html','htm'].indexOf(ext)>=0) txt=_zxml(txt);
+        }
+        else if(['doc','xls','ppt','pages','numbers'].indexOf(ext)>=0)
+          throw new Error('"'+f.name+'" está en un formato antiguo. Guárdalo como PDF o .docx y vuelve a subirlo.');
+        else throw new Error('No sé leer "'+f.name+'". Sirven fotos, PDF, Word, Excel y archivos de texto.');
+        if(txt.trim()) content.push({type:'text', text:'--- Contenido de "'+f.name+'" ---\n'+txt.slice(0,120000)});
       }
     }
-    if(!content.length){ throw new Error('Formatos no soportados. Usa imágenes o PDF.'); }
+    if(!content.length){ throw new Error('No se pudo leer ningún archivo. Sirven fotos, PDF, Word, Excel y texto.'); }
     content.push({type:'text', text:
       'Eres un asistente experto en documentos inmobiliarios chilenos (escrituras, certificados del CBR/SII, cédulas de identidad, '+
       'liquidaciones de sueldo, boletines comerciales Equifax/Dicom, contratos, etc.). Extrae los datos del/los documento(s) y '+
@@ -2974,7 +3051,7 @@ function buildAIPanel(){
 
   const r3=el('div',{class:'ai-row'});
   r3.appendChild(el('label',{class:'ai-lbl'},'Documentos'));
-  const fin=el('input',{type:'file',accept:'image/*,application/pdf',multiple:'multiple',class:'ai-file'});
+  const fin=el('input',{type:'file',accept:'image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf',multiple:'multiple',class:'ai-file'});
   r3.appendChild(fin); body.appendChild(r3);
 
   const status=el('div',{class:'ai-status'});
