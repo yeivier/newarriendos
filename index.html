@@ -531,6 +531,21 @@
   .lector-chip button:hover{background:var(--red-bg);color:var(--red-d)}
   .lector-res{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
   .lector-resumen{font-size:13px;color:var(--text);line-height:1.55;white-space:pre-wrap}
+  .lector-orden{min-height:44px;max-height:120px;resize:none;margin-bottom:10px;font-size:16px}
+
+  /* Acciones propuestas por la IA cuando el documento no encaja en el formulario */
+  .sug-wrap{margin-top:13px;border-top:1px solid var(--line2);padding-top:12px}
+  .sug-t{font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:9px}
+  .sug{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:var(--card)}
+  .sug + .sug{margin-top:8px}
+  .sug-ico{font-size:20px;flex-shrink:0;line-height:1.2}
+  .sug-body{flex:1;min-width:0}
+  .sug-titulo{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.35}
+  .sug-porque{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .sug-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px;font-size:12px;color:var(--brand-d);font-weight:700}
+  .sug-btn{margin-top:9px;border:none;border-radius:9px;background:var(--brand);color:#141419;font:800 13px var(--font);padding:9px 14px;cursor:pointer;width:100%}
+  .sug-btn:hover{background:var(--brand-d);color:#fff}
+  .sug-nada{margin-top:7px;font-size:12.5px;color:var(--faint)}
 
   /* Aviso mientras consulta internet, y fuentes citadas bajo la respuesta. */
   .ai-buscando{font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:9px;padding:7px 10px;align-self:flex-start}
@@ -1835,6 +1850,39 @@ function EscriturasBox({ p, onChange }){
 }
 
 /* ---------- Sección desplegable (acordeón) — para ordenar y no aglomerar ---------- */
+/* Acciones que propone la IA cuando el documento no encaja en los campos de una
+   propiedad. Evita el callejón sin salida: en vez de "no encontré nada",
+   explica qué hacer y lo ejecuta. */
+const ACC_ICO={gasto:"💸",bitacora:"📓",incidencia:"🛠️",ninguna:"ℹ️"};
+const ACC_TXT={gasto:"Registrar como gasto",bitacora:"Anotar en la bitácora",incidencia:"Crear incidencia",ninguna:""};
+
+function Sugerencias({ res, props, onEjecutar }){
+  const lista=(res&&res.datos&&res.datos.sugerencias)||[];
+  if(!lista.length) return null;
+  const nombreProp=(id)=>{ const p=props.find(x=>String(x.id)===String(id)); return p?p.name:null; };
+  return (<div className="sug-wrap">
+    <div className="sug-t">¿Qué hacemos con este documento?</div>
+    {lista.slice(0,3).map((s,i)=>{
+      const prop=nombreProp(s.propiedadId);
+      const ejecutable=s.accion&&s.accion!=="ninguna";
+      return (<div key={i} className="sug">
+        <div className="sug-ico">{ACC_ICO[s.accion]||"ℹ️"}</div>
+        <div className="sug-body">
+          <div className="sug-titulo">{s.titulo||ACC_TXT[s.accion]||"Sugerencia"}</div>
+          {s.porque&&<div className="sug-porque">{s.porque}</div>}
+          <div className="sug-meta">
+            {prop&&<span>🏠 {prop}</span>}
+            {num(s.monto)>0&&<span>{CLP(num(s.monto))}{s.periodo&&s.periodo!=="una vez"?" / "+s.periodo:""}</span>}
+          </div>
+          {ejecutable
+            ? <button className="sug-btn" onClick={()=>onEjecutar(s)}>{ACC_TXT[s.accion]||"Hacerlo"}</button>
+            : <div className="sug-nada">No hay nada que guardar en la plataforma.</div>}
+        </div>
+      </div>);
+    })}
+  </div>);
+}
+
 function Collapsible({ title, icon, subtitle, children, defaultOpen, flush, accent }){
   // Todas las secciones parten cerradas: el usuario las despliega una a una.
   const [open,setOpen]=React.useState(false);
@@ -2590,6 +2638,8 @@ function App(){
   const [repProp,setRepProp]=useState("");
   const [aiAdj,setAiAdj]=useState([]);
   const [aiDocs,setAiDocs]=useState([]), [aiDocBusy,setAiDocBusy]=useState(false), [aiDocRes,setAiDocRes]=useState(null), [aiDocDest,setAiDocDest]=useState("nueva");
+  // Instrucción libre para el lector: "guárdalo como gasto de la casa de Ñuñoa", etc.
+  const [aiOrden,setAiOrden]=useState("");
   const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
   const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
   SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
@@ -3211,7 +3261,7 @@ function App(){
     try{
       const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
       // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
-      const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ mode:"extraer", files:aiDocs.map(f=>f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name})), propiedades:hint })});
+      const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ mode:"extraer", instruccion:aiOrden, files:aiDocs.map(f=>f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name})), propiedades:hint })});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
       setAiDocRes(j);
@@ -3242,16 +3292,45 @@ function App(){
      usuario revise y corrija antes de guardar. */
   const rellenarFormNueva=()=>{
     const { c, g, nCampos }=datosACampos();
-    if(!nCampos){ notify("La IA no encontró campos aplicables en el documento",true); return; }
+    if(!nCampos){ notify("Este documento no trae datos de propiedad. Mira las acciones que te propone la IA más abajo.",true); return; }
     setNP(prev=>({ ...prev, ...c, rentedNow: c.tenant?true:prev.rentedNow,
       garantia:{ ...(prev.garantia||blank.garantia), ...g } }));
     setAiDocRes(null); setAiDocs([]);
     notify(nCampos+" campos completados. Revísalos antes de guardar.");
   };
 
+  /* Ejecuta una de las acciones que propuso la IA cuando el documento no
+     encaja en los campos de una propiedad (una declaración de impuestos, una
+     boleta, un certificado). Así el usuario nunca queda sin salida. */
+  const ejecutarSugerencia=(s)=>{
+    const pid=s.propiedadId&&props.some(p=>String(p.id)===String(s.propiedadId))?s.propiedadId:null;
+    const titulo=s.titulo||"Documento leído con IA";
+    const detalle=s.detalle||s.porque||"";
+    if(s.accion==="gasto"){
+      if(!pid){ notify("Elige a qué propiedad asociar el gasto",true); return; }
+      const periodo = s.periodo==="año" ? "año" : "mes";
+      patchProp(pid, x=>({...x, gastosExtra:[...(x.gastosExtra||[]),
+        { id:"g"+Date.now().toString(36), concepto:titulo, monto:String(Math.round(num(s.monto))||""), periodo }]}));
+      notify("Gasto agregado: "+titulo);
+    } else if(s.accion==="incidencia"){
+      if(!pid){ notify("Elige a qué propiedad asociar la incidencia",true); return; }
+      patchProp(pid, x=>({...x, incidencias:[{ id:Date.now(), fecha:todayISO(), titulo,
+        descripcion:detalle, prioridad:"Media", categoria:"Mantención", adjuntos:[] }, ...(x.incidencias||[])]}));
+      notify("Incidencia registrada: "+titulo);
+    } else if(s.accion==="bitacora"){
+      // Sin propiedad indicada, la nota queda en todas: es preferible a perderla.
+      const destinos = pid ? [pid] : props.map(p=>p.id).slice(0,1);
+      if(!destinos.length){ notify("Primero crea una propiedad para poder anotar",true); return; }
+      destinos.forEach(d=>patchProp(d, x=>({...x, bitacora:[{ id:"bit-"+Date.now(), fecha:todayISO(),
+        tipo:"Nota", titulo, texto:detalle, adjuntos:[] }, ...(x.bitacora||[])]})));
+      notify("Anotado en la bitácora: "+titulo);
+    } else { notify("Sin acción que ejecutar"); return; }
+    setAiDocRes(null); setAiDocs([]); setAiOrden("");
+  };
+
   const aplicarDatos=()=>{
     const { c, g, nCampos }=datosACampos();
-    if(!nCampos){ notify("La IA no encontró campos aplicables en el documento",true); return; }
+    if(!nCampos){ notify("Este documento no trae datos de propiedad. Mira las acciones que te propone la IA más abajo.",true); return; }
     if(aiDocDest==="nueva"){
       const nueva={...blank, id:Date.now(), use:"arriendo", status:"pendiente", rentedNow:!!c.tenant, gastosExtra:SEED_GASTOS(), ...c, garantia:{...blank.garantia,...g}};
       if(!nueva.name) nueva.name = c.address || ("Propiedad "+todayISO());
@@ -5409,6 +5488,8 @@ function App(){
           <div className="card pad" style={{marginBottom:14}}>
             <div className="sec-title">Lector de documentos con IA</div>
             <div className="help" style={{marginBottom:10}}>Sube <b>fotos, pantallazos, PDF, Word, Excel o texto</b> (contrato de arriendo, escritura, certificado de dominio, informe Equifax o InfoCheck, liquidaciones…). La IA los lee con precisión, te muestra un resumen y <b>completa automáticamente</b> los datos de la propiedad y del arrendatario en las secciones correspondientes.</div>
+            <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
+              placeholder="Opcional: dile a la IA qué hacer con estos archivos. Ej: “anótalo en la bitácora de la casa de Ñuñoa”." />
             <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
               <label className="btn btn-out" style={{cursor:"pointer"}}>Elegir archivos<input type="file" accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" multiple style={{display:"none"}} onChange={async e=>{ const fs=[...e.target.files]; e.target.value=""; const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } } if(ok.length) setAiDocs(d=>[...d,...ok]); }}/></label>
               <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo con IA…":"Analizar y completar"}</button>
@@ -5417,7 +5498,9 @@ function App(){
             {aiDocs.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:10}}>{aiDocs.map((f,i)=><div key={i} className="ai-doc-row"><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span><button className="btn btn-out btn-sm" onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))}>Quitar</button></div>)}</div>}
             {aiDocRes&&<div style={{marginTop:12}}>
               <div className="auth-info" style={{whiteSpace:"pre-wrap"}}>{aiDocRes.text||"Documento leído."}</div>
-              {aiDocRes.datos&&<>
+              {/* El bloque de "ingresar datos" solo tiene sentido si el
+                  documento realmente trae campos de propiedad. */}
+              {aiDocRes.datos&&datosACampos().nCampos>0&&<>
               <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",margin:"10px 0"}}>
                 <span className="label" style={{margin:0}}>Ingresar en:</span>
                 <select className="input" style={{maxWidth:300,width:"auto"}} value={aiDocDest} onChange={e=>setAiDocDest(e.target.value)}>
@@ -5428,6 +5511,7 @@ function App(){
               </div>
               <div style={{fontSize:13,color:"var(--muted)"}}>Se rellenan solo los campos que la IA encontró en el documento; lo que ya existe no se borra.</div>
               </>}
+              <Sugerencias res={aiDocRes} props={props} onEjecutar={ejecutarSugerencia}/>
             </div>}
           </div>
           <div className="card pad" style={{marginBottom:14}}>
@@ -5479,6 +5563,8 @@ function App(){
         <div className="lector-ia">
           <div className="lector-t">✨ Completar con IA desde tus archivos</div>
           <div className="lector-d">Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</div>
+          <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
+            placeholder="Opcional: dile a la IA qué hacer. Ej: “es el contrato del depto de Vitacura, complétame el arrendatario y la renta”." />
           <div className="lector-btns">
             <label className="btn btn-out" style={{cursor:"pointer"}}>
               {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
@@ -5494,7 +5580,8 @@ function App(){
           {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
           {aiDocRes&&<div className="lector-res">
             <div className="lector-resumen">{aiDocRes.text||"Documento leído."}</div>
-            {aiDocRes.datos&&<button className="btn btn-red" style={{width:"100%",marginTop:10}} onClick={rellenarFormNueva}>Completar el formulario con estos datos</button>}
+            {aiDocRes.datos&&datosACampos().nCampos>0&&<button className="btn btn-red" style={{width:"100%",marginTop:10}} onClick={rellenarFormNueva}>Completar el formulario con estos datos</button>}
+            <Sugerencias res={aiDocRes} props={props} onEjecutar={ejecutarSugerencia}/>
           </div>}
         </div>
         <PropForm d={nP} set={setNP}/>
