@@ -116,9 +116,12 @@ export default async (req: Request, _context: Context) => {
         headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: MODEL,
-          // El modelo razona dentro de este mismo tope, así que dejamos holgura
-          // para que el JSON de salida no se corte a la mitad.
-          max_tokens: 16000,
+          // Las funciones de Netlify se cortan a los ~10 segundos, así que la
+          // lectura tiene que ser rápida: esfuerzo bajo y un tope de salida
+          // ajustado al JSON que esperamos (el razonamiento se descuenta del
+          // mismo tope). El cliente además manda los archivos de a uno.
+          max_tokens: 4096,
+          output_config: { effort: 'low' },
           system: EXTRACCION + hint + orden,
           messages: [{ role: 'user', content: [...adjuntos, { type: 'text', text: 'Extrae los datos de estos documentos según el formato indicado.' }] }],
         }),
