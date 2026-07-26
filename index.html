@@ -2685,6 +2685,7 @@ function App(){
   const [aiDocs,setAiDocs]=useState([]), [aiDocBusy,setAiDocBusy]=useState(false), [aiDocRes,setAiDocRes]=useState(null), [aiDocDest,setAiDocDest]=useState("nueva");
   // Instrucción libre para el lector: "guárdalo como gasto de la casa de Ñuñoa", etc.
   const [aiOrden,setAiOrden]=useState("");
+  const [aiDocPaso,setAiDocPaso]=useState(""); // "Leyendo 2 de 3…"
   const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
   const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
   SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
@@ -3315,17 +3316,66 @@ function App(){
   const runQuickCmd=(cmd)=>{ setAi(a=>[...a,{r:"user",c:cmd.label.replace(/^[^ ]+ /,"")},{r:"ai",c:cmd.run()}]); };
 
   /* ================== LECTOR DE DOCUMENTOS CON IA ================== */
-  const analizarDocs=async()=>{ if(!aiDocs.length){ notify("Adjunta al menos un archivo",true); return; } setAiDocBusy(true); setAiDocRes(null);
-    try{
-      const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
-      // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
-      const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ mode:"extraer", instruccion:aiOrden, files:aiDocs.map(f=>f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name})), propiedades:hint })});
-      const j=await r.json().catch(()=>({}));
-      if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
+  /* Combina las lecturas de varios archivos en un solo resultado. Los primeros
+     archivos mandan: los siguientes solo rellenan lo que quedó vacío. */
+  const fusionarLecturas=(partes)=>{
+    const datos={}, resumenes=[], sugerencias=[];
+    partes.forEach(({nombre,j})=>{
+      if(j.text) resumenes.push((partes.length>1?"• "+nombre+": ":"")+j.text);
+      const d=j.datos||{};
+      Object.keys(d).forEach(k=>{
+        if(k==="sugerencias"){ (d[k]||[]).forEach(s=>sugerencias.push(s)); return; }
+        const v=d[k];
+        if(v&&typeof v==="object"&&!Array.isArray(v)){
+          datos[k]=datos[k]||{};
+          Object.keys(v).forEach(kk=>{
+            const val=v[kk];
+            const vacio = datos[k][kk]===undefined||datos[k][kk]===null||String(datos[k][kk]).trim()===""||datos[k][kk]===0;
+            if(vacio && val!==undefined && val!==null && String(val).trim()!=="") datos[k][kk]=val;
+          });
+        } else if(datos[k]===undefined||datos[k]===null||String(datos[k]||"").trim()===""){
+          datos[k]=v;
+        }
+      });
+    });
+    if(sugerencias.length) datos.sugerencias=sugerencias.slice(0,6);
+    return { text:resumenes.join("\n\n"), datos };
+  };
+
+  const analizarDocs=async()=>{
+    if(!aiDocs.length){ notify("Adjunta al menos un archivo",true); return; }
+    setAiDocBusy(true); setAiDocRes(null);
+    const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
+    const partes=[], fallidos=[];
+    // De a un archivo por llamada: las funciones de Netlify se cortan a los ~10
+    // segundos y varios PDF juntos no alcanzan a procesarse (error 504).
+    for(let i=0;i<aiDocs.length;i++){
+      const f=aiDocs[i];
+      setAiDocPaso(aiDocs.length>1?("Leyendo "+(i+1)+" de "+aiDocs.length+"…"):"Leyendo…");
+      try{
+        // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
+        const cuerpo={ mode:"extraer", instruccion:aiOrden, propiedades:hint,
+          files:[ f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name}) ] };
+        const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo)});
+        const j=await r.json().catch(()=>({}));
+        if(r.status===504||r.status===502&&!j.error) throw new Error("tardó demasiado");
+        if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
+        partes.push({nombre:f.name,j});
+      }catch(e){ fallidos.push({nombre:f.name,motivo:(e&&e.message)||"error"}); }
+    }
+    setAiDocPaso("");
+    if(partes.length){
+      const j=fusionarLecturas(partes);
       setAiDocRes(j);
       const co=j.datos&&j.datos.coincidenciaId;
       setAiDocDest(co&&props.some(p=>String(p.id)===String(co))?String(co):"nueva");
-    }catch(e){ notify("No se pudo analizar el documento: "+(e.message||"error")+". Verifica ANTHROPIC_API_KEY en Netlify.",true); }
+      if(fallidos.length) notify("No pude leer: "+fallidos.map(x=>x.nombre).join(", "),true);
+    } else {
+      const t=fallidos[0]&&fallidos[0].motivo||"error";
+      notify(/demasiado|504|timeout/i.test(t)
+        ? "El documento es muy pesado y la lectura se agotó. Prueba con un archivo más liviano, o súbelo por partes."
+        : ("No se pudo analizar el documento: "+t), true);
+    }
     setAiDocBusy(false); };
   /* Traduce lo que leyó la IA a los campos de una propiedad. Se usa tanto para
      crear la propiedad de una vez como para rellenar el formulario abierto. */
@@ -3383,7 +3433,7 @@ function App(){
               const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
               if(ok.length) setAiDocs(d=>[...d,...ok]); }}/>
         </label>
-        <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo…":"Leer y completar"}</button>
+        <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?(aiDocPaso||"Leyendo…"):"Leer y completar"}</button>
         {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
       </div>
       {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
@@ -5607,7 +5657,7 @@ function App(){
               placeholder="Opcional: dile a la IA qué hacer con estos archivos. Ej: “anótalo en la bitácora de la casa de Ñuñoa”." />
             <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
               <label className="btn btn-out" style={{cursor:"pointer"}}>Elegir archivos<input type="file" accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" multiple style={{display:"none"}} onChange={async e=>{ const fs=[...e.target.files]; e.target.value=""; const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } } if(ok.length) setAiDocs(d=>[...d,...ok]); }}/></label>
-              <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?"Leyendo con IA…":"Analizar y completar"}</button>
+              <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?(aiDocPaso||"Leyendo con IA…"):"Analizar y completar"}</button>
               {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
             </div>
             {aiDocs.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:10}}>{aiDocs.map((f,i)=><div key={i} className="ai-doc-row"><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span><button className="btn btn-out btn-sm" onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))}>Quitar</button></div>)}</div>}
