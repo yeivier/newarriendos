@@ -2987,11 +2987,17 @@ async function aiRun(files, model, statusEl, runBtn){
       'Reglas: usa únicamente los "id" del catálogo; para type "choice" el valor debe COINCIDIR EXACTO con una de sus "opciones"; '+
       'para montos entrega solo el número sin puntos ni símbolos; para fechas usa AAAA-MM-DD; '+
       'omite los campos que no aparezcan en el documento; no inventes datos. Catálogo de campos: '+JSON.stringify(aiCatalog()) });
-    const resp=await fetch('/.netlify/functions/leer-documento',{
+    /* La ficha puede estar servida desde el sitio principal o desde su propio
+       dominio (que redirige al principal). Se prueba primero la ruta /api,
+       que es la que atraviesa la redirección, y si no existe se usa la ruta
+       por omisión de las funciones de Netlify. */
+    const pedirIA=(ruta)=>fetch(ruta,{
       method:'POST',
       headers:{'content-type':'application/json'},
       body:JSON.stringify({model:model||'claude-sonnet-5', content:content})
     });
+    let resp=await pedirIA('/api/leer-documento');
+    if(resp.status===404) resp=await pedirIA('/.netlify/functions/leer-documento');
     const rawTxt=await resp.text();
     let data;
     try{ data=JSON.parse(rawTxt); }catch(e){ throw new Error('El servidor no devolvió JSON (código '+resp.status+'). '+(rawTxt||'').slice(0,200)); }

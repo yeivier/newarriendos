@@ -1,0 +1,25 @@
+CARPETA PARA EL DOMINIO DE LA FICHA (fichacompletapropiedadescgvd.com)
+=====================================================================
+
+Qué hace
+--------
+Deja el dominio de la ficha apuntando al sitio principal (newarriendos),
+que ya tiene configurada la clave de la IA. Después de subir esta carpeta:
+
+  - fichacompletapropiedadescgvd.com muestra la ficha nueva del sitio
+    principal, siempre actualizada.
+  - El lector de archivos con IA funciona, porque las llamadas viajan al
+    sitio principal y usan la clave que ya está ahí.
+  - No hay que mantener la clave en dos proyectos ni volver a subir la
+    ficha cuando cambie.
+
+Cómo subirla
+------------
+1. Entra a https://app.netlify.com/projects/fichapropiedades
+2. Pestaña "Deploys".
+3. Arrastra ESTA CARPETA COMPLETA (ficha-dominio) al recuadro que dice
+   "Drag and drop your project output folder here".
+4. Espera a que diga "Published". Listo.
+
+Nota: este proyecto queda sin funciones propias, a propósito. Todo lo
+resuelve el sitio principal.

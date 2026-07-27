@@ -103,13 +103,24 @@ export default async (req: Request, _context: Context) => {
 
   try {
     if (body.mode === 'extraer') {
-      if (!adjuntos.length) return Response.json({ error: 'No llegaron archivos para analizar' }, { status: 400 })
+      const instruccion = String(body.instruccion || '').trim()
+      // Se puede trabajar solo con la instrucción escrita: sin archivos, la IA
+      // corrige o completa el formulario con lo que el usuario le dicta.
+      if (!adjuntos.length && !instruccion) {
+        return Response.json({ error: 'Adjunta un archivo o escribe qué quieres que haga la IA' }, { status: 400 })
+      }
       const hint = Array.isArray(body.propiedades) && body.propiedades.length
         ? `\nPropiedades ya existentes en la plataforma (para "coincidenciaId" y "propiedadId"): ${JSON.stringify(body.propiedades).slice(0, 4000)}`
         : ''
+      const formulario = body.formulario && typeof body.formulario === 'object'
+        ? `\nLo que ya está escrito en el formulario abierto (corrige solo lo que corresponda y deja el resto igual): ${JSON.stringify(body.formulario).slice(0, 2000)}`
+        : ''
       // Instrucción libre del usuario: manda por sobre el criterio por defecto.
-      const orden = String(body.instruccion || '').trim()
-        ? `\n\nINSTRUCCIÓN DEL USUARIO (tiene prioridad, síguela al pie de la letra): ${String(body.instruccion).slice(0, 2000)}`
+      const orden = instruccion
+        ? `\n\nINSTRUCCIÓN DEL USUARIO (tiene prioridad, síguela al pie de la letra): ${instruccion.slice(0, 2000)}`
+        : ''
+      const sinArchivos = !adjuntos.length
+        ? '\n\nEn esta consulta NO hay archivos adjuntos: trabaja solo con la instrucción del usuario y con el formulario actual. Devuelve en "propiedad" (o donde corresponda) los campos que el usuario te está dictando o pidiendo corregir, y explica en "resumen" qué cambiaste. Si lo que pide no calza en ningún campo, propónlo en "sugerencias".'
         : ''
       const r = await fetch(API, {
         method: 'POST',
@@ -122,8 +133,16 @@ export default async (req: Request, _context: Context) => {
           // mismo tope). El cliente además manda los archivos de a uno.
           max_tokens: 4096,
           output_config: { effort: 'low' },
-          system: EXTRACCION + hint + orden,
-          messages: [{ role: 'user', content: [...adjuntos, { type: 'text', text: 'Extrae los datos de estos documentos según el formato indicado.' }] }],
+          system: EXTRACCION + hint + formulario + orden + sinArchivos,
+          messages: [{
+            role: 'user',
+            content: [
+              ...adjuntos,
+              { type: 'text', text: adjuntos.length
+                ? 'Extrae los datos de estos documentos según el formato indicado.'
+                : 'Aplica la instrucción sobre el formulario actual y devuelve el JSON en el formato indicado.' },
+            ],
+          }],
         }),
       })
       const j: any = await r.json()
