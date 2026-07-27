@@ -456,6 +456,19 @@
   .ai-fab{position:fixed;right:22px;bottom:22px;z-index:180;width:60px;height:60px;border:none;border-radius:19px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 16px 40px rgba(34,28,15,.28);cursor:pointer;font-size:27px;display:flex;align-items:center;justify-content:center;transition:.18s}
   .ai-fab:hover{transform:translateY(-2px) scale(1.02)}
   .ai-fab .ai-dot{position:absolute;right:5px;top:5px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--green)}
+
+  /* Botón para volver al inicio de la página sin arrastrar con el dedo. */
+  .subir-fab{position:fixed;left:22px;bottom:22px;z-index:178;width:52px;height:52px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 10px 28px rgba(16,24,40,.18);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;transition:.18s}
+  .subir-fab:hover{transform:translateY(-2px)}
+  /* Fichas reordenables: se mantienen presionadas para moverlas. */
+  .ord-wrap{position:relative}
+  .ord-wrap.movible{outline:2px dashed var(--brand-soft);outline-offset:3px;border-radius:16px}
+  .ord-num{position:absolute;left:-9px;top:-9px;z-index:3;background:var(--gold);color:#141419;border-radius:9px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;box-shadow:0 3px 10px rgba(16,24,40,.2)}
+  .mov-lista{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .mov-it{display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:left;font-size:14.5px;font-weight:600;color:var(--ink);width:100%}
+  .mov-it.act{border-color:var(--gold);background:var(--brand-bg)}
+  .mov-it .n{width:24px;height:24px;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
+  .mov-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .ai-float{position:fixed;right:22px;bottom:94px;z-index:179;width:min(410px,calc(100vw - 24px));height:min(650px,calc(100vh - 125px));background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 80px rgba(16,24,40,.24);display:flex;flex-direction:column;overflow:hidden;transform-origin:bottom right;animation:aiPop .18s ease-out}
   @keyframes aiPop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
   .ai-float-head{padding:15px 16px;background:linear-gradient(135deg,#17171d,#29272a);color:#fff;display:flex;align-items:center;gap:11px}
@@ -480,6 +493,11 @@
      campo y deja toda la página ampliada, sin volver atrás sola. */
   .ai-compose textarea{min-height:44px;max-height:110px;resize:none;padding:10px 11px;font-size:16px}
   .ai-send{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0}
+  /* Micrófono: se le habla al asesor y él ejecuta lo que se le pidió. */
+  .ai-mic{width:44px;height:44px;min-height:44px;padding:0;border-radius:12px;flex-shrink:0;border:1px solid var(--line);background:var(--card);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .ai-mic:hover{background:var(--panel2)}
+  .ai-mic.on{background:var(--red);color:#fff;border-color:var(--red);animation:micLatido 1.1s ease-in-out infinite}
+  @keyframes micLatido{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
   .ai-clip{width:40px;height:44px;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;flex-shrink:0;border-radius:11px;background:var(--panel2);border:1px solid var(--line)}
   .ai-clip:hover{background:var(--brand-bg);border-color:var(--brand-soft)}
   .ai-adj{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
@@ -785,7 +803,7 @@ function mergeTrinidadSeed(list){
   return arr;
 }
 
-const defOwner = store.get("ap_owner", { name:"Javier Corral", rut:"12.345.678-9", email:"javier@arriendopro.cl", phone:"+56912345678", whatsapp:"+56912345678", bank:"Banco de Chile", accountType:"Cuenta Corriente", accountNumber:"000-12345678", alias:"arriendos-javier", gateway:"webpay" });
+const defOwner = store.get("ap_owner", { name:"Javier Corral", rut:"12.345.678-9", email:"javier@arriendopro.cl", phone:"+56912345678", whatsapp:"+56912345678", whatsappEnvio:WA_REMITENTE_DEF, bank:"Banco de Chile", accountType:"Cuenta Corriente", accountNumber:"000-12345678", alias:"arriendos-javier", gateway:"webpay" });
 
 /* ---------- Cuentas bancarias para transferencias (varias cuentas) ---------- */
 // El usuario puede tener más de una cuenta de banco para recibir transferencias.
@@ -867,6 +885,30 @@ const TIPOS_BIT = ["Nota","Contrato","Servicio","Antecedentes","Mantenciones"];
 const blankInc = { titulo:"", descripcion:"", prioridad:"Media", categoria:"Mantención", adjuntos:[] };
 const blankBit = { tipo:"Nota", titulo:"", texto:"", adjuntos:[] };
 const CANALES_COBRO = [ {id:"correo",label:"Correo",ico:"📧"}, {id:"whatsapp",label:"WhatsApp",ico:"💬"}, {id:"sms",label:"SMS",ico:"📱"} ];
+
+/* ---- WhatsApp: un solo número para todo lo que sale de la plataforma ----
+   Los mensajes se envían desde este número, que además va firmado en las
+   plantillas. Se puede cambiar en Configuración (campo "WhatsApp de envío").
+   Ojo: wa.me abre WhatsApp con el mensaje escrito y el envío lo confirma la
+   persona; para que salgan solos hay que conectar la API de WhatsApp Business
+   con ese mismo número. */
+const WA_REMITENTE_DEF = "+56975549829";
+const waNumeroFmt = (n)=>{
+  const d=String(n||"").replace(/[^0-9]/g,"");
+  if(!d) return "";
+  if(d.indexOf("56")===0) return d;
+  if(d.length===9||d.length===8) return "56"+d;
+  return d;
+};
+const waRemitente = (owner)=>{ const n=(owner&&owner.whatsappEnvio)||WA_REMITENTE_DEF; const d=waNumeroFmt(n); return d?("+"+d):WA_REMITENTE_DEF; };
+/* Abre WhatsApp con el mensaje ya escrito. Sin destinatario, deja elegir el
+   contacto. El texto se codifica una sola vez (antes se mezclaban formatos y
+   los saltos de línea y los signos $ salían mal). */
+const waEnviar = (destino, texto)=>{
+  const d=waNumeroFmt(destino);
+  const url="https://wa.me/"+d+(texto?("?text="+encodeURIComponent(String(texto))):"");
+  window.open(url,"_blank","noopener");
+};
 const defCanales = { correo:true, whatsapp:false, sms:false };
 const getCanales = (p)=> ({ ...defCanales, ...(p.canales||{}) });
 const defRecord = { activo:true, diasAntes:3 };
@@ -885,13 +927,39 @@ const readFileDataURL = (file)=> new Promise((res,rej)=>{ const r=new FileReader
 /* Consulta para Google Maps. Las propiedades nuevas no traen coordenadas, y
    pedirle el mapa con "q=," hace que Google caiga en un lugar cualquiera: por
    eso, sin coordenadas, se busca por la dirección escrita. */
+const dirTexto = (p)=>[p.address,p.comuna,p.region,"Chile"].filter(Boolean).join(", ");
+const tieneCoords = (p)=>{ const a=parseFloat(p.lat), b=parseFloat(p.lng); return !isNaN(a)&&!isNaN(b)&&(a||b); };
+/* Las coordenadas solo valen si se calcularon con la dirección que está
+   escrita hoy. Si la dirección cambió (la corrigió el usuario o la IA), las
+   coordenadas viejas quedan obsoletas y no se usan. */
+const coordsFrescas = (p)=>tieneCoords(p) && (!p.address || String(p.geoDir||"")===dirTexto(p));
+/* Manda la dirección escrita: es lo que el usuario ve y corrige, y el buscador
+   de Google la resuelve mejor que unas coordenadas aproximadas. Las
+   coordenadas solo se usan cuando no hay dirección. */
 const mapaConsulta = (p)=>{
+  const dir=dirTexto(p);
+  if(String(p.address||"").trim()) return encodeURIComponent(dir);
   const lat=parseFloat(p.lat), lng=parseFloat(p.lng);
   if(!isNaN(lat)&&!isNaN(lng)&&(lat||lng)) return lat+","+lng;
-  const dir=[p.address,p.comuna,p.region,"Chile"].filter(Boolean).join(", ");
-  return encodeURIComponent(dir||"Chile");
+  return encodeURIComponent("Chile");
 };
-const tieneCoords = (p)=>{ const a=parseFloat(p.lat), b=parseFloat(p.lng); return !isNaN(a)&&!isNaN(b)&&(a||b); };
+/* Street View de Google solo abre con coordenadas, así que se usan las que
+   correspondan a la dirección escrita. */
+const panoURL = (p)=>coordsFrescas(p)
+  ? ("https://www.google.com/maps/@?api=1&map_action=pano&viewpoint="+p.lat+","+p.lng)
+  : "";
+/* Acepta que peguen un enlace de Google Maps o unas coordenadas sueltas: es la
+   forma más exacta de fijar el punto cuando el buscador no da con la casa. */
+const parsearCoords = (txt)=>{
+  const s=String(txt||"");
+  const m = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+        || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+        || s.match(/(?:q|query|viewpoint|ll|cbll)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/)
+        || s.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
+  if(!m) return null;
+  const lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+  return (isNaN(lat)||isNaN(lng)) ? null : { lat, lng };
+};
 
 /* Convierte la dirección escrita en coordenadas.
    Street View de Google solo se puede abrir con coordenadas: con una dirección
@@ -1168,52 +1236,52 @@ const TPL_LIST = [
    crear nuevas plantillas, eliminarlas y adjuntar archivos de cualquier tipo.
    El texto admite variables entre llaves que se reemplazan al previsualizar/copiar:
    {nombre} {propiedad} {direccion} {comuna} {monto} {periodo} {vence} {banco} {pasarela} {email_admin} */
-const TPL_VARS = ["{nombre}","{propiedad}","{direccion}","{comuna}","{monto}","{periodo}","{vence}","{banco}","{pasarela}","{email_admin}"];
+const TPL_VARS = ["{nombre}","{propiedad}","{direccion}","{comuna}","{monto}","{periodo}","{vence}","{banco}","{pasarela}","{email_admin}","{whatsapp_admin}"];
 const seedPlantillas = ()=> [
   {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:"🧾",builtin:true,adjuntos:[],
     asunto:"Tu arriendo de {periodo} ya está listo · {propiedad}",
     cuerpo:"ArriendoPro: tu arriendo de {periodo} ({monto}) ya está disponible, vence {vence}. ¡Gracias!",
-    cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nYa está disponible tu arriendo de *{periodo}* \n{direccion}\n\n*Monto:*  {monto}\n*Vence:*  {vence}\n\n¿Cómo pagar? \nEn línea con {pasarela}\nTransferencia:\n{banco}\n\n¡Gracias por ser parte! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro · Administración de propiedades_",
+    cuerpoWA:"🧾 *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nYa está disponible tu arriendo de *{periodo}* 📅\n🏠 {direccion}\n\n💵 *Monto:* {monto}\n⏳ *Vence:* {vence}\n\n¿Cómo pagar? 💳\n• En línea con {pasarela}\n• Transferencia:\n🏦 {banco}\n\n¡Gracias por ser parte! 🙌\n━━━━━━━━━━━━━\n_Equipo ArriendoPro · Administración de propiedades_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\nEsperamos que te encuentres muy bien. Ya está disponible el detalle de tu arriendo correspondiente a {periodo} para {direccion}.\n\n— Resumen de tu pago —\n•  Monto a pagar:  {monto}\n•  Fecha de vencimiento:  {vence}\n\nPuedes pagar de forma fácil y segura en línea con {pasarela}, o mediante transferencia bancaria a:\n{banco}\n\nSi tienes cualquier consulta, escríbenos a {email_admin}; estaremos encantados de ayudarte.\n\nUn cordial saludo,\nEquipo ArriendoPro\nAdministración de propiedades"},
   {id:"recordatorio",label:"Recordatorio de pago",ico:"⏰",builtin:true,adjuntos:[],
     asunto:"Recordatorio amable · tu arriendo vence el {vence}",
     cuerpo:"ArriendoPro: recordatorio, tu arriendo de {periodo} ({monto}) vence {vence}. Evita recargos. ¡Gracias!",
-    cuerpoWA:"⏰ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nUn recordatorio con cariño: tu arriendo de *{periodo}* vence muy pronto.\n{propiedad}\n\n*Pendiente:*  {monto}\n*Vence:*  {vence}\n\nPara evitar recargos, paga fácil \n{pasarela}\n{banco}\n\nCualquier duda, aquí estamos \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"⏰ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nUn recordatorio con cariño: tu arriendo de *{periodo}* vence muy pronto.\n🏠 {propiedad}\n\n💵 *Pendiente:* {monto}\n⏳ *Vence:* {vence}\n\nPara evitar recargos, paga fácil 👇\n💳 {pasarela}\n🏦 {banco}\n\nCualquier duda, aquí estamos 💬\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\nTe escribimos para recordarte, con la mejor disposición, que tu arriendo de {periodo} por {propiedad} está próximo a vencer.\n\n— Detalle —\n•  Monto pendiente:  {monto}\n•  Fecha de vencimiento:  {vence}\n\nPara evitar recargos por atraso, puedes pagar en línea con {pasarela} o por transferencia a:\n{banco}\n\nSi ya realizaste el pago, por favor ignora este mensaje. Ante cualquier duda, escríbenos a {email_admin}.\n\nSaludos cordiales,\nEquipo ArriendoPro"},
-  {id:"confirmacion",label:"Confirmación de pago",ico:"✓",builtin:true,adjuntos:[],
+  {id:"confirmacion",label:"Confirmación de pago",ico:"✅",builtin:true,adjuntos:[],
     asunto:"✓ ¡Pago recibido! Muchas gracias · {periodo}",
     cuerpo:"ArriendoPro: recibimos tu pago de {monto} (arriendo {periodo}). ¡Gracias! Este mensaje es tu comprobante.",
-    cuerpoWA:"✓ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nConfirmamos que recibimos tu pago \n{propiedad}\n\n*Pagado:*  {monto}\n*Período:*  {periodo}\n\nGuarda este mensaje como tu *comprobante* \n¡Gracias por tu puntualidad! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"✅ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nConfirmamos que recibimos tu pago 🎉\n🏠 {propiedad}\n\n💵 *Pagado:* {monto}\n📅 *Período:* {periodo}\n\nGuarda este mensaje como tu *comprobante* 🧾\n¡Gracias por tu puntualidad! 🙌\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\n¡Gracias! Confirmamos que hemos recibido correctamente el pago de tu arriendo de {periodo} por {propiedad}.\n\n— Comprobante —\n•  Monto pagado:  {monto}\n•  Período:  {periodo}\n\nPuedes conservar este correo como respaldo de tu pago. Agradecemos mucho tu puntualidad.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
   {id:"liq_admin",label:"Liquidación (administrador)",ico:"📋",builtin:true,adjuntos:[],
     asunto:"Liquidación de arriendo {periodo} · {propiedad}",
     cuerpo:"ArriendoPro: liquidación {periodo} de {propiedad}. Recaudado {monto}. Detalle en el panel.",
-    cuerpoWA:"*ArriendoPro · Liquidación*\n━━━━━━━━━━━━━\n*Período:*  {periodo}\n{propiedad}\n\n*Recaudado:*  {monto}\n\nEl saldo a transferir al propietario queda disponible en el panel \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"📋 *ArriendoPro · Liquidación*\n━━━━━━━━━━━━━\n📅 *Período:* {periodo}\n🏠 {propiedad}\n\n💰 *Recaudado:* {monto}\n\n📊 El saldo a transferir al propietario queda disponible en el panel\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Estimado(a):\n\nAdjuntamos la liquidación del arriendo de {periodo} correspondiente a {propiedad}.\n\n— Resumen —\n•  Arriendo recaudado:  {monto}\n\nDescontados los gastos y la comisión, el saldo a transferir al propietario queda disponible en el panel de ArriendoPro, donde podrás revisar el detalle completo.\n\nSaludos cordiales,\nEquipo ArriendoPro"},
   {id:"liq_prop",label:"Liquidación (propietario)",ico:"💵",builtin:true,adjuntos:[],
     asunto:"Tu liquidación de arriendo {periodo} está lista",
     cuerpo:"ArriendoPro: tu liquidación de {propiedad} ({periodo}) está lista. Recaudado {monto}. Detalle en el panel.",
-    cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola! \n\nTu liquidación ya está lista \n{propiedad} · *{periodo}*\n\n*Recaudado:*  {monto}\n\nDescontados gastos y comisión, el saldo será depositado en tu cuenta \nDetalle completo en tu panel \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"💵 *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola! 👋\n\nTu liquidación ya está lista ✅\n🏠 {propiedad} · *{periodo}*\n\n💰 *Recaudado:* {monto}\n\n🏦 Descontados gastos y comisión, el saldo será depositado en tu cuenta\n📊 Detalle completo en tu panel\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola:\n\nTu liquidación de {propiedad} correspondiente a {periodo} ya se encuentra disponible.\n\n— Resumen —\n•  Arriendo recaudado:  {monto}\n\nUna vez descontados los gastos y la comisión, el saldo será depositado en tu cuenta registrada. Puedes revisar el detalle completo en tu panel.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
   {id:"bienvenida",label:"Bienvenida",ico:"👋",builtin:true,adjuntos:[],
     asunto:"¡Bienvenido(a) a tu nuevo hogar, {nombre}!",
     cuerpo:"ArriendoPro: ¡bienvenido(a) {nombre} a {direccion}! Aquí gestionarás tu arriendo y pagos.",
-    cuerpoWA:"*¡Bienvenido(a), {nombre}!* \n━━━━━━━━━━━━━\nNos alegra muchísimo recibirte en tu nuevo hogar \n{direccion}, {comuna}\n\nCada mes te avisaremos tu arriendo y podrás pagar:\nEn línea con {pasarela}\nO por transferencia\n\n¿Dudas? Escríbenos \n{email_admin}\n\n¡Que lo disfrutes! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"🎉 *¡Bienvenido(a), {nombre}!*\n━━━━━━━━━━━━━\nNos alegra muchísimo recibirte en tu nuevo hogar 🏡\n📍 {direccion}, {comuna}\n\nCada mes te avisaremos tu arriendo y podrás pagar:\n💳 En línea con {pasarela}\n🏦 O por transferencia\n\n¿Dudas? Escríbenos 💬\n📧 {email_admin}\n\n¡Que lo disfrutes! 🌟\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\n¡Te damos la más cálida bienvenida a tu nuevo hogar en {direccion}, {comuna}!\n\nCada mes te avisaremos oportunamente el detalle de tu arriendo, que podrás pagar en línea con {pasarela} o por transferencia bancaria, como prefieras.\n\nEstamos para acompañarte: ante cualquier consulta o necesidad, escríbenos a {email_admin}.\n\nEsperamos que disfrutes mucho tu nuevo espacio.\n\nCon un afectuoso saludo,\nEquipo ArriendoPro"},
   {id:"reajuste",label:"Reajuste de arriendo",ico:"📈",builtin:true,adjuntos:[],
     asunto:"Información sobre tu arriendo · {propiedad}",
     cuerpo:"ArriendoPro: conforme a tu contrato, tu arriendo se reajusta. Nuevo valor: {monto}. Consultas: {email_admin}.",
-    cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nConforme a tu contrato, tu arriendo se actualizará a partir del próximo período \n{propiedad}\n\n*Nuevo valor:*  {monto}\n\nAnte cualquier duda, escríbenos \n{email_admin}\n\nGracias por tu confianza \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"📈 *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nConforme a tu contrato, tu arriendo se actualizará a partir del próximo período 📅\n🏠 {propiedad}\n\n💵 *Nuevo valor:* {monto}\n\nAnte cualquier duda, escríbenos 💬\n📧 {email_admin}\n\nGracias por tu confianza 🙏\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\nQueremos informarte que, conforme a lo establecido en tu contrato, el valor de tu arriendo por {propiedad} se actualizará a partir del próximo período.\n\n— Detalle —\n•  Nuevo valor de arriendo:  {monto}\n\nQuedamos atentos a cualquier consulta que tengas a través de {email_admin}. Agradecemos sinceramente tu confianza.\n\nSaludos cordiales,\nEquipo ArriendoPro"},
   {id:"renovacion",label:"Renovación de contrato",ico:"🔄",builtin:true,adjuntos:[],
     asunto:"¡Nos encantaría que sigas con nosotros! · {propiedad}",
     cuerpo:"ArriendoPro: tu contrato de {propiedad} está por vencer. ¿Renovamos? Valor propuesto: {monto}. Escríbenos: {email_admin}.",
-    cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nTu contrato por *{propiedad}* está próximo a vencer, y de verdad nos encantaría que sigas con nosotros \n\n*Propuesta de renovación:*  {monto}\n\nEscríbenos y coordinamos la firma \n{email_admin}\n\n¡Gracias por estos meses juntos! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"🔄 *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nTu contrato por *{propiedad}* está próximo a vencer, y de verdad nos encantaría que sigas con nosotros 🏡\n\n💵 *Propuesta de renovación:* {monto}\n\n✍️ Escríbenos y coordinamos la firma\n📧 {email_admin}\n\n¡Gracias por estos meses juntos! 🙌\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\nTu contrato de arriendo por {propiedad} se encuentra próximo a vencer, y para nosotros sería un gusto que sigas siendo parte.\n\n— Propuesta de renovación —\n•  Valor de arriendo:  {monto}\n\nSi estás de acuerdo, escríbenos a {email_admin} y coordinamos la firma cuando mejor te acomode.\n\nAgradecemos la confianza de estos meses y esperamos seguir acompañándote.\n\nUn cordial saludo,\nEquipo ArriendoPro"},
   {id:"serv_basicos",label:"Recordatorio servicios básicos",ico:"💡",builtin:true,adjuntos:[],
     asunto:"Recordatorio de gasto común y servicios · {propiedad}",
     cuerpo:"ArriendoPro: recuerda mantener al día el gasto común y servicios de {propiedad}. Datos de transferencia en el mensaje.",
-    cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nUn recordatorio amable sobre el *gasto común* y los servicios básicos de tu propiedad \n{propiedad}\n\nTe pedimos mantenerlos al día para evitar inconvenientes.\n\nDatos para transferencia:\n{banco}\n\n¡Gracias por tu colaboración! \n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",
+    cuerpoWA:"💡 *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nUn recordatorio amable sobre el *gasto común* y los servicios básicos de tu propiedad 🏠\n{propiedad}\n\n⚠️ Te pedimos mantenerlos al día para evitar inconvenientes.\n\n🏦 Datos para transferencia:\n{banco}\n\n¡Gracias por tu colaboración! 🙌\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",
     cuerpoCorreo:"Hola {nombre}:\n\nTe escribimos para recordarte, amablemente, la importancia de mantener al día el gasto común y los servicios básicos asociados a {propiedad}.\n\nMantenerlos al corriente evita inconvenientes y recargos. Si necesitas el detalle de los montos, con gusto te lo enviamos.\n\n— Datos para transferencia —\n{banco}\n\nAgradecemos tu colaboración.\n\nSaludos cordiales,\nEquipo ArriendoPro"}
 ];
 // Reemplaza las variables de una plantilla con los datos reales de la propiedad.
@@ -1227,6 +1295,7 @@ function aplicarPlantilla(texto, p, owner, gw, cuentas){
     "{nombre}":primer, "{propiedad}":p.name||"", "{direccion}":p.address||p.name||"", "{comuna}":p.comuna||"",
     "{monto}":CLP(num(p.rent)), "{periodo}":periodo, "{vence}":`día ${p.dueDay||5}`, "{banco}":banco,
     "{pasarela}":(gw&&gw.name)||"la pasarela", "{email_admin}":owner.email||"—",
+    "{whatsapp_admin}":waRemitente(owner),
   };
   return String(texto).replace(/\{[a-z_]+\}/g, k=> map[k]!=null ? map[k] : k);
 }
@@ -1548,6 +1617,20 @@ function PropForm({d, set}){
       : <Inp key={f.k} f={f} value={d[f.k]} onChange={ch}/>
     )}</div>
 
+    {/* Certificado de avalúo fiscal: el documento del SII que acredita el
+        avalúo y el rol. Se guarda con su fecha y su archivo. */}
+    <div className="sub-title">🧾 Certificado de avalúo fiscal</div>
+    <div className="help" style={{marginBottom:10}}>Es el documento del <b>SII</b> que acredita el <b>avalúo fiscal</b> y el <b>rol</b> de la propiedad. Se pide gratis en el sitio del SII con el rol{d.rolSII?<> (el de esta propiedad es <b>{d.rolSII}</b>)</>:null} y sirve para contribuciones, tasaciones, créditos y trámites en notaría.</div>
+    <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
+      <Inp f={{k:"certAvaluoFecha",label:"Fecha de emisión del certificado",t:"date"}} value={d.certAvaluoFecha} onChange={ch}/>
+      <Inp f={{k:"certAvaluoFolio",label:"Folio o número (si lo trae)",ph:"Ej: 123456789"}} value={d.certAvaluoFolio} onChange={ch}/>
+    </div>
+    <AdjuntosEditor items={d.certAvaluoDocs||[]} onChange={l=>ch("certAvaluoDocs",l)}/>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
+      <a className="btn btn-out btn-sm" href="https://www4.sii.cl/certconsultarolinternetui/" target="_blank" rel="noopener">Obtener el certificado en el SII →</a>
+      <a className="btn btn-ghost btn-sm" href="https://www.sii.cl/servicios_online/" target="_blank" rel="noopener">Servicios online del SII</a>
+    </div>
+
     {d.use==="arriendo" && <>
       <div className="sub-title green">④ ¿Está arrendada actualmente?</div>
       <div className="seg" style={{marginBottom:10}}>
@@ -1643,7 +1726,7 @@ function ComunicacionesPanel({ p, owner, gw, cuentas, plantillas, onSave, onAdd,
   });
   const guardar = ()=>{ onSave({...draft}); lastId.current=draft.id; note("Plantilla guardada"); };
   const restaurar = ()=>{ const base=seedPlantillas().find(t=>t.id===draft.id); if(base){ setDraft({...base,adjuntos:draft.adjuntos||[]}); onSave({...base,adjuntos:draft.adjuntos||[]}); note("↩ Plantilla restaurada"); } };
-  const nueva = ()=>{ const id="tpl"+Date.now().toString(36); const t={id,label:"Nueva plantilla",ico:"✉️",builtin:false,adjuntos:[],asunto:"Asunto — {propiedad}",cuerpo:"Hola {nombre}, escribe aquí tu mensaje para {propiedad}.",cuerpoWA:"*ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! \n\nEscribe aquí tu mensaje para {propiedad}.\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_",cuerpoCorreo:"Hola {nombre}:\n\nEscribe aquí tu mensaje para {propiedad}.\n\nSaludos cordiales,\nEquipo ArriendoPro"}; onAdd(t); setSelId(id); setDraft(t); lastId.current=id; };
+  const nueva = ()=>{ const id="tpl"+Date.now().toString(36); const t={id,label:"Nueva plantilla",ico:"✉️",builtin:false,adjuntos:[],asunto:"Asunto — {propiedad}",cuerpo:"Hola {nombre}, escribe aquí tu mensaje para {propiedad}.",cuerpoWA:"✉️ *ArriendoPro*\n━━━━━━━━━━━━━\n¡Hola {nombre}! 👋\n\nEscribe aquí tu mensaje para {propiedad}.\n━━━━━━━━━━━━━\n_Equipo ArriendoPro_\n📱 {whatsapp_admin}",cuerpoCorreo:"Hola {nombre}:\n\nEscribe aquí tu mensaje para {propiedad}.\n\nSaludos cordiales,\nEquipo ArriendoPro"}; onAdd(t); setSelId(id); setDraft(t); lastId.current=id; };
   const eliminar = ()=>{ if(!confirm("¿Eliminar esta plantilla?")) return; const rest=list.filter(t=>t.id!==draft.id); onDelete(draft.id); const next=rest[0]; if(next){ setSelId(next.id); setDraft(next); lastId.current=next.id; } note("✕ Plantilla eliminada"); };
   const copiar = ()=>{
     const txt = canal==="correo" ? `Asunto: ${asuntoR}\n\n${correoR}` : (canal==="whatsapp" ? waR : cuerpoR);
@@ -1913,8 +1996,8 @@ function EscriturasBox({ p, onChange }){
 /* Acciones que propone la IA cuando el documento no encaja en los campos de una
    propiedad. Evita el callejón sin salida: en vez de "no encontré nada",
    explica qué hacer y lo ejecuta. */
-const ACC_ICO={gasto:"💸",bitacora:"📓",incidencia:"🛠️",ninguna:"ℹ️"};
-const ACC_TXT={gasto:"Registrar como gasto",bitacora:"Anotar en la bitácora",incidencia:"Crear incidencia",ninguna:""};
+const ACC_ICO={gasto:"💸",bitacora:"📓",incidencia:"🛠️",ninguna:"ℹ️",actualizar_propiedad:"✏️",crear_propiedad:"🏠"};
+const ACC_TXT={gasto:"Registrar como gasto",bitacora:"Anotar en la bitácora",incidencia:"Crear incidencia",ninguna:"",actualizar_propiedad:"Corregir la ficha de la propiedad",crear_propiedad:"Crear una propiedad nueva"};
 
 /* Selección múltiple: la IA puede proponer varias acciones y conviene poder
    hacerlas todas de una, no una por una. Vienen marcadas por defecto porque se
@@ -1959,6 +2042,110 @@ function Sugerencias({ res, props, onEjecutar }){
       {elegidas.length<=1 ? "Hacerlo" : ("Hacer las "+elegidas.length+" acciones marcadas")}
     </button>}
   </div>);
+}
+
+/* Lo que el asesor propone cambiar en la plataforma. Nada se guarda hasta que
+   el usuario marca lo que quiere y lo aplica. */
+function PropuestasIA({ items, props, onAplicar }){
+  const lista=items||[];
+  const todas=()=>new Set(lista.map((_c,i)=>i));
+  const [sel,setSel]=React.useState(todas);
+  const [hecho,setHecho]=React.useState(false);
+  React.useEffect(()=>{ setSel(todas()); setHecho(false); },[items]);
+  if(!lista.length) return null;
+  const nombreProp=(id)=>{ const p=(props||[]).find(x=>String(x.id)===String(id)); return p?p.name:null; };
+  const alternar=(i)=>setSel(p=>{ const n=new Set(p); n.has(i)?n.delete(i):n.add(i); return n; });
+  const elegidos=lista.filter((_c,i)=>sel.has(i));
+  return (<div className="sug-wrap">
+    <div className="sug-cab">
+      <span className="sug-t">Cambios que puedo hacer en la plataforma</span>
+      {lista.length>1&&<button className="sug-todas" onClick={()=>setSel(sel.size?new Set():todas())}>
+        {sel.size?"Desmarcar todo":"Marcar todo"}</button>}
+    </div>
+    {lista.map((c,i)=>{
+      const prop=nombreProp(c.propiedad_id), marcada=sel.has(i);
+      const campos=Object.keys(c.campos||{});
+      return (<label key={i} className={"sug sug-sel"+(marcada?" on":"")}>
+        <input type="checkbox" className="sug-check" checked={marcada} onChange={()=>alternar(i)} disabled={hecho}/>
+        <div className="sug-ico">{ACC_ICO[c.accion]||"✨"}</div>
+        <div className="sug-body">
+          <div className="sug-titulo">{c.titulo||ACC_TXT[c.accion]||"Cambio"}</div>
+          <div className="sug-accion">{ACC_TXT[c.accion]||c.accion}</div>
+          {c.detalle&&<div className="sug-porque">{c.detalle}</div>}
+          {c.porque&&<div className="sug-porque">{c.porque}</div>}
+          <div className="sug-meta">
+            {prop&&<span>🏠 {prop}</span>}
+            {num(c.monto)>0&&<span>{CLP(num(c.monto))}{c.periodo&&c.periodo!=="una vez"?" / "+c.periodo:""}</span>}
+            {!!campos.length&&<span>{campos.length} campo(s): {campos.slice(0,5).join(", ")}</span>}
+          </div>
+        </div>
+      </label>);
+    })}
+    {hecho
+      ? <div className="sug-nada" style={{textAlign:"center",padding:"8px 0"}}>✓ Aplicado</div>
+      : <button className="sug-btn" disabled={!elegidos.length} onClick={()=>{ onAplicar(elegidos); setHecho(true); }}>
+          {elegidos.length<=1 ? "Aplicar este cambio" : ("Aplicar los "+elegidos.length+" cambios marcados")}
+        </button>}
+  </div>);
+}
+
+/* ---- Reordenar fichas ----------------------------------------------------
+   Se mantiene presionada una tarjeta (o clic derecho en el computador) y se
+   elige dónde dejarla. El temporizador vive fuera de React a propósito: hay un
+   solo gesto a la vez y la cantidad de tarjetas cambia, así que no puede ser
+   un hook. */
+const _pl={t:null,sup:false,x:0,y:0};
+const _plFin=()=>{ if(_pl.t){ clearTimeout(_pl.t); _pl.t=null; } };
+const _plEditando=(el)=>{ const t=((el&&el.tagName)||"").toLowerCase();
+  return t==="input"||t==="textarea"||t==="select"||(el&&el.isContentEditable); };
+const pulsacionLarga=(alPresionar)=>{
+  const ini=(e)=>{ if(_plEditando(e.target)) return;
+    const p=(e.touches&&e.touches[0])||e; _pl.x=p.clientX; _pl.y=p.clientY; _plFin();
+    _pl.t=setTimeout(()=>{ _pl.t=null; _pl.sup=true;
+      try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
+      alPresionar(); },500); };
+  const mov=(e)=>{ const p=(e.touches&&e.touches[0])||e;
+    if(Math.abs(p.clientX-_pl.x)>12||Math.abs(p.clientY-_pl.y)>12) _plFin(); };
+  return { onTouchStart:ini, onTouchMove:mov, onTouchEnd:_plFin, onTouchCancel:_plFin,
+    onContextMenu:(e)=>{ if(_plEditando(e.target)) return; e.preventDefault(); alPresionar(); },
+    // El toque que viene después de la pulsación larga no debe abrir la ficha.
+    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } } };
+};
+const ordenarPor=(items, orden, idDe)=>{
+  if(!Array.isArray(orden)||!orden.length) return items;
+  const pos=(x)=>{ const i=orden.indexOf(idDe(x)); return i<0?9999:i; };
+  return [...items].sort((a,b)=>pos(a)-pos(b));
+};
+const moverEn=(ids, id, destino)=>{
+  const l=ids.filter(x=>x!==id);
+  l.splice(Math.max(0,Math.min(l.length,destino)),0,id);
+  return l;
+};
+
+function MoverFicha({ titulo, items, idSel, onOrden, onCerrar, onReiniciar }){
+  const ids=items.map(x=>x.id);
+  const i=ids.indexOf(idSel);
+  const mover=(d)=>onOrden(moverEn(ids,idSel,d));
+  return (<div className="modal-bg" onClick={onCerrar}><div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:520}}>
+    <div className="modal-head"><h3>Mover “{titulo}”</h3><p>Elige dónde quieres que aparezca. También puedes tocar otra ficha de la lista para dejarla justo en ese lugar.</p></div>
+    <div className="modal-body">
+      <div className="mov-btns">
+        <button className="btn btn-out btn-sm" disabled={i<=0} onClick={()=>mover(i-1)}>↑ Subir</button>
+        <button className="btn btn-out btn-sm" disabled={i<0||i>=ids.length-1} onClick={()=>mover(i+1)}>↓ Bajar</button>
+        <button className="btn btn-out btn-sm" disabled={i<=0} onClick={()=>mover(0)}>⤒ Al principio</button>
+        <button className="btn btn-out btn-sm" disabled={i>=ids.length-1} onClick={()=>mover(ids.length-1)}>⤓ Al final</button>
+      </div>
+      <div className="mov-lista">
+        {items.map((x,k)=>(<button key={x.id} type="button" className={"mov-it"+(x.id===idSel?" act":"")}
+          onClick={()=>{ if(x.id!==idSel) mover(k); }}>
+          <span className="n">{k+1}</span><span style={{flex:1}}>{x.titulo}</span>
+          {x.id===idSel&&<span style={{fontSize:12,color:"var(--muted)",fontWeight:600}}>esta</span>}
+        </button>))}
+      </div>
+      {onReiniciar&&<button className="btn btn-ghost btn-sm" style={{marginTop:12}} onClick={onReiniciar}>Volver al orden original</button>}
+    </div>
+    <div className="modal-foot"><button className="btn btn-red" style={{flex:1}} onClick={onCerrar}>Listo</button></div>
+  </div></div>);
 }
 
 function Collapsible({ title, icon, subtitle, children, defaultOpen, flush, accent }){
@@ -2073,6 +2260,66 @@ const isoInDays=(n)=>{ const d=new Date(); d.setDate(d.getDate()+n); return d.to
 const ASESOR_CHAT_KEY="ap_asesor_chat", ASESOR_MET_KEY="ap_asesor_metricas";
 
 /* Se puede arrendar ahora: está en el catálogo de arriendo y sin arrendatario. */
+/* ---- Glosario: lo que el asesor explica cuando preguntan "¿qué es…?" ----
+   Vive aquí y no en el modelo para que la explicación calce siempre con lo que
+   muestra la plataforma y sea la misma todas las veces. */
+const GLOSARIO=[
+  {k:"cip certificado informaciones previas", t:"CIP — Certificado de Informaciones Previas",
+   d:"Documento que emite la Dirección de Obras de la municipalidad y que dice qué se puede hacer en un terreno: la zona del plan regulador, los usos de suelo permitidos, la altura máxima, la constructibilidad y si hay afectaciones de utilidad pública. Se pide en la municipalidad de la comuna (varias lo tienen en línea) y suele costar entre 0 y algunas UTM según el municipio. Es el primer papel que pide cualquier arquitecto o comprador antes de proyectar algo. En la plataforma se guarda en la Ficha de Levantamiento, sección Información urbanística."},
+  {k:"avaluo fiscal certificado de avaluo", t:"Avalúo fiscal y su certificado",
+   d:"El avalúo fiscal es el valor que el SII le asigna a la propiedad para calcular las contribuciones. Casi siempre es bastante más bajo que el valor comercial. El certificado de avalúo fiscal es el documento gratuito del SII que acredita ese valor y el rol; se saca en sii.cl con el rol de la propiedad y sirve para trámites en notaría, créditos, tasaciones y postulaciones. En la plataforma se guarda en Editar propiedad → Certificado de avalúo fiscal."},
+  {k:"rol sii rol de avaluo", t:"Rol de avalúo (SII)",
+   d:"Es el número que identifica la propiedad ante el SII, con formato manzana-predio (por ejemplo 2891-45). Con el rol se consultan el avalúo, las contribuciones y los certificados. Aparece en las boletas de contribuciones y en la escritura. En la plataforma está en Editar propiedad → Rol de avalúo (SII)."},
+  {k:"contribuciones impuesto territorial", t:"Contribuciones (impuesto territorial)",
+   d:"Impuesto que se paga sobre el avalúo fiscal. Se paga en 4 cuotas al año: abril, junio, septiembre y noviembre. Las propiedades con avalúo bajo el tramo exento no pagan. Conviene pagarlas dentro del mes de vencimiento para no acumular intereses y multas; si la propiedad está arrendada, las contribuciones las paga el dueño salvo pacto distinto en el contrato. En la plataforma se registran en la ficha de cada propiedad, sección Contribuciones, con la boleta adjunta."},
+  {k:"cbr conservador bienes raices inscripcion fojas", t:"Conservador de Bienes Raíces (CBR) e inscripción",
+   d:"El CBR es la oficina donde se inscriben las propiedades. La inscripción se identifica con fojas, número y año (por ejemplo “Fojas 12.345 N°6.789, 2015”) y es la prueba de que la propiedad es tuya. Del CBR salen el certificado de dominio vigente (dice quién es el dueño hoy) y el de hipotecas y gravámenes (dice si está hipotecada o embargada). Ambos se piden en línea en el sitio del conservador de la comuna."},
+  {k:"dominio vigente", t:"Certificado de dominio vigente",
+   d:"Certificado del Conservador de Bienes Raíces que acredita quién es el dueño actual de la propiedad. Tiene vigencia corta (normalmente 30 a 60 días para trámites) y lo piden bancos, notarías y compradores."},
+  {k:"gravamenes hipotecas prohibiciones", t:"Certificado de hipotecas y gravámenes",
+   d:"Certificado del Conservador que muestra si la propiedad tiene hipotecas, embargos, prohibiciones o usufructos. Es indispensable antes de comprar: sin él no se sabe si la propiedad se puede transferir libremente."},
+  {k:"uf unidad de fomento", t:"UF (Unidad de Fomento)",
+   d:"Unidad reajustable según la inflación. Los arriendos y dividendos se pactan en UF para que no se desvaloricen: el valor en pesos cambia todos los días. En la plataforma el arriendo se guarda en UF y se convierte a pesos con el valor del día."},
+  {k:"garantia mes de garantia", t:"Garantía de arriendo",
+   d:"Monto que el arrendatario entrega al inicio, normalmente un mes de arriendo, para responder por daños o cuentas impagas. Se devuelve al término del contrato, descontando lo que corresponda. No es un pago de arriendo: no sirve para cubrir el último mes salvo que se acuerde por escrito."},
+  {k:"gasto comun gastos comunes", t:"Gasto común",
+   d:"Lo que se paga al edificio o condominio por mantención, portería, ascensores y áreas comunes. Se paga aparte del arriendo, salvo que el contrato diga lo contrario, y normalmente lo paga quien vive en la propiedad."},
+  {k:"tasacion comercial", t:"Tasación comercial",
+   d:"Valor de mercado de la propiedad estimado por un tasador o por el banco. Es distinto del avalúo fiscal (el del SII) y es el que se usa para vender o para pedir un crédito."},
+  {k:"laguna de arriendo vacancia", t:"Laguna de arriendo (vacancia)",
+   d:"El tiempo en que la propiedad está sin arrendar y por lo tanto sin generar ingresos. La plataforma la registra sola desde la fecha en que marcas la propiedad como disponible, para que después se vea cuántos meses estuvo vacía."},
+  {k:"liquidacion propietario", t:"Liquidación al propietario",
+   d:"El resumen mensual de lo recaudado por los arriendos, menos la comisión de administración y los gastos pagados, con el saldo líquido que se transfiere al dueño. En la plataforma se genera en Finanzas y se puede enviar por WhatsApp o correo."},
+  {k:"bitacora", t:"Bitácora",
+   d:"El registro cronológico de todo lo que pasa con una propiedad: contratos, mantenciones, visitas, comunicaciones y antecedentes, cada uno con su fecha y sus archivos. Sirve de respaldo si después hay una discusión sobre qué se hizo y cuándo."},
+  {k:"ficha de levantamiento", t:"Ficha de Levantamiento",
+   d:"El formulario completo con el que se levanta toda la información de una propiedad: antecedentes legales, físicos, urbanísticos, financieros y de contacto. Se puede llenar dentro de la plataforma o compartir el enlace para que la complete otra persona."},
+  {k:"dfl2 dfl 2", t:"DFL 2",
+   d:"Régimen que da beneficios tributarios a las viviendas de hasta 140 m² construidos: rebajas en contribuciones y exención sobre las rentas de arriendo, con tope de dos viviendas por persona natural. Conviene saber si la propiedad es DFL 2 antes de declarar los arriendos."},
+  {k:"ley 21461 devuelveme mi casa", t:"Ley 21.461 (“Devuélveme mi casa”)",
+   d:"Ley que creó un procedimiento monitorio más rápido para cobrar rentas impagas y recuperar el inmueble cuando el arrendatario no paga. Para usarla el contrato tiene que estar bien hecho y la deuda acreditada."},
+  {k:"recepcion final permiso de edificacion", t:"Permiso de edificación y recepción final",
+   d:"El permiso de edificación autoriza construir; la recepción final certifica que lo construido cumple lo aprobado y que la propiedad se puede habitar. Los emite la Dirección de Obras Municipales y son claves para vender o para regularizar ampliaciones."},
+  {k:"plan regulador zona uso de suelo", t:"Plan regulador",
+   d:"El instrumento municipal que define qué se puede construir en cada zona de la comuna: usos permitidos, altura máxima, constructibilidad y ocupación de suelo. Se consulta en el CIP."},
+  {k:"cobrar arrendatario mejor fecha cobro", t:"Cuándo conviene cobrar el arriendo",
+   d:"Lo habitual es que el arriendo venza dentro de los primeros 5 días del mes, porque calza con el pago de sueldos. El recordatorio conviene mandarlo 3 días antes del vencimiento y el segundo aviso al día siguiente de vencido: mientras más temprano el recordatorio, menos mora. En la plataforma se configura en cada propiedad con el día de cobro y los recordatorios automáticos."},
+];
+const asExplicar=(termino)=>{
+  const q=String(termino||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  if(!q) return { encontrado:false };
+  const palabras=q.split(/[^a-z0-9]+/).filter(w=>w.length>2);
+  let mejor=null, mejorN=0;
+  GLOSARIO.forEach(g=>{
+    const base=(g.k+" "+g.t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    let n=0; palabras.forEach(w=>{ if(base.indexOf(w)>=0) n++; });
+    if(base.indexOf(q)>=0) n+=3;
+    if(n>mejorN){ mejorN=n; mejor=g; }
+  });
+  return mejor ? { encontrado:true, termino:mejor.t, explicacion:mejor.d }
+               : { encontrado:false, nota:"No está en el glosario de la plataforma: explícalo tú con lo que sabes de Chile y avisa que es tu conocimiento general." };
+};
+
 const asDisponible=(p)=> p.use==="arriendo" && !String(p.tenant||"").trim();
 const asPrecio=(p,op)=> op==="venta" ? num(p.tasacion) : num(p.rent);
 const asFoto=(p)=>{ const f=(p.fotos||[])[0]; return (f&&(f.url||f))||""; };
@@ -2302,7 +2549,7 @@ const CRMPanel=({ leads, setLeads, qreplies, setQreplies, propiedades, uf, notif
   const toggleTarea=(tid)=>{ if(!sel) return; patch(sel.id,{tareas:(sel.tareas||[]).map(t=>t.id===tid?{...t,hecha:!t.hecha}:t)}); };
   const delTarea=(tid)=>{ if(!sel) return; patch(sel.id,{tareas:(sel.tareas||[]).filter(t=>t.id!==tid)}); };
 
-  const waLead=(l,texto)=>{ const n=waNum(l.telefono); const base=n?("https://wa.me/"+n):"https://wa.me/"; window.open(base+(texto?("?text="+encodeURIComponent(texto)):""),"_blank","noopener"); };
+  const waLead=(l,texto)=>waEnviar(l&&l.telefono,texto);
 
   const matchQ=(l)=>{ if(!q.trim()) return true; const s=(l.nombre+" "+l.telefono+" "+(l.email||"")+" "+(l.comuna||"")+" "+(l.notas||"")+" "+propName(l.propInteres)).toLowerCase(); return q.toLowerCase().split(/\s+/).every(t=>s.includes(t)); };
   const leadsFiltrados = leads.filter(matchQ).filter(l=>fEstado==="todos"||l.estado===fEstado).filter(l=>fFuente==="todos"||l.fuente===fFuente);
@@ -2417,7 +2664,7 @@ const CRMPanel=({ leads, setLeads, qreplies, setQreplies, propiedades, uf, notif
           <textarea className="input" value={r.texto} onChange={e=>setQreplies(qs=>qs.map(x=>x.id===r.id?{...x,texto:e.target.value}:x))} style={{minHeight:70}}/>
           <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
             <button className="btn btn-ghost btn-sm" onClick={()=>{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(r.texto).then(()=>notify&&notify("Copiado")); }}>Copiar</button>
-            <button className="btn btn-ghost btn-sm" onClick={()=>window.open("https://wa.me/?text="+encodeURIComponent(r.texto),"_blank","noopener")}>WhatsApp</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>waEnviar("",r.texto)}>WhatsApp</button>
             <div style={{flex:1}}/>
             <button className="btn btn-ghost btn-sm" style={{color:"var(--red-d)"}} onClick={()=>setQreplies(qs=>qs.filter(x=>x.id!==r.id))}>✕ Eliminar</button>
           </div>
@@ -2689,7 +2936,8 @@ function PortalArrendatario({u,propiedades,uf,owner,cuentas,montoCobro,calcMulta
     }catch(e){ aviso("No se pudo generar el pago en línea ("+(e.message||"sin conexión")+"). Puedes transferir con los datos de abajo."); }
     setPagando(false);
   };
-  const waAdmin=(owner.whatsapp||owner.phone||"").replace(/[^0-9]/g,"");
+  // Todo lo que sale de la plataforma usa el mismo número de WhatsApp.
+  const waAdmin=waNumeroFmt(waRemitente(owner));
   return (<div className="portal">
     <div className="portal-top">
       <div style={{display:"flex",alignItems:"center",gap:11}}><div className="auth-logo" style={{width:40,height:40,fontSize:19,margin:0}}>A</div><div><div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:17,color:"var(--ink)"}}>ArriendoPro</div><div style={{fontSize:12,color:"var(--muted)"}}>Portal del arrendatario</div></div></div>
@@ -2777,6 +3025,7 @@ function App(){
 
   /* ---- Ubicar propiedades en el mapa (para que Street View funcione) ---- */
   const [geoBusy,setGeoBusy]=useState("");
+  const [geoPegar,setGeoPegar]=useState("");
   const geoIntentadas=useRef(new Set());
   const ubicarPropiedad=async(p,silencioso)=>{
     if(geoBusy) return;
@@ -2784,7 +3033,9 @@ function App(){
     try{
       const r=await ubicarDireccion(p);
       if(r){
-        patchProp(p.id, x=>({...x, lat:r.lat, lng:r.lng}));
+        // Se guarda con qué dirección se calculó: si la dirección cambia, estas
+        // coordenadas dejan de usarse solas.
+        patchProp(p.id, x=>({...x, lat:r.lat, lng:r.lng, geoDir:dirTexto(x)}));
         if(!silencioso) notify("Ubicación encontrada: el mapa y Street View ya apuntan bien");
       } else if(!silencioso){
         notify("No encontré esa dirección. Puedes pegar la latitud y longitud a mano en Editar.",true);
@@ -2792,18 +3043,26 @@ function App(){
     }catch(e){ if(!silencioso) notify("No se pudo ubicar la dirección: "+((e&&e.message)||"error"),true); }
     setGeoBusy("");
   };
-  // Al abrir una propiedad con dirección pero sin coordenadas, se ubica sola
-  // una vez. Así Street View deja de caer en cualquier parte sin que el usuario
-  // tenga que hacer nada.
+  // Fija la ubicación a mano desde un enlace de Google Maps o unas coordenadas.
+  const fijarUbicacion=(p,txt)=>{
+    const c=parsearCoords(txt);
+    if(!c){ notify("Pega el enlace de Google Maps de ese punto, o las coordenadas separadas por coma.",true); return false; }
+    patchProp(p.id, x=>({...x, lat:c.lat, lng:c.lng, geoDir:dirTexto(x)}));
+    notify("Ubicación fijada. El mapa y Street View apuntan a ese punto exacto.");
+    return true;
+  };
+  // Al abrir una propiedad se ubica sola con la dirección escrita. Si después
+  // se corrige la dirección, se vuelve a ubicar: la dirección manda, no las
+  // coordenadas viejas.
   useEffect(()=>{
     if(!sel) return;
     const p=props.find(x=>String(x.id)===String(sel.id))||sel;
-    if(tieneCoords(p)||!String(p.address||"").trim()) return;
-    const k=String(p.id);
+    if(!String(p.address||"").trim() || coordsFrescas(p)) return;
+    const k=String(p.id)+"|"+dirTexto(p);
     if(geoIntentadas.current.has(k)) return;
     geoIntentadas.current.add(k);
     ubicarPropiedad(p,true);
-  },[sel&&sel.id]);
+  },[sel&&sel.id, sel&&sel.address, sel&&sel.comuna, sel&&sel.region]);
   const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
   const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
   SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
@@ -3004,11 +3263,42 @@ function App(){
   window.__UF__=uf;
 
   const gw=gateways.find(g=>g.id===owner.gateway)||gateways[0];
-  const rentals=props.filter(p=>p.use==="arriendo");
-  const personals=props.filter(p=>p.use==="personal");
-  const bySoc=(id)=>props.filter(p=>(p.sociedad||"beta")===id);
-  const view = (filter==="arriendo"?rentals : filter==="personal"?personals : props)
+  /* Orden elegido a mano: se mantiene presionada una ficha y se decide dónde va.
+     Se guarda por sección ("inicio", "props"). */
+  const [ordenes,setOrdenes]=useState(()=>store.get("ap_ordenes",{}));
+  useEffect(()=>{ store.set("ap_ordenes",ordenes); },[ordenes]);
+  const [mover,setMover]=useState(null);
+  const guardarOrden=(clave,ids)=>setOrdenes(o=>({...o,[clave]:ids}));
+  const reiniciarOrden=(clave)=>{ setOrdenes(o=>{ const n={...o}; delete n[clave]; return n; }); setMover(null); };
+  /* Envuelve cada ficha para poder moverla. `lista` son {id, titulo, node}. */
+  const bloquesOrdenados=(clave,lista)=>{
+    const ord=ordenarPor(lista,ordenes[clave],x=>x.id);
+    const items=ord.map(x=>({id:x.id,titulo:x.titulo}));
+    return ord.map((x,i)=>(
+      <div key={x.id} className="ord-wrap" {...pulsacionLarga(()=>setMover({clave,id:x.id,titulo:x.titulo,items}))}>
+        {!!(ordenes[clave]&&ordenes[clave].length)&&<span className="ord-num">{i+1}</span>}
+        {x.node}
+      </div>));
+  };
+
+  /* Botón para volver arriba: aparece al bajar y sirve en todas las secciones. */
+  const [arriba,setArriba]=useState(false);
+  useEffect(()=>{
+    const h=()=>setArriba(window.scrollY>320);
+    window.addEventListener("scroll",h,{passive:true}); h();
+    return ()=>window.removeEventListener("scroll",h);
+  },[]);
+  const subirAlInicio=()=>{ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_e){ window.scrollTo(0,0); } };
+
+  const propsOrd = ordenarPor(props, ordenes.props, p=>String(p.id));
+  const rentals=propsOrd.filter(p=>p.use==="arriendo");
+  const personals=propsOrd.filter(p=>p.use==="personal");
+  const bySoc=(id)=>propsOrd.filter(p=>(p.sociedad||"beta")===id);
+  const view = (filter==="arriendo"?rentals : filter==="personal"?personals : propsOrd)
     .filter(p=>socFilter==="todas" || (p.sociedad||"beta")===socFilter);
+  /* Datos para mover una propiedad de lugar dentro de "Mis propiedades". */
+  const itemsProps=()=>propsOrd.map(p=>({id:String(p.id),titulo:p.name}));
+  const moverPropiedad=(p)=>setMover({clave:"props",id:String(p.id),titulo:p.name,items:itemsProps()});
 
   const ingresos=rentals.reduce((s,p)=>s+num(p.rent),0);
   const dividendos=props.reduce((s,p)=>s+divCLP(p,uf),0);
@@ -3170,7 +3460,7 @@ function App(){
   };
   const verLiquidacion=()=>abrirImprimir(liquidacionOwnerHTML(liqSoc,liqMes));
   const descargarLiquidacionWord=()=>{ const ym=liqMes; const soc=liqSoc==="todas"?"todas":liqSoc; descargarBlob("Liquidacion-"+ym+".doc", liquidacionOwnerHTML(soc,ym), "application/msword"); };
-  const liquidacionWhatsApp=()=>{ const {tot}=liquidacionData(liqSoc,liqMes); const mm=parseInt(liqMes.slice(5,7))-1; const txt=`Liquidación ${MESES_L[mm]} ${liqMes.slice(0,4)}%0AArriendos cobrados: ${CLP(tot.bruto)}%0AComisión: ${CLP(tot.com)}%0AGastos: ${CLP(tot.gastos)}%0ALíquido a transferir: ${CLP(tot.liquido)}`; window.open("https://wa.me/?text="+txt,"_blank"); };
+  const liquidacionWhatsApp=()=>{ const {tot}=liquidacionData(liqSoc,liqMes); const mm=parseInt(liqMes.slice(5,7))-1; const txt=`📋 Liquidación ${MESES_L[mm]} ${liqMes.slice(0,4)}\n💰 Arriendos cobrados: ${CLP(tot.bruto)}\n🧾 Comisión: ${CLP(tot.com)}\n🔧 Gastos: ${CLP(tot.gastos)}\n🏦 Líquido a transferir: ${CLP(tot.liquido)}`; waEnviar("",txt); };
 
   /* ---- Publicación de propiedades vacantes a portales ---- */
   const PORTALES=[
@@ -3265,7 +3555,7 @@ function App(){
 
   const asDerivar=(motivo)=>{
     const id=asLeadId2();
-    const tel=String((owner&&owner.whatsapp)||(owner&&owner.phone)||"").replace(/[^\d]/g,"");
+    const tel=waNumeroFmt(waRemitente(owner));
     if(id) setLeads(ls=>ls.map(l=>l.id===id?{...l,
       estado:l.estado==="visita"?l.estado:"contactado", actualizado:Date.now(),
       notas:(l.notas?l.notas+" · ":"")+"Derivado por el asesor: "+motivo,
@@ -3275,7 +3565,89 @@ function App(){
     return { ok:true, mensaje:"Conversación derivada. Un ejecutivo continuará el contacto.",
       asesor:(owner&&owner.name)||"Equipo "+asEmpresa(), telefono:(owner&&owner.phone)||"",
       email:(owner&&owner.email)||"",
-      whatsapp: tel?("https://wa.me/"+(tel.indexOf("56")===0?tel:"56"+tel)):"" };
+      whatsapp: tel?("https://wa.me/"+tel):"" };
+  };
+
+  /* Datos tributarios que la plataforma ya tiene, más los enlaces oficiales.
+     El SII no ofrece una conexión automática: entra cada contribuyente con su
+     RUT y su clave, así que aquí se entrega lo guardado y el camino exacto para
+     obtener lo que falte. */
+  const SII_LINKS={
+    certificado_avaluo:"https://www4.sii.cl/certconsultarolinternetui/",
+    servicios_online:"https://www.sii.cl/servicios_online/",
+    situacion_tributaria:"https://zeus.sii.cl/cvc_cgi/stc/getstc",
+  };
+  const asDatosSII=(i)=>{
+    const q=String(i.sociedad||"").toLowerCase();
+    let lista=props;
+    if(i.propiedad_id) lista=props.filter(p=>String(p.id)===String(i.propiedad_id));
+    else if(q) lista=props.filter(p=>{ const s=socById(p.sociedad); return String(s.id).toLowerCase()===q||String(s.name||"").toLowerCase().indexOf(q)>=0; });
+    const propiedades=lista.slice(0,12).map(p=>{
+      const s=socById(p.sociedad);
+      const cert=(p.certAvaluoDocs||[]).length;
+      return { id:String(p.id), nombre:p.name, direccion:[p.address,p.comuna].filter(Boolean).join(", "),
+        sociedad:s.name, rut_sociedad:s.rut||"",
+        rol_sii:p.rolSII||null, avaluo_fiscal:num(p.avaluoFiscal)||null,
+        contribuciones_anuales:num(p.contribucionesAnuales)||null,
+        pagos_contribuciones:(p.contribuciones||[]).map(c=>({concepto:c.concepto,monto:num(c.monto),fecha:c.fecha})),
+        certificado_avaluo: cert?{ cargado:true, fecha:p.certAvaluoFecha||null, folio:p.certAvaluoFolio||null, archivos:cert }:{ cargado:false } };
+    });
+    const faltan=propiedades.filter(p=>!p.rol_sii||!p.avaluo_fiscal).map(p=>p.nombre);
+    return { propiedades, sociedades:SOCIEDADES.map(s=>({id:s.id,nombre:s.name,rut:s.rut})),
+      faltan_datos:faltan, enlaces_sii:SII_LINKS,
+      nota:"Estos son los datos guardados en la plataforma. El SII no permite conectarse de forma automática: para lo que falte hay que entrar con el RUT y la clave tributaria en los enlaces indicados. Explícale a la persona en dos pasos cómo obtenerlo." };
+  };
+
+  /* Propuestas del asesor: se muestran con casillas y no cambian nada hasta que
+     el usuario las marca y las aplica. */
+  const asRecibirPropuestas=(cambios)=>{
+    const lista=(Array.isArray(cambios)?cambios:[]).slice(0,6).filter(c=>c&&c.accion);
+    if(!lista.length) return { error:"No llegaron cambios que proponer." };
+    return { propuestas:lista, nota:"Se le mostraron al usuario con casillas para que elija cuáles aplicar. No están guardados todavía." };
+  };
+  /* Traduce los nombres de la ficha que usa la IA a los campos internos. */
+  const asCamposAProp=(campos)=>{
+    const m={ nombre:"name", direccion:"address", comuna:"comuna", region:"region", tipo:"type",
+      rolSII:"rolSII", rol:"rolSII", avaluoFiscal:"avaluoFiscal", tasacion:"tasacion",
+      dormitorios:"bedrooms", banos:"bathrooms", estacionamientos:"parking", bodega:"bodega",
+      superficieConstruida:"surfaceBuilt", superficieTerreno:"surfaceTerrain",
+      anoConstruccion:"constructionYear", inscripcion:"inscripcion", orientacion:"orientation",
+      piso:"floor", estado:"condition", arrendatario:"tenant" };
+    const out={};
+    Object.keys(campos||{}).forEach(k=>{
+      const destino=m[k]||(Object.prototype.hasOwnProperty.call(blank,k)?k:null);
+      const v=campos[k];
+      if(destino && v!==undefined && v!==null && String(v).trim()!=="") out[destino]=v;
+    });
+    return out;
+  };
+  const aplicarPropuesta=(c,i)=>{
+    if(c.accion==="actualizar_propiedad"){
+      const p=props.find(x=>String(x.id)===String(c.propiedad_id));
+      const campos=asCamposAProp(c.campos);
+      if(!p||!Object.keys(campos).length) return false;
+      patchProp(p.id, x=>({...x, ...campos}));
+      return true;
+    }
+    if(c.accion==="crear_propiedad"){
+      const campos=asCamposAProp(c.campos);
+      if(!Object.keys(campos).length) return false;
+      const nueva={...blank, id:Date.now()+i, use:"arriendo", status:"pendiente", rentedNow:!!campos.tenant,
+        gastosExtra:SEED_GASTOS(), ...campos};
+      if(!nueva.name) nueva.name = campos.address || ("Propiedad "+todayISO());
+      setProps(l=>[...l,nueva]);
+      return true;
+    }
+    // Gastos, bitácora e incidencias reutilizan el mismo camino que el lector.
+    return aplicarSugerencia({ accion:c.accion, propiedadId:c.propiedad_id, titulo:c.titulo,
+      detalle:c.detalle, monto:c.monto, periodo:c.periodo }, "as"+i);
+  };
+  const aplicarPropuestas=(lista)=>{
+    if(!lista.length){ notify("Marca al menos un cambio",true); return; }
+    let hechos=0, fallidos=0;
+    lista.forEach((c,i)=>{ if(aplicarPropuesta(c,i)) hechos++; else fallidos++; });
+    if(!hechos){ notify("No pude aplicar los cambios: falta indicar la propiedad o los datos",true); return; }
+    notify(hechos===1?"Cambio aplicado":(hechos+" cambios aplicados")+(fallidos?" ("+fallidos+" quedaron pendientes)":""));
   };
 
   const asEjecutar=(nombre,input)=>{
@@ -3297,9 +3669,49 @@ function App(){
       if(nombre==="calcular_costos") return asCostos(props,i.id,i.monto_arriendo);
       if(nombre==="registrar_lead") return asGuardarLead(i);
       if(nombre==="agendar_visita") return asAgendar(i);
+      if(nombre==="explicar_concepto") return asExplicar(i.termino);
+      if(nombre==="consultar_sii") return asDatosSII(i);
+      if(nombre==="proponer_cambios") return asRecibirPropuestas(i.cambios);
       if(nombre==="derivar_asesor") return asDerivar(i.motivo||"Solicitud del usuario");
       return { error:"Herramienta desconocida: "+nombre };
     }catch(e){ return { error:"No pude ejecutar esa acción: "+((e&&e.message)||"error") }; }
+  };
+
+  /* ---- Hablarle al asesor ----
+     Usa el reconocimiento de voz del navegador (el mismo del dictado del
+     teclado). En iPhone y Android funciona en Safari y Chrome; si el navegador
+     no lo trae, el micrófono simplemente no aparece. Al terminar de hablar, el
+     texto queda escrito y se envía solo. */
+  const vozRef=useRef(null);
+  const [oyendo,setOyendo]=useState(false);
+  const hayVoz = typeof window!=="undefined" && !!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  const detenerVoz=()=>{ try{ vozRef.current&&vozRef.current.stop(); }catch(_e){} setOyendo(false); };
+  const escuchar=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ notify("Este navegador no permite dictar por voz",true); return; }
+    try{
+      const rec=new SR();
+      rec.lang="es-CL"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+      let final="";
+      rec.onresult=(ev)=>{
+        let parcial="";
+        for(let i=ev.resultIndex;i<ev.results.length;i++){
+          const t=ev.results[i][0].transcript;
+          if(ev.results[i].isFinal) final+=t; else parcial+=t;
+        }
+        setAsIn((final+" "+parcial).trim());
+      };
+      rec.onerror=(ev)=>{ setOyendo(false);
+        notify(ev&&ev.error==="not-allowed"
+          ? "Tienes que permitir el micrófono para hablarle al asesor"
+          : "No pude escucharte, inténtalo de nuevo", true); };
+      rec.onend=()=>{
+        setOyendo(false);
+        const dicho=final.trim();
+        if(dicho){ setAsIn(dicho); setTimeout(()=>asEnviar(dicho),120); }
+      };
+      vozRef.current=rec; setOyendo(true); setAsOpen(true); rec.start();
+    }catch(e){ setOyendo(false); notify("No se pudo iniciar el micrófono",true); }
   };
 
   /* Bucle de conversación: el modelo puede pedir varias herramientas seguidas
@@ -3369,6 +3781,7 @@ function App(){
           if(salida&&salida.resultados&&salida.resultados.length) setAsChat(c=>[...c,{r:"ai",fichas:salida.resultados}]);
           else if(salida&&salida.propiedad) setAsChat(c=>[...c,{r:"ai",fichas:[salida.propiedad]}]);
           else if(salida&&salida.comparacion) setAsChat(c=>[...c,{r:"ai",comparacion:salida.comparacion}]);
+          else if(salida&&salida.propuestas) setAsChat(c=>[...c,{r:"ai",propuestas:salida.propuestas}]);
           else if(salida&&salida.whatsapp!==undefined) setAsChat(c=>[...c,{r:"ai",derivacion:salida}]);
           return { type:"tool_result", tool_use_id:u.id, content:JSON.stringify(salida).slice(0,12000) };
         });
@@ -3468,10 +3881,38 @@ function App(){
     return { text:resumenes.join("\n\n"), datos };
   };
 
+  /* Lo que hay ahora en el formulario abierto: le sirve a la IA para corregir
+     o completar cuando la instrucción viene sin archivo ("la comuna es Vicuña,
+     arréglala"). */
+  const formActual=()=>{
+    const d=(mEdit&&eP)?eP:nP; if(!d) return null;
+    const campos=["name","address","comuna","region","type","use","rolSII","inscripcion","avaluoFiscal","tasacion",
+      "surfaceBuilt","surfaceTerrain","bedrooms","bathrooms","parking","bodega","constructionYear","tenant","rentUF"];
+    const out={}; campos.forEach(k=>{ if(d[k]!==undefined&&d[k]!==""&&d[k]!==null) out[k]=d[k]; });
+    return out;
+  };
+
   const analizarDocs=async()=>{
-    if(!aiDocs.length){ notify("Adjunta al menos un archivo",true); return; }
+    const soloOrden=!aiDocs.length;
+    if(soloOrden && !String(aiOrden||"").trim()){
+      notify("Adjunta un archivo o escríbele a la IA qué quieres que haga",true); return;
+    }
     setAiDocBusy(true); setAiDocRes(null);
     const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
+    // Sin archivos: una sola llamada con la instrucción y el formulario actual.
+    if(soloOrden){
+      setAiDocPaso("Pensando…");
+      try{
+        const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({mode:"extraer", instruccion:aiOrden, propiedades:hint, formulario:formActual(), files:[]})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
+        setAiDocRes(j);
+        const co=j.datos&&j.datos.coincidenciaId;
+        setAiDocDest(co&&props.some(p=>String(p.id)===String(co))?String(co):"nueva");
+      }catch(e){ notify("No pude procesar la instrucción: "+((e&&e.message)||"error"),true); }
+      setAiDocPaso(""); setAiDocBusy(false); return;
+    }
     const partes=[], fallidos=[];
     // De a un archivo por llamada: las funciones de Netlify se cortan a los ~10
     // segundos y varios PDF juntos no alcanzan a procesarse (error 504).
@@ -3553,7 +3994,7 @@ function App(){
       <div className="lector-t">✨ {titulo}</div>
       <div className="lector-d">{ayuda}</div>
       <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
-        placeholder="Opcional: dile a la IA qué hacer. Ej: “corrige la dirección y la comuna según la escritura”." />
+        placeholder="Dile a la IA qué hacer, con o sin archivo. Ej: “la dirección correcta es Av. Balmaceda 480, Vicuña, Coquimbo” o “corrige la comuna según la escritura”." />
       <div className="lector-btns">
         <label className="btn btn-out" style={{cursor:"pointer"}}>
           {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
@@ -3563,7 +4004,8 @@ function App(){
               const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } }
               if(ok.length) setAiDocs(d=>[...d,...ok]); }}/>
         </label>
-        <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?(aiDocPaso||"Leyendo…"):"Leer y completar"}</button>
+        <button className="btn btn-red" disabled={aiDocBusy||(!aiDocs.length&&!String(aiOrden||"").trim())} onClick={analizarDocs}>
+          {aiDocBusy?(aiDocPaso||"Leyendo…"):(aiDocs.length?"Leer y completar":"Pedirle a la IA")}</button>
         {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
       </div>
       {aiDocs.length>0&&<div className="lector-files">{aiDocs.map((f,i)=>(<span key={i} className="lector-chip">{f.texto?"📄":"🖼"} {f.name}<button onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))} aria-label="Quitar">×</button></span>))}</div>}
@@ -4028,8 +4470,7 @@ function App(){
   };
   const compartirWhatsApp=async(p)=>{
     const url=await publicarFicha(p); if(!url) return;
-    const txt=encodeURIComponent(`Mira esta propiedad: ${p.name}\n${url}`);
-    window.open(`https://wa.me/?text=${txt}`,"_blank","noopener");
+    waEnviar("",`🏠 Mira esta propiedad: ${p.name}\n${url}`);
   };
   const verFichaPDF=async(p)=>{
     const url=await publicarFicha(p); if(!url) return;
@@ -4051,7 +4492,7 @@ function App(){
     return [ ""+p.name, ""+[p.comuna,p.region].filter(Boolean).join(", "), specs.length?(""+specs.join(" · ")):"", precio, (s.descripcionPublica&&s.descripcionPublica.trim())?("\n"+s.descripcionPublica.trim()):"", "\n"+(soc.name||"")+(soc.telefono?(" · "+soc.telefono):""), link?("\n"+link):"" ].filter(Boolean).join("\n");
   };
   const mailtoFicha=(p)=> "mailto:?subject="+encodeURIComponent("Propiedad en arriendo: "+p.name)+"&body="+encodeURIComponent(fichaResumenTexto(p));
-  const compartirFichaWhatsApp=(p)=>{ window.open("https://wa.me/?text="+encodeURIComponent(fichaResumenTexto(p)),"_blank","noopener"); };
+  const compartirFichaWhatsApp=(p)=>waEnviar("",fichaResumenTexto(p));
   const copiarFichaResumen=(p)=>{ const t=fichaResumenTexto(p); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>notify("Texto de la ficha copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify("No se pudo copiar",true); };
   const buildFichaMarketingHTML=(p)=>{
     const s=getCompartir(p); const soc=socById(p.sociedad);
@@ -4262,7 +4703,7 @@ function App(){
   const descargarFichaCompletaHTML2=(p,f)=> descargarBlob("ficha_completa_"+fichaSlug(p,f)+".html", buildFichaCompletaHTML(p,f), "text/html;charset=utf-8");
   const descargarFichaCompletaExcel=(p,f)=> descargarBlob("ficha_completa_"+fichaSlug(p,f)+".xls", buildFichaCompletaXLS(p,f), "application/vnd.ms-excel");
   const descargarFichaCompletaPDF=(p,f)=>{ const html=buildFichaCompletaHTML(p,f); const w=window.open("","_blank"); if(!w){ notify("Ventana bloqueada; descargo la ficha como HTML…",true); descargarFichaCompletaHTML2(p,f); return; } w.document.open(); w.document.write(html); w.document.close(); setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} },800); };
-  const compartirFichaCompletaWA=(p,f)=> window.open("https://wa.me/?text="+encodeURIComponent(fichaCompletaTexto(p,f)),"_blank","noopener");
+  const compartirFichaCompletaWA=(p,f)=>waEnviar("",fichaCompletaTexto(p,f));
   const compartirFichaCompletaMail=(p,f)=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de propiedad: "+(f.alias||p.name))+"&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
   const compartirFichaCompletaSMS=(p,f)=>{ window.location.href="sms:?&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
 
@@ -4271,7 +4712,7 @@ function App(){
   const LEV_URL="https://fichacompletapropiedadescgvd.com";
   const levLink=()=> LEV_URL;
   const abrirLevantamiento=()=> window.open(LEV_URL,"_blank","noopener");
-  const compartirLevWA=()=> window.open("https://wa.me/?text="+encodeURIComponent("Completa la Ficha de Levantamiento de la propiedad aquí: "+levLink()),"_blank","noopener");
+  const compartirLevWA=()=>waEnviar("","Completa la Ficha de Levantamiento de la propiedad aquí: "+levLink());
   const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const copiarLevantamiento=()=>{ const u=levLink(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(()=>notify("Enlace de la Ficha de Levantamiento copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify(u,true); };
@@ -4460,20 +4901,36 @@ function App(){
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Data label="Dirección" value={p.address}/>
           <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:10}}><Data label="Comuna" value={p.comuna}/><Data label="Región" value={p.region}/></div>
-          {/* Street View necesita coordenadas sí o sí. Sin ellas se ofrece
-              ubicar la propiedad en vez de abrir un enlace que caería mal. */}
-          {!tieneCoords(p) && <div className="help" style={{margin:0,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{flex:1,minWidth:150}}>Esta propiedad aún no está ubicada en el mapa, por eso Street View no puede abrirse en la dirección exacta.</span>
+          {/* El mapa siempre se arma con la dirección escrita. Street View, en
+              cambio, solo abre con coordenadas, así que se calculan a partir de
+              esa misma dirección y se recalculan si la dirección cambia. */}
+          <div className="help" style={{margin:0}}>
+            📍 El mapa se muestra según la dirección escrita: <b>{dirTexto(p)}</b>. Si está mal, corrígela en <b>Editar</b> (a mano o pidiéndoselo a la IA) y la ubicación se recalcula sola.
+          </div>
+          {!coordsFrescas(p) && <div className="help" style={{margin:0,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{flex:1,minWidth:150}}>{tieneCoords(p)
+              ? "La dirección cambió, así que Street View todavía apunta al punto anterior."
+              : "Falta ubicar esta dirección para poder abrir Street View en el punto exacto."}</span>
             <button className="btn btn-red btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)}>
-              {geoBusy===String(p.id)?"Ubicando…":"Ubicar en el mapa"}</button>
+              {geoBusy===String(p.id)?"Ubicando…":"Ubicar según la dirección"}</button>
           </div>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {tieneCoords(p) && <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`} target="_blank" rel="noopener">Street View</a>}
+            {!!panoURL(p) && <a className="btn btn-out btn-sm" href={panoURL(p)} target="_blank" rel="noopener">Street View</a>}
             <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Google Maps</a>
-            {tieneCoords(p) && <button className="btn btn-out btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)} title="Vuelve a calcular las coordenadas desde la dirección">{geoBusy===String(p.id)?"Ubicando…":"Recalcular ubicación"}</button>}
+            {coordsFrescas(p) && <button className="btn btn-out btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)} title="Vuelve a calcular las coordenadas desde la dirección">{geoBusy===String(p.id)?"Ubicando…":"Recalcular ubicación"}</button>}
             {!!(p.panoramas&&p.panoramas.length) && <button className="btn btn-out btn-sm" onClick={()=>setPanoProp(p)}>Recorrido 360°</button>}
             {p.virtualTour && <a className="btn btn-out btn-sm" href={p.virtualTour} target="_blank" rel="noopener">Recorrido externo</a>}
           </div>
+          {/* Última palabra del usuario: pegar el punto exacto desde Google Maps. */}
+          <details>
+            <summary style={{cursor:"pointer",fontSize:13,color:"var(--muted)",fontWeight:600}}>¿Sigue cayendo mal? Fijar el punto exacto</summary>
+            <div className="help" style={{marginTop:8}}>Abre Google Maps, deja el marcador justo en la propiedad, copia el enlace y pégalo aquí. También sirven las coordenadas separadas por coma.</div>
+            <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+              <input className="input" style={{flex:1,minWidth:180}} placeholder="https://maps.app.goo.gl/…  o  -30.0319,-70.7135"
+                value={geoPegar} onChange={e=>setGeoPegar(e.target.value)}/>
+              <button className="btn btn-red btn-sm" onClick={()=>{ if(fijarUbicacion(p,geoPegar)) setGeoPegar(""); }}>Usar este punto</button>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -4856,8 +5313,13 @@ function App(){
 
         <GuiaSeccion tab={tab}/>
 
-        {/* ============ INICIO ============ */}
+        {/* ============ INICIO ============
+            Cada ficha se puede mover: se mantiene presionada y se elige el
+            lugar donde debe aparecer. El orden queda guardado. */}
         {tab==="inicio" && <>
+        <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> cualquiera de estas fichas y elige dónde ponerla.</div>
+        {bloquesOrdenados("inicio",[
+         {id:"acciones",titulo:"¿Qué quieres hacer hoy?",node:(
           <Collapsible icon="👋" title="¿Qué quieres hacer hoy?" subtitle="Accesos directos — toca para abrir" defaultOpen={false}>
             <div className="help g" style={{marginBottom:16}}>Toca un botón para ir directo a lo que necesitas.</div>
             <div className="qa-grid">
@@ -4872,8 +5334,9 @@ function App(){
               <button className="qa" onClick={()=>setTab("informes")}><span className="qico">📈</span><span><span className="qt">Informes</span><span className="qd">Descargar Word, Excel o PDF</span></span></button>
             </div>
             <div className="help" style={{marginTop:10}}>La <b>Ficha completa</b> de cada propiedad reúne toda su información (legal, física, valores, arriendo, arrendatario, crédito, gastos, servicios y contactos). Puedes <b>rellenarla, agregar fotos y archivos, previsualizarla</b> y <b>compartirla o exportarla</b> en PDF, Word, Excel o HTML, o por WhatsApp, correo y SMS.</div>
-          </Collapsible>
+          </Collapsible>)},
 
+         {id:"resumen",titulo:"Resumen rápido",node:(
           <Collapsible icon="⚡" title="Resumen rápido" subtitle="Ingresos, dividendos, utilidad y patrimonio" defaultOpen={false}>
             <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
               <div className="stat" style={{borderTopColor:"var(--green)"}}><div className="lab">Ingresos por arriendo</div><div className="val">{CLP(ingresos)}</div><div className="sub" style={{color:"var(--green-d)"}}>{rentals.length} en arriendo</div></div>
@@ -4887,15 +5350,17 @@ function App(){
               <div className="help" style={{margin:0}}><b>Utilidad neta / mes:</b> lo que realmente te queda: los arriendos menos todos los gastos (dividendos, contribuciones, gasto común, seguros, etc.).</div>
               <div className="help" style={{margin:0}}><b>Patrimonio:</b> el valor total de tus propiedades, según la tasación comercial que cargaste en cada una.</div>
             </div>
-          </Collapsible>
+          </Collapsible>)},
 
+         {id:"cobros",titulo:"Estado de cobros",node:(
           <Collapsible icon="💰" title="Estado de cobros" subtitle="Cuántas propiedades están al día, pendientes o atrasadas" defaultOpen={false}>
             {[{l:"Al día",n:paid,c:"var(--green)"},{l:"Pendiente",n:pend,c:"var(--amber)"},{l:"Atrasado",n:late,c:"var(--red)"}].map(s=>(
               <div key={s.l} style={{marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:700,marginBottom:6}}><span style={{color:"#445"}}>{s.l}</span><span style={{color:s.c}}>{s.n} propiedad{s.n!==1?"es":""}</span></div><div className="bar"><div style={{width:(rentals.length?(s.n/rentals.length*100):0)+"%",background:s.c}}></div></div></div>
             ))}
             <div className="help" style={{marginTop:6}}>Tienes <b>{rentals.length}</b> propiedades en arriendo y <b>{personals.length}</b> de uso personal. <b>Al día</b> = ya pagaron el mes · <b>Pendiente</b> = aún no pagan · <b>Atrasado</b> = pasó la fecha de pago.</div>
-          </Collapsible>
+          </Collapsible>)},
 
+         {id:"sociedades",titulo:"Mis sociedades",node:(
           <Collapsible icon="🏢" title="Mis sociedades" subtitle={SOCIEDADES.length+" sociedad(es) propietaria(s)"} defaultOpen={false}>
             <div className="help" style={{marginBottom:10}}>Las empresas o personas dueñas de tus propiedades. Aquí ves un resumen; toca “Ver sociedades” para gestionarlas.</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -4906,9 +5371,10 @@ function App(){
                 </div>); })}
             </div>
             <button className="btn btn-out" style={{marginTop:12}} onClick={()=>setTab("sociedades")}>Ver y gestionar sociedades →</button>
-          </Collapsible>
+          </Collapsible>)},
 
-          {(()=>{ const allBit=[]; props.forEach(p=>(p.bitacora||[]).forEach(b=>allBit.push({...b, pid:p.id, pname:p.name}))); allBit.sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
+         {id:"bitacora",titulo:"Bitácora",node:(
+          (()=>{ const allBit=[]; props.forEach(p=>(p.bitacora||[]).forEach(b=>allBit.push({...b, pid:p.id, pname:p.name}))); allBit.sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
             return (<Collapsible icon="📓" title="Bitácora" subtitle={allBit.length+" anotación(es) en todas las propiedades"} defaultOpen={false}>
               <div className="help" style={{marginBottom:10}}>Las últimas anotaciones de todas tus propiedades (contratos, servicios, antecedentes, mantenciones, etc.).</div>
               {allBit.length===0 ? <div style={{color:"var(--muted)"}}>Aún no hay anotaciones. Agrégalas desde la pestaña Bitácora o desde cada propiedad.</div> :
@@ -4918,26 +5384,31 @@ function App(){
                     <div style={{fontSize:13,color:"var(--muted)"}}>{b.pname}{b.texto?" — "+b.texto:""}</div>
                   </div>))}</div>}
               <button className="btn btn-out" style={{marginTop:12}} onClick={()=>setTab("bitacora")}>Ver bitácora completa →</button>
-            </Collapsible>); })()}
+            </Collapsible>); })()
+         )},
 
+         {id:"dividendos",titulo:"Resumen de dividendos",node:(
           <Collapsible icon="🏦" title="Resumen de dividendos" defaultOpen={false}>
             <Data label="Dividendos totales por pagar (todas)" value={props.reduce((s,p)=>s+divPorPagar(p),0)+" cuotas"} color="var(--red-d)" big/>
             <div style={{height:10}}></div>
             <Data label="Deuda hipotecaria restante (aprox.)" value={UFf(deudaHipTotalUF)+" ≈ "+CLP(deudaHipTotalUF*uf)}/>
             <button className="btn btn-out" style={{marginTop:14}} onClick={()=>setTab("finanzas")}>Ver dividendos, gastos y utilidades →</button>
-          </Collapsible>
+          </Collapsible>)},
 
+         {id:"tusprops",titulo:"Tus propiedades",node:(
           <Collapsible icon="🏘️" title="Tus propiedades" subtitle={props.length+" inmueble(s) — toca para verlas"} defaultOpen={false}>
             <div style={{textAlign:"right",marginBottom:10}}><button className="btn btn-ghost" onClick={()=>setTab("props")}>Ver todas →</button></div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
-              {props.map(p=>(<div key={p.id} className="prop" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}>
+              {propsOrd.map(p=>(<div key={p.id} className="prop" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}
+                {...pulsacionLarga(()=>moverPropiedad(p))}>
                 <span className="dot" style={{background:dotColor(p.status)}}></span>
                 <div style={{flex:1}}><div style={{fontWeight:700}}>{p.name} {p.use==="personal" && <span className="pill blue">Uso personal</span>}</div><div style={{fontSize:14,color:"var(--muted)",marginTop:2}}>{p.use==="arriendo"?p.tenant+" · ":""}{p.comuna}</div></div>
                 <div style={{textAlign:"right"}}><div style={{fontWeight:800}}>{p.use==="arriendo"?CLP(p.rent):"—"}</div>{p.use==="arriendo"&&<div style={{fontSize:12,color:"var(--faint)",fontWeight:600}}>{UFf(p.rentUF)}</div>}{p.use==="arriendo"?<Pill s={p.status}/>:<span className="pill blue">{p.subtype}</span>}</div>
                 <button className="btn btn-ghost btn-sm" title="Abrir ficha completa" onClick={e=>{e.stopPropagation();abrirFicha(p);}}></button>
               </div>))}
             </div>
-          </Collapsible>
+          </Collapsible>)},
+        ])}
         </>}
 
         {/* ============ SOCIEDADES ============ */}
@@ -4968,6 +5439,32 @@ function App(){
                 </div>))}
                 {list.length===0 && <div className="help">Esta sociedad aún no tiene propiedades. Agrégalas con <b>＋ Nueva propiedad</b>.</div>}
               </div>
+
+              {/* Servicio de Impuestos Internos, por sociedad. */}
+              <div className="sub-title" style={{marginTop:18}}>🏛️ Servicio de Impuestos Internos</div>
+              <div className="help" style={{marginBottom:10}}>
+                Datos tributarios de <b>{s.name}</b> (RUT <b>{s.rut||"—"}</b>). El SII no permite conectarse solo: se entra con el RUT y la clave tributaria de cada contribuyente. Lo que sí hace la plataforma es guardar aquí el <b>rol</b>, el <b>avalúo</b>, las <b>contribuciones</b> y los <b>certificados</b> de cada propiedad, y dejarte a un toque el trámite en el SII. Al asesor con IA puedes preguntarle “¿cuál es el rol de …?” o “¿cuánto paga de contribuciones …?” y responde con estos datos.
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {list.map(p=>{
+                  const falta=!p.rolSII||!num(p.avaluoFiscal);
+                  return (<div key={"sii"+p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,padding:"9px 12px",background:"var(--panel2)",borderRadius:10}}>
+                    <div style={{minWidth:180,flex:1}}>
+                      <div style={{fontWeight:700}}>{p.name}</div>
+                      <div style={{fontSize:13,color:"var(--muted)"}}>
+                        Rol {p.rolSII||"—"} · Avalúo {num(p.avaluoFiscal)?CLP(num(p.avaluoFiscal)):"—"} · Contribuciones {num(p.contribucionesAnuales)?CLP(num(p.contribucionesAnuales))+"/año":"—"}
+                        {(p.certAvaluoDocs||[]).length?" · 📄 certificado cargado":""}
+                      </div>
+                    </div>
+                    {falta && <button className="btn btn-out btn-sm" onClick={()=>{setEP({...p}); setMEdit(p);}}>Completar datos</button>}
+                  </div>);
+                })}
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
+                <a className="btn btn-out btn-sm" href={SII_LINKS.certificado_avaluo} target="_blank" rel="noopener">Certificado de avalúo fiscal →</a>
+                <a className="btn btn-out btn-sm" href={SII_LINKS.servicios_online} target="_blank" rel="noopener">Servicios online SII</a>
+                <a className="btn btn-ghost btn-sm" href={SII_LINKS.situacion_tributaria} target="_blank" rel="noopener">Situación tributaria del RUT</a>
+              </div>
             </Collapsible>);
           })}
         </>}
@@ -4985,11 +5482,12 @@ function App(){
               {SOCIEDADES.map(s=><button key={s.id} className={socFilter===s.id?"on":""} onClick={()=>setSocFilter(s.id)}>{s.name.replace(/ SPA$/,"")} ({bySoc(s.id).length})</button>)}
             </div>
           </div>
-          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial.</div>
+          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial. 💡 <b>Mantén presionada</b> una propiedad para cambiarla de lugar en la lista.</div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {view.map(p=>{ const on=sel&&sel.id===p.id; const util=utilidadMes(p,uf);
               return (<div key={p.id}>
-                <div className={"prop"+(on?" on":"")} onClick={()=>setSel(on?null:p)}>
+                <div className={"prop"+(on?" on":"")} onClick={()=>setSel(on?null:p)}
+                  {...pulsacionLarga(()=>moverPropiedad(p))}>
                   <span className="dot" style={{background:dotColor(p.status),boxShadow:`0 0 0 4px ${dotColor(p.status)}22`}}></span>
                   {!!(p.fotos&&p.fotos.length) && <div className="cover-thumb" style={{backgroundImage:`url('${p.fotos[0].url}')`}}></div>}
                   <div style={{flex:1}}>
@@ -5732,6 +6230,17 @@ function App(){
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               {[["Nombre completo","name"],["RUT","rut"],["Correo","email"],["Teléfono","phone"],["WhatsApp","whatsapp"]].map(f=>(
                 <div key={f[1]} className="field"><label className="label">{f[0]}</label><input className="input" value={ownerEdit[f[1]]} onChange={e=>setOwnerEdit(o=>({...o,[f[1]]:e.target.value}))}/></div>))}
+            </div>
+          </Collapsible>
+          <Collapsible icon="💬" title="WhatsApp de envío" subtitle="El número desde el que sale todo lo que manda la plataforma" defaultOpen={false}>
+            <div className="help" style={{marginBottom:12}}>Todos los mensajes automáticos (vouchers, recordatorios, confirmaciones, liquidaciones y fichas) salen desde este número y lo llevan firmado al pie.</div>
+            <div className="field" style={{maxWidth:280}}>
+              <label className="label">Número de WhatsApp</label>
+              <input className="input" value={ownerEdit.whatsappEnvio||WA_REMITENTE_DEF} onChange={e=>setOwnerEdit(o=>({...o,whatsappEnvio:e.target.value}))} placeholder={WA_REMITENTE_DEF}/>
+            </div>
+            <div className="card pad" style={{marginTop:14,background:"var(--panel2)",border:"none"}}>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:6}}>CÓMO SALEN LOS MENSAJES HOY</div>
+              <div style={{fontSize:14.5,lineHeight:1.7}}>Al tocar “WhatsApp” se abre la aplicación con el mensaje ya escrito y firmado con <b>{waRemitente(ownerEdit)}</b>, y solo queda apretar enviar. Para que salgan <b>solos</b>, sin abrir WhatsApp, hay que conectar la <b>API de WhatsApp Business</b> con ese mismo número (Meta la entrega con un número verificado y un token). Cuando la tengas, la conectamos aquí y los envíos pasan a ser automáticos.</div>
             </div>
           </Collapsible>
           <Collapsible icon="🏦" title="Datos bancarios para transferencias" defaultOpen={false}>
@@ -6494,6 +7003,10 @@ function App(){
             </div>))}
           </div>);
 
+          if(m.propuestas) return (<div key={i} style={{margin:"2px 0"}}>
+            <PropuestasIA items={m.propuestas} props={props} onAplicar={aplicarPropuestas}/>
+          </div>);
+
           if(m.comparacion) return (<div key={i} className="ai-compare">
             <table>
               <thead><tr><th></th>{m.comparacion.map(f=><th key={f.id}>{f.nombre}</th>)}</tr></thead>
@@ -6546,13 +7059,24 @@ function App(){
           </label>
           <textarea id="asesorInput" className="input" value={asIn} onChange={e=>setAsIn(e.target.value)}
             onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); asEnviar(asIn); } }}
-            placeholder="Ej: busco depto 2D en Providencia…" />
+            placeholder={oyendo?"Te escucho…":"Ej: busco depto 2D en Providencia…"} />
+          {hayVoz && <button className={"ai-mic"+(oyendo?" on":"")} onClick={oyendo?detenerVoz:escuchar}
+            aria-label={oyendo?"Dejar de escuchar":"Hablarle al asesor"} title={oyendo?"Dejar de escuchar":"Hablarle al asesor"}>{oyendo?"■":"🎙️"}</button>}
           <button className="btn btn-red ai-send" onClick={()=>asEnviar(asIn)} disabled={asBusy||(!asIn.trim()&&!asAdj.length)} aria-label="Enviar">➤</button>
         </div>
         <div className="ai-disclaimer">Asesor con IA · puede equivocarse. Confirma valores y condiciones antes de decidir.</div>
       </div>
     </div>}
     <button className="ai-fab" onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario">✦<span className="ai-dot"></span></button>
+    {arriba && <button className="subir-fab" onClick={subirAlInicio} aria-label="Volver al inicio de la página" title="Volver arriba">↑</button>}
+
+    {mover && (()=>{
+      const items = mover.clave==="props" ? itemsProps() : ordenarPor(mover.items,ordenes[mover.clave],x=>x.id);
+      return <MoverFicha titulo={mover.titulo} items={items} idSel={mover.id}
+        onOrden={ids=>guardarOrden(mover.clave,ids)}
+        onCerrar={()=>setMover(null)}
+        onReiniciar={ordenes[mover.clave]?()=>reiniciarOrden(mover.clave):null}/>;
+    })()}
 
     {notif && <div className={"notif"+(notif.err?" err":"")}>{notif.msg}</div>}
   </div>);
