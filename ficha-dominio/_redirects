@@ -1,0 +1,10 @@
+# fichacompletapropiedadescgvd.com apunta al sitio principal.
+#
+# Con estas dos reglas el dominio de la ficha deja de tener su propia copia y
+# muestra siempre la ficha del sitio principal, que ya tiene la clave de la IA
+# configurada. Así no hay que volver a subir la ficha cada vez que cambia ni
+# mantener la clave en dos lugares.
+#
+# El orden importa: primero la API, después el resto.
+/api/*  https://newarriendos.netlify.app/api/:splat  200!
+/*      https://newarriendos.netlify.app/levantamiento/:splat  200!

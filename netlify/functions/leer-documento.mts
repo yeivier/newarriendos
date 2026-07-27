@@ -1,4 +1,4 @@
-import type { Context } from '@netlify/functions'
+import type { Config, Context } from '@netlify/functions'
 
 // Lee documentos (imágenes/PDF) con Claude y devuelve los campos extraídos.
 // La API key nunca sale del servidor: se lee de la variable de entorno
@@ -54,4 +54,12 @@ export default async (req: Request, _context: Context) => {
       { status: 502 },
     )
   }
+}
+
+// Además de la ruta por omisión (/.netlify/functions/leer-documento) se publica
+// en /api/leer-documento: esa es la que puede atravesar la redirección del
+// dominio de la ficha, porque Netlify reserva las rutas /.netlify/*.
+export const config: Config = {
+  path: '/api/leer-documento',
+  method: ['POST'],
 }
