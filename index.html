@@ -893,6 +893,39 @@ const mapaConsulta = (p)=>{
 };
 const tieneCoords = (p)=>{ const a=parseFloat(p.lat), b=parseFloat(p.lng); return !isNaN(a)&&!isNaN(b)&&(a||b); };
 
+/* Convierte la dirección escrita en coordenadas.
+   Street View de Google solo se puede abrir con coordenadas: con una dirección
+   de texto abre un mapa normal, nunca la vista de calle. Por eso, sin
+   coordenadas, no basta con arreglar el enlace: hay que ubicar la propiedad.
+   Se usa el geocodificador de OpenStreetMap, que es abierto y no pide clave. */
+const geocodificar = async (dir)=>{
+  const q=String(dir||"").trim();
+  if(!q) return null;
+  const url="https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=cl&q="+encodeURIComponent(q);
+  const r=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  if(!Array.isArray(j)||!j.length) return null;
+  const lat=parseFloat(j[0].lat), lng=parseFloat(j[0].lon);
+  return (isNaN(lat)||isNaN(lng)) ? null : { lat, lng };
+};
+
+/* Busca la dirección completa y, si no aparece, reintenta sin el número: en
+   pueblos chicos muchas veces solo está mapeada la calle. */
+const ubicarDireccion = async (p)=>{
+  const cola=[p.comuna,p.region,"Chile"].filter(Boolean).join(", ");
+  const calle=String(p.address||"").trim();
+  const intentos=[];
+  if(calle) intentos.push([calle,cola].filter(Boolean).join(", "));
+  if(calle&&/\d/.test(calle)) intentos.push([calle.replace(/\s*\d.*$/,"").trim(),cola].filter(Boolean).join(", "));
+  if(cola) intentos.push(cola);
+  for(const q of intentos){
+    const r=await geocodificar(q);
+    if(r) return r;
+  }
+  return null;
+};
+
 /* ============ Lectura universal de archivos para la IA ============
    La IA lee imágenes y PDF de forma nativa. Word, Excel y planillas no: son
    archivos ZIP con XML adentro, así que les extraemos el texto aquí, en el
@@ -2138,6 +2171,61 @@ const asTexto=(t)=>String(t||"").split(/(\*\*[^*]+\*\*)/g).map((p,i)=>
     ? React.createElement("b",{key:i},p.slice(2,-2))
     : p);
 
+/* La API exige que cada bloque de herramienta viaje con su resultado. Si una
+   búsqueda en internet queda a medias (se corta el tiempo, se acaba el tope de
+   texto), el turno queda con una llamada suelta y TODAS las respuestas
+   siguientes fallan con "tool use ... without a corresponding tool_result".
+   Como el historial se guarda en el navegador, ese turno roto se arrastra
+   entre sesiones, así que lo limpiamos antes de enviar. */
+const asEsResultado=(b)=>typeof b.type==="string"&&/_tool_result$/.test(b.type);
+const asSanearBloques=(lista)=>{
+  const bl=(Array.isArray(lista)?lista:[]).filter(b=>b&&typeof b.type==="string");
+  const conResultado=new Set(bl.filter(asEsResultado).map(b=>b.tool_use_id));
+  const llamadas=new Set(bl.filter(b=>b.type==="server_tool_use").map(b=>b.id));
+  return bl.filter(b=>{
+    if(b.type==="server_tool_use") return conResultado.has(b.id);
+    if(asEsResultado(b)&&b.type!=="tool_result") return llamadas.has(b.tool_use_id);
+    return true;
+  });
+};
+const asSanearHistorial=(hist)=>{
+  const out=[]; const pendientes=new Set();
+  (Array.isArray(hist)?hist:[]).forEach(m=>{
+    if(!m||!m.content) return;
+    let bl=typeof m.content==="string"
+      ? (m.content.trim()?[{type:"text",text:m.content}]:[])
+      : (Array.isArray(m.content)?m.content:[]);
+    if(m.role==="assistant"){
+      bl=asSanearBloques(bl);
+      bl.filter(b=>b.type==="tool_use").forEach(b=>pendientes.add(b.id));
+    }else{
+      // Un resultado sin su llamada también invalida la conversación.
+      bl=bl.filter(b=>b&&(b.type!=="tool_result"||pendientes.has(b.tool_use_id)));
+      bl.forEach(b=>pendientes.delete(b.tool_use_id));
+    }
+    if(!bl.length) return;
+    // Si al limpiar quedaron dos turnos seguidos del mismo lado, se juntan:
+    // la API espera que se vayan alternando.
+    const prev=out[out.length-1];
+    if(prev&&prev.role===m.role){
+      const enBloques=(c)=>Array.isArray(c)?c:[{type:"text",text:String(c)}];
+      prev.content=[...enBloques(prev.content),...bl];
+      return;
+    }
+    out.push({role:m.role,content:bl});
+  });
+  // No puede quedar una llamada del asistente esperando respuesta al final.
+  while(out.length){
+    const u=out[out.length-1];
+    const abierta=u.role==="assistant"&&Array.isArray(u.content)&&
+      u.content.some(b=>b.type==="tool_use"&&pendientes.has(b.id));
+    if(!abierta) break;
+    out.pop();
+  }
+  while(out.length&&out[0].role!=="user") out.shift();
+  return out;
+};
+
 const asResumenCatalogo=(props,uf,empresa,contacto,lead)=>{
   const arr=props.filter(p=>p.use==="arriendo");
   const precios=arr.map(p=>num(p.rent)).filter(n=>n>0);
@@ -2686,6 +2774,36 @@ function App(){
   // Instrucción libre para el lector: "guárdalo como gasto de la casa de Ñuñoa", etc.
   const [aiOrden,setAiOrden]=useState("");
   const [aiDocPaso,setAiDocPaso]=useState(""); // "Leyendo 2 de 3…"
+
+  /* ---- Ubicar propiedades en el mapa (para que Street View funcione) ---- */
+  const [geoBusy,setGeoBusy]=useState("");
+  const geoIntentadas=useRef(new Set());
+  const ubicarPropiedad=async(p,silencioso)=>{
+    if(geoBusy) return;
+    setGeoBusy(String(p.id));
+    try{
+      const r=await ubicarDireccion(p);
+      if(r){
+        patchProp(p.id, x=>({...x, lat:r.lat, lng:r.lng}));
+        if(!silencioso) notify("Ubicación encontrada: el mapa y Street View ya apuntan bien");
+      } else if(!silencioso){
+        notify("No encontré esa dirección. Puedes pegar la latitud y longitud a mano en Editar.",true);
+      }
+    }catch(e){ if(!silencioso) notify("No se pudo ubicar la dirección: "+((e&&e.message)||"error"),true); }
+    setGeoBusy("");
+  };
+  // Al abrir una propiedad con dirección pero sin coordenadas, se ubica sola
+  // una vez. Así Street View deja de caer en cualquier parte sin que el usuario
+  // tenga que hacer nada.
+  useEffect(()=>{
+    if(!sel) return;
+    const p=props.find(x=>String(x.id)===String(sel.id))||sel;
+    if(tieneCoords(p)||!String(p.address||"").trim()) return;
+    const k=String(p.id);
+    if(geoIntentadas.current.has(k)) return;
+    geoIntentadas.current.add(k);
+    ubicarPropiedad(p,true);
+  },[sel&&sel.id]);
   const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
   const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
   SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
@@ -3203,7 +3321,7 @@ function App(){
               : { type:"image", source:{ type:"base64", media_type:f.media, data:f.b64 } })),
          { type:"text", text:texto }]
       : texto;
-    let msgs=[...asMsgs,{role:"user",content:contenido}];
+    let msgs=[...asSanearHistorial(asMsgs),{role:"user",content:contenido}];
     const l=asLeadActual();
     const contexto=asResumenCatalogo(props,uf,asEmpresa(),asContacto(),
       l?(l.nombre+(l.telefono?" · "+l.telefono:"")+(l.email?" · "+l.email:"")):null);
@@ -3213,12 +3331,20 @@ function App(){
           body:JSON.stringify({messages:msgs,contexto})});
         const d=await r.json().catch(()=>null);
         if(!r.ok){
-          setAsChat(c=>[...c,{r:"ai",c:(d&&d.error)?d.error:("No pude responder (error "+r.status+")."),err:true}]);
+          const agotado=r.status===504||r.status===502||r.status===408;
+          setAsChat(c=>[...c,{r:"ai",err:true,c:(d&&d.error)?d.error
+            :(agotado?"Se me alargó la búsqueda y no alcancé a responder 😅 Pídemelo otra vez acotando la comuna o el presupuesto y lo reviso al tiro."
+                    :("No pude responder (error "+r.status+")."))}]);
           break;
         }
-        // Se reenvía tal cual: los resultados de internet vienen cifrados y
-        // modificarlos hace fallar la siguiente llamada.
-        const bloques=d.content||[];
+        // Los resultados de internet vienen cifrados y modificarlos hace fallar
+        // la siguiente llamada, así que solo sacamos las llamadas que quedaron
+        // sin su resultado (una búsqueda cortada envenena todo el historial).
+        const bloques=asSanearBloques(d.content||[]);
+        if(!bloques.length){
+          setAsChat(c=>[...c,{r:"ai",err:true,c:"La búsqueda quedó a medias. Vuelve a pedírmela, si puede ser más acotada, y la retomo."}]);
+          break;
+        }
         msgs=[...msgs,{role:"assistant",content:bloques}];
         const usos=bloques.filter(b=>b.type==="tool_use");
         const textos=bloques.filter(b=>b.type==="text");
@@ -3417,8 +3543,12 @@ function App(){
     notify(nCampos+" campos actualizados. Revísalos y guarda los cambios.");
   };
 
-  /* El bloque del lector se usa igual en crear y en editar. */
-  const LectorIA=({ titulo, ayuda, onAplicar })=>(
+  /* El bloque del lector se usa igual en crear y en editar.
+     Ojo: esto se INVOCA como función — lectorIA({...}) — y no como <LectorIA/>.
+     Si se usara como componente, React lo trataría como un tipo nuevo en cada
+     render del formulario y volvería a montar el cuadro de texto: en el celular
+     eso cierra el teclado a cada letra que se escribe. */
+  const lectorIA=({ titulo, ayuda, onAplicar })=>(
     <div className="lector-ia">
       <div className="lector-t">✨ {titulo}</div>
       <div className="lector-d">{ayuda}</div>
@@ -4145,7 +4275,9 @@ function App(){
   const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const copiarLevantamiento=()=>{ const u=levLink(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(()=>notify("Enlace de la Ficha de Levantamiento copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify(u,true); };
-  const LevantamientoBox=()=>(<div style={{marginTop:14}}>
+  /* También se invocan como funciones (ver la nota de lectorIA): así los campos
+     que traen dentro no pierden el foco mientras se escribe. */
+  const levantamientoBox=()=>(<div style={{marginTop:14}}>
     <div className="sub-title green">Ficha de Levantamiento (formulario completo)</div>
     <div className="help" style={{marginBottom:8}}>Formulario integral de <b>levantamiento de propiedad</b> (30+ secciones: antecedentes legales, físicos, financieros, arrendatario, aval, documentación y exportación a Word, PDF y ZIP). Ábrelo para llenarlo tú, o comparte el enlace para que lo complete un corredor, el dueño o tu equipo.</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -4213,7 +4345,7 @@ function App(){
   };
 
   /* ---------------- Panel de compartir (reutilizado en ficha y en modal) ---------------- */
-  const SharePanel=({p})=>{ const s=getCompartir(p); const link=fichaLink(p); const fotos=p.fotos||[];
+  const sharePanel=({p})=>{ const s=getCompartir(p); const link=fichaLink(p); const fotos=p.fotos||[];
     return (<div>
       <div className="help g" style={{marginBottom:12}}>Comparte una <b>ficha de marketing</b> atractiva y autocontenida de la propiedad: portada, características, fotos, recorrido 360°, mapa y contacto directo por WhatsApp. Nunca muestra el nombre, RUT ni contacto del arrendatario o propietario.</div>
       <div className="grid c3" style={{gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
@@ -4275,12 +4407,12 @@ function App(){
           </div>); })}
       </div>
 
-      <LevantamientoBox/>
+      {levantamientoBox()}
     </div>);
   };
 
   /* ---------------- Detalle de propiedad ---------------- */
-  const Detail=({p})=>{ const multa=calcMulta(p); const util=utilidadMes(p,uf); const diff=diffArrDiv(p,uf); const dCLP=divCLP(p,uf);
+  const detalleProp=({p})=>{ const multa=calcMulta(p); const util=utilidadMes(p,uf); const diff=diffArrDiv(p,uf); const dCLP=divCLP(p,uf);
     return (<div className="card pad" style={{marginTop:12}}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:6}}>
         <button className="btn btn-out btn-sm" onClick={()=>{setEP({...p}); setMEdit(p);}}>Editar</button>
@@ -4328,9 +4460,17 @@ function App(){
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Data label="Dirección" value={p.address}/>
           <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:10}}><Data label="Comuna" value={p.comuna}/><Data label="Región" value={p.region}/></div>
+          {/* Street View necesita coordenadas sí o sí. Sin ellas se ofrece
+              ubicar la propiedad en vez de abrir un enlace que caería mal. */}
+          {!tieneCoords(p) && <div className="help" style={{margin:0,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{flex:1,minWidth:150}}>Esta propiedad aún no está ubicada en el mapa, por eso Street View no puede abrirse en la dirección exacta.</span>
+            <button className="btn btn-red btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)}>
+              {geoBusy===String(p.id)?"Ubicando…":"Ubicar en el mapa"}</button>
+          </div>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <a className="btn btn-out btn-sm" href={tieneCoords(p)?`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Street View</a>
+            {tieneCoords(p) && <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`} target="_blank" rel="noopener">Street View</a>}
             <a className="btn btn-out btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${mapaConsulta(p)}`} target="_blank" rel="noopener">Google Maps</a>
+            {tieneCoords(p) && <button className="btn btn-out btn-sm" disabled={geoBusy===String(p.id)} onClick={()=>ubicarPropiedad(p)} title="Vuelve a calcular las coordenadas desde la dirección">{geoBusy===String(p.id)?"Ubicando…":"Recalcular ubicación"}</button>}
             {!!(p.panoramas&&p.panoramas.length) && <button className="btn btn-out btn-sm" onClick={()=>setPanoProp(p)}>Recorrido 360°</button>}
             {p.virtualTour && <a className="btn btn-out btn-sm" href={p.virtualTour} target="_blank" rel="noopener">Recorrido externo</a>}
           </div>
@@ -4574,12 +4714,12 @@ function App(){
       <Collapsible icon="📄" title="Ficha completa de la propiedad" subtitle="Rellenar, previsualizar, exportar y compartir" defaultOpen={false} accent="var(--blue)">
       <div className="help" style={{marginBottom:10}}>Reúne <b>toda</b> la información de la propiedad: identificación, legal/registral, características físicas, valores, arriendo, arrendatario, crédito, gastos, servicios y contactos. Incluye <b>arrendatarios y dueños anteriores sin límite</b>, fotos y archivos. Previsualízala y <b>compártela o expórtala</b> en PDF, Word, Excel o HTML, o por WhatsApp, correo y SMS.</div>
       <button className="btn btn-red" onClick={()=>abrirFicha(p)}>Abrir ficha completa</button>
-      <LevantamientoBox/>
+      {levantamientoBox()}
       </Collapsible>
 
       {/* COMPARTIR PROPIEDAD */}
       <Collapsible icon="📤" title="Compartir propiedad" subtitle="Ficha pública de marketing (sin datos del arrendatario)" defaultOpen={false}>
-      <SharePanel p={p}/>
+      {sharePanel({p})}
       </Collapsible>
 
     </div>);
@@ -4867,7 +5007,7 @@ function App(){
                   {p.use==="arriendo" && <Pill s={p.status}/>}
                   <button className="btn btn-ghost btn-sm" title="Abrir ficha completa" onClick={e=>{e.stopPropagation();abrirFicha(p);}}></button>
                 </div>
-                {on && <Detail p={p}/>}
+                {on && detalleProp({p})}
               </div>);
             })}
           </div>
@@ -5725,10 +5865,10 @@ function App(){
     {mAdd && <div className="modal-bg" onClick={()=>setMAdd(false)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Nueva propiedad</h3><p>Sube los documentos y deja que la IA complete el formulario, o llénalo a mano.</p></div>
       <div className="modal-body">
-        <LectorIA
-          titulo="Completar con IA desde tus archivos"
-          ayuda={<>Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</>}
-          onAplicar={rellenarFormNueva}/>
+        {lectorIA({
+          titulo:"Completar con IA desde tus archivos",
+          ayuda:<>Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</>,
+          onAplicar:rellenarFormNueva})}
         <PropForm d={nP} set={setNP}/>
       </div>
       <div className="modal-foot"><button className="btn btn-red" style={{flex:1}} onClick={addProp}>Agregar y guardar</button><button className="btn btn-out" onClick={()=>setMAdd(false)}>Cancelar</button></div>
@@ -5737,10 +5877,10 @@ function App(){
     {mEdit && eP && <div className="modal-bg" onClick={()=>setMEdit(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Editar — {mEdit.name}</h3><p>Modifica ficha, arrendatario, crédito o gastos.</p></div>
       <div className="modal-body">
-        <LectorIA
-          titulo="Corregir o completar con IA"
-          ayuda={<>Sube la <b>escritura, el certificado de dominio, el contrato o una foto</b> y la IA corrige lo que esté mal y completa lo que falte. Solo toca los campos que encuentre; el resto queda igual.</>}
-          onAplicar={rellenarFormEdicion}/>
+        {lectorIA({
+          titulo:"Corregir o completar con IA",
+          ayuda:<>Sube la <b>escritura, el certificado de dominio, el contrato o una foto</b> y la IA corrige lo que esté mal y completa lo que falte. Solo toca los campos que encuentre; el resto queda igual.</>,
+          onAplicar:rellenarFormEdicion})}
         <PropForm d={eP} set={setEP}/>
       </div>
       <div className="modal-foot"><button className="btn btn-green" style={{flex:1}} onClick={saveEdit}>Guardar cambios</button><button className="btn btn-out" style={{color:"var(--red-d)",borderColor:"var(--red-soft)"}} onClick={()=>{setMEdit(null);setMDel(eP);}}>✕ Eliminar</button><button className="btn btn-out" onClick={()=>setMEdit(null)}>Cancelar</button></div>
@@ -5881,7 +6021,7 @@ function App(){
           </div>
         </div>}
 
-        <LevantamientoBox/>
+        {levantamientoBox()}
       </div>
       <div className="modal-foot" style={{flexWrap:"wrap",gap:8}}>
         <button className="btn btn-green btn-sm" onClick={guardarFicha}>Guardar</button>
@@ -5991,7 +6131,7 @@ function App(){
     {mShare && (()=>{ const sp=props.find(x=>x.id===mShare.id)||mShare; return (
       <div className="modal-bg" onClick={()=>setMShare(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-head"><h3>Compartir — {sp.name}</h3><p>Genera una ficha pública atractiva y compártela por enlace, WhatsApp o PDF.</p></div>
-        <div className="modal-body"><SharePanel p={sp}/></div>
+        <div className="modal-body">{sharePanel({p:sp})}</div>
         <div className="modal-foot"><button className="btn btn-out" style={{flex:1}} onClick={()=>setMShare(null)}>Cerrar</button></div>
       </div></div>
     ); })()}
