@@ -3543,8 +3543,12 @@ function App(){
     notify(nCampos+" campos actualizados. Revísalos y guarda los cambios.");
   };
 
-  /* El bloque del lector se usa igual en crear y en editar. */
-  const LectorIA=({ titulo, ayuda, onAplicar })=>(
+  /* El bloque del lector se usa igual en crear y en editar.
+     Ojo: esto se INVOCA como función — lectorIA({...}) — y no como <LectorIA/>.
+     Si se usara como componente, React lo trataría como un tipo nuevo en cada
+     render del formulario y volvería a montar el cuadro de texto: en el celular
+     eso cierra el teclado a cada letra que se escribe. */
+  const lectorIA=({ titulo, ayuda, onAplicar })=>(
     <div className="lector-ia">
       <div className="lector-t">✨ {titulo}</div>
       <div className="lector-d">{ayuda}</div>
@@ -4271,7 +4275,9 @@ function App(){
   const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const copiarLevantamiento=()=>{ const u=levLink(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(()=>notify("Enlace de la Ficha de Levantamiento copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify(u,true); };
-  const LevantamientoBox=()=>(<div style={{marginTop:14}}>
+  /* También se invocan como funciones (ver la nota de lectorIA): así los campos
+     que traen dentro no pierden el foco mientras se escribe. */
+  const levantamientoBox=()=>(<div style={{marginTop:14}}>
     <div className="sub-title green">Ficha de Levantamiento (formulario completo)</div>
     <div className="help" style={{marginBottom:8}}>Formulario integral de <b>levantamiento de propiedad</b> (30+ secciones: antecedentes legales, físicos, financieros, arrendatario, aval, documentación y exportación a Word, PDF y ZIP). Ábrelo para llenarlo tú, o comparte el enlace para que lo complete un corredor, el dueño o tu equipo.</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -4339,7 +4345,7 @@ function App(){
   };
 
   /* ---------------- Panel de compartir (reutilizado en ficha y en modal) ---------------- */
-  const SharePanel=({p})=>{ const s=getCompartir(p); const link=fichaLink(p); const fotos=p.fotos||[];
+  const sharePanel=({p})=>{ const s=getCompartir(p); const link=fichaLink(p); const fotos=p.fotos||[];
     return (<div>
       <div className="help g" style={{marginBottom:12}}>Comparte una <b>ficha de marketing</b> atractiva y autocontenida de la propiedad: portada, características, fotos, recorrido 360°, mapa y contacto directo por WhatsApp. Nunca muestra el nombre, RUT ni contacto del arrendatario o propietario.</div>
       <div className="grid c3" style={{gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
@@ -4401,12 +4407,12 @@ function App(){
           </div>); })}
       </div>
 
-      <LevantamientoBox/>
+      {levantamientoBox()}
     </div>);
   };
 
   /* ---------------- Detalle de propiedad ---------------- */
-  const Detail=({p})=>{ const multa=calcMulta(p); const util=utilidadMes(p,uf); const diff=diffArrDiv(p,uf); const dCLP=divCLP(p,uf);
+  const detalleProp=({p})=>{ const multa=calcMulta(p); const util=utilidadMes(p,uf); const diff=diffArrDiv(p,uf); const dCLP=divCLP(p,uf);
     return (<div className="card pad" style={{marginTop:12}}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:6}}>
         <button className="btn btn-out btn-sm" onClick={()=>{setEP({...p}); setMEdit(p);}}>Editar</button>
@@ -4708,12 +4714,12 @@ function App(){
       <Collapsible icon="📄" title="Ficha completa de la propiedad" subtitle="Rellenar, previsualizar, exportar y compartir" defaultOpen={false} accent="var(--blue)">
       <div className="help" style={{marginBottom:10}}>Reúne <b>toda</b> la información de la propiedad: identificación, legal/registral, características físicas, valores, arriendo, arrendatario, crédito, gastos, servicios y contactos. Incluye <b>arrendatarios y dueños anteriores sin límite</b>, fotos y archivos. Previsualízala y <b>compártela o expórtala</b> en PDF, Word, Excel o HTML, o por WhatsApp, correo y SMS.</div>
       <button className="btn btn-red" onClick={()=>abrirFicha(p)}>Abrir ficha completa</button>
-      <LevantamientoBox/>
+      {levantamientoBox()}
       </Collapsible>
 
       {/* COMPARTIR PROPIEDAD */}
       <Collapsible icon="📤" title="Compartir propiedad" subtitle="Ficha pública de marketing (sin datos del arrendatario)" defaultOpen={false}>
-      <SharePanel p={p}/>
+      {sharePanel({p})}
       </Collapsible>
 
     </div>);
@@ -5001,7 +5007,7 @@ function App(){
                   {p.use==="arriendo" && <Pill s={p.status}/>}
                   <button className="btn btn-ghost btn-sm" title="Abrir ficha completa" onClick={e=>{e.stopPropagation();abrirFicha(p);}}></button>
                 </div>
-                {on && <Detail p={p}/>}
+                {on && detalleProp({p})}
               </div>);
             })}
           </div>
@@ -5859,10 +5865,10 @@ function App(){
     {mAdd && <div className="modal-bg" onClick={()=>setMAdd(false)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Nueva propiedad</h3><p>Sube los documentos y deja que la IA complete el formulario, o llénalo a mano.</p></div>
       <div className="modal-body">
-        <LectorIA
-          titulo="Completar con IA desde tus archivos"
-          ayuda={<>Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</>}
-          onAplicar={rellenarFormNueva}/>
+        {lectorIA({
+          titulo:"Completar con IA desde tus archivos",
+          ayuda:<>Sube el <b>contrato, la escritura, el certificado de dominio, una liquidación o incluso una foto o pantallazo</b>. La IA los lee y rellena los campos de abajo. Sirven fotos, PDF, Word, Excel y archivos de texto.</>,
+          onAplicar:rellenarFormNueva})}
         <PropForm d={nP} set={setNP}/>
       </div>
       <div className="modal-foot"><button className="btn btn-red" style={{flex:1}} onClick={addProp}>Agregar y guardar</button><button className="btn btn-out" onClick={()=>setMAdd(false)}>Cancelar</button></div>
@@ -5871,10 +5877,10 @@ function App(){
     {mEdit && eP && <div className="modal-bg" onClick={()=>setMEdit(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <div className="modal-head"><h3>Editar — {mEdit.name}</h3><p>Modifica ficha, arrendatario, crédito o gastos.</p></div>
       <div className="modal-body">
-        <LectorIA
-          titulo="Corregir o completar con IA"
-          ayuda={<>Sube la <b>escritura, el certificado de dominio, el contrato o una foto</b> y la IA corrige lo que esté mal y completa lo que falte. Solo toca los campos que encuentre; el resto queda igual.</>}
-          onAplicar={rellenarFormEdicion}/>
+        {lectorIA({
+          titulo:"Corregir o completar con IA",
+          ayuda:<>Sube la <b>escritura, el certificado de dominio, el contrato o una foto</b> y la IA corrige lo que esté mal y completa lo que falte. Solo toca los campos que encuentre; el resto queda igual.</>,
+          onAplicar:rellenarFormEdicion})}
         <PropForm d={eP} set={setEP}/>
       </div>
       <div className="modal-foot"><button className="btn btn-green" style={{flex:1}} onClick={saveEdit}>Guardar cambios</button><button className="btn btn-out" style={{color:"var(--red-d)",borderColor:"var(--red-soft)"}} onClick={()=>{setMEdit(null);setMDel(eP);}}>✕ Eliminar</button><button className="btn btn-out" onClick={()=>setMEdit(null)}>Cancelar</button></div>
@@ -6015,7 +6021,7 @@ function App(){
           </div>
         </div>}
 
-        <LevantamientoBox/>
+        {levantamientoBox()}
       </div>
       <div className="modal-foot" style={{flexWrap:"wrap",gap:8}}>
         <button className="btn btn-green btn-sm" onClick={guardarFicha}>Guardar</button>
@@ -6125,7 +6131,7 @@ function App(){
     {mShare && (()=>{ const sp=props.find(x=>x.id===mShare.id)||mShare; return (
       <div className="modal-bg" onClick={()=>setMShare(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-head"><h3>Compartir — {sp.name}</h3><p>Genera una ficha pública atractiva y compártela por enlace, WhatsApp o PDF.</p></div>
-        <div className="modal-body"><SharePanel p={sp}/></div>
+        <div className="modal-body">{sharePanel({p:sp})}</div>
         <div className="modal-foot"><button className="btn btn-out" style={{flex:1}} onClick={()=>setMShare(null)}>Cerrar</button></div>
       </div></div>
     ); })()}
