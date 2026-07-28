@@ -199,6 +199,42 @@
   .ai-res-val{color:var(--navy);}
   .ai-res-sec{color:var(--text-muted);font-size:11px;}
 
+  /* ---- Asistente inmobiliario de la ficha (el mismo de la plataforma) ---- */
+  #asFab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:190;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 14px 34px rgba(34,28,15,.3);cursor:pointer;font-size:25px;display:flex;align-items:center;justify-content:center;}
+  #asFab .dot{position:absolute;right:5px;top:5px;width:11px;height:11px;border:2px solid #fff;border-radius:50%;background:#2E7D46;}
+  #asPanel{position:fixed;right:18px;bottom:calc(144px + env(safe-area-inset-bottom,0px));z-index:189;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100vh - 210px));background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 70px rgba(16,24,40,.26);display:none;flex-direction:column;overflow:hidden;}
+  #asPanel.open{display:flex;}
+  #asHead{padding:14px 15px;background:linear-gradient(135deg,#17171d,#29272a);color:#fff;display:flex;align-items:center;gap:10px;}
+  #asHead .av{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0;}
+  #asHead .t{font-weight:800;font-size:15px;}
+  #asHead .s{font-size:11.5px;opacity:.72;margin-top:1px;}
+  #asHead .x{margin-left:auto;background:transparent;border:none;color:#fff;opacity:.7;font-size:20px;cursor:pointer;padding:2px 6px;}
+  #asMsgs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
+  #asMsgs > *{flex-shrink:0;}
+  .as-row{display:flex;}
+  .as-row.bot{justify-content:flex-start;}
+  .as-row.user{justify-content:flex-end;}
+  .as-bub{max-width:86%;padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+  .as-row.bot .as-bub{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:5px;color:var(--text);}
+  .as-row.user .as-bub{background:var(--navy);color:#fff;border-bottom-right-radius:5px;}
+  .as-bub.err{background:var(--danger-bg);border-color:var(--danger);color:var(--danger);}
+  .as-sug{display:flex;flex-wrap:wrap;gap:7px;padding:0 14px 12px;background:var(--bg);}
+  .as-sug button{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 12px;font-size:12.5px;cursor:pointer;color:var(--text);}
+  .as-sug button:hover{background:var(--accent-fill);}
+  #asForm{display:flex;gap:8px;padding:11px;border-top:1px solid var(--border);background:var(--card);align-items:flex-end;}
+  #asIn{flex:1;min-height:44px;max-height:110px;resize:none;font-size:16px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;font-family:inherit;}
+  #asForm button{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:18px;cursor:pointer;flex-shrink:0;}
+  #asForm button.send{background:var(--navy);color:#fff;border-color:var(--navy);}
+  #asForm button.on{background:var(--danger);color:#fff;border-color:var(--danger);}
+  .as-pts{display:flex;gap:4px;padding:12px 14px;}
+  .as-pts span{width:7px;height:7px;border-radius:50%;background:var(--text-faint);animation:asPt 1.2s infinite;}
+  .as-pts span:nth-child(2){animation-delay:.15s} .as-pts span:nth-child(3){animation-delay:.3s}
+  @keyframes asPt{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  @media(max-width:560px){
+    #asPanel{right:10px;left:10px;width:auto;height:min(72vh,calc(100vh - 190px));bottom:calc(140px + env(safe-area-inset-bottom,0px));}
+    #asFab{right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0px));width:54px;height:54px;}
+  }
+
 </style>
 </head>
 <body>
@@ -232,6 +268,23 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- Asistente inmobiliario: el mismo de la plataforma, adaptado a la ficha. -->
+<button id="asFab" type="button" title="Asesor inmobiliario" aria-label="Abrir el asesor inmobiliario">✦<span class="dot"></span></button>
+<div id="asPanel" role="dialog" aria-label="Asesor inmobiliario">
+  <div id="asHead">
+    <div class="av">✦</div>
+    <div><div class="t">Asesor inmobiliario</div><div class="s">Te ayuda a llenar la ficha y responde tus dudas</div></div>
+    <button class="x" type="button" id="asCerrar" aria-label="Cerrar">✕</button>
+  </div>
+  <div id="asMsgs"></div>
+  <div class="as-sug" id="asSug"></div>
+  <div id="asForm">
+    <textarea id="asIn" rows="1" placeholder="Ej: ¿qué es el CIP y dónde lo saco?"></textarea>
+    <button type="button" id="asMic" title="Hablarle al asesor" aria-label="Hablarle al asesor">🎙️</button>
+    <button type="button" id="asSend" class="send" title="Enviar" aria-label="Enviar">➤</button>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -4254,6 +4307,151 @@ function init(){
   document.getElementById('btnZip').addEventListener('click', buildAndDownloadZip);
 }
 document.addEventListener('DOMContentLoaded', init);
+
+/* ================== ASESOR INMOBILIARIO DE LA FICHA ==================
+   El mismo asistente de la plataforma, adaptado a este formulario: explica
+   qué va en cada campo, define los conceptos del rubro y asesora. Ve lo que
+   ya está escrito en la ficha (para responder con eso y avisar lo que falta),
+   pero no tiene acceso al panel privado, porque este enlace es público. */
+(function(){
+  var msgs = [];            // historial que se manda a la IA
+  var busy = false, rec = null, oyendo = false;
+  var SUGERENCIAS = [
+    '¿Qué es el CIP y dónde lo saco?',
+    '¿Qué documentos necesito para arrendar?',
+    '¿Cada cuánto se pagan las contribuciones?',
+    '¿Qué me falta por llenar?',
+    '¿En cuánto podría arrendar esta propiedad?'
+  ];
+
+  function $(id){ return document.getElementById(id); }
+  function abajo(){ var c=$('asMsgs'); if(c) c.scrollTop = c.scrollHeight; }
+
+  /* Muestra **negritas** sin meter HTML de terceros en la página. */
+  function pintarTexto(cont, texto){
+    String(texto||'').split(/(\*\*[^*]+\*\*)/g).forEach(function(p){
+      if(p.slice(0,2)==='**' && p.slice(-2)==='**' && p.length>4){
+        var b=document.createElement('b'); b.textContent=p.slice(2,-2); cont.appendChild(b);
+      } else if(p) cont.appendChild(document.createTextNode(p));
+    });
+  }
+  function burbuja(rol, texto, err){
+    var row=document.createElement('div'); row.className='as-row '+(rol==='user'?'user':'bot');
+    var b=document.createElement('div'); b.className='as-bub'+(err?' err':'');
+    pintarTexto(b, texto);
+    row.appendChild(b); $('asMsgs').appendChild(row); abajo();
+    return row;
+  }
+  function pensando(){
+    var row=document.createElement('div'); row.className='as-row bot';
+    var b=document.createElement('div'); b.className='as-bub as-pts';
+    b.innerHTML='<span></span><span></span><span></span>';
+    row.appendChild(b); $('asMsgs').appendChild(row); abajo();
+    return row;
+  }
+  function pintarSugerencias(){
+    var c=$('asSug'); if(!c) return;
+    c.innerHTML='';
+    SUGERENCIAS.forEach(function(s){
+      var b=document.createElement('button'); b.type='button'; b.textContent=s;
+      b.onclick=function(){ enviar(s); };
+      c.appendChild(b);
+    });
+  }
+
+  /* Resumen de lo que ya está escrito: solo campos con contenido, acotado. */
+  function fichaResumen(){
+    try{
+      var out={}, n=0;
+      for(var k in state.values){
+        var v=state.values[k];
+        if(v!==undefined && v!==null && String(v).trim()!=='' && n<70){ out[k]=String(v).slice(0,120); n++; }
+      }
+      for(var c in state.choices){
+        if(state.choices[c] && n<90){ out[c]=String(state.choices[c]).slice(0,80); n++; }
+      }
+      return n?out:null;
+    }catch(e){ return null; }
+  }
+
+  function enviar(texto){
+    var t=String(texto||'').trim();
+    if(!t || busy) return;
+    $('asIn').value='';
+    burbuja('user', t);
+    msgs.push({role:'user', content:t});
+    busy=true;
+    var esperando=pensando();
+    fetch('/api/ficha-asistente',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: msgs.slice(-14), ficha: fichaResumen() })
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, status:r.status, j:j}; }); })
+      .then(function(res){
+        esperando.remove();
+        if(!res.ok || res.j.error){
+          burbuja('bot', res.j.error || ('No pude responder (error '+res.status+').'), true);
+        } else {
+          burbuja('bot', res.j.text);
+          msgs.push({role:'assistant', content:String(res.j.text||'')});
+        }
+      })
+      .catch(function(){ esperando.remove(); burbuja('bot','No pude conectar con el asesor. Revisa tu conexión.', true); })
+      .then(function(){ busy=false; });
+  }
+
+  /* Micrófono: se le habla y se manda solo lo que dictó. */
+  function escuchar(){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ toast('Este navegador no permite dictar por voz'); return; }
+    if(oyendo){ try{ rec.stop(); }catch(e){} return; }
+    try{
+      rec = new SR();
+      rec.lang='es-CL'; rec.interimResults=true; rec.continuous=false;
+      var final='';
+      rec.onresult=function(ev){
+        var parcial='';
+        for(var i=ev.resultIndex;i<ev.results.length;i++){
+          var tr=ev.results[i][0].transcript;
+          if(ev.results[i].isFinal) final+=tr; else parcial+=tr;
+        }
+        $('asIn').value=(final+' '+parcial).trim();
+      };
+      rec.onerror=function(){ oyendo=false; $('asMic').classList.remove('on'); toast('No pude escucharte'); };
+      rec.onend=function(){
+        oyendo=false; $('asMic').classList.remove('on');
+        if(final.trim()) enviar(final.trim());
+      };
+      oyendo=true; $('asMic').classList.add('on'); rec.start();
+    }catch(e){ oyendo=false; $('asMic').classList.remove('on'); }
+  }
+
+  function abrir(){
+    var p=$('asPanel');
+    p.classList.toggle('open');
+    if(p.classList.contains('open')){
+      if(!$('asMsgs').children.length){
+        burbuja('bot','¡Hola! 👋 Soy el asesor de New Arriendos. Te ayudo a llenar la ficha, te explico qué significa cada cosa (CIP, avalúo fiscal, contribuciones, dominio vigente…) y te asesoro sobre arriendo o venta. ¿Qué necesitas?');
+        pintarSugerencias();
+      }
+      setTimeout(function(){ $('asIn').focus(); }, 120);
+    }
+  }
+
+  function montar(){
+    var fab=$('asFab'); if(!fab) return;
+    fab.onclick=abrir;
+    $('asCerrar').onclick=function(){ $('asPanel').classList.remove('open'); };
+    $('asSend').onclick=function(){ enviar($('asIn').value); };
+    $('asMic').onclick=escuchar;
+    if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('asMic').style.display='none';
+    $('asIn').addEventListener('keydown', function(e){
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); enviar($('asIn').value); }
+    });
+  }
+  // Si el documento ya terminó de cargar, se monta al tiro.
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', montar);
+  else montar();
+})();
 </script>
 </body>
 </html>
