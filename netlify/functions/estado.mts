@@ -1,5 +1,6 @@
 import type { Context, Config } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
+import { quienLlama, sinAcceso, soloDueno } from '../lib/auth.mts'
 
 // Guarda y entrega el estado completo del panel (propiedades, sociedades,
 // contactos, indicadores y configuración) en Netlify Blobs. Así todo lo que se
@@ -9,12 +10,40 @@ import { getStore } from '@netlify/blobs'
 // relacionales), por lo que Blobs con consistencia fuerte es el primitivo
 // adecuado.
 //
+// Requiere sesión: sin la clave de la plataforma no se puede leer ni escribir.
+// Los accesos de solo lectura pueden mirar, pero no guardar.
+//
+// Cada guardado deja además la copia del día en 'app-respaldos', para poder
+// volver atrás si algo se sobrescribe por error.
+//
 // GET  /api/estado  -> { estado, updatedAt } | { estado:null }
 // PUT  /api/estado  -> guarda el cuerpo JSON recibido
 
 const KEY = 'workspace'
+const DIAS_RESPALDO = 30
+
+/** Deja la copia del día y borra las que pasaron los 30 días.
+ *  La copia de cada día es la PRIMERA del día y no se pisa después: así, si
+ *  hoy se estropea algo, la copia de hoy todavía tiene el estado con el que
+ *  empezó la jornada. */
+async function respaldar(estado: unknown, updatedAt: number) {
+  const store = getStore({ name: 'app-respaldos', consistency: 'strong' })
+  const fecha = new Date().toISOString().slice(0, 10)
+  const yaHay = await store.get('snap-' + fecha, { type: 'json' }).catch(() => null)
+  if (!yaHay) await store.setJSON('snap-' + fecha, { estado, updatedAt, fecha })
+  const limite = new Date(Date.now() - DIAS_RESPALDO * 86400000).toISOString().slice(0, 10)
+  const { blobs } = await store.list()
+  await Promise.all(
+    blobs
+      .filter((b) => b.key.startsWith('snap-') && b.key.slice(5) < limite)
+      .map((b) => store.delete(b.key).catch(() => {})),
+  )
+}
 
 export default async (req: Request, _context: Context) => {
+  const yo = await quienLlama(req)
+  if (!yo) return sinAcceso()
+
   const store = getStore({ name: 'app-estado', consistency: 'strong' })
 
   if (req.method === 'GET') {
@@ -23,6 +52,7 @@ export default async (req: Request, _context: Context) => {
   }
 
   if (req.method === 'PUT' || req.method === 'POST') {
+    if (yo.rol !== 'dueño') return soloDueno()
     let estado: unknown
     try {
       estado = await req.json()
@@ -34,6 +64,8 @@ export default async (req: Request, _context: Context) => {
     }
     const updatedAt = Date.now()
     await store.setJSON(KEY, { estado, updatedAt })
+    // Si el respaldo falla, el guardado igual vale.
+    await respaldar(estado, updatedAt).catch(() => {})
     return Response.json({ ok: true, updatedAt })
   }
 

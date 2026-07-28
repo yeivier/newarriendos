@@ -1,4 +1,5 @@
 import type { Context, Config } from '@netlify/functions'
+import { quienLlama, sinAcceso } from '../lib/auth.mts'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Asesor inmobiliario digital de New Arriendos.
@@ -402,6 +403,9 @@ const TOPE_MS = 8500
 const esErrorDeWeb = (msg: string) => /web[ _-]?(search|fetch)/i.test(String(msg || ''))
 
 export default async (req: Request, _context: Context) => {
+  // La IA cuesta dinero: solo la usa quien entró con la clave.
+  if (!(await quienLlama(req))) return sinAcceso()
+
   if (req.method !== 'POST') {
     return Response.json({ error: 'Método no permitido' }, { status: 405 })
   }
