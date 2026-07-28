@@ -2269,7 +2269,7 @@ const FAQ=[
   ]},
   {cat:"Cobros, arriendo y UF", items:[
     {q:"¿Qué es la UF y por qué el arriendo está en UF?", a:"La UF es una unidad que se reajusta con la inflación. Como el arriendo se pacta en UF, su valor en pesos sube un poco cada mes; así el arriendo no pierde valor con el tiempo."},
-    {q:"¿Por qué el monto a cobrar cambia cada mes?", a:"Porque el arriendo está pactado en UF y la UF cambia todos los días: el monto en pesos se recalcula solo, sin que tengas que reajustar nada. Por omisión se cobra con la UF del día en que se paga, que es lo habitual en Chile; en Configuración → Reajuste de los arriendos puedes cambiar la regla (día 1, último día del mes anterior o la más alta del mes) y conviene que sea la misma que dice el contrato."},
+    {q:"¿Por qué el monto a cobrar cambia cada mes?", a:"Porque el arriendo está pactado en UF y la UF cambia todos los días: el monto en pesos se recalcula solo, sin que tengas que reajustar nada. Por omisión se cobra con la UF del día en que se paga, que es lo habitual en Chile; en Configuración → Reajuste de los arriendos puedes cambiar la regla (día 1, último día del mes anterior o la más alta del mes) y conviene que sea la misma que dice el contrato. Y si el arriendo se paga atrasado, se cobra con la UF más alta desde el día del vencimiento, para que el atraso no termine saliendo más barato."},
     {q:"¿Cómo registro un pago?", a:"En Cobros, toca la propiedad, elige el medio (transferencia o Khipu) y confirma. El pago queda en el historial y el estado pasa a Al día."},
     {q:"¿Qué es Khipu?", a:"Es un servicio que genera un link de pago por transferencia. Le envías el link al arrendatario y, cuando paga, el cobro se marca como pagado automáticamente."},
     {q:"¿Qué es la multa por atraso?", a:"Es un recargo que se aplica cuando el arriendo se paga después del día acordado. La plataforma la calcula sola según el porcentaje que definas."}
@@ -3615,22 +3615,47 @@ function App(){
     if(previa) return { valor:num(previa.valor), fecha:previa.fecha, exacta:false };
     return { valor:num(uf), fecha:todayISO(), exacta:false };
   };
+  /* UF más alta dentro de un rango de fechas. */
+  const ufMaxEntre=(desde,hasta)=>{
+    const d=String(desde||"").slice(0,10), h=String(hasta||todayISO()).slice(0,10);
+    let valor=0, fecha="";
+    (ufSerie||[]).forEach(s=>{ if(s.fecha>=d && s.fecha<=h && num(s.valor)>valor){ valor=num(s.valor); fecha=s.fecha; } });
+    return valor ? { valor, fecha } : null;
+  };
+  /* Día en que vence el arriendo del período que se está cobrando. */
+  const vencimientoDelMes=(p,fecha)=>{
+    const f=String(fecha||todayISO()).slice(0,10);
+    const dia=Math.min(28,Math.max(1,parseInt(num(p&&p.dueDay))||5));
+    return f.slice(0,7)+"-"+String(dia).padStart(2,"0");
+  };
   /* Cómo se convierte a pesos un arriendo pactado en UF.
      El reajuste es automático: la UF cambia todos los días y el monto se
      recalcula solo. Lo único que se elige es CON QUÉ UF se cobra, que es lo
-     que dice el contrato. */
+     que dice el contrato.
+     Y si el pago se atrasa, se cobra con la UF MÁS ALTA desde que venció:
+     atrasarse no puede terminar saliendo más barato. */
   const ufParaCobro=(p,hasta)=>{
     const fin=String(hasta||todayISO()).slice(0,10);
     const regla=String((p&&p.reglaUF)||(owner&&owner.reglaUF)||"dia_pago");
-    if(regla==="mas_alta"){ const m=ufMaxMes(fin); return { valor:m.valor, fecha:m.fecha, regla, etiqueta:"la UF más alta del mes" }; }
-    if(regla==="dia_1"){ const f=fin.slice(0,7)+"-01"; const v=ufEnFecha(f); return { valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del día 1 del mes" }; }
-    if(regla==="ultimo_mes_anterior"){
+    let base;
+    if(regla==="mas_alta"){ const m=ufMaxMes(fin); base={ valor:m.valor, fecha:m.fecha, regla, etiqueta:"la UF más alta del mes" }; }
+    else if(regla==="dia_1"){ const f=fin.slice(0,7)+"-01"; const v=ufEnFecha(f); base={ valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del día 1 del mes" }; }
+    else if(regla==="ultimo_mes_anterior"){
       const d=new Date(fin.slice(0,7)+"-01T12:00:00"); d.setDate(0);
       const f=d.toISOString().slice(0,10); const v=ufEnFecha(f);
-      return { valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del último día del mes anterior" };
+      base={ valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del último día del mes anterior" };
     }
-    const v=ufEnFecha(fin);
-    return { valor:v.valor, fecha:v.fecha, regla:"dia_pago", etiqueta:"la UF del día del pago" };
+    else { const v=ufEnFecha(fin); base={ valor:v.valor, fecha:v.fecha, regla:"dia_pago", etiqueta:"la UF del día del pago" }; }
+
+    const venc=vencimientoDelMes(p,fin);
+    if(fin>venc){
+      const m=ufMaxEntre(venc,fin);
+      if(m && m.valor>base.valor){
+        return { valor:m.valor, fecha:m.fecha, regla:base.regla, atraso:true, desde:venc,
+          etiqueta:"la UF más alta desde que venció el pago (venció el "+fmtF(venc)+")" };
+      }
+    }
+    return base;
   };
   const reglaUFTexto=(p)=>{ const r=ufParaCobro(p); return r.etiqueta+" ("+CLP(r.valor)+" del "+fmtF(r.fecha)+")"; };
   const refrescarIndicadores=async()=>{ setIndLoading(true); await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]); setIndLoading(false); };
@@ -6134,7 +6159,7 @@ function App(){
           </div>
           <div className="card pad" style={{borderLeft:"5px solid var(--green)"}}>
             <div className="sec-title">Cómo se convierte el arriendo en UF a pesos</div>
-            <div className="help g" style={{marginBottom:0}}>El arriendo en <b>UF es fijo y nunca cambia</b>: lo que cambia es su valor en pesos, porque la UF sube todos los días. Por eso <b>el reajuste es automático</b> — no tienes que aprobar ni recalcular nada. Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>, que es lo habitual en Chile; puedes cambiar la regla (día 1 del mes, último día del mes anterior o la más alta del mes) en <b>Configuración → Reajuste de los arriendos</b>, y conviene que coincida con lo que dice el contrato. {(!ufSerie||!ufSerie.length)&&<span style={{color:"var(--amber)"}}> · La serie diaria de la UF se está cargando desde mindicador.cl; mientras tanto se usa la UF de hoy.</span>}</div>
+            <div className="help g" style={{marginBottom:0}}>El arriendo en <b>UF es fijo y nunca cambia</b>: lo que cambia es su valor en pesos, porque la UF sube todos los días. Por eso <b>el reajuste es automático</b> — no tienes que aprobar ni recalcular nada. Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>, que es lo habitual en Chile; puedes cambiar la regla (día 1 del mes, último día del mes anterior o la más alta del mes) en <b>Configuración → Reajuste de los arriendos</b>, y conviene que coincida con lo que dice el contrato. <b>Si el pago se atrasa</b>, el monto se calcula con la <b>UF más alta desde el día en que venció</b>: atrasarse nunca sale más barato. {(!ufSerie||!ufSerie.length)&&<span style={{color:"var(--amber)"}}> · La serie diaria de la UF se está cargando desde mindicador.cl; mientras tanto se usa la UF de hoy.</span>}</div>
           </div>
           <div className="card pad"><div className="sec-title">Arriendos del mes</div>
             <div className="help" style={{marginBottom:10}}>El <b>arriendo en UF</b> es fijo (edítalo en cada propiedad). El <b>monto a cobrar</b> se recalcula solo cada día con el valor de la UF.</div>
@@ -6142,7 +6167,7 @@ function App(){
               {cobrables.map(p=>{ const m=calcMulta(p); const cobro=cobroUF(p); return (<tr key={p.id}>
                 <td style={{fontWeight:700}}>{p.name}</td><td>{p.tenant}<div style={{fontSize:13,color:"var(--muted)"}}>{p.tenantEmail}</div></td>
                 <td><input className="input" type="number" min="0" step="any" style={{width:90,fontWeight:700,padding:"6px 8px"}} value={p.rentUF} onChange={e=>patchProp(p.id,x=>{ const v=num(e.target.value); return {...x, rentUF:e.target.value, rent:Math.round(v*uf)}; })}/><div style={{fontSize:12,color:"var(--faint)",fontWeight:600,marginTop:2}}>UF · valor fijo</div></td>
-                <td style={{fontSize:13}}><b>{CLP(num(p.rentUF)>0?ufParaCobro(p).valor:uf)}</b><div style={{fontSize:11,color:"var(--faint)"}}>{num(p.rentUF)>0?fmtF(ufParaCobro(p).fecha):"UF de hoy"}</div></td>
+                <td style={{fontSize:13}}><b>{CLP(num(p.rentUF)>0?ufParaCobro(p).valor:uf)}</b><div style={{fontSize:11,color:"var(--faint)"}}>{num(p.rentUF)>0?(fmtF(ufParaCobro(p).fecha)+(ufParaCobro(p).atraso?" · más alta desde el vencimiento":"")):"UF de hoy"}</div></td>
                 <td style={{fontWeight:800,color:"var(--ink)"}}>{CLP(cobro)}</td>
                 <td style={{color:m>0?"var(--red-d)":"var(--faint)"}}>{m>0?CLP(m):"—"}</td>
                 <td style={{fontWeight:800,color:"var(--green-d)"}}>{CLP(cobro+m)}</td><td>
@@ -6817,7 +6842,7 @@ function App(){
                 </select>
               </div>
             </div>
-            <div className="help" style={{marginTop:6}}>Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>. Conviene que esta regla sea la misma que aparece escrita en tus contratos.</div>
+            <div className="help" style={{marginTop:6}}>Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>. Si un pago se atrasa, se usa la <b>UF más alta desde el día del vencimiento</b>. Conviene que esta regla sea la misma que aparece escrita en tus contratos.</div>
             <div className="card pad" style={{marginTop:12,background:"var(--panel2)",border:"none"}}>
               <div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:8}}>CÓMO ESTÁ CADA PROPIEDAD</div>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
