@@ -226,6 +226,13 @@
   #asForm button{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:18px;cursor:pointer;flex-shrink:0;}
   #asForm button.send{background:var(--navy);color:#fff;border-color:var(--navy);}
   #asForm button.on{background:var(--danger);color:#fff;border-color:var(--danger);}
+  #asForm .clip{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  #asForm .clip:hover{background:var(--accent-fill);}
+  #asAdj{display:flex;flex-wrap:wrap;gap:6px;padding:0 11px 8px;background:var(--card);}
+  #asAdj:empty{display:none;}
+  #asAdj .chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-fill);border:1px solid var(--border);border-radius:999px;padding:5px 10px;font-size:12px;max-width:100%;}
+  #asAdj .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
+  #asAdj .chip button{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;}
   .as-pts{display:flex;gap:4px;padding:12px 14px;}
   .as-pts span{width:7px;height:7px;border-radius:50%;background:var(--text-faint);animation:asPt 1.2s infinite;}
   .as-pts span:nth-child(2){animation-delay:.15s} .as-pts span:nth-child(3){animation-delay:.3s}
@@ -279,7 +286,11 @@
   </div>
   <div id="asMsgs"></div>
   <div class="as-sug" id="asSug"></div>
+  <div id="asAdj"></div>
   <div id="asForm">
+    <label class="clip" id="asClipLbl" title="Adjuntar archivo">📎
+      <input type="file" id="asClip" multiple accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" style="display:none;">
+    </label>
     <textarea id="asIn" rows="1" placeholder="Ej: ¿qué es el CIP y dónde lo saco?"></textarea>
     <button type="button" id="asMic" title="Hablarle al asesor" aria-label="Hablarle al asesor">🎙️</button>
     <button type="button" id="asSend" class="send" title="Enviar" aria-label="Enviar">➤</button>
@@ -3004,6 +3015,36 @@ function aiApply(campos){
   return filled;
 }
 
+/* Lee un archivo y lo deja listo para la IA. Las fotos y los PDF viajan tal
+   cual; de Word, Excel y texto se extrae el contenido aquí mismo. Lo usan el
+   lector de documentos y también el chat del asesor. */
+async function aiLeerArchivo(f){
+  if(/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name)){
+    const im=await aiImageToJpeg(f); return { media:im.media, data:im.data, name:f.name };
+  }
+  if(/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){
+    const b=await aiFileB64(f); return { media:'application/pdf', data:b, name:f.name };
+  }
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  let txt='';
+  if(ext==='docx') txt=await docxTexto(await f.arrayBuffer());
+  else if(ext==='xlsx'||ext==='xlsm') txt=await xlsxTexto(await f.arrayBuffer());
+  else if(['txt','csv','md','json','xml','html','htm','rtf'].indexOf(ext)>=0 || /^text\//.test(f.type)){
+    txt=await f.text();
+    if(['rtf','html','htm'].indexOf(ext)>=0) txt=_zxml(txt);
+  }
+  else if(['doc','xls','ppt','pages','numbers'].indexOf(ext)>=0)
+    throw new Error('"'+f.name+'" está en un formato antiguo. Guárdalo como PDF o .docx y vuelve a subirlo.');
+  else throw new Error('No sé leer "'+f.name+'". Sirven fotos, PDF, Word, Excel y archivos de texto.');
+  return txt.trim() ? { texto:txt.slice(0,120000), name:f.name } : null;
+}
+function aiBloqueDeArchivo(a){
+  if(!a) return null;
+  if(a.texto) return { type:'text', text:'--- Contenido de "'+a.name+'" ---\n'+a.texto };
+  if(a.media==='application/pdf') return { type:'document', source:{type:'base64',media_type:'application/pdf',data:a.data} };
+  return { type:'image', source:{type:'base64',media_type:a.media,data:a.data} };
+}
+
 async function aiRun(files, model, statusEl, runBtn){
   if(!files.length){ statusEl.textContent='Selecciona al menos un documento.'; return; }
   localStorage.setItem('ficha_ai_model', model);
@@ -3011,25 +3052,8 @@ async function aiRun(files, model, statusEl, runBtn){
   try{
     const content=[];
     for(const f of files){
-      if(/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name)){
-        const im=await aiImageToJpeg(f); content.push({type:'image',source:{type:'base64',media_type:im.media,data:im.data}});
-      } else if(/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){
-        const b=await aiFileB64(f); content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});
-      } else {
-        // Word, Excel y texto: se extrae el contenido aquí y viaja como texto.
-        const ext=(f.name.split('.').pop()||'').toLowerCase();
-        let txt='';
-        if(ext==='docx') txt=await docxTexto(await f.arrayBuffer());
-        else if(ext==='xlsx'||ext==='xlsm') txt=await xlsxTexto(await f.arrayBuffer());
-        else if(['txt','csv','md','json','xml','html','htm','rtf'].indexOf(ext)>=0 || /^text\//.test(f.type)){
-          txt=await f.text();
-          if(['rtf','html','htm'].indexOf(ext)>=0) txt=_zxml(txt);
-        }
-        else if(['doc','xls','ppt','pages','numbers'].indexOf(ext)>=0)
-          throw new Error('"'+f.name+'" está en un formato antiguo. Guárdalo como PDF o .docx y vuelve a subirlo.');
-        else throw new Error('No sé leer "'+f.name+'". Sirven fotos, PDF, Word, Excel y archivos de texto.');
-        if(txt.trim()) content.push({type:'text', text:'--- Contenido de "'+f.name+'" ---\n'+txt.slice(0,120000)});
-      }
+      const b=aiBloqueDeArchivo(await aiLeerArchivo(f));
+      if(b) content.push(b);
     }
     if(!content.length){ throw new Error('No se pudo leer ningún archivo. Sirven fotos, PDF, Word, Excel y texto.'); }
     content.push({type:'text', text:
@@ -4374,17 +4398,44 @@ document.addEventListener('DOMContentLoaded', init);
     }catch(e){ return null; }
   }
 
+  /* Archivos adjuntos del chat: se leen aquí (fotos y PDF van tal cual; de
+     Word, Excel y texto se extrae el contenido) y viajan con el mensaje. */
+  var adjuntos = [];
+  function pintarAdjuntos(){
+    var c=$('asAdj'); if(!c) return;
+    c.innerHTML='';
+    adjuntos.forEach(function(a,i){
+      var chip=document.createElement('span'); chip.className='chip';
+      var t=document.createElement('span'); t.textContent=(a.texto?'📄 ':'🖼 ')+a.name;
+      var x=document.createElement('button'); x.type='button'; x.textContent='✕'; x.title='Quitar';
+      x.onclick=function(){ adjuntos.splice(i,1); pintarAdjuntos(); };
+      chip.appendChild(t); chip.appendChild(x); c.appendChild(chip);
+    });
+  }
+  async function agregarArchivos(lista){
+    for(var i=0;i<lista.length;i++){
+      if(adjuntos.length>=4){ toast('Máximo 4 archivos por mensaje'); break; }
+      try{
+        var a=await aiLeerArchivo(lista[i]);
+        if(a) adjuntos.push(a); else toast('"'+lista[i].name+'" venía vacío');
+      }catch(e){ toast(e.message||'No pude leer ese archivo'); }
+    }
+    pintarAdjuntos();
+  }
+
   function enviar(texto){
     var t=String(texto||'').trim();
-    if(!t || busy) return;
+    if((!t && !adjuntos.length) || busy) return;
+    if(!t) t='Revisa estos archivos y dime qué son y qué datos sirven para la ficha.';
     $('asIn').value='';
-    burbuja('user', t);
-    msgs.push({role:'user', content:t});
+    var envio=adjuntos.slice(); adjuntos=[]; pintarAdjuntos();
+    burbuja('user', t+(envio.length?('\n📎 '+envio.map(function(a){return a.name;}).join(', ')):''));
+    msgs.push({role:'user', content:t+(envio.length?('\n(se adjuntaron: '+envio.map(function(a){return a.name;}).join(', ')+')'):'')});
     busy=true;
     var esperando=pensando();
     fetch('/api/ficha-asistente',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages: msgs.slice(-14), ficha: fichaResumen() })
+      body: JSON.stringify({ messages: msgs.slice(-14), ficha: fichaResumen(), files: envio })
     }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, status:r.status, j:j}; }); })
       .then(function(res){
         esperando.remove();
@@ -4443,6 +4494,10 @@ document.addEventListener('DOMContentLoaded', init);
     $('asCerrar').onclick=function(){ $('asPanel').classList.remove('open'); };
     $('asSend').onclick=function(){ enviar($('asIn').value); };
     $('asMic').onclick=escuchar;
+    $('asClip').addEventListener('change', function(e){
+      var fs=Array.prototype.slice.call(e.target.files||[]); e.target.value='';
+      if(fs.length) agregarArchivos(fs);
+    });
     if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('asMic').style.display='none';
     $('asIn').addEventListener('keydown', function(e){
       if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); enviar($('asIn').value); }
