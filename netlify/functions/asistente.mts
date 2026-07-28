@@ -78,7 +78,28 @@ acción por cada archivo adjunto), propónlas todas por separado en vez de
 juntarlas en una sola. No repitas la misma acción dos veces.
 
 Si el documento sí trae datos de propiedad o arrendatario, las sugerencias son
-opcionales y complementarias.`
+opcionales y complementarias.
+
+## Cuando te preguntan en vez de mandarte un documento
+El mismo cuadro sirve para preguntarte cosas, con o sin archivos. Eres además
+un asesor inmobiliario chileno con experiencia: sabes de arriendos y
+compraventa, contratos y la Ley 18.101 (y la 21.461), garantías, reajustes en
+UF e IPC, contribuciones y el SII, el Conservador de Bienes Raíces, permisos y
+recepción municipal, CIP, DFL 2, tasaciones, gastos comunes, corretaje,
+comisiones, morosidad y cobranza, y del mercado de arriendo y venta en Chile.
+
+Si la persona te hace una pregunta o te pide un consejo, respóndele en la clave
+"resumen" con una respuesta completa, clara y en español de Chile: al grano,
+con cifras y plazos cuando corresponda, y con un ejemplo si ayuda. Usa el
+contexto de la plataforma que viene más abajo para responder con SUS datos
+reales (valor de la UF de hoy, cuántas propiedades tiene, cuánto suman sus
+arriendos, en qué comunas). No inventes cifras que no tengas: si un dato no
+está, dilo y explica dónde se consigue.
+
+En ese caso deja "propiedad", "arriendo" y las demás claves vacías (no
+inventes campos), y agrega en "sugerencias" solo lo que de verdad convenga
+guardar en la plataforma a partir de esa conversación. Si además la pregunta
+implica corregir algo del formulario abierto, sí devuelve esos campos.`
 
 export default async (req: Request, _context: Context) => {
   // La IA cuesta dinero: solo la usa quien entró con la clave.
@@ -123,8 +144,11 @@ export default async (req: Request, _context: Context) => {
       const orden = instruccion
         ? `\n\nINSTRUCCIÓN DEL USUARIO (tiene prioridad, síguela al pie de la letra): ${instruccion.slice(0, 2000)}`
         : ''
+      const contexto = body.contexto && typeof body.contexto === 'object'
+        ? `\n\n## Contexto de la plataforma (datos reales de esta persona)\n${JSON.stringify(body.contexto).slice(0, 1500)}\nLos montos van en pesos chilenos. "uf", "utm" y "dolar" son los valores de hoy; "ipc" es la variación mensual.`
+        : ''
       const sinArchivos = !adjuntos.length
-        ? '\n\nEn esta consulta NO hay archivos adjuntos: trabaja solo con la instrucción del usuario y con el formulario actual. Devuelve en "propiedad" (o donde corresponda) los campos que el usuario te está dictando o pidiendo corregir, y explica en "resumen" qué cambiaste. Si lo que pide no calza en ningún campo, propónlo en "sugerencias".'
+        ? '\n\nEn esta consulta NO hay archivos adjuntos: trabaja solo con lo que escribió el usuario. Si es una instrucción para corregir o completar el formulario, devuelve esos campos y explica en "resumen" qué cambiaste. Si es una pregunta o una consulta del rubro, respóndela completa en "resumen" usando el contexto de la plataforma, y deja los campos vacíos. Nunca respondas que no encontraste datos: siempre responde algo útil.'
         : ''
       const r = await fetch(API, {
         method: 'POST',
@@ -137,7 +161,7 @@ export default async (req: Request, _context: Context) => {
           // mismo tope). El cliente además manda los archivos de a uno.
           max_tokens: 4096,
           output_config: { effort: 'low' },
-          system: EXTRACCION + hint + formulario + orden + sinArchivos,
+          system: EXTRACCION + hint + formulario + contexto + orden + sinArchivos,
           messages: [{
             role: 'user',
             content: [

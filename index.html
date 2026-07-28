@@ -4238,6 +4238,18 @@ function App(){
   /* Lo que hay ahora en el formulario abierto: le sirve a la IA para corregir
      o completar cuando la instrucción viene sin archivo ("la comuna es Vicuña,
      arréglala"). */
+  /* Contexto que se le pasa a la IA para que pueda responder con datos reales
+     ("¿cuál es el valor de la UF hoy?", "¿cuánto llevo cobrado este mes?"). */
+  const ctxIA=()=>({
+    fecha:new Date().toLocaleDateString("es-CL"),
+    uf:Math.round(num(uf)), utm:Math.round(num(utm)), dolar:Math.round(num(dolar)), ipc:num(ipc),
+    propiedades:props.length,
+    en_arriendo:props.filter(p=>p.use==="arriendo").length,
+    disponibles:props.filter(asDisponible).length,
+    comunas:[...new Set(props.map(p=>p.comuna).filter(Boolean))].slice(0,20),
+    ingresos_mes:props.filter(p=>p.use==="arriendo").reduce((s,p)=>s+num(p.rent),0),
+  });
+
   const formActual=()=>{
     const d=(mEdit&&eP)?eP:nP; if(!d) return null;
     const campos=["name","address","comuna","region","type","use","rolSII","inscripcion","avaluoFiscal","tasacion",
@@ -4253,12 +4265,13 @@ function App(){
     }
     setAiDocBusy(true); setAiDocRes(null);
     const hint=props.map(p=>({id:p.id,nombre:p.name,direccion:[p.address,p.comuna].filter(Boolean).join(", ")}));
-    // Sin archivos: una sola llamada con la instrucción y el formulario actual.
+    // Sin archivos: una sola llamada con la instrucción, el formulario actual y
+    // el contexto de la cartera (para poder responder preguntas con datos reales).
     if(soloOrden){
       setAiDocPaso("Pensando…");
       try{
         const r=await api("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({mode:"extraer", instruccion:aiOrden, propiedades:hint, formulario:formActual(), files:[]})});
+          body:JSON.stringify({mode:"extraer", instruccion:aiOrden, propiedades:hint, formulario:formActual(), contexto:ctxIA(), files:[]})});
         const j=await r.json().catch(()=>({}));
         if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
         setAiDocRes(j);
@@ -4275,7 +4288,7 @@ function App(){
       setAiDocPaso(aiDocs.length>1?("Leyendo "+(i+1)+" de "+aiDocs.length+"…"):"Leyendo…");
       try{
         // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
-        const cuerpo={ mode:"extraer", instruccion:aiOrden, propiedades:hint,
+        const cuerpo={ mode:"extraer", instruccion:aiOrden, propiedades:hint, contexto:ctxIA(),
           files:[ f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name}) ] };
         const r=await api("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo)});
         const j=await r.json().catch(()=>({}));
@@ -4348,7 +4361,7 @@ function App(){
       <div className="lector-t">✨ {titulo}</div>
       <div className="lector-d">{ayuda}</div>
       <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
-        placeholder="Dile a la IA qué hacer, con o sin archivo. Ej: “la dirección correcta es Av. Balmaceda 480, Vicuña, Coquimbo” o “corrige la comuna según la escritura”." />
+        placeholder="Escríbele con o sin archivo: pídele algo (“la dirección correcta es Av. Balmaceda 480, Vicuña”) o pregúntale (“¿cuánto es la UF hoy?”, “¿cuándo se pagan las contribuciones?”)." />
       <div className="lector-btns">
         <label className="btn btn-out" style={{cursor:"pointer"}}>
           {aiDocs.length?("Agregar más ("+aiDocs.length+")"):"Elegir archivos"}
@@ -6805,12 +6818,13 @@ function App(){
           </div>
           <div className="card pad" style={{marginBottom:14}}>
             <div className="sec-title">Lector de documentos con IA</div>
-            <div className="help" style={{marginBottom:10}}>Sube <b>fotos, pantallazos, PDF, Word, Excel o texto</b> (contrato de arriendo, escritura, certificado de dominio, informe Equifax o InfoCheck, liquidaciones…). La IA los lee con precisión, te muestra un resumen y <b>completa automáticamente</b> los datos de la propiedad y del arrendatario en las secciones correspondientes.</div>
+            <div className="help" style={{marginBottom:10}}>Funciona de las dos formas: <b>con archivos</b> (fotos, pantallazos, PDF, Word, Excel o texto: contrato, escritura, certificado de dominio, informe Equifax o InfoCheck, liquidaciones…), que la IA lee y usa para completar los datos de la propiedad y del arrendatario; o <b>solo escribiendo</b>, para preguntarle o pedirle algo. Sabe de arriendos, compraventa, contratos, contribuciones, SII, conservador y del negocio inmobiliario en Chile, y conoce tu cartera.</div>
             <textarea className="input lector-orden" value={aiOrden} onChange={e=>setAiOrden(e.target.value)}
-              placeholder="Opcional: dile a la IA qué hacer con estos archivos. Ej: “anótalo en la bitácora de la casa de Ñuñoa”." />
+              placeholder="Escríbele con o sin archivo. Ej: “¿cuál es el valor de la UF hoy?”, “¿cuándo se pagan las contribuciones?”, “anótalo en la bitácora de la casa de Ñuñoa”." />
             <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
               <label className="btn btn-out" style={{cursor:"pointer"}}>Elegir archivos<input type="file" accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" multiple style={{display:"none"}} onChange={async e=>{ const fs=[...e.target.files]; e.target.value=""; const ok=[]; for(const f of fs){ try{ ok.push(await leerArchivoParaIA(f)); }catch(err){ notify(err.message,true); } } if(ok.length) setAiDocs(d=>[...d,...ok]); }}/></label>
-              <button className="btn btn-red" disabled={aiDocBusy||!aiDocs.length} onClick={analizarDocs}>{aiDocBusy?(aiDocPaso||"Leyendo con IA…"):"Analizar y completar"}</button>
+              <button className="btn btn-red" disabled={aiDocBusy||(!aiDocs.length&&!String(aiOrden||"").trim())} onClick={analizarDocs}>
+                {aiDocBusy?(aiDocPaso||"Leyendo con IA…"):(aiDocs.length?"Analizar y completar":"Preguntar a la IA")}</button>
               {aiDocs.length>0&&<button className="btn btn-out btn-sm" onClick={()=>{setAiDocs([]);setAiDocRes(null);}}>Limpiar</button>}
             </div>
             {aiDocs.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:10}}>{aiDocs.map((f,i)=><div key={i} className="ai-doc-row"><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span><button className="btn btn-out btn-sm" onClick={()=>setAiDocs(d=>d.filter((_,j)=>j!==i))}>Quitar</button></div>)}</div>}
