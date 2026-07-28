@@ -1,4 +1,5 @@
 import type { Context, Config } from '@netlify/functions'
+import { quienLlama, sinAcceso } from '../lib/auth.mts'
 
 // Asistente de IA de ArriendoPro (proxy seguro hacia la API de Anthropic).
 // La clave nunca sale del servidor: se lee de la variable ANTHROPIC_API_KEY.
@@ -80,6 +81,9 @@ Si el documento sí trae datos de propiedad o arrendatario, las sugerencias son
 opcionales y complementarias.`
 
 export default async (req: Request, _context: Context) => {
+  // La IA cuesta dinero: solo la usa quien entró con la clave.
+  if (!(await quienLlama(req))) return sinAcceso()
+
   if (req.method !== 'POST') {
     return Response.json({ error: 'Método no permitido' }, { status: 405 })
   }

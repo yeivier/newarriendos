@@ -458,6 +458,24 @@
   .ai-fab .ai-dot{position:absolute;right:5px;top:5px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--green)}
 
   /* Botón para volver al inicio de la página sin arrastrar con el dedo. */
+  /* Alertas */
+  .alerta{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;border-radius:12px;background:var(--panel2);border-left:5px solid var(--line2)}
+  .alerta.alta{background:var(--red-bg);border-left-color:var(--red)}
+  .alerta.media{background:var(--amber-bg);border-left-color:var(--amber)}
+  .alerta.baja{background:var(--panel2);border-left-color:var(--line2)}
+  .alerta .al-ico{font-size:19px;line-height:1.2;flex-shrink:0}
+  .alerta .al-t{font-weight:800;font-size:14.5px;color:var(--ink)}
+  .alerta .al-d{font-size:13.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+
+  /* Pantalla de la clave */
+  .puerta{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#17171d,#2b2830)}
+  .puerta-caja{width:100%;max-width:380px;background:var(--card);border-radius:20px;padding:28px 24px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 24px 70px rgba(0,0,0,.34);text-align:center}
+  .puerta-caja h2{font-family:var(--font-head);font-size:23px;font-weight:800;color:var(--ink);margin-bottom:6px}
+  .puerta-caja p{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:18px}
+  .puerta-caja .brand-logo{margin-left:auto;margin-right:auto}
+  .puerta-err{margin-top:10px;font-size:13.5px;font-weight:700;color:var(--red-d);background:var(--red-bg);border-radius:9px;padding:9px 11px}
+  .puerta-nota{margin-top:14px;font-size:12.5px;color:var(--faint);line-height:1.5}
+
   .subir-fab{position:fixed;left:22px;bottom:22px;z-index:178;width:52px;height:52px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 10px 28px rgba(16,24,40,.18);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;transition:.18s}
   .subir-fab:hover{transform:translateY(-2px)}
   /* Fichas reordenables: se mantienen presionadas para moverlas. */
@@ -616,6 +634,20 @@ const store = {
   get(k, fb){ try{ const v = localStorage.getItem(k); return v!=null ? JSON.parse(v) : (k in mem ? mem[k] : fb);}catch{ return (k in mem)?mem[k]:fb; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{ mem[k]=v; } }
 };
+
+/* ---------- Acceso a la plataforma ----------
+   Los datos viven en el servidor y ya no son públicos: cada llamada viaja con
+   el token de la sesión. Si el servidor responde 401, se cierra la sesión y
+   vuelve a aparecer la pantalla de la clave. */
+let TOKEN = (()=>{ try{ return localStorage.getItem("ap_token")||""; }catch(_e){ return ""; } })();
+const guardarToken = (t)=>{ TOKEN=t||""; try{ t?localStorage.setItem("ap_token",t):localStorage.removeItem("ap_token"); }catch(_e){} };
+const api = async (url, opts)=>{
+  const o=opts||{};
+  const r=await fetch(url,{...o, headers:{...(o.headers||{}), ...(TOKEN?{Authorization:"Bearer "+TOKEN}:{})}});
+  if(r.status===401){ guardarToken(""); if(window.__sinAcceso) window.__sinAcceso(); }
+  return r;
+};
+const apiJSON = (url, cuerpo, metodo)=>api(url,{method:metodo||"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo||{})});
 
 /* ---------- Helpers ---------- */
 const CLP = (n)=> new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0}).format(Math.round(n||0));
@@ -1581,7 +1613,9 @@ function PropForm({d, set}){
     {k:"rentUF",label:"Arriendo mensual (en UF) *",ph:"16.5",t:"number",step:"any"},
     {k:"deposit",label:"Garantía (CLP)",ph:"650000",t:"number"},
     {k:"dueDay",label:"Día de pago",type:"select",opts:[1,5,10,15,20,25].map(x=>({v:x,l:"Día "+x}))},
-    {k:"adjustment",label:"Reajuste",type:"select",opts:[{v:"UF",l:"UF"},{v:"IPC",l:"IPC"},{v:"%",l:"Fijo %"}]},
+    {k:"adjustment",label:"Cómo se reajusta",type:"select",opts:REAJUSTE_MODOS},
+    {k:"reajustePeriodo",label:"Cada cuánto se revisa",type:"select",opts:[{v:12,l:"Cada 12 meses"},{v:6,l:"Cada 6 meses"},{v:24,l:"Cada 24 meses"}]},
+    {k:"ultimoReajuste",label:"Último reajuste aplicado",t:"date"},
     {k:"penalty",label:"Multa por atraso (%)",type:"select",opts:[0,1,2,3,5,10].map(x=>({v:x,l:x+"%"}))},
     {k:"contractStart",label:"Inicio contrato",ph:"2025-01-05"},
     {k:"contractEnd",label:"Término contrato",ph:"2026-12-31"}
@@ -2320,6 +2354,107 @@ const asExplicar=(termino)=>{
                : { encontrado:false, nota:"No está en el glosario de la plataforma: explícalo tú con lo que sabes de Chile y avisa que es tu conocimiento general." };
 };
 
+/* ================== REAJUSTE Y ALERTAS ==================
+   Todo se calcula desde los datos que ya están cargados: no hay que anotar
+   nada aparte. */
+
+/* Reajuste. Por omisión es UF, que es como están todos los contratos hoy: el
+   arriendo se guarda en UF y sube solo con ella. La opción IPC queda
+   disponible por contrato o como criterio general. */
+const REAJUSTE_MODOS=[{v:"UF",l:"UF (se reajusta solo)"},{v:"IPC",l:"IPC (reajuste periódico)"},{v:"%",l:"Porcentaje fijo"}];
+const sumarMeses=(iso,m)=>{ const d=new Date(String(iso).slice(0,10)+"T12:00:00"); if(isNaN(d)) return ""; d.setMonth(d.getMonth()+m); return d.toISOString().slice(0,10); };
+const diasEntre=(a,b)=>Math.round((new Date(String(b).slice(0,10)+"T12:00:00")-new Date(String(a).slice(0,10)+"T12:00:00"))/86400000);
+const modoReajuste=(p,owner)=>String((p&&p.adjustment)||(owner&&owner.reajusteModo)||"UF").toUpperCase();
+/* Cuándo toca el próximo reajuste de una propiedad. */
+const reajusteInfo=(p,owner,hoy)=>{
+  const H=hoy||todayISO();
+  const modo=modoReajuste(p,owner);
+  const periodo=parseInt(p&&p.reajustePeriodo)||parseInt(owner&&owner.reajustePeriodo)||12;
+  const base=(p&&(p.ultimoReajuste||p.contractStart))||"";
+  if(!base) return { modo, periodo, base:"", vence:"", proximo:"", toca:false };
+  const vence=sumarMeses(base,periodo);
+  let proximo=vence, guarda=0;
+  while(proximo && proximo<=H && guarda++<60) proximo=sumarMeses(proximo,periodo);
+  return { modo, periodo, base, vence, proximo, toca: !!vence && vence<=H };
+};
+/* IPC acumulado desde una fecha, con la serie mensual de mindicador.cl. */
+const ipcAcumuladoDesde=async(desdeISO)=>{
+  const desde=String(desdeISO||"").slice(0,10);
+  if(!desde) return null;
+  const y0=parseInt(desde.slice(0,4),10), y1=new Date().getFullYear();
+  const serie=[];
+  for(let y=y0;y<=y1;y++){
+    try{
+      const r=await fetch("https://mindicador.cl/api/ipc/"+y);
+      const j=await r.json();
+      (j.serie||[]).forEach(x=>{ const f=String(x.fecha).slice(0,10); const v=Number(x.valor); if(f&&!isNaN(v)) serie.push({f,v}); });
+    }catch(_e){}
+  }
+  const usados=serie.filter(x=>x.f>desde);
+  if(!usados.length) return { pct:0, meses:0 };
+  const factor=usados.reduce((a,x)=>a*(1+x.v/100),1);
+  return { pct:(factor-1)*100, meses:usados.length };
+};
+
+/* Alertas: contratos, cobros, contribuciones, seguros, reajustes y datos que
+   faltan. Es una función pura para poder probarla. */
+const MESES_CONTRIBUCIONES=[3,5,8,10]; // abril, junio, septiembre, noviembre
+const URGENCIA_ORDEN={alta:0,media:1,baja:2};
+const calcularAlertas=(props,owner,hoy)=>{
+  const H=hoy||todayISO();
+  const mes=parseInt(H.slice(5,7),10)-1;
+  const out=[];
+  const add=(a)=>out.push(a);
+  (props||[]).forEach(p=>{
+    const nom=p.name||p.address||"Propiedad";
+    const pid=String(p.id);
+    if(p.use==="arriendo"){
+      if(p.status==="atrasado")
+        add({id:pid+"-atraso",urgencia:"alta",ico:"⏰",titulo:"Arriendo atrasado",
+          detalle:nom+" no ha pagado el arriendo de este mes.",pid,ir:"cobros"});
+      const fin=p.contractEnd;
+      if(fin){
+        const d=diasEntre(H,fin);
+        if(d<0) add({id:pid+"-contrato",urgencia:"alta",ico:"📄",titulo:"Contrato vencido",
+          detalle:"El contrato de "+nom+" venció el "+fin+". Renuévalo o formaliza el término.",pid,ir:"props"});
+        else if(d<=90) add({id:pid+"-contrato",urgencia:"media",ico:"📄",titulo:"Contrato por vencer",
+          detalle:"Al contrato de "+nom+" le quedan "+d+" días (vence el "+fin+").",pid,ir:"props"});
+      }
+      const r=reajusteInfo(p,owner,H);
+      if(r.toca){
+        add({id:pid+"-reajuste",urgencia:"media",ico:"📈",titulo:"Toca revisar el reajuste",
+          detalle:"El arriendo de "+nom+" se reajusta por "+r.modo+" y le correspondía el "+r.vence+".",
+          pid,ir:"props",accion:"reajuste"});
+      }
+      if(!num(p.rentUF)&&num(p.rent))
+        add({id:pid+"-sinuf",urgencia:"media",ico:"📐",titulo:"Arriendo sin UF",
+          detalle:"El arriendo de "+nom+" está solo en pesos, así que no se reajusta solo. Cárgalo en UF.",pid,ir:"props"});
+      if(fin && diasEntre(H,fin)<0 && p.garantia && p.garantia.estado==="retenida")
+        add({id:pid+"-garantia",urgencia:"media",ico:"🔐",titulo:"Garantía por devolver",
+          detalle:"El contrato de "+nom+" terminó y la garantía sigue retenida.",pid,ir:"props"});
+      if(!String(p.tenant||"").trim() && p.vacDesde){
+        const meses=Math.floor(diasEntre(p.vacDesde,H)/30);
+        if(meses>=2) add({id:pid+"-vacante",urgencia:"media",ico:"🏚️",titulo:"Sin arrendar hace "+meses+" meses",
+          detalle:nom+" está disponible desde el "+p.vacDesde+". Cada mes vacío es plata que no entra.",pid,ir:"props"});
+      }
+    }
+    if(MESES_CONTRIBUCIONES.indexOf(mes)>=0 && num(p.contribucionesAnuales)){
+      const pagada=(p.contribuciones||[]).some(c=>String(c.fecha||"").slice(0,7)===H.slice(0,7));
+      if(!pagada) add({id:pid+"-contrib",urgencia:"media",ico:"🧾",titulo:"Cuota de contribuciones",
+        detalle:"Este mes vence una cuota de contribuciones de "+nom+" (≈ "+CLP(num(p.contribucionesAnuales)/4)+"). No hay pago registrado.",pid,ir:"props"});
+    }
+    (p.seguros||[]).forEach(s=>{
+      if(s && s.activo!==false && s.termino && s.termino<H)
+        add({id:pid+"-seg-"+s.id,urgencia:"alta",ico:"🔥",titulo:"Seguro vencido",
+          detalle:"El seguro "+(s.tipo||"")+" de "+nom+" venció el "+s.termino+".",pid,ir:"props"});
+    });
+    if(!String(p.rolSII||"").trim())
+      add({id:pid+"-rol",urgencia:"baja",ico:"🏛️",titulo:"Falta el rol del SII",
+        detalle:"Sin el rol de "+nom+" no se pueden pedir certificados ni revisar contribuciones.",pid,ir:"props"});
+  });
+  return out.sort((a,b)=>(URGENCIA_ORDEN[a.urgencia]-URGENCIA_ORDEN[b.urgencia]));
+};
+
 const asDisponible=(p)=> p.use==="arriendo" && !String(p.tenant||"").trim();
 const asPrecio=(p,op)=> op==="venta" ? num(p.tasacion) : num(p.rent);
 const asFoto=(p)=>{ const f=(p.fotos||[])[0]; return (f&&(f.url||f))||""; };
@@ -3000,8 +3135,170 @@ function PortalArrendatario({u,propiedades,uf,owner,cuentas,montoCobro,calcMulta
   </div>);
 }
 
+/* Puerta de entrada: la primera vez se crea la clave, después se pide.
+   Sin esto, cualquiera que llegara a la dirección del sitio podía leer y
+   sobrescribir todos los datos. */
+function Puerta({ modo, onEntrar }){
+  const [clave,setClave]=useState("");
+  const [clave2,setClave2]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState("");
+  const crear = modo==="crear";
+  const corta = clave.length<6;
+  const noCalza = crear && clave!==clave2;
+  const entrar=async()=>{
+    if(busy||corta||noCalza) return;
+    setBusy(true); setErr("");
+    try{
+      const r=await apiJSON("/api/acceso", crear?{accion:"crear",clave}:{accion:"entrar",clave});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.token){ setErr(j.error||"No se pudo entrar"); setBusy(false); return; }
+      guardarToken(j.token);
+      onEntrar({rol:j.rol,nombre:j.nombre});
+    }catch(e){ setErr("Sin conexión con el servidor"); }
+    setBusy(false);
+  };
+  return (<div className="puerta">
+    <div className="puerta-caja">
+      <div className="brand-logo" style={{width:52,height:52,fontSize:24,marginBottom:14}}>A</div>
+      <h2>{crear?"Protege tu plataforma":"ArriendoPro"}</h2>
+      <p>{crear
+        ? "Crea la clave con la que entrarás desde ahora. Sin ella, nadie puede ver ni cambiar tus datos."
+        : "Ingresa tu clave para entrar."}</p>
+      <input className="input" type="password" value={clave} autoFocus
+        placeholder={crear?"Clave nueva (mínimo 6 caracteres)":"Tu clave"}
+        onChange={e=>setClave(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter"&&!crear) entrar(); }}/>
+      {crear && <input className="input" type="password" value={clave2} placeholder="Repite la clave"
+        style={{marginTop:10}} onChange={e=>setClave2(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter") entrar(); }}/>}
+      {err && <div className="puerta-err">{err}</div>}
+      <button className="btn btn-red" style={{width:"100%",marginTop:14,padding:"14px"}}
+        disabled={busy||corta||noCalza} onClick={entrar}>
+        {busy?"Entrando…":(crear?"Crear clave y entrar":"Entrar")}</button>
+      {crear && <div className="puerta-nota">Anótala en un lugar seguro: no hay forma de recuperarla desde acá.</div>}
+      {!crear && <div className="puerta-nota">Si alguien más administra contigo, pídele su propio acceso al dueño de la cuenta.</div>}
+    </div>
+  </div>);
+}
+
 function App(){
   const [tab,setTab]=useState("inicio");
+  /* ---- Acceso: clave de la plataforma ----
+     "cargando" mientras se pregunta al servidor, "crear" la primera vez,
+     "entrar" si ya hay clave, "ok" cuando la sesión es válida. */
+  const [puerta,setPuerta]=useState("cargando");
+  const [acceso,setAcceso]=useState(null);
+  useEffect(()=>{
+    window.__sinAcceso=()=>{ setAcceso(null); setPuerta("entrar"); };
+    let vivo=true;
+    (async()=>{
+      try{
+        if(TOKEN){
+          const r=await apiJSON("/api/acceso",{accion:"yo"});
+          if(r.ok){ const j=await r.json(); if(vivo){ setAcceso({rol:j.rol,nombre:j.nombre}); setPuerta("ok"); } return; }
+        }
+        const r=await apiJSON("/api/acceso",{accion:"estado"});
+        const j=await r.json().catch(()=>({}));
+        if(vivo) setPuerta(j.configurada?"entrar":"crear");
+      }catch(e){ if(vivo) setPuerta("entrar"); }
+    })();
+    return ()=>{ vivo=false; window.__sinAcceso=null; };
+  },[]);
+  /* Clave, accesos de otras personas y respaldos. */
+  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura"});
+  const [segBusy,setSegBusy]=useState(false);
+  const [accesos,setAccesos]=useState([]);
+  const [respaldos,setRespaldos]=useState([]);
+  const [repBusy,setRepBusy]=useState(false);
+  const cambiarClave=async()=>{
+    setSegBusy(true);
+    try{
+      const r=await apiJSON("/api/acceso",{accion:"cambiar",actual:segForm.actual,nueva:segForm.nueva});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok) notify(j.error||"No se pudo cambiar la clave",true);
+      else { notify("Clave cambiada"); setSegForm(f=>({...f,actual:"",nueva:""})); }
+    }catch(e){ notify("Sin conexión",true); }
+    setSegBusy(false);
+  };
+  const cargarAccesos=async()=>{
+    try{ const r=await apiJSON("/api/acceso",{accion:"accesos"}); const j=await r.json().catch(()=>({}));
+      if(r.ok&&Array.isArray(j.accesos)) setAccesos(j.accesos); }catch(_e){}
+  };
+  const crearAcceso=async()=>{
+    setSegBusy(true);
+    try{
+      const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok) notify(j.error||"No se pudo crear el acceso",true);
+      else { setAccesos(j.accesos||[]); setSegForm(f=>({...f,nombre:"",claveInv:""}));
+        notify("Acceso creado. Entrégale esa clave a la persona."); }
+    }catch(e){ notify("Sin conexión",true); }
+    setSegBusy(false);
+  };
+  const borrarAcceso=async(id)=>{
+    try{ const r=await apiJSON("/api/acceso",{accion:"borrar_acceso",id}); const j=await r.json().catch(()=>({}));
+      if(r.ok){ setAccesos(j.accesos||[]); notify("Acceso eliminado"); } }catch(_e){}
+  };
+  const cargarRespaldos=async()=>{
+    setRepBusy(true);
+    try{ const r=await api("/api/respaldos"); const j=await r.json().catch(()=>({}));
+      if(r.ok) setRespaldos(j.respaldos||[]); else notify(j.error||"No pude leer los respaldos",true); }
+    catch(e){ notify("Sin conexión",true); }
+    setRepBusy(false);
+  };
+  const restaurarRespaldo=async(fecha)=>{
+    if(!window.confirm("Se va a reemplazar todo lo que hay ahora por la copia del "+fecha+". Lo actual queda guardado por si te arrepientes. ¿Seguimos?")) return;
+    setRepBusy(true);
+    try{
+      const r=await apiJSON("/api/respaldos",{fecha});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ notify(j.error||"No se pudo restaurar",true); setRepBusy(false); return; }
+      const e=j.estado||{};
+      if(Array.isArray(e.props)) setProps(e.props);
+      if(Array.isArray(e.socs)) setSocs(e.socs);
+      if(e.owner){ setOwner(e.owner); setOwnerEdit(e.owner); }
+      if(Array.isArray(e.contacts)) setContacts(e.contacts);
+      if(Array.isArray(e.cuentas)) setCuentas(e.cuentas);
+      if(Array.isArray(e.plantillas)) setPlantillas(e.plantillas);
+      if(Array.isArray(e.leads)) setLeads(e.leads);
+      if(Array.isArray(e.qreplies)) setQreplies(e.qreplies);
+      notify("Restaurado el respaldo del "+fecha);
+    }catch(e){ notify("Sin conexión",true); }
+    setRepBusy(false);
+  };
+  const descargarTodo=()=>{
+    const datos={ version:1, fecha:new Date().toISOString(), props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies };
+    const url=URL.createObjectURL(new Blob([JSON.stringify(datos,null,2)],{type:"application/json"}));
+    const a=document.createElement("a");
+    a.href=url; a.download="arriendopro-respaldo-"+todayISO()+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    notify("Respaldo descargado");
+  };
+  const restaurarArchivo=async(file)=>{
+    try{
+      const e=JSON.parse(await file.text());
+      if(!e||typeof e!=="object"||!Array.isArray(e.props)) { notify("Ese archivo no es un respaldo de la plataforma",true); return; }
+      if(!window.confirm("Se va a reemplazar lo que hay ahora por el contenido de "+file.name+". ¿Seguimos?")) return;
+      setProps(e.props);
+      if(Array.isArray(e.socs)) setSocs(e.socs);
+      if(e.owner){ setOwner(e.owner); setOwnerEdit(e.owner); }
+      if(Array.isArray(e.contacts)) setContacts(e.contacts);
+      if(Array.isArray(e.cuentas)) setCuentas(e.cuentas);
+      if(Array.isArray(e.plantillas)) setPlantillas(e.plantillas);
+      if(Array.isArray(e.leads)) setLeads(e.leads);
+      if(Array.isArray(e.qreplies)) setQreplies(e.qreplies);
+      notify("Respaldo restaurado desde el archivo");
+    }catch(err){ notify("No pude leer ese archivo",true); }
+  };
+  useEffect(()=>{ if(puerta==="ok"&&tab==="config") cargarAccesos(); },[puerta,tab]);
+
+  const salirDeLaCuenta=async()=>{
+    try{ await apiJSON("/api/acceso",{accion:"salir"}); }catch(_e){}
+    guardarToken(""); setAcceso(null); setPuerta("entrar");
+  };
+
   /* ---- Usuarios, roles y sesión ---- */
   const [usuarios,setUsuarios]=useState(()=>store.get("ap_usuarios",[]));
   const [sesion,setSesion]=useState(()=>store.get("ap_sesion",null));
@@ -3012,7 +3309,7 @@ function App(){
   const usuarioActual = sesion ? (usuarios.find(u=>u.id===sesion.id)||sesion) : SESION_DEMO;
   const rolActual = usuarioActual ? (usuarioActual.rol||"propietario") : "propietario";
   const esProp = rolActual==="propietario";
-  const soloLectura = rolActual==="invitado";
+  const soloLectura = rolActual==="invitado" || !!(acceso && acceso.rol==="lectura");
   const iniciarSesion=(u)=>{ setSesion({id:u.id,nombre:u.nombre,email:u.email,rol:u.rol,propiedadId:u.propiedadId||null}); };
   const cerrarSesion=()=>{ setSesion(null); };
   const [invForm,setInvForm]=useState({nombre:"",email:"",rol:"colaborador",propiedadId:""});
@@ -3187,10 +3484,12 @@ function App(){
      se mantiene como copia rápida local. */
   const [hydrated,setHydrated]=useState(false);
   const saveTimer=useRef(null);
+  // Solo se carga el estado del servidor cuando ya se entró con la clave.
   useEffect(()=>{ let alive=true;
+    if(puerta!=="ok") return ()=>{ alive=false; };
     (async()=>{
       try{
-        const r=await fetch("/api/estado"); const j=await r.json();
+        const r=await api("/api/estado"); if(!r.ok) throw new Error("sin acceso"); const j=await r.json();
         if(alive && j && j.estado){
           const e=j.estado;
           if(Array.isArray(e.props)) setProps(mergeTrinidadSeed(e.props));
@@ -3206,19 +3505,25 @@ function App(){
           if(Array.isArray(e.leads)) setLeads(e.leads);
           if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
         }
-      }catch(err){ /* sin conexión: se usa la copia local guardada */ }
-      finally{ if(alive){ setHydrated(true); try{ store.set("ap_trinidad_seed_v1", true); }catch(_e){} } }
+        // Solo desde aquí en adelante se puede guardar: si la carga falla y
+        // guardáramos igual, se subiría la copia local vacía encima de los
+        // datos buenos del servidor.
+        if(alive){ setHydrated(true); try{ store.set("ap_trinidad_seed_v1", true); }catch(_e){} }
+      }catch(err){
+        if(alive) notify("No pude cargar tus datos del servidor. No voy a guardar nada hasta que vuelva la conexión: recarga la página cuando tengas señal.",true);
+      }
     })();
     return ()=>{ alive=false; };
-  },[]);
+  },[puerta]);
   useEffect(()=>{
-    if(!hydrated) return;
+    if(!hydrated || puerta!=="ok") return;
+    if(acceso && acceso.rol==="lectura") return; // acceso de solo lectura: no guarda
     if(saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
-      fetch("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies }) }).catch(()=>{});
+      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies }) }).catch(()=>{});
     }, 800);
     return ()=>{ if(saveTimer.current) clearTimeout(saveTimer.current); };
-  },[hydrated, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies]);
+  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies]);
 
   /* Indicadores económicos desde mindicador.cl (con respaldo / edición manual) */
   const migrarAUF=(v)=>{
@@ -3290,7 +3595,56 @@ function App(){
   },[]);
   const subirAlInicio=()=>{ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_e){ window.scrollTo(0,0); } };
 
+  /* ---- Reajuste del arriendo ----
+     Por omisión es UF: el arriendo se guarda en UF y sube solo con ella, así
+     que "reajustar" es solo dejar constancia de que se revisó. Con IPC hay que
+     calcular el acumulado y cambiar el monto. */
+  const [reajBusy,setReajBusy]=useState("");
+  const aplicarReajuste=async(p)=>{
+    const r=reajusteInfo(p,owner);
+    const actual=num(p.rent)||Math.round(num(p.rentUF)*uf);
+    if(r.modo==="UF"){
+      if(!window.confirm("El arriendo de "+p.name+" está en UF ("+UFf(num(p.rentUF))+"), así que ya se reajusta solo todos los días con la UF. Hoy equivale a "+CLP(actual)+".\n\n¿Dejo registrado que lo revisaste hoy?")) return;
+      patchProp(p.id,x=>({...x, ultimoReajuste:todayISO()}));
+      notify("Revisado. El arriendo en UF sigue reajustándose solo.");
+      return;
+    }
+    if(r.modo==="IPC"){
+      if(!r.base){ notify("Falta la fecha de inicio del contrato para calcular el IPC",true); return; }
+      setReajBusy(String(p.id));
+      const acum=await ipcAcumuladoDesde(r.base);
+      setReajBusy("");
+      if(!acum||!acum.meses){ notify("No pude obtener la serie del IPC. Inténtalo de nuevo en un rato.",true); return; }
+      const nuevo=Math.round(actual*(1+acum.pct/100));
+      if(!window.confirm("IPC acumulado desde "+r.base+": "+acum.pct.toFixed(2)+"% en "+acum.meses+" meses.\n\nArriendo actual: "+CLP(actual)+"\nNuevo arriendo: "+CLP(nuevo)+"\n\n¿Aplico el reajuste?")) return;
+      const nuevoUF=Math.round((nuevo/(uf||1))*100)/100;
+      patchProp(p.id,x=>({...x, rent:nuevo, rentUF:nuevoUF, ultimoReajuste:todayISO(),
+        bitacora:[{id:"bit-reaj"+Date.now().toString(36),fecha:todayISO(),tipo:"Reajuste",
+          titulo:"Reajuste por IPC",
+          texto:"IPC acumulado "+acum.pct.toFixed(2)+"% desde "+r.base+" ("+acum.meses+" meses). Arriendo de "+CLP(actual)+" a "+CLP(nuevo)+" ("+UFf(nuevoUF)+").",
+          adjuntos:[]}, ...(x.bitacora||[])]}));
+      notify("Reajuste aplicado: nuevo arriendo "+CLP(nuevo));
+      return;
+    }
+    const pct=parseFloat(String(window.prompt("¿Qué porcentaje de reajuste aplico al arriendo de "+p.name+"?","3")||"").replace(",","."));
+    if(isNaN(pct)) return;
+    const nuevo=Math.round(actual*(1+pct/100));
+    patchProp(p.id,x=>({...x, rent:nuevo, rentUF:Math.round((nuevo/(uf||1))*100)/100, ultimoReajuste:todayISO()}));
+    notify("Reajuste de "+pct+"% aplicado: "+CLP(nuevo));
+  };
+
+
   const propsOrd = ordenarPor(props, ordenes.props, p=>String(p.id));
+
+  /* Alertas calculadas desde los datos: contratos, cobros, contribuciones,
+     seguros, reajustes y lo que falte por completar. */
+  const alertas = calcularAlertas(propsOrd, owner);
+  const irAlerta=(a)=>{
+    const p=props.find(x=>String(x.id)===String(a.pid));
+    if(a.ir==="cobros"){ setTab("cobros"); return; }
+    if(p){ setSel(p); setFilter("todas"); setSocFilter("todas"); setTab("props"); }
+    else setTab(a.ir||"props");
+  };
   const rentals=propsOrd.filter(p=>p.use==="arriendo");
   const personals=propsOrd.filter(p=>p.use==="personal");
   const bySoc=(id)=>propsOrd.filter(p=>(p.sociedad||"beta")===id);
@@ -3491,7 +3845,7 @@ function App(){
   const sendAi=async()=>{ if(!aiIn.trim()&&!aiAdj.length) return; const q=aiIn.trim()||"Analiza en detalle los archivos adjuntos y dime qué contienen."; const adj=aiAdj; setAiIn(""); setAiAdj([]); setAiLoad(true); setAi(a=>[...a,{r:"user",c:q+(adj.length?"  ["+adj.map(f=>f.name).join(", ")+"]":"")}]);
     try{
       const ctx=`Eres un asistente experto en administración de propiedades en Chile dentro de la plataforma ArriendoPro. Datos actuales (UF=${CLP(uf)}): ${props.length} propiedades (${rentals.length} en arriendo, ${personals.length} de uso personal). Ingresos por arriendo: ${CLP(ingresos)}/mes. Dividendos hipotecarios totales: ${CLP(dividendos)}/mes. Utilidad neta de arriendos: ${CLP(utilidadTotal)}/mes. Detalle: ${props.map(p=>`${p.name} [${p.use}] arriendo ${UFf(p.rentUF)} (${CLP(num(p.rent))}), dividendo ${p.hasMortgage?UFf(num(p.dividendoUF))+" ("+CLP(divCLP(p,uf))+")":"sin crédito"}, seguro ${UFf(p.seguroUF)} (${CLP(num(p.seguroIncendioSismo))}/año), contribuciones ${CLP(num(p.contribucionesAnuales))}/año, utilidad mensual ${CLP(utilidadMes(p,uf))}`).join("; ")}. Responde en español, claro y conciso. Si haces cálculos, muéstralos.`;
-      const r=await fetch("/api/asistente",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ system:ctx, messages:[...ai.map(m=>({role:m.r==="user"?"user":"assistant",content:m.c})),{role:"user",content:q}], files:adj.map(f=>({media_type:f.media,data:f.b64,name:f.name})) }) });
+      const r=await api("/api/asistente",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ system:ctx, messages:[...ai.map(m=>({role:m.r==="user"?"user":"assistant",content:m.c})),{role:"user",content:q}], files:adj.map(f=>({media_type:f.media,data:f.b64,name:f.name})) }) });
       // Mostramos el motivo real que devuelve el servidor (por ejemplo, que falta
       // configurar la clave de la IA en Netlify) en vez de un mensaje genérico.
       const d=await r.json().catch(()=>null);
@@ -3739,7 +4093,7 @@ function App(){
       l?(l.nombre+(l.telefono?" · "+l.telefono:"")+(l.email?" · "+l.email:"")):null);
     try{
       for(let paso=0; paso<6; paso++){
-        const r=await fetch("/api/asesor",{method:"POST",headers:{"Content-Type":"application/json"},
+        const r=await api("/api/asesor",{method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({messages:msgs,contexto})});
         const d=await r.json().catch(()=>null);
         if(!r.ok){
@@ -3903,7 +4257,7 @@ function App(){
     if(soloOrden){
       setAiDocPaso("Pensando…");
       try{
-        const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},
+        const r=await api("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({mode:"extraer", instruccion:aiOrden, propiedades:hint, formulario:formActual(), files:[]})});
         const j=await r.json().catch(()=>({}));
         if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
@@ -3923,7 +4277,7 @@ function App(){
         // Word/Excel viajan como texto ya extraído; fotos y PDF como adjunto nativo.
         const cuerpo={ mode:"extraer", instruccion:aiOrden, propiedades:hint,
           files:[ f.texto?({name:f.name,texto:f.texto}):({media_type:f.media,data:f.b64,name:f.name}) ] };
-        const r=await fetch("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo)});
+        const r=await api("/api/asistente",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo)});
         const j=await r.json().catch(()=>({}));
         if(r.status===504||r.status===502&&!j.error) throw new Error("tardó demasiado");
         if(!r.ok||j.error) throw new Error(j.error||("HTTP "+r.status));
@@ -5241,7 +5595,11 @@ function App(){
   const _match=(it)=>{ const hay=normTxt(it.title+" "+(it.sub||"")+" "+(it.kw||"")); return _toks.every(t=>hay.includes(t)); };
   let buscaRes = _q ? BUSCABLE.filter(_match) : BUSCABLE.filter(it=>it.cat==="Secciones"||it.cat==="En la plataforma");
   buscaRes = buscaRes.slice().sort((a,b)=>CATORD.indexOf(a.cat)-CATORD.indexOf(b.cat)).slice(0,50);
-  /* ---- Login desactivado por ahora: se entra directo. Solo el rol arrendatario ve su portal propio. ---- */
+  /* ---- Sin clave no se entra: los datos del panel son privados. ---- */
+  if(puerta==="cargando") return (<div className="puerta"><div className="puerta-caja"><p style={{margin:0}}>Abriendo…</p></div></div>);
+  if(puerta!=="ok") return (<Puerta modo={puerta} onEntrar={(a)=>{ setAcceso(a); setPuerta("ok"); }}/>);
+
+  /* Solo el rol arrendatario ve su portal propio. */
   if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
   return (<div className={"app"+(soloLectura?" solo-lectura":"")}>
@@ -5252,7 +5610,7 @@ function App(){
         <div className="nav-group">{g.label}</div>
         {g.ids.map(id=>{ const n=navItem(id); return n?(<div key={id} className={"nav-item"+(tab===id?" on":"")} onClick={()=>{setTab(id);setSel(null);setMenuOpen(false);}}><span className="ico">{n.ico}</span>{n.label}</div>):null; })}
       </React.Fragment>))}</div>
-      <div className="nav-foot"><div className="av">{(usuarioActual.nombre||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div><div style={{minWidth:0,flex:1}}><div style={{fontWeight:700,color:"var(--side-tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(usuarioActual.nombre||"").split(" ")[0]||usuarioActual.email}</div><div style={{fontSize:12.5,color:"var(--side-mut)"}}>{(ROLES_INFO[rolActual]||{}).label||rolActual}</div></div>{sesion&&<button className="btn btn-out btn-sm" style={{padding:"6px 10px",fontSize:12}} onClick={cerrarSesion}>Salir</button>}</div>
+      <div className="nav-foot"><div className="av">{(usuarioActual.nombre||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div><div style={{minWidth:0,flex:1}}><div style={{fontWeight:700,color:"var(--side-tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(usuarioActual.nombre||"").split(" ")[0]||usuarioActual.email}</div><div style={{fontSize:12.5,color:"var(--side-mut)"}}>{acceso&&acceso.rol==="lectura"?"Solo lectura":((ROLES_INFO[rolActual]||{}).label||rolActual)}</div></div><button className="btn btn-out btn-sm" style={{padding:"6px 10px",fontSize:12}} onClick={sesion?cerrarSesion:salirDeLaCuenta}>Salir</button></div>
     </div>
 
     {mBusca && <div className="modal-bg" style={{alignItems:"flex-start",paddingTop:"8vh",zIndex:300}} onClick={cerrarBusca}>
@@ -5319,6 +5677,31 @@ function App(){
         {tab==="inicio" && <>
         <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> cualquiera de estas fichas y elige dónde ponerla.</div>
         {bloquesOrdenados("inicio",[
+         {id:"alertas",titulo:"Alertas",node:(
+          <Collapsible icon="🔔" title={alertas.length?("Alertas ("+alertas.length+")"):"Alertas"}
+            subtitle={alertas.length?"Lo que conviene revisar hoy":"No hay nada pendiente"} defaultOpen={false}>
+            {alertas.length===0
+              ? <div className="help" style={{margin:0}}>✅ Todo al día: sin arriendos atrasados, contratos por vencer, seguros vencidos ni reajustes pendientes.</div>
+              : <>
+                <div className="help" style={{marginBottom:10}}>Esto se calcula solo con lo que tienes cargado. Toca <b>Ver</b> para ir a la propiedad.</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {alertas.map(a=>(<div key={a.id} className={"alerta "+a.urgencia}>
+                    <span className="al-ico">{a.ico}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="al-t">{a.titulo}</div>
+                      <div className="al-d">{a.detalle}</div>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      {a.accion==="reajuste" && <button className="btn btn-red btn-sm" disabled={reajBusy===String(a.pid)}
+                        onClick={()=>{ const p=props.find(x=>String(x.id)===String(a.pid)); if(p) aplicarReajuste(p); }}>
+                        {reajBusy===String(a.pid)?"Calculando…":"Reajustar"}</button>}
+                      <button className="btn btn-out btn-sm" onClick={()=>irAlerta(a)}>Ver</button>
+                    </div>
+                  </div>))}
+                </div>
+              </>}
+          </Collapsible>)},
+
          {id:"acciones",titulo:"¿Qué quieres hacer hoy?",node:(
           <Collapsible icon="👋" title="¿Qué quieres hacer hoy?" subtitle="Accesos directos — toca para abrir" defaultOpen={false}>
             <div className="help g" style={{marginBottom:16}}>Toca un botón para ir directo a lo que necesitas.</div>
@@ -6173,6 +6556,11 @@ function App(){
 
         {/* ============ CONFIGURACIÓN ============ */}
         {tab==="equipo" && <>
+          <div className="card pad" style={{marginBottom:14,background:"var(--brand-bg)",border:"none"}}>
+            <div style={{fontWeight:800,marginBottom:6}}>🔒 ¿Quieres darle acceso a alguien ahora?</div>
+            <div style={{fontSize:14.5,color:"var(--muted)",lineHeight:1.55,marginBottom:10}}>Lo que funciona hoy son los <b>accesos con clave</b>: le creas una clave a tu mamá o a tu contador, eliges si pueden solo mirar o también modificar, y entran con esa clave. Lo de más abajo (invitaciones por correo) queda para cuando conectemos el envío de correos.</div>
+            <button className="btn btn-red btn-sm" onClick={()=>setTab("config")}>Ir a Clave y accesos →</button>
+          </div>
           <div className="help" style={{marginBottom:14}}>Invita a las personas que necesiten entrar a la plataforma. Cada una crea su cuenta con <b>el mismo correo de la invitación</b> (validado con un código) y su propia contraseña segura. Los <b>arrendatarios</b> entran a un portal propio donde ven su arriendo y lo pagan en línea.</div>
           <div className="grid" style={{gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:10,marginBottom:16}}>
             {Object.keys(ROLES_INFO).map(r=>(<div key={r} className="card pad" style={{padding:"14px 15px"}}>
@@ -6226,6 +6614,55 @@ function App(){
         </>}
 
         {tab==="config" && <>
+          <Collapsible icon="🔒" title="Clave y accesos" subtitle="Quién puede entrar a la plataforma" defaultOpen={false}>
+            <div className="help" style={{marginBottom:14}}>Tus datos (arrendatarios, contratos, cuentas) solo se ven con la clave. Puedes crear accesos aparte para tu mamá, tu contador o quien administre contigo: los de <b>solo lectura</b> ven todo pero no pueden cambiar nada.</div>
+
+            <div className="sub-title">Cambiar mi clave</div>
+            <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="field"><label className="label">Clave actual</label><input className="input" type="password" value={segForm.actual} onChange={e=>setSegForm(f=>({...f,actual:e.target.value}))}/></div>
+              <div className="field"><label className="label">Clave nueva</label><input className="input" type="password" value={segForm.nueva} onChange={e=>setSegForm(f=>({...f,nueva:e.target.value}))}/></div>
+            </div>
+            <button className="btn btn-green btn-sm" disabled={segBusy||!segForm.actual||segForm.nueva.length<6} onClick={cambiarClave}>{segBusy?"Guardando…":"Cambiar clave"}</button>
+
+            <div className="sub-title" style={{marginTop:20}}>Accesos de otras personas</div>
+            {accesos.length===0
+              ? <div className="help" style={{marginBottom:10}}>Todavía no has creado accesos para nadie más.</div>
+              : <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+                  {accesos.map(a=>(<div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10}}>
+                    <div><div style={{fontWeight:700}}>{a.nombre}</div><div style={{fontSize:13,color:"var(--muted)"}}>{a.rol==="dueño"?"Puede ver y modificar":"Solo lectura"}</div></div>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>borrarAcceso(a.id)}>✕ Quitar</button>
+                  </div>))}
+                </div>}
+            <div className="grid" style={{gridTemplateColumns:"1.2fr 1fr 1fr",gap:10}}>
+              <div className="field"><label className="label">Nombre</label><input className="input" placeholder="Ej: Mamá, Contador" value={segForm.nombre} onChange={e=>setSegForm(f=>({...f,nombre:e.target.value}))}/></div>
+              <div className="field"><label className="label">Clave para esa persona</label><input className="input" type="password" value={segForm.claveInv} onChange={e=>setSegForm(f=>({...f,claveInv:e.target.value}))}/></div>
+              <div className="field"><label className="label">Permiso</label>
+                <select value={segForm.rol} onChange={e=>setSegForm(f=>({...f,rol:e.target.value}))}>
+                  <option value="lectura">Solo lectura</option>
+                  <option value="dueño">Ver y modificar</option>
+                </select>
+              </div>
+            </div>
+            <button className="btn btn-red btn-sm" disabled={segBusy||!segForm.nombre.trim()||segForm.claveInv.length<6} onClick={crearAcceso}>＋ Crear acceso</button>
+          </Collapsible>
+
+          <Collapsible icon="🛟" title="Respaldos" subtitle="Copias diarias para volver atrás si algo se borra" defaultOpen={false}>
+            <div className="help" style={{marginBottom:12}}>Cada vez que se guarda algo, el servidor deja la copia del día. Se guardan los últimos <b>30 días</b>. Antes de restaurar, se guarda también lo que hay ahora, así que siempre puedes deshacer.</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+              <button className="btn btn-out btn-sm" onClick={cargarRespaldos} disabled={repBusy}>{repBusy?"Cargando…":"Ver respaldos"}</button>
+              <button className="btn btn-out btn-sm" onClick={descargarTodo}>⬇ Descargar todo a mi teléfono</button>
+              <label className="btn btn-out btn-sm" style={{cursor:"pointer"}}>⬆ Restaurar desde archivo
+                <input type="file" accept=".json,application/json" style={{display:"none"}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(f) restaurarArchivo(f); }}/>
+              </label>
+            </div>
+            {respaldos.length>0 && <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {respaldos.map(r=>(<div key={r.fecha} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10}}>
+                <div><b>{r.fecha}</b> <span style={{fontSize:13,color:"var(--muted)"}}>copia del día</span></div>
+                <button className="btn btn-out btn-sm" onClick={()=>restaurarRespaldo(r.fecha)} disabled={repBusy}>Restaurar</button>
+              </div>))}
+            </div>}
+          </Collapsible>
+
           <Collapsible icon="🧑‍💼" title="Mis datos" defaultOpen={true}>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               {[["Nombre completo","name"],["RUT","rut"],["Correo","email"],["Teléfono","phone"],["WhatsApp","whatsapp"]].map(f=>(
@@ -6250,6 +6687,41 @@ function App(){
             </div>
             <div className="card pad" style={{marginTop:14,background:"var(--green-bg)",border:"none"}}><div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:6}}>VISTA PREVIA — lo que ven tus arrendatarios</div>
               <div style={{fontSize:15,lineHeight:1.8}}>Banco: <b>{ownerEdit.bank}</b> · {ownerEdit.accountType} <b>{ownerEdit.accountNumber}</b><br/>RUT: <b>{ownerEdit.rut}</b> · Nombre: <b>{ownerEdit.name}</b></div></div>
+          </Collapsible>
+          <Collapsible icon="📈" title="Reajuste de los arriendos" subtitle="UF o IPC, y cada cuánto se revisa" defaultOpen={false}>
+            <div className="help" style={{marginBottom:12}}>Este es el criterio que se usa cuando una propiedad no tiene el suyo propio. Hoy <b>todos tus arriendos están en UF</b>, así que suben solos día a día con la UF y no hay que hacer nada: la plataforma solo te avisa para que lo revises. Si algún contrato se reajusta por <b>IPC</b>, elígelo aquí o en esa propiedad, y cuando toque te calculo el IPC acumulado y te propongo el nuevo monto.</div>
+            <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="field"><label className="label">Reajuste por omisión</label>
+                <select value={ownerEdit.reajusteModo||"UF"} onChange={e=>setOwnerEdit(o=>({...o,reajusteModo:e.target.value}))}>
+                  {REAJUSTE_MODOS.map(m=><option key={m.v} value={m.v}>{m.l}</option>)}
+                </select>
+              </div>
+              <div className="field"><label className="label">Revisión por omisión</label>
+                <select value={ownerEdit.reajustePeriodo||12} onChange={e=>setOwnerEdit(o=>({...o,reajustePeriodo:parseInt(e.target.value)||12}))}>
+                  <option value={12}>Cada 12 meses</option>
+                  <option value={6}>Cada 6 meses</option>
+                  <option value={24}>Cada 24 meses</option>
+                </select>
+              </div>
+            </div>
+            <div className="card pad" style={{marginTop:12,background:"var(--panel2)",border:"none"}}>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:8}}>CÓMO ESTÁ CADA PROPIEDAD</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {rentals.map(p=>{ const r=reajusteInfo(p,ownerEdit);
+                  return (<div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <div style={{minWidth:170,flex:1}}>
+                      <div style={{fontWeight:700}}>{p.name}</div>
+                      <div style={{fontSize:13,color:"var(--muted)"}}>
+                        {UFf(num(p.rentUF))} ≈ {CLP(num(p.rentUF)*uf)} · reajuste por <b>{r.modo}</b>
+                        {r.vence?(r.toca?" · le tocaba el "+r.vence:" · próxima revisión "+r.proximo):" · falta la fecha de inicio del contrato"}
+                      </div>
+                    </div>
+                    {r.toca && <button className="btn btn-out btn-sm" disabled={reajBusy===String(p.id)} onClick={()=>aplicarReajuste(p)}>{reajBusy===String(p.id)?"Calculando…":"Revisar ahora"}</button>}
+                  </div>);
+                })}
+                {rentals.length===0 && <div className="help" style={{margin:0}}>Todavía no tienes propiedades en arriendo.</div>}
+              </div>
+            </div>
           </Collapsible>
           <Collapsible icon="📐" title="Valor de la UF" defaultOpen={false}>
             <div className="help" style={{marginBottom:12}}>Se actualiza solo desde <b>mindicador.cl</b>. Si no carga, puedes escribirlo a mano. Este valor reajusta automáticamente todos los dividendos en UF.</div>
@@ -6292,6 +6764,38 @@ function App(){
 
         {/* ============ ASISTENTE ============ */}
         {tab==="ai" && <>
+          {/* Lo que el asesor inmobiliario ha atendido: se registra solo. */}
+          <Collapsible icon="📊" title="Qué ha hecho el asesor" subtitle="Consultas, búsquedas y contactos capturados" defaultOpen={false}>
+            <div className="help" style={{marginBottom:12}}>Esto lo registra la plataforma sola cada vez que alguien conversa con el <b>asesor inmobiliario</b> (el botón ✦ de abajo a la derecha).</div>
+            <div className="grid c4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
+              <div className="stat" style={{borderTopColor:"var(--gold)"}}><div className="lab">Conversaciones</div><div className="val">{asMet.consultas||0}</div></div>
+              <div className="stat" style={{borderTopColor:"#37404f"}}><div className="lab">Búsquedas</div><div className="val">{asMet.busquedas||0}</div></div>
+              <div className="stat" style={{borderTopColor:"var(--green)"}}><div className="lab">Contactos capturados</div><div className="val">{asMet.leads||0}</div><div className="sub">quedan en el CRM</div></div>
+              <div className="stat" style={{borderTopColor:"var(--red)"}}><div className="lab">Visitas agendadas</div><div className="val">{asMet.visitas||0}</div></div>
+            </div>
+            {(()=>{ const vistas=Object.entries(asMet.propiedades||{}).sort((a,b)=>b[1]-a[1]).slice(0,8);
+              if(!vistas.length) return <div className="help" style={{marginTop:12}}>Todavía nadie ha mirado propiedades con el asesor.</div>;
+              const max=vistas[0][1]||1;
+              return (<div style={{marginTop:16}}>
+                <div className="sub-title">Propiedades más consultadas</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {vistas.map(([id,n])=>{ const p=props.find(x=>String(x.id)===String(id));
+                    return (<div key={id}>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:14,fontWeight:600,marginBottom:4}}>
+                        <span>{p?p.name:"Propiedad "+id}</span><span style={{color:"var(--muted)"}}>{n} vez{n!==1?"es":""}</span>
+                      </div>
+                      <div className="bar"><div style={{width:Math.round(n/max*100)+"%",background:"var(--gold)"}}></div></div>
+                    </div>);
+                  })}
+                </div>
+                <div className="help" style={{marginTop:10}}>Lo más consultado es lo que conviene tener con mejores fotos, mejor descripción y precio revisado.</div>
+              </div>);
+            })()}
+            <div style={{marginTop:14,display:"flex",gap:8,flexWrap:"wrap"}}>
+              <button className="btn btn-out btn-sm" onClick={()=>setTab("crm")}>Ver los contactos en el CRM →</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>{ if(window.confirm("¿Borro los contadores del asesor?")) setAsMet({consultas:0,busquedas:0,leads:0,visitas:0,derivaciones:0,propiedades:{}}); }}>Reiniciar contadores</button>
+            </div>
+          </Collapsible>
           <div className="help">Pregúntale al asistente sobre tu cartera, o usa un <b>comando rápido</b> para ver la información al instante (sin esperar respuesta).</div>
           <div className="card pad" style={{marginBottom:14}}>
             <div className="sec-title" style={{marginBottom:10}}>Comandos rápidos</div>
