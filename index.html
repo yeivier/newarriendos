@@ -340,6 +340,13 @@
   /* ---- Indicadores en vivo ---- */
   .indbar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:9px 26px;background:var(--card);border-bottom:1px solid var(--line)}
   .indbar .pill{white-space:nowrap;cursor:default;font-size:12px;padding:5px 11px;background:var(--panel2);color:#A0A1A9}
+  /* De dónde sale cada indicador y a qué hora se actualizó. */
+  .indfuente{display:flex;align-items:flex-start;gap:7px;padding:0 26px 9px;background:var(--card);border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--faint)}
+  .indfuente a{color:var(--muted);text-decoration:underline}
+  .indfuente b{color:var(--muted);font-weight:700}
+  .indfuente .viva{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;animation:latido 2s ease-in-out infinite}
+  @keyframes latido{0%,100%{opacity:1}50%{opacity:.25}}
+  @media(max-width:900px){ .indfuente{padding:0 16px 8px} }
   .indbar .pill.editable{cursor:pointer}
   @media(max-width:900px){ .indbar{padding:8px 13px;gap:6px} .indbar .pill{font-size:11px;padding:4px 10px} }
 
@@ -1614,6 +1621,7 @@ function PropForm({d, set}){
     {k:"deposit",label:"Garantía (CLP)",ph:"650000",t:"number"},
     {k:"dueDay",label:"Día de pago",type:"select",opts:[1,5,10,15,20,25].map(x=>({v:x,l:"Día "+x}))},
     {k:"adjustment",label:"Cómo se reajusta",type:"select",opts:REAJUSTE_MODOS},
+    {k:"reglaUF",label:"Con qué UF se cobra",type:"select",opts:[{v:"",l:"Como diga la configuración"},...REGLAS_UF]},
     {k:"reajustePeriodo",label:"Cada cuánto se revisa",type:"select",opts:[{v:12,l:"Cada 12 meses"},{v:6,l:"Cada 6 meses"},{v:24,l:"Cada 24 meses"}]},
     {k:"ultimoReajuste",label:"Último reajuste aplicado",t:"date"},
     {k:"penalty",label:"Multa por atraso (%)",type:"select",opts:[0,1,2,3,5,10].map(x=>({v:x,l:x+"%"}))},
@@ -2261,7 +2269,7 @@ const FAQ=[
   ]},
   {cat:"Cobros, arriendo y UF", items:[
     {q:"¿Qué es la UF y por qué el arriendo está en UF?", a:"La UF es una unidad que se reajusta con la inflación. Como el arriendo se pacta en UF, su valor en pesos sube un poco cada mes; así el arriendo no pierde valor con el tiempo."},
-    {q:"¿Por qué el monto a cobrar cambia cada mes?", a:"Porque se calcula multiplicando el arriendo en UF por el valor de la UF. La plataforma usa la UF más alta entre el día 1 del mes y el día en que se paga. Conviene dejar esta regla escrita en el contrato del arrendatario."},
+    {q:"¿Por qué el monto a cobrar cambia cada mes?", a:"Porque el arriendo está pactado en UF y la UF cambia todos los días: el monto en pesos se recalcula solo, sin que tengas que reajustar nada. Por omisión se cobra con la UF del día en que se paga, que es lo habitual en Chile; en Configuración → Reajuste de los arriendos puedes cambiar la regla (día 1, último día del mes anterior o la más alta del mes) y conviene que sea la misma que dice el contrato."},
     {q:"¿Cómo registro un pago?", a:"En Cobros, toca la propiedad, elige el medio (transferencia o Khipu) y confirma. El pago queda en el historial y el estado pasa a Al día."},
     {q:"¿Qué es Khipu?", a:"Es un servicio que genera un link de pago por transferencia. Le envías el link al arrendatario y, cuando paga, el cobro se marca como pagado automáticamente."},
     {q:"¿Qué es la multa por atraso?", a:"Es un recargo que se aplica cuando el arriendo se paga después del día acordado. La plataforma la calcula sola según el porcentaje que definas."}
@@ -2362,6 +2370,15 @@ const asExplicar=(termino)=>{
    arriendo se guarda en UF y sube solo con ella. La opción IPC queda
    disponible por contrato o como criterio general. */
 const REAJUSTE_MODOS=[{v:"UF",l:"UF (se reajusta solo)"},{v:"IPC",l:"IPC (reajuste periódico)"},{v:"%",l:"Porcentaje fijo"}];
+/* Con qué valor de la UF se convierte el arriendo a pesos. Lo normal en Chile
+   es cobrar con la UF del día en que se paga; las otras opciones existen
+   porque hay contratos que lo pactan distinto. */
+const REGLAS_UF=[
+  {v:"dia_pago",l:"UF del día en que se paga (lo habitual)"},
+  {v:"dia_1",l:"UF del día 1 del mes"},
+  {v:"ultimo_mes_anterior",l:"UF del último día del mes anterior"},
+  {v:"mas_alta",l:"La UF más alta del mes"},
+];
 const sumarMeses=(iso,m)=>{ const d=new Date(String(iso).slice(0,10)+"T12:00:00"); if(isNaN(d)) return ""; d.setMonth(d.getMonth()+m); return d.toISOString().slice(0,10); };
 const diasEntre=(a,b)=>Math.round((new Date(String(b).slice(0,10)+"T12:00:00")-new Date(String(a).slice(0,10)+"T12:00:00"))/86400000);
 const modoReajuste=(p,owner)=>String((p&&p.adjustment)||(owner&&owner.reajusteModo)||"UF").toUpperCase();
@@ -2420,9 +2437,13 @@ const calcularAlertas=(props,owner,hoy)=>{
         else if(d<=90) add({id:pid+"-contrato",urgencia:"media",ico:"📄",titulo:"Contrato por vencer",
           detalle:"Al contrato de "+nom+" le quedan "+d+" días (vence el "+fin+").",pid,ir:"props"});
       }
+      // El reajuste en UF es automático (la UF cambia todos los días y el monto
+      // se recalcula solo), así que no se avisa nada. Solo se avisa cuando el
+      // contrato se reajusta por IPC o por un porcentaje, que sí requieren
+      // cambiar el monto a mano.
       const r=reajusteInfo(p,owner,H);
-      if(r.toca){
-        add({id:pid+"-reajuste",urgencia:"media",ico:"📈",titulo:"Toca revisar el reajuste",
+      if(r.toca && r.modo!=="UF"){
+        add({id:pid+"-reajuste",urgencia:"media",ico:"📈",titulo:"Toca aplicar el reajuste",
           detalle:"El arriendo de "+nom+" se reajusta por "+r.modo+" y le correspondía el "+r.vence+".",
           pid,ir:"props",accion:"reajuste"});
       }
@@ -3099,7 +3120,7 @@ function PortalArrendatario({u,propiedades,uf,owner,cuentas,montoCobro,calcMulta
         <div className="stat" style={{border:"none",padding:0,boxShadow:"none",background:"transparent"}}>
           <div className="lab">Monto a pagar este mes {calcMulta(p)>0?"(incluye multa por atraso de "+CLP(calcMulta(p))+")":""}</div>
           <div className="portal-monto">{CLP(total)}</div>
-          <div className="sub" style={{color:"var(--muted)"}}>Día de pago: hasta el {p.dueDay||5} de cada mes {num(p.rentUF)>0?"· Arriendo en UF, se cobra con la UF más alta del período":""}</div>
+          <div className="sub" style={{color:"var(--muted)"}}>Día de pago: hasta el {p.dueDay||5} de cada mes {num(p.rentUF)>0?"· Arriendo pactado en UF: el monto en pesos se calcula con el valor de la UF vigente":""}</div>
         </div>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:16}}>
           <button className="btn btn-red" style={{flex:1,minWidth:200,padding:"14px 18px",fontSize:15.5}} disabled={pagando} onClick={pagar}>{pagando?"Generando pago…":"Pagar mi arriendo en línea"}</button>
@@ -3534,13 +3555,37 @@ function App(){
       return Object.keys(patch).length ? {...p,...patch} : p;
     }));
   };
+  /* De dónde sale cada indicador. mindicador.cl publica los datos oficiales:
+     la UF y la UTM las fija el SII, el dólar observado el Banco Central y el
+     IPC lo calcula el INE. */
+  const FUENTES_IND={
+    uf:{ nombre:"UF", org:"SII (publicada por el Banco Central)", url:"https://mindicador.cl/api/uf" },
+    utm:{ nombre:"UTM", org:"SII", url:"https://mindicador.cl/api/utm" },
+    uta:{ nombre:"UTA", org:"SII (UTM × 12)", url:"https://mindicador.cl/api/utm" },
+    dolar:{ nombre:"Dólar observado", org:"Banco Central de Chile", url:"https://mindicador.cl/api/dolar" },
+    ipc:{ nombre:"IPC (variación mensual)", org:"INE", url:"https://mindicador.cl/api/ipc" },
+  };
+  const [indInfo,setIndInfo]=useState(()=>store.get("ap_ind_info",{}));
+  useEffect(()=>{ store.set("ap_ind_info",indInfo); },[indInfo]);
+  const ufManualRef=useRef(false); useEffect(()=>{ ufManualRef.current=ufManual; },[ufManual]);
+
   const fetchUF=async()=>{ try{ const r=await fetch("https://mindicador.cl/api/uf"); const j=await r.json();
-      if(j&&j.serie&&j.serie[0]&&j.serie[0].valor){ const v=Math.round(j.serie[0].valor); setUf(v); migrarAUF(v); }
+      if(j&&j.serie&&j.serie[0]&&j.serie[0].valor){
+        const v=Math.round(j.serie[0].valor);
+        // Si el usuario escribió la UF a mano, no se le pisa el valor.
+        if(!ufManualRef.current){ setUf(v); migrarAUF(v); }
+        setIndInfo(i=>({...i, uf:String(j.serie[0].fecha||"").slice(0,10), at:Date.now()}));
+      }
     }catch(e){ /* se mantiene el valor guardado / editable */ } };
   const fetchOtrosIndicadores=async()=>{ try{ const r=await fetch("https://mindicador.cl/api"); const j=await r.json();
       if(j&&j.utm&&j.utm.valor) setUtm(Math.round(j.utm.valor));
       if(j&&j.dolar&&j.dolar.valor) setDolar(Math.round(j.dolar.valor));
       if(j&&j.ipc&&typeof j.ipc.valor==="number") setIpc(j.ipc.valor);
+      setIndInfo(i=>({...i,
+        utm:String((j&&j.utm&&j.utm.fecha)||"").slice(0,10),
+        dolar:String((j&&j.dolar&&j.dolar.fecha)||"").slice(0,10),
+        ipc:String((j&&j.ipc&&j.ipc.fecha)||"").slice(0,10),
+        at:Date.now() }));
     }catch(e){ /* se mantienen los últimos valores guardados */ } };
   // Trae la serie diaria de la UF del año en curso desde mindicador.cl (Banco Central).
   const fetchUFSerie=async()=>{ try{
@@ -3557,11 +3602,53 @@ function App(){
     (ufSerie||[]).forEach(s=>{ if(s.fecha>=ini && s.fecha<=fin && num(s.valor)>valor){ valor=num(s.valor); fecha=s.fecha; } });
     return { valor, fecha, ini, fin };
   };
+  /* Valor de la UF en una fecha concreta. Si ese día todavía no está publicado,
+     se toma el último publicado antes de esa fecha. */
+  const ufEnFecha=(fecha)=>{
+    const f=String(fecha||todayISO()).slice(0,10);
+    let exacta=null, previa=null;
+    (ufSerie||[]).forEach(s=>{
+      if(s.fecha===f) exacta=s;
+      else if(s.fecha<f && (!previa||s.fecha>previa.fecha)) previa=s;
+    });
+    if(exacta) return { valor:num(exacta.valor), fecha:f, exacta:true };
+    if(previa) return { valor:num(previa.valor), fecha:previa.fecha, exacta:false };
+    return { valor:num(uf), fecha:todayISO(), exacta:false };
+  };
+  /* Cómo se convierte a pesos un arriendo pactado en UF.
+     El reajuste es automático: la UF cambia todos los días y el monto se
+     recalcula solo. Lo único que se elige es CON QUÉ UF se cobra, que es lo
+     que dice el contrato. */
+  const ufParaCobro=(p,hasta)=>{
+    const fin=String(hasta||todayISO()).slice(0,10);
+    const regla=String((p&&p.reglaUF)||(owner&&owner.reglaUF)||"dia_pago");
+    if(regla==="mas_alta"){ const m=ufMaxMes(fin); return { valor:m.valor, fecha:m.fecha, regla, etiqueta:"la UF más alta del mes" }; }
+    if(regla==="dia_1"){ const f=fin.slice(0,7)+"-01"; const v=ufEnFecha(f); return { valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del día 1 del mes" }; }
+    if(regla==="ultimo_mes_anterior"){
+      const d=new Date(fin.slice(0,7)+"-01T12:00:00"); d.setDate(0);
+      const f=d.toISOString().slice(0,10); const v=ufEnFecha(f);
+      return { valor:v.valor, fecha:v.fecha, regla, etiqueta:"la UF del último día del mes anterior" };
+    }
+    const v=ufEnFecha(fin);
+    return { valor:v.valor, fecha:v.fecha, regla:"dia_pago", etiqueta:"la UF del día del pago" };
+  };
+  const reglaUFTexto=(p)=>{ const r=ufParaCobro(p); return r.etiqueta+" ("+CLP(r.valor)+" del "+fmtF(r.fecha)+")"; };
   const refrescarIndicadores=async()=>{ setIndLoading(true); await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]); setIndLoading(false); };
 
   useEffect(()=>{ fetchUFSerie(); /* eslint-disable-next-line */ },[]);
   useEffect(()=>{ fetchUF(); /* eslint-disable-next-line */ },[]);
   useEffect(()=>{ fetchOtrosIndicadores(); /* eslint-disable-next-line */ },[]);
+  /* En vivo: se actualizan solos cada media hora y cada vez que se vuelve a la
+     aplicación (al desbloquear el teléfono o cambiar de pestaña). La UF cambia
+     todos los días, así que el monto a cobrar nunca queda viejo. */
+  useEffect(()=>{
+    const refrescar=()=>{ fetchUF(); fetchOtrosIndicadores(); fetchUFSerie(); };
+    const iv=setInterval(refrescar, 30*60*1000);
+    const alVolver=()=>{ if(document.visibilityState==="visible") refrescar(); };
+    document.addEventListener("visibilitychange",alVolver);
+    window.addEventListener("focus",alVolver);
+    return ()=>{ clearInterval(iv); document.removeEventListener("visibilitychange",alVolver); window.removeEventListener("focus",alVolver); };
+  /* eslint-disable-next-line */ },[]);
 
   const notify=(msg,err=false)=>{ setNotif({msg,err}); setTimeout(()=>setNotif(null),3600); };
   useEffect(()=>{ window.__notify=notify; });
@@ -3665,7 +3752,9 @@ function App(){
 
   // Monto a cobrar aplicando la regla del valor MÁS ALTO de la UF del mes.
   // El arriendo en UF es fijo; solo cambia la conversión a pesos.
-  const montoCobro=(p)=> num(p.rentUF)>0 ? Math.round(num(p.rentUF)*ufMaxMes().valor) : num(p.rent);
+  /* Monto a cobrar hoy: el arriendo en UF convertido con la regla del contrato.
+     No hay que reajustar nada a mano: cambia solo cuando cambia la UF. */
+  const montoCobro=(p,hasta)=> num(p.rentUF)>0 ? Math.round(num(p.rentUF)*ufParaCobro(p,hasta).valor) : num(p.rent);
   const calcMulta=(p)=>{ if(p.status!=="atrasado"||!p.lastPaid) return 0; const d=daysBetween(p.lastPaid,todayISO())-30; return Math.max(0,Math.round(montoCobro(p)*(num(p.penalty)/100)*(d/30))); };
 
   const coerce=(o)=>{ const x={...o}; ["deposit","penalty","dueDay","tasacion","avaluoFiscal","constructionYear","surfaceBuilt","surfaceTerrain","bedrooms","bathrooms","parking","bodega","floor","dividendosTotales","dividendosPagados","contribucionesAnuales","gastoComun"].forEach(k=>{ if(x[k]!==""&&x[k]!=null) x[k]=parseInt(num(x[k])); }); ["lat","lng","dividendoUF","rentUF","seguroUF"].forEach(k=>{ if(x[k]!==""&&x[k]!=null) x[k]=num(x[k]); }); x.rent=Math.round(num(x.rentUF)*uf); x.seguroIncendioSismo=Math.round(num(x.seguroUF)*uf); x.garantia={...x.garantia, monto:x.garantia&&x.garantia.monto!==""?parseInt(num(x.garantia.monto)):0}; return x; };
@@ -4506,7 +4595,7 @@ function App(){
        <h2>2 · Identificación de la propiedad</h2>
        ${filaDL([["Propiedad",p.name],["Sociedad / propietario",soc.name||owner.name],["RUT propietario",soc.rut||owner.rut],["Dirección",[p.address,p.comuna,p.region].filter(Boolean).join(", ")],["Tipo",(p.type==="Otro"?p.typeOtro:p.type)],["Uso",p.use==="arriendo"?"Arriendo":"Uso personal ("+(p.subtype||"")+")"],["Rol de avalúo (SII)",p.rolSII],["Inscripción CBR",p.inscripcion],["Avalúo fiscal",num(p.avaluoFiscal)?CLP(num(p.avaluoFiscal)):""],["Tasación comercial",num(p.tasacion)?CLP(num(p.tasacion)):""],["Año de construcción",p.constructionYear],["Superficie construida",p.surfaceBuilt?p.surfaceBuilt+" m²":""],["Superficie terreno",p.surfaceTerrain?p.surfaceTerrain+" m²":""],["Programa",[p.bedrooms&&p.bedrooms+" dorm.",p.bathrooms&&p.bathrooms+" baños",p.parking&&p.parking+" estac.",p.bodega&&p.bodega+" bodega(s)"].filter(Boolean).join(" · ")],["Piso / orientación",[p.floor,p.orientation].filter(Boolean).join(" · ")],["Estado de conservación",p.condition]])}
        ${p.use==="arriendo"?`<h2>3 · Situación de arriendo</h2>
-       ${filaDL([["Arrendatario",p.tenant],["RUT",p.tenantRut],["Contacto",[p.tenantEmail,p.tenantPhone].filter(Boolean).join(" · ")],["Inicio del contrato",p.contractStart],["Término del contrato",p.contractEnd||"Indefinido / renovación tácita"],["Renta pactada",num(p.rentUF)>0?UFf(p.rentUF)+" (se cobra con la UF más alta del período) ≈ "+CLP(num(p.rent)):CLP(num(p.rent))],["Reajuste",p.adjustment],["Día límite de pago",p.dueDay?("Día "+p.dueDay+" de cada mes"):""],["Multa por atraso",num(p.penalty)?num(p.penalty)+"% mensual proporcional":""],["Garantía",(p.garantia&&num(p.garantia.monto))?CLP(num(p.garantia.monto))+" · "+(p.garantia.estado||"")+(p.garantia.fechaRecibida?" · recibida el "+p.garantia.fechaRecibida:""):""],["Estado actual",(ST[p.status]||{}).t]])}
+       ${filaDL([["Arrendatario",p.tenant],["RUT",p.tenantRut],["Contacto",[p.tenantEmail,p.tenantPhone].filter(Boolean).join(" · ")],["Inicio del contrato",p.contractStart],["Término del contrato",p.contractEnd||"Indefinido / renovación tácita"],["Renta pactada",num(p.rentUF)>0?UFf(p.rentUF)+" ("+ufParaCobro(p).etiqueta+") ≈ "+CLP(montoCobro(p)):CLP(num(p.rent))],["Reajuste",p.adjustment],["Día límite de pago",p.dueDay?("Día "+p.dueDay+" de cada mes"):""],["Multa por atraso",num(p.penalty)?num(p.penalty)+"% mensual proporcional":""],["Garantía",(p.garantia&&num(p.garantia.monto))?CLP(num(p.garantia.monto))+" · "+(p.garantia.estado||"")+(p.garantia.fechaRecibida?" · recibida el "+p.garantia.fechaRecibida:""):""],["Estado actual",(ST[p.status]||{}).t]])}
        ${pagos.length?`<h3>Últimos pagos registrados</h3><table><tr><th>Fecha</th><th>Concepto</th><th>Monto</th></tr>${pagos.map(x=>`<tr><td>${esc(x.fecha)}</td><td>${esc(x.concepto||"Arriendo")}</td><td>${esc(CLP(num(x.monto)))}</td></tr>`).join("")}</table>`:""}
        ${(p.vacancias||[]).length?`<h3>Lagunas de arriendo (vacancias)</h3><table><tr><th>Desde</th><th>Hasta</th><th>Días</th><th>Notas</th></tr>${p.vacancias.map(v=>`<tr><td>${esc(v.desde)}</td><td>${esc(v.hasta)}</td><td>${esc(v.dias)}</td><td>${esc(v.notas||"")}</td></tr>`).join("")}</table>`:""}
        <h2>4 · Antecedentes del arrendatario</h2>
@@ -5670,14 +5759,20 @@ function App(){
       </div></div>
       {soloLectura && <div className="readonly-note">Estás en modo <b>invitado (solo lectura)</b>: puedes revisar la información, pero no crear ni modificar registros.</div>}
 
-      {/* INDICADORES EN VIVO */}
+      {/* INDICADORES EN VIVO — se actualizan solos y dicen de dónde salen. */}
       <div className="indbar">
-        <span className="pill grey">UF {CLP(uf)}</span>
-        <span className="pill grey">UTM {CLP(utm)}</span>
-        <span className="pill grey">UTA {CLP(utm*12)}</span>
-        <span className="pill grey">Dólar {CLP(dolar)}</span>
-        <span className="pill grey" title="Variación mensual del IPC — fuente: mindicador.cl (Banco Central / INE)">IPC {pctFmt(ipc)}</span>
+        <span className="pill grey" title={"UF — la fija el "+FUENTES_IND.uf.org+", vía mindicador.cl"+(indInfo.uf?" · valor del "+fmtF(indInfo.uf):"")}>UF {CLP(uf)}{ufManual&&" ✎"}</span>
+        <span className="pill grey" title={"UTM — la fija el "+FUENTES_IND.utm.org+", vía mindicador.cl"+(indInfo.utm?" · valor de "+fmtF(indInfo.utm):"")}>UTM {CLP(utm)}</span>
+        <span className="pill grey" title="UTA = UTM × 12 (SII)">UTA {CLP(utm*12)}</span>
+        <span className="pill grey" title={"Dólar observado — "+FUENTES_IND.dolar.org+", vía mindicador.cl"+(indInfo.dolar?" · valor del "+fmtF(indInfo.dolar):"")}>Dólar {CLP(dolar)}</span>
+        <span className="pill grey" title={"IPC, variación mensual — "+FUENTES_IND.ipc.org+", vía mindicador.cl"+(indInfo.ipc?" · dato de "+fmtF(indInfo.ipc):"")}>IPC {pctFmt(ipc)}</span>
         <button className="btn btn-ghost btn-sm" onClick={refrescarIndicadores} disabled={indLoading} style={{marginLeft:"auto"}}>{indLoading?"Actualizando…":"Actualizar"}</button>
+      </div>
+      <div className="indfuente">
+        <span className="viva"></span>
+        En vivo desde <a href="https://mindicador.cl" target="_blank" rel="noopener">mindicador.cl</a>: UF y UTM del <b>SII</b>, dólar observado del <b>Banco Central</b>, IPC del <b>INE</b>.
+        {indInfo.at ? <> Actualizado a las {new Date(indInfo.at).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}{indInfo.uf?<> · UF del {fmtF(indInfo.uf)}</>:null}.</> : <> Actualizando…</>}
+        {ufManual && <> <b>La UF está editada a mano</b>, así que no se actualiza sola (quita el valor manual en Configuración para volver a la automática).</>}
       </div>
 
       <div className="content">
@@ -5741,7 +5836,7 @@ function App(){
               <div className="stat" style={{borderTopColor:"#37404f"}}><div className="lab">Patrimonio</div><div className="val">{CLP(patrimonio)}</div><div className="sub" style={{color:"var(--muted)"}}>{props.length} inmuebles</div></div>
             </div>
             <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
-              <div className="help" style={{margin:0}}><b>Ingresos por arriendo:</b> la suma de todos los arriendos mensuales que cobras hoy (en pesos, según la UF más alta del mes).</div>
+              <div className="help" style={{margin:0}}><b>Ingresos por arriendo:</b> la suma de todos los arriendos mensuales que cobras hoy, convertidos a pesos con {reglaUFTexto(null)}. Sube solo cuando sube la UF.</div>
               <div className="help" style={{margin:0}}><b>Dividendos / mes:</b> lo que pagas cada mes a los bancos por las propiedades que tienen crédito hipotecario.</div>
               <div className="help" style={{margin:0}}><b>Utilidad neta / mes:</b> lo que realmente te queda: los arriendos menos todos los gastos (dividendos, contribuciones, gasto común, seguros, etc.).</div>
               <div className="help" style={{margin:0}}><b>Patrimonio:</b> el valor total de tus propiedades, según la tasación comercial que cargaste en cada una.</div>
@@ -5908,7 +6003,7 @@ function App(){
         </>}
 
         {/* ============ ARRENDATARIOS ============ */}
-        {tab==="arrendatarios" && (()=>{ const ufm=ufMaxMes();
+        {tab==="arrendatarios" && (()=>{
           const con=rentals.filter(p=>p.tenant&&p.tenant.trim()), sin=rentals.filter(p=>!p.tenant||!p.tenant.trim());
           const fld=(p,k,val,type)=>(<input className="input" type={type||"text"} value={val==null?"":val} onChange={e=>patchProp(p.id,x=>({...x,[k]:e.target.value}))} style={{padding:"7px 9px"}}/>);
           const icf=(p,k,type)=>(<input className="input" type={type||"text"} value={(p.tenantInfocheck&&p.tenantInfocheck[k])||""} onChange={e=>patchProp(p.id,x=>({...x,tenantInfocheck:{...(x.tenantInfocheck||{}),[k]:e.target.value}}))} style={{padding:"7px 9px"}}/>);
@@ -5919,14 +6014,14 @@ function App(){
             <div className="stat" style={{borderTopColor:"var(--amber)"}}><div className="lab">Propiedades sin arrendatario</div><div className="val" style={{color:"var(--amber)"}}>{sin.length}</div></div>
             <div className="stat" style={{borderTopColor:"var(--green)"}}><div className="lab">Arriendo total (UF fija)</div><div className="val" style={{color:"var(--green-d)"}}>{UFf(rentals.reduce((s,p)=>s+num(p.rentUF),0))}</div></div>
           </div>
-          <div className="help g">Aquí tienes a <b>todos tus arrendatarios</b> en un solo lugar. Puedes editar sus datos de contacto, las fechas de contrato y el arriendo en UF directamente; los cambios se guardan solos. El <b>monto en pesos</b> se calcula con la UF más alta del mes (regla anti-atrasos).</div>
+          <div className="help g">Aquí tienes a <b>todos tus arrendatarios</b> en un solo lugar. Puedes editar sus datos de contacto, las fechas de contrato y el arriendo en UF directamente; los cambios se guardan solos. El <b>monto en pesos</b> se calcula solo con {reglaUFTexto(null)}: el reajuste es automático.</div>
           <div style={{margin:"2px 0",display:"flex",gap:8,flexWrap:"wrap"}}>
             <button className="btn btn-red" onClick={()=>{ setNtForm({propId:"",tenant:"",tenantRut:"",tenantEmail:"",tenantPhone:"",tenantWhatsapp:"",contractStart:"",contractEnd:"",rentUF:"",garantiaMonto:""}); setMNewTenant(true); }}>+ Agregar nuevo arrendatario</button>
             <button className="btn btn-out" onClick={nuevoContactoGeneral}>Agregar contacto</button>
           </div>
           <div className="sec-title" style={{marginTop:6}}>Arrendatarios actuales</div>
           {con.length===0 && <div className="help">Aún no tienes arrendatarios activos.</div>}
-          {con.map(p=>{ const cobro=num(p.rentUF)>0?Math.round(num(p.rentUF)*ufm.valor):num(p.rent); const venc=p.contractEnd&&daysBetween(todayISO(),p.contractEnd); const porVencer=venc!==""&&venc!=null&&venc<=60&&venc>=0;
+          {con.map(p=>{ const cobro=montoCobro(p); const venc=p.contractEnd&&daysBetween(todayISO(),p.contractEnd); const porVencer=venc!==""&&venc!=null&&venc<=60&&venc>=0;
             return (<Collapsible key={p.id} accent="var(--blue)" icon="👤" title={p.tenant} subtitle={""+p.name+(p.comuna?" · "+p.comuna:"")+" · "+CLP(cobro)+"/mes"} defaultOpen={false}>
             <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",flexWrap:"wrap",gap:6,marginBottom:10}}>
               <span className={"pill "+(ST[p.status]?ST[p.status].c:"")}>{ST[p.status]?ST[p.status].t:p.status}</span>
@@ -5941,7 +6036,7 @@ function App(){
               <div className="field"><label className="label">Arriendo (UF fija)</label><input className="input" type="number" min="0" step="any" value={p.rentUF==null?"":p.rentUF} onChange={e=>patchProp(p.id,x=>({...x,rentUF:e.target.value,rent:Math.round(num(e.target.value)*uf)}))} style={{fontWeight:700,padding:"7px 9px"}}/></div>
               <div className="field"><label className="label">Inicio contrato</label>{fld(p,"contractStart",p.contractStart,"date")}</div>
               <div className="field"><label className="label">Término contrato</label>{fld(p,"contractEnd",p.contractEnd,"date")}</div>
-              <div className="field"><label className="label">Monto a cobrar hoy (UF más alta)</label><div className="input" style={{background:"var(--panel2)",fontWeight:800,color:"var(--green-d)"}}>{CLP(cobro)}</div></div>
+              <div className="field"><label className="label">Monto a cobrar hoy</label><div className="input" style={{background:"var(--panel2)",fontWeight:800,color:"var(--green-d)"}}>{CLP(cobro)}</div></div>
             </div>
             <div className="sub-title green" style={{marginTop:10}}>Antecedentes (InfoCheck)</div>
             <div className="help" style={{marginBottom:8}}>Guarda el resumen del informe InfoCheck del arrendatario y adjunta el PDF y otros documentos (cédula, liquidaciones, contrato firmado…).</div>
@@ -6028,8 +6123,8 @@ function App(){
         </>); })()}
 
         {/* ============ COBROS ============ */}
-        {tab==="cobros" && (()=>{ const ufm=ufMaxMes();
-          const cobroUF=(p)=> num(p.rentUF)>0 ? Math.round(num(p.rentUF)*ufm.valor) : num(p.rent);
+        {tab==="cobros" && (()=>{
+          const cobroUF=(p)=> montoCobro(p);
           const cobrables=rentals.filter(p=>p.tenant&&p.tenant.trim()&&p.status!=="disponible");
           return (<>
           <div className="grid c3" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
@@ -6038,16 +6133,16 @@ function App(){
             <div className="stat" style={{borderTopColor:"var(--red)"}}><div className="lab">Multas por atraso</div><div className="val" style={{color:"var(--red-d)"}}>{CLP(rentals.reduce((s,p)=>s+calcMulta(p),0))}</div></div>
           </div>
           <div className="card pad" style={{borderLeft:"5px solid var(--green)"}}>
-            <div className="sec-title">Regla de cobro en UF (valor más alto del mes)</div>
-            <div className="help g" style={{marginBottom:0}}>El arriendo en <b>UF es fijo y nunca cambia</b>; solo cambia su conversión a pesos según el día. Para que nadie pague con una UF más baja (o la use al atrasarse), el monto a cobrar se calcula con la <b>UF más alta entre el día 1 del mes y la fecha de pago</b>. Hoy ({todayISO()}) la UF más alta del período {ufm.ini} → {ufm.fin} es <b>{CLP(ufm.valor)}</b> (del {ufm.fecha}). Si un arriendo está atrasado, al registrar el pago se usa la UF más alta hasta ese día. {(!ufSerie||!ufSerie.length)&&<span style={{color:"var(--amber)"}}> · La serie diaria de UF se carga al publicar el sitio (mindicador.cl); mientras tanto se usa la UF actual.</span>}</div>
+            <div className="sec-title">Cómo se convierte el arriendo en UF a pesos</div>
+            <div className="help g" style={{marginBottom:0}}>El arriendo en <b>UF es fijo y nunca cambia</b>: lo que cambia es su valor en pesos, porque la UF sube todos los días. Por eso <b>el reajuste es automático</b> — no tienes que aprobar ni recalcular nada. Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>, que es lo habitual en Chile; puedes cambiar la regla (día 1 del mes, último día del mes anterior o la más alta del mes) en <b>Configuración → Reajuste de los arriendos</b>, y conviene que coincida con lo que dice el contrato. {(!ufSerie||!ufSerie.length)&&<span style={{color:"var(--amber)"}}> · La serie diaria de la UF se está cargando desde mindicador.cl; mientras tanto se usa la UF de hoy.</span>}</div>
           </div>
           <div className="card pad"><div className="sec-title">Arriendos del mes</div>
-            <div className="help" style={{marginBottom:10}}>El <b>arriendo en UF</b> es fijo (edítalo en cada propiedad). El <b>monto a cobrar</b> se calcula con la UF más alta del mes y se recalcula solo.</div>
+            <div className="help" style={{marginBottom:10}}>El <b>arriendo en UF</b> es fijo (edítalo en cada propiedad). El <b>monto a cobrar</b> se recalcula solo cada día con el valor de la UF.</div>
             <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Arrendatario</th><th>Arriendo (UF fija)</th><th>UF aplicada</th><th>Monto a cobrar</th><th>Multa</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
               {cobrables.map(p=>{ const m=calcMulta(p); const cobro=cobroUF(p); return (<tr key={p.id}>
                 <td style={{fontWeight:700}}>{p.name}</td><td>{p.tenant}<div style={{fontSize:13,color:"var(--muted)"}}>{p.tenantEmail}</div></td>
                 <td><input className="input" type="number" min="0" step="any" style={{width:90,fontWeight:700,padding:"6px 8px"}} value={p.rentUF} onChange={e=>patchProp(p.id,x=>{ const v=num(e.target.value); return {...x, rentUF:e.target.value, rent:Math.round(v*uf)}; })}/><div style={{fontSize:12,color:"var(--faint)",fontWeight:600,marginTop:2}}>UF · valor fijo</div></td>
-                <td style={{fontSize:13}}><b>{CLP(num(p.rentUF)>0?ufm.valor:uf)}</b><div style={{fontSize:11,color:"var(--faint)"}}>{num(p.rentUF)>0?`más alta · ${ufm.fecha}`:"UF actual"}</div></td>
+                <td style={{fontSize:13}}><b>{CLP(num(p.rentUF)>0?ufParaCobro(p).valor:uf)}</b><div style={{fontSize:11,color:"var(--faint)"}}>{num(p.rentUF)>0?fmtF(ufParaCobro(p).fecha):"UF de hoy"}</div></td>
                 <td style={{fontWeight:800,color:"var(--ink)"}}>{CLP(cobro)}</td>
                 <td style={{color:m>0?"var(--red-d)":"var(--faint)"}}>{m>0?CLP(m):"—"}</td>
                 <td style={{fontWeight:800,color:"var(--green-d)"}}>{CLP(cobro+m)}</td><td>
@@ -6702,14 +6797,19 @@ function App(){
               <div style={{fontSize:15,lineHeight:1.8}}>Banco: <b>{ownerEdit.bank}</b> · {ownerEdit.accountType} <b>{ownerEdit.accountNumber}</b><br/>RUT: <b>{ownerEdit.rut}</b> · Nombre: <b>{ownerEdit.name}</b></div></div>
           </Collapsible>
           <Collapsible icon="📈" title="Reajuste de los arriendos" subtitle="UF o IPC, y cada cuánto se revisa" defaultOpen={false}>
-            <div className="help" style={{marginBottom:12}}>Este es el criterio que se usa cuando una propiedad no tiene el suyo propio. Hoy <b>todos tus arriendos están en UF</b>, así que suben solos día a día con la UF y no hay que hacer nada: la plataforma solo te avisa para que lo revises. Si algún contrato se reajusta por <b>IPC</b>, elígelo aquí o en esa propiedad, y cuando toque te calculo el IPC acumulado y te propongo el nuevo monto.</div>
+            <div className="help" style={{marginBottom:12}}>Hoy <b>todos tus arriendos están en UF</b>, así que el reajuste es <b>automático</b>: la UF sube todos los días y el monto a cobrar se recalcula solo, sin que tengas que hacer nada ni aprobar nada. Lo único que se define aquí es <b>con qué valor de la UF se cobra</b>, que es lo que dice el contrato. Si algún contrato se reajusta por <b>IPC</b> o por un porcentaje fijo, elígelo aquí o en esa propiedad: en esos casos sí hay que cambiar el monto, y cuando toque te aviso y te propongo el nuevo valor.</div>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="field"><label className="label">Con qué UF se cobra</label>
+                <select value={ownerEdit.reglaUF||"dia_pago"} onChange={e=>setOwnerEdit(o=>({...o,reglaUF:e.target.value}))}>
+                  {REGLAS_UF.map(m=><option key={m.v} value={m.v}>{m.l}</option>)}
+                </select>
+              </div>
               <div className="field"><label className="label">Reajuste por omisión</label>
                 <select value={ownerEdit.reajusteModo||"UF"} onChange={e=>setOwnerEdit(o=>({...o,reajusteModo:e.target.value}))}>
                   {REAJUSTE_MODOS.map(m=><option key={m.v} value={m.v}>{m.l}</option>)}
                 </select>
               </div>
-              <div className="field"><label className="label">Revisión por omisión</label>
+              <div className="field"><label className="label">Revisión por omisión (IPC o %)</label>
                 <select value={ownerEdit.reajustePeriodo||12} onChange={e=>setOwnerEdit(o=>({...o,reajustePeriodo:parseInt(e.target.value)||12}))}>
                   <option value={12}>Cada 12 meses</option>
                   <option value={6}>Cada 6 meses</option>
@@ -6717,19 +6817,22 @@ function App(){
                 </select>
               </div>
             </div>
+            <div className="help" style={{marginTop:6}}>Hoy se está cobrando con <b>{reglaUFTexto(null)}</b>. Conviene que esta regla sea la misma que aparece escrita en tus contratos.</div>
             <div className="card pad" style={{marginTop:12,background:"var(--panel2)",border:"none"}}>
               <div style={{fontSize:13,fontWeight:700,color:"var(--muted)",marginBottom:8}}>CÓMO ESTÁ CADA PROPIEDAD</div>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {rentals.map(p=>{ const r=reajusteInfo(p,ownerEdit);
+                {rentals.map(p=>{ const r=reajusteInfo(p,ownerEdit); const c=ufParaCobro(p);
                   return (<div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                     <div style={{minWidth:170,flex:1}}>
                       <div style={{fontWeight:700}}>{p.name}</div>
                       <div style={{fontSize:13,color:"var(--muted)"}}>
-                        {UFf(num(p.rentUF))} ≈ {CLP(num(p.rentUF)*uf)} · reajuste por <b>{r.modo}</b>
-                        {r.vence?(r.toca?" · le tocaba el "+r.vence:" · próxima revisión "+r.proximo):" · falta la fecha de inicio del contrato"}
+                        {UFf(num(p.rentUF))} · reajuste por <b>{r.modo}</b>
+                        {r.modo==="UF"
+                          ? <> · automático: hoy se cobra <b>{CLP(montoCobro(p))}</b> con {c.etiqueta} ({CLP(c.valor)} del {fmtF(c.fecha)})</>
+                          : (r.vence?(r.toca?" · le tocaba el "+r.vence:" · próxima revisión "+r.proximo):" · falta la fecha de inicio del contrato")}
                       </div>
                     </div>
-                    {r.toca && <button className="btn btn-out btn-sm" disabled={reajBusy===String(p.id)} onClick={()=>aplicarReajuste(p)}>{reajBusy===String(p.id)?"Calculando…":"Revisar ahora"}</button>}
+                    {r.toca && r.modo!=="UF" && <button className="btn btn-out btn-sm" disabled={reajBusy===String(p.id)} onClick={()=>aplicarReajuste(p)}>{reajBusy===String(p.id)?"Calculando…":"Aplicar ahora"}</button>}
                   </div>);
                 })}
                 {rentals.length===0 && <div className="help" style={{margin:0}}>Todavía no tienes propiedades en arriendo.</div>}
