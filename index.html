@@ -842,7 +842,7 @@ function mergeTrinidadSeed(list){
   return arr;
 }
 
-const defOwner = store.get("ap_owner", { name:"Javier Corral", rut:"12.345.678-9", email:"javier@arriendopro.cl", phone:"+56912345678", whatsapp:"+56912345678", whatsappEnvio:WA_REMITENTE_DEF, bank:"Banco de Chile", accountType:"Cuenta Corriente", accountNumber:"000-12345678", alias:"arriendos-javier", gateway:"webpay" });
+const defOwner = store.get("ap_owner", { name:"Javier Corral", rut:"12.345.678-9", email:"javier@arriendopro.cl", phone:"+56912345678", whatsapp:"+56912345678", whatsappEnvio:"+56975549829", bank:"Banco de Chile", accountType:"Cuenta Corriente", accountNumber:"000-12345678", alias:"arriendos-javier", gateway:"webpay" });
 
 /* ---------- Cuentas bancarias para transferencias (varias cuentas) ---------- */
 // El usuario puede tener más de una cuenta de banco para recibir transferencias.
@@ -3341,6 +3341,21 @@ function App(){
   const [aiOrden,setAiOrden]=useState("");
   const [aiDocPaso,setAiDocPaso]=useState(""); // "Leyendo 2 de 3…"
 
+  const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
+  const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
+  SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
+  const [owner,setOwner]=useState(defOwner);
+  const [ownerEdit,setOwnerEdit]=useState(defOwner);
+  const [uf,setUf]=useState(()=>store.get("ap_uf", 38500));
+  const [ufManual,setUfManual]=useState(false);
+  // Serie diaria de la UF (para aplicar la regla del valor MÁS ALTO del mes al cobrar).
+  const [ufSerie,setUfSerie]=useState(()=>store.get("ap_uf_serie", []));
+  useEffect(()=>{ store.set("ap_uf_serie", ufSerie); },[ufSerie]);
+  const [sel,setSel]=useState(null);
+  const [filter,setFilter]=useState("todas");
+  const [socFilter,setSocFilter]=useState("todas");
+  const [notif,setNotif]=useState(null);
+
   /* ---- Ubicar propiedades en el mapa (para que Street View funcione) ---- */
   const [geoBusy,setGeoBusy]=useState("");
   const [geoPegar,setGeoPegar]=useState("");
@@ -3381,20 +3396,6 @@ function App(){
     geoIntentadas.current.add(k);
     ubicarPropiedad(p,true);
   },[sel&&sel.id, sel&&sel.address, sel&&sel.comuna, sel&&sel.region]);
-  const [props,setProps]=useState(()=>mergeTrinidadSeed(store.get("ap_props", mock)));
-  const [socs,setSocs]=useState(()=>store.get("ap_socs", seedSociedades));
-  SOCIEDADES = socs; // mantener sincronizados los ayudantes a nivel de módulo (socById, contratos)
-  const [owner,setOwner]=useState(defOwner);
-  const [ownerEdit,setOwnerEdit]=useState(defOwner);
-  const [uf,setUf]=useState(()=>store.get("ap_uf", 38500));
-  const [ufManual,setUfManual]=useState(false);
-  // Serie diaria de la UF (para aplicar la regla del valor MÁS ALTO del mes al cobrar).
-  const [ufSerie,setUfSerie]=useState(()=>store.get("ap_uf_serie", []));
-  useEffect(()=>{ store.set("ap_uf_serie", ufSerie); },[ufSerie]);
-  const [sel,setSel]=useState(null);
-  const [filter,setFilter]=useState("todas");
-  const [socFilter,setSocFilter]=useState("todas");
-  const [notif,setNotif]=useState(null);
 
   const [mAdd,setMAdd]=useState(false), [nP,setNP]=useState(blank);
   const [mEdit,setMEdit]=useState(null), [eP,setEP]=useState(null);
