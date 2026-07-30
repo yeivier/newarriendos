@@ -2,8 +2,12 @@
 # Asegura que las funciones (carpeta netlify/functions) se detecten y se
 # desplieguen, incluso en despliegues manuales (drag & drop).
 
+# build.mjs pre-transpila el JSX de index.html y publica desde dist/, para que
+# el navegador no cargue Babel ni transpile nada (antes la página tardaba mucho
+# en abrir en el celular, o quedaba en blanco).
 [build]
-  publish = "."
+  command = "node build.mjs"
+  publish = "dist"
 
 [functions]
   directory = "netlify/functions"
