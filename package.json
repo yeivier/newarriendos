@@ -2,6 +2,12 @@
   "name": "arriendopro",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@babel/standalone": "7.23.2"
+  },
   "devDependencies": {
     "@netlify/blobs": "^9.0.0",
     "@netlify/functions": "^3.0.0"
