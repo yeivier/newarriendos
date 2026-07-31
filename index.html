@@ -167,6 +167,10 @@
   /* Flecha de la barra superior, para devolverse entre secciones. */
   .volver-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:17px;font-weight:800;padding:0}
   .volver-btn:hover{border-color:var(--brand-soft);background:var(--brand-bg)}
+  /* Aviso de guardado automático. */
+  .guardado{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;white-space:nowrap}
+  .guardado.ok{color:var(--green-d);border-color:var(--green-soft);background:var(--green-bg)}
+  .guardado.mal{color:var(--red-d);border-color:var(--red-soft)}
   .modal-head h3{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--ink)}
   .modal-head p{font-size:13.5px;color:var(--muted);margin-top:3px}
   .modal-body{padding:20px 24px}
@@ -3750,6 +3754,12 @@ function App(){
           // Preferencias: el orden de las fichas y los contadores del asesor.
           if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
           if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
+          // Ajustes de las liquidaciones y del reajuste, para que sean los
+          // mismos en el teléfono y en el computador.
+          if(typeof e.comisionAdmin==="number") setComisionAdmin(e.comisionAdmin);
+          if(typeof e.ipcAcum==="number") setIpcAcum(e.ipcAcum);
+          if(typeof e.ufVarAnual==="number") setUfVarAnual(e.ufVarAnual);
+          if(typeof e.reajPeriodo==="number") setReajPeriodo(e.reajPeriodo);
         }
         // Solo desde aquí en adelante se puede guardar: si la carga falla y
         // guardáramos igual, se subiría la copia local vacía encima de los
@@ -3761,15 +3771,25 @@ function App(){
     })();
     return ()=>{ alive=false; };
   },[puerta]);
+  /* "guardando" mientras sube, "ok" cuando quedó guardado en el servidor y
+     "error" si no se pudo. Se muestra arriba para no dejar dudas de que todo
+     se guarda solo. */
+  const [guardado,setGuardado]=useState("");
   useEffect(()=>{
     if(!hydrated || puerta!=="ok") return;
     if(acceso && acceso.rol==="lectura") return; // acceso de solo lectura: no guarda
     if(saveTimer.current) clearTimeout(saveTimer.current);
+    setGuardado("guardando");
     saveTimer.current=setTimeout(()=>{
-      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet }) }).catch(()=>{});
+      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas,
+          leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo }) })
+        .then(r=>setGuardado(r&&r.ok?"ok":"error")).catch(()=>setGuardado("error"));
     }, 800);
     return ()=>{ if(saveTimer.current) clearTimeout(saveTimer.current); };
-  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet]);
+  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo]);
+  /* El aviso de "guardado" se apaga solo; el de error se queda a la vista. */
+  useEffect(()=>{ if(guardado!=="ok") return; const t=setTimeout(()=>setGuardado(""),2200); return ()=>clearTimeout(t); },[guardado]);
 
   /* Indicadores económicos desde mindicador.cl (con respaldo / edición manual) */
   const migrarAUF=(v)=>{
@@ -6132,6 +6152,10 @@ function App(){
         </div>
         <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <button className="btn btn-ghost btn-sm btn-busca" onClick={()=>setMBusca(true)}>Buscar <span className="kbd">/</span></button>
+          {/* Todo se guarda solo en el servidor; esto lo hace visible. */}
+          {guardado==="guardando" && <span className="guardado" title="Guardando en el servidor…"><span className="ind-spin"></span> Guardando…</span>}
+          {guardado==="ok" && <span className="guardado ok" title="Guardado en el servidor: lo verás igual en cualquier dispositivo">✓ Guardado</span>}
+          {guardado==="error" && <span className="guardado mal" title="Revisa tu conexión; volveré a intentarlo con el próximo cambio">⚠ No se pudo guardar</span>}
           <div className="pill grey">1 UF = {CLP(uf)}</div>
           <button className="btn btn-red" onClick={()=>{setNP({...blank,gastosExtra:SEED_GASTOS()});setMAdd(true);}}>＋ Nueva propiedad</button>
         </div>
