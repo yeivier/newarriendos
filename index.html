@@ -123,9 +123,15 @@
   .databox .dv{font-size:15.5px;font-weight:700;color:var(--ink);word-break:break-word}
   .databox.big .dv{font-size:20px}
 
-  .prop{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;background:var(--card);transition:.12s}
+  .prop{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;background:var(--card);transition:.12s;flex-wrap:wrap}
   .prop:hover{border-color:var(--brand-soft);background:var(--panel2);box-shadow:var(--shadow)}
-  .prop.on{border-color:var(--brand);background:var(--card)}
+  /* La propiedad abierta se nota: borde dorado, fondo cálido y una barra al
+     costado, además de la flecha girada. */
+  .prop.on{border-color:var(--gold);background:var(--brand-bg);box-shadow:inset 4px 0 0 var(--gold),var(--shadow)}
+  .prop .chev-prop{margin-left:auto;flex-shrink:0;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px;transition:transform .18s,background .12s}
+  .prop.on .chev-prop{transform:rotate(180deg);background:var(--gold);color:#141419;border-color:var(--gold)}
+  /* El detalle desplegado se ve enganchado a su propiedad. */
+  .prop-abierta{border-left:4px solid var(--gold);border-radius:0 12px 12px 0;margin-left:6px}
   .dot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
 
   table{width:100%;border-collapse:collapse}
@@ -341,12 +347,20 @@
   .indbar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:9px 26px;background:var(--card);border-bottom:1px solid var(--line)}
   .indbar .pill{white-space:nowrap;cursor:default;font-size:12px;padding:5px 11px;background:var(--panel2);color:#A0A1A9}
   /* De dónde sale cada indicador y a qué hora se actualizó. */
-  .indfuente{display:flex;align-items:flex-start;gap:7px;padding:0 26px 9px;background:var(--card);border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--faint)}
+  /* Ojo: bloque normal, NO flex. Con flex, cada <b> y cada <a> se convertía en
+     una columna y el texto salía apilado, cortado y sin poder desplazarse. */
+  .indfuente{padding:2px 26px 9px;background:var(--card);border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.5;color:var(--faint)}
   .indfuente a{color:var(--muted);text-decoration:underline}
   .indfuente b{color:var(--muted);font-weight:700}
-  .indfuente .viva{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;animation:latido 2s ease-in-out infinite}
+  .indfuente .viva{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle;animation:latido 2s ease-in-out infinite}
   @keyframes latido{0%,100%{opacity:1}50%{opacity:.25}}
-  @media(max-width:900px){ .indfuente{padding:0 16px 8px} }
+  @media(max-width:900px){ .indfuente{padding:2px 16px 8px} }
+  /* El botón de actualizar tiene que decir en qué va: girando mientras trabaja
+     y con un visto por unos segundos al terminar. */
+  .ind-btn{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:700}
+  .ind-btn.cargando{color:var(--gold);border-color:var(--brand-soft)}
+  .ind-spin{display:inline-block;width:11px;height:11px;border:2px solid var(--brand-soft);border-top-color:var(--gold);border-radius:50%;vertical-align:-1px;animation:girar .7s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
   .indbar .pill.editable{cursor:pointer}
   @media(max-width:900px){ .indbar{padding:8px 13px;gap:6px} .indbar .pill{font-size:11px;padding:4px 10px} }
 
@@ -486,8 +500,19 @@
   .subir-fab{position:fixed;left:22px;bottom:22px;z-index:178;width:52px;height:52px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 10px 28px rgba(16,24,40,.18);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;transition:.18s}
   .subir-fab:hover{transform:translateY(-2px)}
   /* Fichas reordenables: se mantienen presionadas para moverlas. */
-  .ord-wrap{position:relative}
+  .ord-wrap{position:relative;touch-action:pan-y}
   .ord-wrap.movible{outline:2px dashed var(--brand-soft);outline-offset:3px;border-radius:16px}
+  /* Mientras se arrastra, la ficha se levanta y el hueco de destino se marca. */
+  .ord-wrap.arrastrando{opacity:.92;transform:scale(1.03);box-shadow:0 18px 42px rgba(16,24,40,.26);border-radius:16px;position:relative;z-index:40;transition:transform .12s;touch-action:none;user-select:none;-webkit-user-select:none}
+  .ord-wrap.hueco{outline:2px dashed var(--gold);outline-offset:3px;border-radius:16px;background:var(--brand-bg)}
+  /* Asa visible: se arrastra desde cualquier parte, pero esto lo hace evidente
+     y, al tocarla, abre el cuadro con las posiciones. */
+  .ord-asa{position:absolute;right:6px;top:6px;z-index:3;width:26px;height:26px;border-radius:8px;background:var(--panel2);color:var(--faint);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:grab;opacity:.55}
+  .ord-wrap:hover .ord-asa{opacity:1}
+  /* Asa dentro de una fila de propiedad: va en línea, no encima del contenido. */
+  .asa-fila{flex-shrink:0;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--faint);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:grab;line-height:1}
+  .asa-fila:active{cursor:grabbing}
+  .prop.ord-wrap.arrastrando{border-color:var(--gold)}
   .ord-num{position:absolute;left:-9px;top:-9px;z-index:3;background:var(--gold);color:#141419;border-radius:9px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;box-shadow:0 3px 10px rgba(16,24,40,.2)}
   .mov-lista{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .mov-it{display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:left;font-size:14.5px;font-weight:600;color:var(--ink);width:100%}
@@ -2134,28 +2159,101 @@ function PropuestasIA({ items, props, onAplicar }){
   </div>);
 }
 
-/* ---- Reordenar fichas ----------------------------------------------------
-   Se mantiene presionada una tarjeta (o clic derecho en el computador) y se
-   elige dónde dejarla. El temporizador vive fuera de React a propósito: hay un
-   solo gesto a la vez y la cantidad de tarjetas cambia, así que no puede ser
-   un hook. */
+/* ---- Arrastrar para reordenar --------------------------------------------
+   Se mantiene presionada una ficha y, sin soltar, se arrastra con el dedo (o
+   con el mouse) hasta donde debe quedar, igual que al mover las aplicaciones
+   en el teléfono. El estado del gesto vive fuera de React porque hay un solo
+   arrastre a la vez y la cantidad de fichas cambia (no puede ser un hook).
+
+   Devuelve los manejadores para la ficha número `indice` de la lista `ids`.
+   `alSoltar(nuevosIds)` recibe el orden final. */
+const _ar = { activo:false, reclamado:false, clave:null, ids:null, desde:-1, sobre:-1, t:null, y0:0, alSoltar:null };
+/* Mientras se arrastra, el gesto se sigue desde el documento y no desde la
+   ficha: así el dedo puede salirse de ella sin que se pierda el movimiento, y
+   —sobre todo— el `preventDefault` sí surte efecto (React escucha los toques
+   de forma pasiva, así que desde sus manejadores la página se desplazaría
+   igual). */
+const _arSeguir = (e)=>{
+  if(!_ar.activo) return;
+  const p=(e.touches&&e.touches[0])||e;
+  if(e.cancelable) e.preventDefault(); // ya arrastrando: la página no debe desplazarse
+  const bajo=_arDebajo(p.clientX,p.clientY);
+  document.querySelectorAll(".ord-wrap.hueco").forEach(el=>el.classList.remove("hueco"));
+  if(bajo && bajo.i!==_ar.desde){ _ar.sobre=bajo.i; bajo.el.classList.add("hueco"); }
+};
+const _arSoltar = ()=>{
+  if(!_ar.activo){ _arLimpiar(); return; }
+  const { ids:lista, desde, sobre, alSoltar:fn } = _ar;
+  _arLimpiar();
+  if(fn && lista && sobre>=0 && sobre!==desde) fn(moverEn(lista, lista[desde], sobre));
+};
+const _arEscuchar = (poner)=>{
+  const f = poner ? document.addEventListener.bind(document) : document.removeEventListener.bind(document);
+  f("touchmove",_arSeguir,{passive:false});
+  f("mousemove",_arSeguir);
+  f("touchend",_arSoltar); f("touchcancel",_arSoltar); f("mouseup",_arSoltar);
+};
+const _arLimpiar = ()=>{
+  if(_ar.t){ clearTimeout(_ar.t); _ar.t=null; }
+  if(_ar.activo) _arEscuchar(false);
+  document.querySelectorAll(".ord-wrap.arrastrando,.ord-wrap.hueco").forEach(el=>el.classList.remove("arrastrando","hueco"));
+  _ar.activo=false; _ar.reclamado=false; _ar.clave=null; _ar.ids=null; _ar.desde=-1; _ar.sobre=-1; _ar.alSoltar=null;
+};
+/* Sobre qué ficha está el dedo ahora mismo. Se mira también la posición
+   horizontal porque en el inicio las propiedades van en dos columnas: si solo
+   se mirara la altura, dos fichas distintas darían lo mismo. */
+const _arDebajo = (x,y)=>{
+  const cajas=[...document.querySelectorAll('.ord-wrap[data-ord-clave="'+_ar.clave+'"]')];
+  let soloAltura=null;
+  for(let i=0;i<cajas.length;i++){
+    const r=cajas[i].getBoundingClientRect();
+    if(y>=r.top && y<=r.bottom){
+      if(x>=r.left && x<=r.right) return { i, el:cajas[i], r };
+      if(!soloAltura) soloAltura={ i, el:cajas[i], r };
+    }
+  }
+  return soloAltura;
+};
+const arrastrable = (clave, ids, indice, alSoltar)=>{
+  const empezar=(e)=>{
+    if(_plEditando(e.target)) return;
+    // Hay fichas dentro de otras fichas (una propiedad dentro de la tarjeta
+    // "Tus propiedades"): manda la de más adentro, que es la que recibe el
+    // gesto primero.
+    if(_ar.reclamado && (_ar.t || _ar.activo)) return;
+    _ar.reclamado=true;
+    const p=(e.touches&&e.touches[0])||e;
+    _ar.y0=p.clientY; _ar.clave=clave; _ar.ids=ids.slice(); _ar.desde=indice; _ar.sobre=indice; _ar.alSoltar=alSoltar;
+    if(_ar.t) clearTimeout(_ar.t);
+    _ar.t=setTimeout(()=>{
+      _ar.t=null; _ar.activo=true; _pl.sup=true;
+      _arEscuchar(true);
+      try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
+      const caja=document.querySelectorAll('.ord-wrap[data-ord-clave="'+clave+'"]')[indice];
+      if(caja) caja.classList.add("arrastrando");
+    },420);
+  };
+  /* Antes de que arranque el arrastre: si el dedo se desplaza, era scroll. */
+  const mover=(e)=>{
+    if(_ar.activo) return;
+    const p=(e.touches&&e.touches[0])||e;
+    if(_ar.t && Math.abs(p.clientY-_ar.y0)>12){ clearTimeout(_ar.t); _ar.t=null; _ar.reclamado=false; }
+  };
+  return {
+    onTouchStart:empezar, onTouchMove:mover, onTouchEnd:_arSoltar, onTouchCancel:_arSoltar,
+    onMouseDown:(e)=>{ if(e.button===0) empezar(e); },
+    onMouseMove:mover, onMouseUp:_arSoltar, onMouseLeave:()=>{ if(!_ar.activo) _arLimpiar(); },
+  };
+};
+
+/* ---- Reordenar fichas: cuadro con posiciones (el respaldo) ----------------
+   El arrastre de arriba es la forma principal. Además queda el cuadro con la
+   lista de posiciones, que se abre desde el asa ⠿ o con clic derecho en el
+   computador. `_pl.sup` marca que hubo un gesto largo, para que el toque que
+   viene después no abra la ficha. */
 const _pl={t:null,sup:false,x:0,y:0};
-const _plFin=()=>{ if(_pl.t){ clearTimeout(_pl.t); _pl.t=null; } };
 const _plEditando=(el)=>{ const t=((el&&el.tagName)||"").toLowerCase();
   return t==="input"||t==="textarea"||t==="select"||(el&&el.isContentEditable); };
-const pulsacionLarga=(alPresionar)=>{
-  const ini=(e)=>{ if(_plEditando(e.target)) return;
-    const p=(e.touches&&e.touches[0])||e; _pl.x=p.clientX; _pl.y=p.clientY; _plFin();
-    _pl.t=setTimeout(()=>{ _pl.t=null; _pl.sup=true;
-      try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
-      alPresionar(); },500); };
-  const mov=(e)=>{ const p=(e.touches&&e.touches[0])||e;
-    if(Math.abs(p.clientX-_pl.x)>12||Math.abs(p.clientY-_pl.y)>12) _plFin(); };
-  return { onTouchStart:ini, onTouchMove:mov, onTouchEnd:_plFin, onTouchCancel:_plFin,
-    onContextMenu:(e)=>{ if(_plEditando(e.target)) return; e.preventDefault(); alPresionar(); },
-    // El toque que viene después de la pulsación larga no debe abrir la ficha.
-    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } } };
-};
 const ordenarPor=(items, orden, idDe)=>{
   if(!Array.isArray(orden)||!orden.length) return items;
   const pos=(x)=>{ const i=orden.indexOf(idDe(x)); return i<0?9999:i; };
@@ -3430,6 +3528,11 @@ function App(){
   const [asAdj,setAsAdj]=useState([]); // archivos adjuntos del chat
   const [asLeadId,setAsLeadId]=useState(()=>store.get("ap_asesor_lead",""));
   const [asMet,setAsMet]=useState(()=>store.get(ASESOR_MET_KEY,{consultas:0,busquedas:0,leads:0,visitas:0,derivaciones:0,propiedades:{}}));
+  /* Orden elegido a mano: se mantiene presionada una ficha y se decide dónde va.
+     Se guarda por sección ("inicio", "props"). */
+  const [ordenes,setOrdenes]=useState(()=>store.get("ap_ordenes",{}));
+  useEffect(()=>{ store.set("ap_ordenes",ordenes); },[ordenes]);
+  const [mover,setMover]=useState(null);
   const asEnd=useRef(null);
   useEffect(()=>{ store.set(ASESOR_CHAT_KEY,asChat.slice(-60)); },[asChat]);
   useEffect(()=>{ store.set(ASESOR_CHAT_KEY+"_raw",asMsgs.slice(-40)); },[asMsgs]);
@@ -3528,6 +3631,9 @@ function App(){
           if(Array.isArray(e.plantillas) && e.plantillas.length) setPlantillas(e.plantillas);
           if(Array.isArray(e.leads)) setLeads(e.leads);
           if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
+          // Preferencias: el orden de las fichas y los contadores del asesor.
+          if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
+          if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
         }
         // Solo desde aquí en adelante se puede guardar: si la carga falla y
         // guardáramos igual, se subiría la copia local vacía encima de los
@@ -3544,10 +3650,10 @@ function App(){
     if(acceso && acceso.rol==="lectura") return; // acceso de solo lectura: no guarda
     if(saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
-      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies }) }).catch(()=>{});
+      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet }) }).catch(()=>{});
     }, 800);
     return ()=>{ if(saveTimer.current) clearTimeout(saveTimer.current); };
-  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies]);
+  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet]);
 
   /* Indicadores económicos desde mindicador.cl (con respaldo / edición manual) */
   const migrarAUF=(v)=>{
@@ -3661,7 +3767,19 @@ function App(){
     return base;
   };
   const reglaUFTexto=(p)=>{ const r=ufParaCobro(p); return r.etiqueta+" ("+CLP(r.valor)+" del "+fmtF(r.fecha)+")"; };
-  const refrescarIndicadores=async()=>{ setIndLoading(true); await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]); setIndLoading(false); };
+  /* Al tocar "Actualizar" tiene que verse que algo pasó: gira mientras trabaja
+     y queda un visto unos segundos, aunque la respuesta llegue al instante. */
+  const [indRecien,setIndRecien]=useState(false);
+  const refrescarIndicadores=async()=>{
+    setIndLoading(true); setIndRecien(false);
+    const desde=Date.now();
+    await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]);
+    // Medio segundo mínimo: si parpadea, el usuario no alcanza a ver nada.
+    const falta=600-(Date.now()-desde);
+    if(falta>0) await new Promise(r=>setTimeout(r,falta));
+    setIndLoading(false); setIndRecien(true);
+    setTimeout(()=>setIndRecien(false),2500);
+  };
 
   useEffect(()=>{ fetchUFSerie(); /* eslint-disable-next-line */ },[]);
   useEffect(()=>{ fetchUF(); /* eslint-disable-next-line */ },[]);
@@ -3683,20 +3801,21 @@ function App(){
   window.__UF__=uf;
 
   const gw=gateways.find(g=>g.id===owner.gateway)||gateways[0];
-  /* Orden elegido a mano: se mantiene presionada una ficha y se decide dónde va.
-     Se guarda por sección ("inicio", "props"). */
-  const [ordenes,setOrdenes]=useState(()=>store.get("ap_ordenes",{}));
-  useEffect(()=>{ store.set("ap_ordenes",ordenes); },[ordenes]);
-  const [mover,setMover]=useState(null);
   const guardarOrden=(clave,ids)=>setOrdenes(o=>({...o,[clave]:ids}));
   const reiniciarOrden=(clave)=>{ setOrdenes(o=>{ const n={...o}; delete n[clave]; return n; }); setMover(null); };
   /* Envuelve cada ficha para poder moverla. `lista` son {id, titulo, node}. */
   const bloquesOrdenados=(clave,lista)=>{
     const ord=ordenarPor(lista,ordenes[clave],x=>x.id);
     const items=ord.map(x=>({id:x.id,titulo:x.titulo}));
+    const ids=ord.map(x=>x.id);
     return ord.map((x,i)=>(
-      <div key={x.id} className="ord-wrap" {...pulsacionLarga(()=>setMover({clave,id:x.id,titulo:x.titulo,items}))}>
+      <div key={x.id} className="ord-wrap" data-ord-clave={clave}
+        {...arrastrable(clave, ids, i, (nuevos)=>guardarOrden(clave,nuevos))}
+        onContextMenu={(e)=>{ e.preventDefault(); setMover({clave,id:x.id,titulo:x.titulo,items}); }}
+        onClickCapture={(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } }}>
         {!!(ordenes[clave]&&ordenes[clave].length)&&<span className="ord-num">{i+1}</span>}
+        <span className="ord-asa" title="Mantén presionado y arrastra para mover"
+          onClick={(e)=>{ e.stopPropagation(); setMover({clave,id:x.id,titulo:x.titulo,items}); }}>⠿</span>
         {x.node}
       </div>));
   };
@@ -3768,6 +3887,24 @@ function App(){
   /* Datos para mover una propiedad de lugar dentro de "Mis propiedades". */
   const itemsProps=()=>propsOrd.map(p=>({id:String(p.id),titulo:p.name}));
   const moverPropiedad=(p)=>setMover({clave:"props",id:String(p.id),titulo:p.name,items:itemsProps()});
+  /* En "Mis propiedades" la lista puede venir filtrada (por uso o por
+     sociedad). Al arrastrar dentro de esa vista solo cambia el orden de lo que
+     se ve; el resto de las propiedades se queda donde estaba. */
+  const fusionarOrdenProps=(visibles)=>{
+    const base=propsOrd.map(p=>String(p.id));
+    const set=new Set(visibles); let k=0;
+    const out=base.map(g=>set.has(g)?visibles[k++]:g);
+    while(k<visibles.length){ if(out.indexOf(visibles[k])<0) out.push(visibles[k]); k++; }
+    return out;
+  };
+  /* Mantener presionada una propiedad y desplazarla con el dedo, igual que al
+     mover las aplicaciones del teléfono. El asa ⠿ abre el cuadro con las
+     posiciones, que sigue estando para quien lo prefiera. */
+  const arrastreProp=(ids,i,p)=>({
+    ...arrastrable("props", ids, i, (nuevos)=>guardarOrden("props", fusionarOrdenProps(nuevos))),
+    onContextMenu:(e)=>{ if(_plEditando(e.target)) return; e.preventDefault(); moverPropiedad(p); },
+    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } },
+  });
 
   const ingresos=rentals.reduce((s,p)=>s+num(p.rent),0);
   const dividendos=props.reduce((s,p)=>s+divCLP(p,uf),0);
@@ -5794,12 +5931,16 @@ function App(){
         <span className="pill grey" title="UTA = UTM × 12 (SII)">UTA {CLP(utm*12)}</span>
         <span className="pill grey" title={"Dólar observado — "+FUENTES_IND.dolar.org+", vía mindicador.cl"+(indInfo.dolar?" · valor del "+fmtF(indInfo.dolar):"")}>Dólar {CLP(dolar)}</span>
         <span className="pill grey" title={"IPC, variación mensual — "+FUENTES_IND.ipc.org+", vía mindicador.cl"+(indInfo.ipc?" · dato de "+fmtF(indInfo.ipc):"")}>IPC {pctFmt(ipc)}</span>
-        <button className="btn btn-ghost btn-sm" onClick={refrescarIndicadores} disabled={indLoading} style={{marginLeft:"auto"}}>{indLoading?"Actualizando…":"Actualizar"}</button>
+        <button className={"btn btn-sm ind-btn"+(indLoading?" cargando":"")} onClick={refrescarIndicadores} disabled={indLoading} style={{marginLeft:"auto"}}>
+          {indLoading ? <><span className="ind-spin"></span> Actualizando…</> : (indRecien ? "✓ Actualizado" : "↻ Actualizar")}
+        </button>
       </div>
       <div className="indfuente">
         <span className="viva"></span>
         En vivo desde <a href="https://mindicador.cl" target="_blank" rel="noopener">mindicador.cl</a>: UF y UTM del <b>SII</b>, dólar observado del <b>Banco Central</b>, IPC del <b>INE</b>.
-        {indInfo.at ? <> Actualizado a las {new Date(indInfo.at).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}{indInfo.uf?<> · UF del {fmtF(indInfo.uf)}</>:null}.</> : <> Actualizando…</>}
+        {indLoading ? <> <b>Actualizando…</b></>
+          : indInfo.at ? <> Actualizado a las {new Date(indInfo.at).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}{indInfo.uf?<> · UF del {fmtF(indInfo.uf)}</>:null}.</>
+          : <> Cargando…</>}
         {ufManual && <> <b>La UF está editada a mano</b>, así que no se actualiza sola (quita el valor manual en Configuración para volver a la automática).</>}
       </div>
 
@@ -5811,7 +5952,7 @@ function App(){
             Cada ficha se puede mover: se mantiene presionada y se elige el
             lugar donde debe aparecer. El orden queda guardado. */}
         {tab==="inicio" && <>
-        <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> cualquiera de estas fichas y elige dónde ponerla.</div>
+        <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> una ficha y, sin soltar, <b>arrástrala</b> con el dedo (o con el mouse) hasta donde quieras, igual que al mover las aplicaciones del teléfono. Si prefieres elegir la posición de una lista, toca el asa <b>⠿</b> de la ficha.</div>
         {bloquesOrdenados("inicio",[
          {id:"alertas",titulo:"Alertas",node:(
           <Collapsible icon="🔔" title={alertas.length?("Alertas ("+alertas.length+")"):"Alertas"}
@@ -5918,8 +6059,10 @@ function App(){
           <Collapsible icon="🏘️" title="Tus propiedades" subtitle={props.length+" inmueble(s) — toca para verlas"} defaultOpen={false}>
             <div style={{textAlign:"right",marginBottom:10}}><button className="btn btn-ghost" onClick={()=>setTab("props")}>Ver todas →</button></div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
-              {propsOrd.map(p=>(<div key={p.id} className="prop" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}
-                {...pulsacionLarga(()=>moverPropiedad(p))}>
+              {propsOrd.map((p,ip)=>(<div key={p.id} className="prop ord-wrap" data-ord-clave="props" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}
+                {...arrastreProp(propsOrd.map(x=>String(x.id)),ip,p)}>
+                <span className="asa-fila" title="Mantén presionada y arrástrala para moverla"
+                  onClick={(e)=>{ e.stopPropagation(); moverPropiedad(p); }}>⠿</span>
                 <span className="dot" style={{background:dotColor(p.status)}}></span>
                 <div style={{flex:1}}><div style={{fontWeight:700}}>{p.name} {p.use==="personal" && <span className="pill blue">Uso personal</span>}</div><div style={{fontSize:14,color:"var(--muted)",marginTop:2}}>{p.use==="arriendo"?p.tenant+" · ":""}{p.comuna}</div></div>
                 <div style={{textAlign:"right"}}><div style={{fontWeight:800}}>{p.use==="arriendo"?CLP(p.rent):"—"}</div>{p.use==="arriendo"&&<div style={{fontSize:12,color:"var(--faint)",fontWeight:600}}>{UFf(p.rentUF)}</div>}{p.use==="arriendo"?<Pill s={p.status}/>:<span className="pill blue">{p.subtype}</span>}</div>
@@ -6001,12 +6144,14 @@ function App(){
               {SOCIEDADES.map(s=><button key={s.id} className={socFilter===s.id?"on":""} onClick={()=>setSocFilter(s.id)}>{s.name.replace(/ SPA$/,"")} ({bySoc(s.id).length})</button>)}
             </div>
           </div>
-          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial. 💡 <b>Mantén presionada</b> una propiedad para cambiarla de lugar en la lista.</div>
+          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial. 💡 Para cambiarlas de lugar, <b>mantén presionada</b> una propiedad y <b>arrástrala</b> con el dedo (o con el mouse) hasta donde quieras. También puedes tocar el asa <b>⠿</b> y elegir la posición de una lista.</div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {view.map(p=>{ const on=sel&&sel.id===p.id; const util=utilidadMes(p,uf);
+            {view.map((p,ip)=>{ const on=sel&&sel.id===p.id; const util=utilidadMes(p,uf);
               return (<div key={p.id}>
-                <div className={"prop"+(on?" on":"")} onClick={()=>setSel(on?null:p)}
-                  {...pulsacionLarga(()=>moverPropiedad(p))}>
+                <div className={"prop ord-wrap"+(on?" on":"")} data-ord-clave="props" onClick={()=>setSel(on?null:p)}
+                  {...arrastreProp(view.map(x=>String(x.id)),ip,p)}>
+                  <span className="asa-fila" title="Mantén presionada y arrástrala para moverla"
+                    onClick={(e)=>{ e.stopPropagation(); moverPropiedad(p); }}>⠿</span>
                   <span className="dot" style={{background:dotColor(p.status),boxShadow:`0 0 0 4px ${dotColor(p.status)}22`}}></span>
                   {!!(p.fotos&&p.fotos.length) && <div className="cover-thumb" style={{backgroundImage:`url('${p.fotos[0].url}')`}}></div>}
                   <div style={{flex:1}}>
@@ -6023,8 +6168,10 @@ function App(){
                   </div>
                   {p.use==="arriendo" && <Pill s={p.status}/>}
                   <button className="btn btn-ghost btn-sm" title="Abrir ficha completa" onClick={e=>{e.stopPropagation();abrirFicha(p);}}></button>
+                  {/* Flecha: dice de un vistazo si está abierta y sirve para abrir y cerrar. */}
+                  <span className="chev-prop" aria-hidden="true" title={on?"Cerrar":"Abrir"}>▼</span>
                 </div>
-                {on && detalleProp({p})}
+                {on && <div className="prop-abierta">{detalleProp({p})}</div>}
               </div>);
             })}
           </div>
