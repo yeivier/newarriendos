@@ -3399,7 +3399,10 @@ function App(){
     return ()=>{ vivo=false; window.__sinAcceso=null; };
   },[]);
   /* Clave, accesos de otras personas y respaldos. */
-  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura"});
+  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura",correo:"",wsp:""});
+  /* Último acceso creado, para poder mandárselo a la persona. La clave vive
+     solo aquí, en la pantalla: el servidor guarda su huella, no la clave. */
+  const [ultAcceso,setUltAcceso]=useState(null);
   const [segBusy,setSegBusy]=useState(false);
   const [accesos,setAccesos]=useState([]);
   const [respaldos,setRespaldos]=useState([]);
@@ -3424,11 +3427,52 @@ function App(){
       const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol});
       const j=await r.json().catch(()=>({}));
       if(!r.ok) notify(j.error||"No se pudo crear el acceso",true);
-      else { setAccesos(j.accesos||[]); setSegForm(f=>({...f,nombre:"",claveInv:""}));
-        notify("Acceso creado. Entrégale esa clave a la persona."); }
+      else { setAccesos(j.accesos||[]);
+        setUltAcceso({nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol,correo:segForm.correo,wsp:segForm.wsp});
+        setSegForm(f=>({...f,nombre:"",claveInv:""}));
+        notify("Acceso creado. Ahora mándaselo por correo o WhatsApp."); }
     }catch(e){ notify("Sin conexión",true); }
     setSegBusy(false);
   };
+  /* ---- Entregarle el acceso a la persona ----
+     El correo sale desde contacto@aliviasoluciones.com si el servidor tiene
+     configurado el servicio de correo; si no, se abre el correo del teléfono
+     con el mensaje ya escrito. El WhatsApp se manda desde el número de la
+     administración (+56975549829), que es el que va firmado al pie. */
+  const CORREO_ADMIN="contacto@aliviasoluciones.com";
+  const textoAcceso=(a)=> [
+    "Hola "+(a.nombre||"")+":","",
+    "Te damos acceso a la plataforma donde administramos las propiedades.","",
+    "Dirección: "+window.location.origin,
+    "Tu clave: "+a.clave,
+    "Permiso: "+(a.rol==="lectura"?"solo lectura (puedes ver todo, no modificar)":"ver y modificar"),"",
+    "Entra a la dirección, escribe la clave y listo. No la compartas con nadie más.","",
+    "Cualquier duda, escríbenos a "+CORREO_ADMIN+" o al WhatsApp "+waRemitente(owner)+".","",
+    "ArriendoPro · Administración de propiedades",
+  ].join("\n");
+  const correoAcceso=async(a)=>{
+    const correo=String(a.correo||"").trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ notify("Escribe el correo de la persona",true); return; }
+    setSegBusy(true);
+    let enviado=false;
+    try{
+      const r=await apiJSON("/api/enviar-acceso",{nombre:a.nombre,email:correo,clave:a.clave,rol:a.rol,url:window.location.origin});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&j.ok){ enviado=true; notify("Acceso enviado a "+correo+" desde "+CORREO_ADMIN); }
+    }catch(_e){}
+    setSegBusy(false);
+    if(!enviado){
+      // Todavía no hay servicio de correo en el servidor: se manda desde el
+      // correo del teléfono con el mensaje ya escrito.
+      window.location.href="mailto:"+encodeURIComponent(correo)
+        +"?subject="+encodeURIComponent("Tu acceso a la plataforma — ArriendoPro")
+        +"&body="+encodeURIComponent(textoAcceso(a));
+      notify("Aún no hay servicio de correo en el servidor: te abrí el correo con el mensaje listo.");
+    }
+  };
+  const whatsappAcceso=(a)=>{ waEnviar(a.wsp||"", textoAcceso(a)); };
+  const copiarAcceso=(a)=>{ if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(textoAcceso(a)).then(()=>notify("Mensaje copiado")).catch(()=>notify("No se pudo copiar",true)); };
   const borrarAcceso=async(id)=>{
     try{ const r=await apiJSON("/api/acceso",{accion:"borrar_acceso",id}); const j=await r.json().catch(()=>({}));
       if(r.ok){ setAccesos(j.accesos||[]); notify("Acceso eliminado"); } }catch(_e){}
@@ -7119,7 +7163,31 @@ function App(){
                 </select>
               </div>
             </div>
+            {/* Dónde mandarle el acceso. Antes se creaba la clave y no se le
+                avisaba a nadie: había que dictársela. */}
+            <div className="grid" style={{gridTemplateColumns:"1.4fr 1fr",gap:10}}>
+              <div className="field"><label className="label">Correo de la persona (para enviarle el acceso)</label><input className="input" type="email" placeholder="nombre@correo.cl" value={segForm.correo} onChange={e=>setSegForm(f=>({...f,correo:e.target.value}))}/></div>
+              <div className="field"><label className="label">WhatsApp de la persona</label><input className="input" placeholder="+56 9 …" value={segForm.wsp} onChange={e=>setSegForm(f=>({...f,wsp:e.target.value}))}/></div>
+            </div>
             <button className="btn btn-red btn-sm" disabled={segBusy||!segForm.nombre.trim()||segForm.claveInv.length<6} onClick={crearAcceso}>＋ Crear acceso</button>
+
+            {ultAcceso && <div className="card pad" style={{marginTop:14,background:"var(--brand-bg)",border:"1px solid var(--gold)"}}>
+              <div style={{fontWeight:800,marginBottom:6}}>✓ Acceso creado para {ultAcceso.nombre}</div>
+              <div className="help" style={{marginBottom:10}}>
+                Ahora entrégaselo. El correo sale desde <b>{CORREO_ADMIN}</b> y el WhatsApp desde <b>{waRemitente(owner)}</b>.
+                La clave se muestra <b>solo aquí y una vez</b>: el servidor guarda su huella, no la clave. Si se pierde, crea otro acceso.
+              </div>
+              <div className="grid" style={{gridTemplateColumns:"1.4fr 1fr",gap:10}}>
+                <div className="field"><label className="label">Correo</label><input className="input" type="email" placeholder="nombre@correo.cl" value={ultAcceso.correo||""} onChange={e=>setUltAcceso(a=>({...a,correo:e.target.value}))}/></div>
+                <div className="field"><label className="label">WhatsApp</label><input className="input" placeholder="+56 9 …" value={ultAcceso.wsp||""} onChange={e=>setUltAcceso(a=>({...a,wsp:e.target.value}))}/></div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button className="btn btn-red btn-sm" disabled={segBusy} onClick={()=>correoAcceso(ultAcceso)}>{segBusy?"Enviando…":"✉️ Enviar por correo"}</button>
+                <button className="btn btn-out btn-sm" onClick={()=>whatsappAcceso(ultAcceso)}>💬 Enviar por WhatsApp</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>copiarAcceso(ultAcceso)}>Copiar mensaje</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setUltAcceso(null)}>Listo, ocultar</button>
+              </div>
+            </div>}
           </Collapsible>
 
           <Collapsible icon="🛟" title="Respaldos" subtitle="Copias diarias para volver atrás si algo se borra" defaultOpen={false}>
