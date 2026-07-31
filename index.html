@@ -123,9 +123,15 @@
   .databox .dv{font-size:15.5px;font-weight:700;color:var(--ink);word-break:break-word}
   .databox.big .dv{font-size:20px}
 
-  .prop{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;background:var(--card);transition:.12s}
+  .prop{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;background:var(--card);transition:.12s;flex-wrap:wrap}
   .prop:hover{border-color:var(--brand-soft);background:var(--panel2);box-shadow:var(--shadow)}
-  .prop.on{border-color:var(--brand);background:var(--card)}
+  /* La propiedad abierta se nota: borde dorado, fondo cálido y una barra al
+     costado, además de la flecha girada. */
+  .prop.on{border-color:var(--gold);background:var(--brand-bg);box-shadow:inset 4px 0 0 var(--gold),var(--shadow)}
+  .prop .chev-prop{margin-left:auto;flex-shrink:0;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px;transition:transform .18s,background .12s}
+  .prop.on .chev-prop{transform:rotate(180deg);background:var(--gold);color:#141419;border-color:var(--gold)}
+  /* El detalle desplegado se ve enganchado a su propiedad. */
+  .prop-abierta{border-left:4px solid var(--gold);border-radius:0 12px 12px 0;margin-left:6px}
   .dot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
 
   table{width:100%;border-collapse:collapse}
@@ -153,6 +159,18 @@
   .modal-bg{position:fixed;inset:0;background:rgba(12,16,24,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px}
   .modal{background:var(--card);border-radius:16px;width:640px;max-width:97vw;max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.3)}
   .modal-head{padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
+  /* Flecha para volver: una sola, flotante, sirve para cualquier ventana que
+     esté abierta. En el teléfono el botón "Cancelar" queda al final de un
+     formulario largo y no se alcanza. */
+  .volver-flot{position:fixed;left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));z-index:260;display:inline-flex;align-items:center;gap:7px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 15px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 8px 26px rgba(16,24,40,.24)}
+  .volver-flot:hover{border-color:var(--brand-soft)}
+  /* Flecha de la barra superior, para devolverse entre secciones. */
+  .volver-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:17px;font-weight:800;padding:0}
+  .volver-btn:hover{border-color:var(--brand-soft);background:var(--brand-bg)}
+  /* Aviso de guardado automático. */
+  .guardado{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;white-space:nowrap}
+  .guardado.ok{color:var(--green-d);border-color:var(--green-soft);background:var(--green-bg)}
+  .guardado.mal{color:var(--red-d);border-color:var(--red-soft)}
   .modal-head h3{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--ink)}
   .modal-head p{font-size:13.5px;color:var(--muted);margin-top:3px}
   .modal-body{padding:20px 24px}
@@ -341,12 +359,20 @@
   .indbar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:9px 26px;background:var(--card);border-bottom:1px solid var(--line)}
   .indbar .pill{white-space:nowrap;cursor:default;font-size:12px;padding:5px 11px;background:var(--panel2);color:#A0A1A9}
   /* De dónde sale cada indicador y a qué hora se actualizó. */
-  .indfuente{display:flex;align-items:flex-start;gap:7px;padding:0 26px 9px;background:var(--card);border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.45;color:var(--faint)}
+  /* Ojo: bloque normal, NO flex. Con flex, cada <b> y cada <a> se convertía en
+     una columna y el texto salía apilado, cortado y sin poder desplazarse. */
+  .indfuente{padding:2px 26px 9px;background:var(--card);border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.5;color:var(--faint)}
   .indfuente a{color:var(--muted);text-decoration:underline}
   .indfuente b{color:var(--muted);font-weight:700}
-  .indfuente .viva{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;animation:latido 2s ease-in-out infinite}
+  .indfuente .viva{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle;animation:latido 2s ease-in-out infinite}
   @keyframes latido{0%,100%{opacity:1}50%{opacity:.25}}
-  @media(max-width:900px){ .indfuente{padding:0 16px 8px} }
+  @media(max-width:900px){ .indfuente{padding:2px 16px 8px} }
+  /* El botón de actualizar tiene que decir en qué va: girando mientras trabaja
+     y con un visto por unos segundos al terminar. */
+  .ind-btn{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:700}
+  .ind-btn.cargando{color:var(--gold);border-color:var(--brand-soft)}
+  .ind-spin{display:inline-block;width:11px;height:11px;border:2px solid var(--brand-soft);border-top-color:var(--gold);border-radius:50%;vertical-align:-1px;animation:girar .7s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
   .indbar .pill.editable{cursor:pointer}
   @media(max-width:900px){ .indbar{padding:8px 13px;gap:6px} .indbar .pill{font-size:11px;padding:4px 10px} }
 
@@ -357,6 +383,13 @@
   .tpl-item.on{border-color:var(--brand);background:var(--brand-bg)}
   .tpl-item .ic{width:34px;height:34px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
   .tpl-item.on .ic{background:var(--brand);color:#fff}
+  /* Explicaciones en palabras simples (liquidaciones, glosario). */
+  .expl-lista{display:flex;flex-direction:column;gap:10px}
+  .expl-lista>div{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:11px;padding:11px 14px;font-size:14.5px;line-height:1.55;color:var(--ink)}
+  .ico-elige{display:flex;flex-wrap:wrap;gap:6px}
+  .ico-op{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .ico-op:hover{border-color:var(--brand-soft)}
+  .ico-op.on{border-color:var(--brand);background:var(--brand-bg);box-shadow:0 0 0 2px var(--brand-soft)}
   .seg-chan{display:inline-flex;background:var(--line);border-radius:11px;padding:4px;gap:4px}
   .seg-chan button{border:none;background:transparent;font-family:inherit;font-size:14px;font-weight:700;padding:8px 15px;border-radius:8px;cursor:pointer;color:#A0A1A9}
   .seg-chan button.on{background:var(--card);color:var(--brand-d);box-shadow:0 1px 3px rgba(0,0,0,.1)}
@@ -486,8 +519,19 @@
   .subir-fab{position:fixed;left:22px;bottom:22px;z-index:178;width:52px;height:52px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 10px 28px rgba(16,24,40,.18);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;transition:.18s}
   .subir-fab:hover{transform:translateY(-2px)}
   /* Fichas reordenables: se mantienen presionadas para moverlas. */
-  .ord-wrap{position:relative}
+  .ord-wrap{position:relative;touch-action:pan-y}
   .ord-wrap.movible{outline:2px dashed var(--brand-soft);outline-offset:3px;border-radius:16px}
+  /* Mientras se arrastra, la ficha se levanta y el hueco de destino se marca. */
+  .ord-wrap.arrastrando{opacity:.92;transform:scale(1.03);box-shadow:0 18px 42px rgba(16,24,40,.26);border-radius:16px;position:relative;z-index:40;transition:transform .12s;touch-action:none;user-select:none;-webkit-user-select:none}
+  .ord-wrap.hueco{outline:2px dashed var(--gold);outline-offset:3px;border-radius:16px;background:var(--brand-bg)}
+  /* Asa visible: se arrastra desde cualquier parte, pero esto lo hace evidente
+     y, al tocarla, abre el cuadro con las posiciones. */
+  .ord-asa{position:absolute;right:6px;top:6px;z-index:3;width:26px;height:26px;border-radius:8px;background:var(--panel2);color:var(--faint);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:grab;opacity:.55}
+  .ord-wrap:hover .ord-asa{opacity:1}
+  /* Asa dentro de una fila de propiedad: va en línea, no encima del contenido. */
+  .asa-fila{flex-shrink:0;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--faint);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:grab;line-height:1}
+  .asa-fila:active{cursor:grabbing}
+  .prop.ord-wrap.arrastrando{border-color:var(--gold)}
   .ord-num{position:absolute;left:-9px;top:-9px;z-index:3;background:var(--gold);color:#141419;border-radius:9px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;box-shadow:0 3px 10px rgba(16,24,40,.2)}
   .mov-lista{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .mov-it{display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:left;font-size:14.5px;font-weight:600;color:var(--ink);width:100%}
@@ -1279,6 +1323,23 @@ const TPL_LIST = [
    El texto admite variables entre llaves que se reemplazan al previsualizar/copiar:
    {nombre} {propiedad} {direccion} {comuna} {monto} {periodo} {vence} {banco} {pasarela} {email_admin} */
 const TPL_VARS = ["{nombre}","{propiedad}","{direccion}","{comuna}","{monto}","{periodo}","{vence}","{banco}","{pasarela}","{email_admin}","{whatsapp_admin}"];
+/* Íconos para elegir con un toque: escribir un emoji en un campo de texto es
+   incómodo, sobre todo en el teléfono. */
+const TPL_ICONOS = ["🧾","⏰","✅","📋","💵","👋","📄","✉️","📢","🔧","🧹","💡","🏠","🔑","📆","⚠️","🙏","🎉","📌","💬","🏦","📷","🚿","🐾","🚗","🧯","📝","🤝"];
+/* Ícono deducido del nombre, para las plantillas que se guardaron sin uno. */
+const icoSugerido = (label)=>{
+  const t = String(label||"").toLowerCase();
+  const reglas = [
+    [/voucher|boleta|comprobante/,"🧾"], [/recordator|vence|aviso de pago/,"⏰"],
+    [/confirm|recib|pagad/,"✅"], [/liquidaci/,"📋"], [/propietari/,"💵"],
+    [/bienvenid/,"👋"], [/contrato|anexo|finiquito/,"📄"], [/reajuste|ipc|uf/,"📈"],
+    [/manten|reparaci|arregl/,"🔧"], [/aseo|limpieza/,"🧹"], [/luz|agua|gas|servicio/,"💡"],
+    [/visita|mostrar|arrendar/,"🔑"], [/renovaci|término|termino|desalojo/,"📆"],
+    [/atraso|multa|mora|cobranza/,"⚠️"], [/gracias|felicit|saludo/,"🎉"], [/garant/,"🏦"],
+  ];
+  for(const [re,ico] of reglas) if(re.test(t)) return ico;
+  return "✉️";
+};
 const seedPlantillas = ()=> [
   {id:"nuevo_voucher",label:"Nuevo voucher disponible",ico:"🧾",builtin:true,adjuntos:[],
     asunto:"Tu arriendo de {periodo} ya está listo · {propiedad}",
@@ -1742,9 +1803,18 @@ function NotasBox({ p, onSave }){
 /* ---------- Comunicaciones: plantillas editables + adjuntos ---------- */
 function ComunicacionesPanel({ p, owner, gw, cuentas, plantillas, onSave, onAdd, onDelete }){
   const _seeds = seedPlantillas();
+  /* Las plantillas guardadas de versiones anteriores venían sin ícono y se
+     veían como un cuadrado blanco. Se les devuelve el de origen, y a las
+     propias se les pone uno según de qué tratan. */
   const list = (plantillas && plantillas.length ? plantillas : _seeds).map(t=>{
-    if(t && t.builtin && (!t.cuerpoWA || !t.cuerpoCorreo)){ const s=_seeds.find(x=>x.id===t.id); if(s) return {...t, cuerpoWA:t.cuerpoWA||s.cuerpoWA, cuerpoCorreo:t.cuerpoCorreo||s.cuerpoCorreo}; }
-    return t;
+    if(!t) return t;
+    const s = t.builtin ? _seeds.find(x=>x.id===t.id) : null;
+    const falta = !t.cuerpoWA || !t.cuerpoCorreo || !t.ico;
+    if(!falta) return t;
+    return {...t,
+      cuerpoWA: t.cuerpoWA || (s&&s.cuerpoWA) || t.cuerpo,
+      cuerpoCorreo: t.cuerpoCorreo || (s&&s.cuerpoCorreo) || t.cuerpo,
+      ico: t.ico || (s&&s.ico) || icoSugerido(t.label)};
   });
   const [selId,setSelId]=useState(list[0]?.id||"");
   const sel = list.find(t=>t.id===selId) || list[0];
@@ -1785,7 +1855,7 @@ function ComunicacionesPanel({ p, owner, gw, cuentas, plantillas, onSave, onAdd,
       <div>
         <div className="tpl-list">
           {list.map(t=>(<div key={t.id} className={"tpl-item"+(selId===t.id?" on":"")} onClick={()=>setSelId(t.id)}>
-            <div className="ic">{t.ico||""}</div>
+            <div className="ic">{t.ico||icoSugerido(t.label)}</div>
             <div style={{fontWeight:700,fontSize:14.5,flex:1}}>{t.label}{!t.builtin&&<span className="pill blue" style={{marginLeft:6,fontSize:11}}>propia</span>}</div>
           </div>))}
         </div>
@@ -1796,8 +1866,16 @@ function ComunicacionesPanel({ p, owner, gw, cuentas, plantillas, onSave, onAdd,
         {/* Editor de la plantilla */}
         <div className="card pad" style={{background:"var(--panel2)",border:"1px solid var(--line)",marginBottom:14}}>
           <div className="grid c2" style={{gridTemplateColumns:"90px 1fr",gap:10}}>
-            <div className="field"><label className="label">Ícono</label><input className="input" value={draft.ico||""} maxLength={2} onChange={e=>setDraft(d=>({...d,ico:e.target.value}))}/></div>
+            <div className="field"><label className="label">Ícono</label><input className="input" value={draft.ico||""} maxLength={2} placeholder={icoSugerido(draft.label)} onChange={e=>setDraft(d=>({...d,ico:e.target.value}))}/></div>
             <div className="field"><label className="label">Nombre de la plantilla</label><input className="input" value={draft.label||""} onChange={e=>setDraft(d=>({...d,label:e.target.value}))}/></div>
+          </div>
+          {/* Elegir el ícono con un toque, sin pelear con el teclado de emojis. */}
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:12.5,color:"var(--muted)",marginBottom:6}}>O elige uno:</div>
+            <div className="ico-elige">
+              {TPL_ICONOS.map(ic=>(<button key={ic} type="button" className={"ico-op"+(draft.ico===ic?" on":"")}
+                title={"Usar "+ic} onClick={()=>setDraft(d=>({...d,ico:ic}))}>{ic}</button>))}
+            </div>
           </div>
           <div className="field" style={{marginTop:10}}><label className="label">Asunto (correo)</label><input className="input" value={draft.asunto||""} onChange={e=>setDraft(d=>({...d,asunto:e.target.value}))}/></div>
           <div className="field" style={{marginTop:10}}><label className="label">Texto para WhatsApp <span style={{fontWeight:400,color:"var(--faint)"}}>(usa *negrita* y _itálica_)</span></label><textarea value={draft.cuerpoWA||""} onChange={e=>setDraft(d=>({...d,cuerpoWA:e.target.value}))} placeholder="Si lo dejas vacío, se usa el texto base." style={{minHeight:150}}/></div>
@@ -2134,28 +2212,107 @@ function PropuestasIA({ items, props, onAplicar }){
   </div>);
 }
 
-/* ---- Reordenar fichas ----------------------------------------------------
-   Se mantiene presionada una tarjeta (o clic derecho en el computador) y se
-   elige dónde dejarla. El temporizador vive fuera de React a propósito: hay un
-   solo gesto a la vez y la cantidad de tarjetas cambia, así que no puede ser
-   un hook. */
+/* ---- Arrastrar para reordenar --------------------------------------------
+   Se mantiene presionada una ficha y, sin soltar, se arrastra con el dedo (o
+   con el mouse) hasta donde debe quedar, igual que al mover las aplicaciones
+   en el teléfono. El estado del gesto vive fuera de React porque hay un solo
+   arrastre a la vez y la cantidad de fichas cambia (no puede ser un hook).
+
+   Devuelve los manejadores para la ficha número `indice` de la lista `ids`.
+   `alSoltar(nuevosIds)` recibe el orden final. */
+const _ar = { activo:false, reclamado:false, clave:null, ids:null, desde:-1, sobre:-1, t:null, y0:0, alSoltar:null };
+/* Mientras se arrastra, el gesto se sigue desde el documento y no desde la
+   ficha: así el dedo puede salirse de ella sin que se pierda el movimiento, y
+   —sobre todo— el `preventDefault` sí surte efecto (React escucha los toques
+   de forma pasiva, así que desde sus manejadores la página se desplazaría
+   igual). */
+const _arSeguir = (e)=>{
+  if(!_ar.activo) return;
+  const p=(e.touches&&e.touches[0])||e;
+  if(e.cancelable) e.preventDefault(); // ya arrastrando: la página no debe desplazarse
+  const bajo=_arDebajo(p.clientX,p.clientY);
+  document.querySelectorAll(".ord-wrap.hueco").forEach(el=>el.classList.remove("hueco"));
+  if(bajo && bajo.i!==_ar.desde){ _ar.sobre=bajo.i; bajo.el.classList.add("hueco"); }
+};
+const _arSoltar = ()=>{
+  if(!_ar.activo){ _arLimpiar(); return; }
+  const { ids:lista, desde, sobre, alSoltar:fn } = _ar;
+  _arLimpiar();
+  if(fn && lista && sobre>=0 && sobre!==desde) fn(moverEn(lista, lista[desde], sobre));
+};
+const _arEscuchar = (poner)=>{
+  const f = poner ? document.addEventListener.bind(document) : document.removeEventListener.bind(document);
+  f("touchmove",_arSeguir,{passive:false});
+  f("mousemove",_arSeguir);
+  f("touchend",_arSoltar); f("touchcancel",_arSoltar); f("mouseup",_arSoltar);
+};
+const _arLimpiar = ()=>{
+  if(_ar.t){ clearTimeout(_ar.t); _ar.t=null; }
+  if(_ar.activo){
+    _arEscuchar(false);
+    /* Tras arrastrar, el toque no debe abrir la ficha. En el teléfono a veces
+       no llega ningún clic después de soltar, así que la marca se borra sola:
+       si no, se comería el siguiente toque de verdad. */
+    setTimeout(()=>{ _pl.sup=false; },700);
+  }
+  document.querySelectorAll(".ord-wrap.arrastrando,.ord-wrap.hueco").forEach(el=>el.classList.remove("arrastrando","hueco"));
+  _ar.activo=false; _ar.reclamado=false; _ar.clave=null; _ar.ids=null; _ar.desde=-1; _ar.sobre=-1; _ar.alSoltar=null;
+};
+/* Sobre qué ficha está el dedo ahora mismo. Se mira también la posición
+   horizontal porque en el inicio las propiedades van en dos columnas: si solo
+   se mirara la altura, dos fichas distintas darían lo mismo. */
+const _arDebajo = (x,y)=>{
+  const cajas=[...document.querySelectorAll('.ord-wrap[data-ord-clave="'+_ar.clave+'"]')];
+  let soloAltura=null;
+  for(let i=0;i<cajas.length;i++){
+    const r=cajas[i].getBoundingClientRect();
+    if(y>=r.top && y<=r.bottom){
+      if(x>=r.left && x<=r.right) return { i, el:cajas[i], r };
+      if(!soloAltura) soloAltura={ i, el:cajas[i], r };
+    }
+  }
+  return soloAltura;
+};
+const arrastrable = (clave, ids, indice, alSoltar)=>{
+  const empezar=(e)=>{
+    if(_plEditando(e.target)) return;
+    // Hay fichas dentro de otras fichas (una propiedad dentro de la tarjeta
+    // "Tus propiedades"): manda la de más adentro, que es la que recibe el
+    // gesto primero.
+    if(_ar.reclamado && (_ar.t || _ar.activo)) return;
+    _ar.reclamado=true;
+    const p=(e.touches&&e.touches[0])||e;
+    _ar.y0=p.clientY; _ar.clave=clave; _ar.ids=ids.slice(); _ar.desde=indice; _ar.sobre=indice; _ar.alSoltar=alSoltar;
+    if(_ar.t) clearTimeout(_ar.t);
+    _ar.t=setTimeout(()=>{
+      _ar.t=null; _ar.activo=true; _pl.sup=true;
+      _arEscuchar(true);
+      try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
+      const caja=document.querySelectorAll('.ord-wrap[data-ord-clave="'+clave+'"]')[indice];
+      if(caja) caja.classList.add("arrastrando");
+    },420);
+  };
+  /* Antes de que arranque el arrastre: si el dedo se desplaza, era scroll. */
+  const mover=(e)=>{
+    if(_ar.activo) return;
+    const p=(e.touches&&e.touches[0])||e;
+    if(_ar.t && Math.abs(p.clientY-_ar.y0)>12){ clearTimeout(_ar.t); _ar.t=null; _ar.reclamado=false; }
+  };
+  return {
+    onTouchStart:empezar, onTouchMove:mover, onTouchEnd:_arSoltar, onTouchCancel:_arSoltar,
+    onMouseDown:(e)=>{ if(e.button===0) empezar(e); },
+    onMouseMove:mover, onMouseUp:_arSoltar, onMouseLeave:()=>{ if(!_ar.activo) _arLimpiar(); },
+  };
+};
+
+/* ---- Reordenar fichas: cuadro con posiciones (el respaldo) ----------------
+   El arrastre de arriba es la forma principal. Además queda el cuadro con la
+   lista de posiciones, que se abre desde el asa ⠿ o con clic derecho en el
+   computador. `_pl.sup` marca que hubo un gesto largo, para que el toque que
+   viene después no abra la ficha. */
 const _pl={t:null,sup:false,x:0,y:0};
-const _plFin=()=>{ if(_pl.t){ clearTimeout(_pl.t); _pl.t=null; } };
 const _plEditando=(el)=>{ const t=((el&&el.tagName)||"").toLowerCase();
   return t==="input"||t==="textarea"||t==="select"||(el&&el.isContentEditable); };
-const pulsacionLarga=(alPresionar)=>{
-  const ini=(e)=>{ if(_plEditando(e.target)) return;
-    const p=(e.touches&&e.touches[0])||e; _pl.x=p.clientX; _pl.y=p.clientY; _plFin();
-    _pl.t=setTimeout(()=>{ _pl.t=null; _pl.sup=true;
-      try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
-      alPresionar(); },500); };
-  const mov=(e)=>{ const p=(e.touches&&e.touches[0])||e;
-    if(Math.abs(p.clientX-_pl.x)>12||Math.abs(p.clientY-_pl.y)>12) _plFin(); };
-  return { onTouchStart:ini, onTouchMove:mov, onTouchEnd:_plFin, onTouchCancel:_plFin,
-    onContextMenu:(e)=>{ if(_plEditando(e.target)) return; e.preventDefault(); alPresionar(); },
-    // El toque que viene después de la pulsación larga no debe abrir la ficha.
-    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } } };
-};
 const ordenarPor=(items, orden, idDe)=>{
   if(!Array.isArray(orden)||!orden.length) return items;
   const pos=(x)=>{ const i=orden.indexOf(idDe(x)); return i<0?9999:i; };
@@ -2282,8 +2439,15 @@ const FAQ=[
     {q:"¿Qué es la bitácora y qué anoto ahí?", a:"Es el cuaderno de notas con fecha de la propiedad. Anota acuerdos, conversaciones, mantenciones o cambios importantes para tener un respaldo. Por ejemplo: “Se pintó el living” o “El arrendatario avisó que viaja en julio”."},
     {q:"¿Qué es el dividendo hipotecario?", a:"Es la cuota mensual del crédito con que se compró la propiedad. Está en UF, por eso se reajusta solo. La plataforma te muestra cuánto llevas pagado y cuánto falta."},
     {q:"¿Qué son las contribuciones y el seguro?", a:"Las contribuciones son el impuesto territorial (normalmente se paga 4 veces al año) y el seguro de incendio y sismo protege el inmueble. Ambos se reparten por mes para calcular bien la utilidad."},
-    {q:"¿Qué es la garantía y cómo se liquida?", a:"Es el mes (o meses) que el arrendatario deja en depósito. Al terminar el arriendo registras los descuentos (daños, cuentas impagas) y la plataforma calcula el saldo a devolver."},
+    {q:"¿Qué es la garantía y cómo se liquida?", a:"La garantía es la plata que el arrendatario deja al firmar el contrato —en Chile casi siempre un mes de arriendo— y que queda guardada por si al final del arriendo hay algo pendiente. No es un pago adelantado del último mes: es un respaldo. Cuando el arrendatario se va, se revisa la propiedad y se hace la liquidación de garantía, que es simplemente la cuenta final: de la garantía recibida se descuenta lo que corresponda y el resto se le devuelve. Se descuentan los arriendos impagos, las cuentas de luz, agua, gas o gasto común que hayan quedado debiendo, y los daños que no sean por el uso normal (un vidrio roto, una puerta forzada, una pared con un hoyo). NO se descuenta el desgaste normal por haber vivido ahí: pintura gastada, sellos de baño amarillos, alfombra usada. En la plataforma vas a Mis propiedades → abre la propiedad → Liquidación de garantía: escribes un descuento por cada cosa, con su monto, y ella calcula sola el saldo a devolver. Después generas el documento: lo puedes ver y guardar en PDF, descargar en Word para editarlo, mandarlo por WhatsApp o copiar el texto. Conviene que ambas partes lo firmen y que la devolución se haga por transferencia una vez entregada la propiedad. Si los descuentos superan la garantía, el saldo sale negativo: esa diferencia queda como deuda del arrendatario."},
     {q:"¿Qué es la utilidad?", a:"Es lo que realmente ganas: todos los ingresos (arriendo más extras) menos todos los gastos (dividendo, contribuciones, seguro, gasto común, reparaciones, etc.). Puede ser positiva o negativa."}
+  ]},
+  {cat:"La liquidación mensual al propietario", items:[
+    {q:"¿Qué es la liquidación mensual y para qué sirve?", a:"Es la cuenta del mes que se le entrega al dueño de la propiedad. Responde tres preguntas: cuánta plata entró por el arriendo, qué se descontó y cuánto se le deposita. Se genera sola en Finanzas → Liquidación mensual al propietario: eliges el mes y la sociedad, y la plataforma arma la tabla con todas las propiedades. Después la ves en PDF, la descargas en Word o la mandas por WhatsApp. Es el documento que más valoran los propietarios porque les deja claro, en una hoja, en qué quedó su mes."},
+    {q:"¿Qué significa la comisión de administración y qué porcentaje pongo?", a:"Es tu pago por administrar la propiedad: cobrar el arriendo, atender al arrendatario, coordinar reparaciones, llevar las cuentas. Se calcula como un porcentaje del arriendo efectivamente cobrado, no del arriendo pactado: si el arrendatario no paga, no hay comisión ese mes. Ejemplo: arriendo cobrado $600.000 con una comisión del 8% = $48.000. En Chile lo habitual está entre 5% y 10%; los departamentos de arriendo residencial suelen ir cerca del 8%, y a mayor cantidad de propiedades del mismo dueño se suele bajar el porcentaje. Importante: si las propiedades son tuyas y tú mismo las administras, no te cobras comisión a ti mismo — deja el campo en 0 y la columna queda en cero."},
+    {q:"¿Qué son los ítems de la liquidación mensual?", a:"Cobrado: el arriendo que el arrendatario efectivamente pagó ese mes. Si el arriendo está pactado en UF, es la UF convertida a pesos con la regla del contrato; si no pagó, aparece en $0 y el estado dice Pendiente. Comisión: tu pago por administrar, o sea el porcentaje aplicado a lo cobrado. Gastos: todo lo que se pagó por cuenta del propietario durante el mes — reparaciones, gasto común, contribuciones, seguro de incendio y sismo, mantenciones. Líquido a transferir: lo que finalmente se le deposita al propietario, que es Cobrado menos Comisión menos Gastos. Si el líquido sale negativo (en rojo), significa que los gastos del mes fueron mayores que el arriendo cobrado y el propietario tiene que poner la diferencia; suele pasar los meses en que toca pagar contribuciones o una reparación grande."},
+    {q:"¿Me puedes dar un ejemplo con números?", a:"Departamento arrendado en $600.000. El arrendatario paga el 5 del mes, así que Cobrado = $600.000. La comisión de administración es 8%, entonces Comisión = $48.000. Ese mes se pagó el gasto común atrasado de $20.000 y se cambió un calefont por $15.000, así que Gastos = $35.000. El Líquido a transferir es 600.000 − 48.000 − 35.000 = $517.000. Esa es la cifra que se le deposita al propietario, y la liquidación en PDF le muestra exactamente de dónde sale cada número."},
+    {q:"¿Cuándo se hace y cómo se envía?", a:"Lo habitual es liquidar dentro de los primeros días del mes siguiente, una vez cobrado el arriendo y pagados los gastos del mes anterior. En Finanzas eliges el mes, revisas la tabla, tocas Ver / Imprimir liquidación (PDF) para guardarla, y Enviar por WhatsApp para mandarle el resumen al propietario junto con el depósito."}
   ]},
   {cat:"Documentos, informes y datos", items:[
     {q:"¿Cómo creo o edito un contrato?", a:"En Documentos Legales puedes crear un contrato de arriendo y enviarlo a firma online. También puedes verificar antecedentes de un postulante antes de arrendarle."},
@@ -3206,7 +3370,23 @@ function Puerta({ modo, onEntrar }){
 }
 
 function App(){
-  const [tab,setTab]=useState("inicio");
+  /* ---- Navegación con flecha de "volver" ----
+     Cada vez que se cambia de sección se anota de dónde se venía, para que la
+     flecha ← de la barra superior (y el gesto de retroceso del teléfono)
+     devuelvan al lugar anterior en vez de sacar de la plataforma. */
+  const [tab,_setTab]=useState("inicio");
+  const navPila=useRef([]);
+  const [navHay,setNavHay]=useState(false);
+  const setTab=(t)=>_setTab(prev=>{
+    const n = typeof t==="function" ? t(prev) : t;
+    if(n!==prev){
+      navPila.current.push(prev);
+      if(navPila.current.length>40) navPila.current.shift();
+      setNavHay(true);
+      try{ window.history.pushState({ap:1},""); }catch(_e){}
+    }
+    return n;
+  });
   /* ---- Acceso: clave de la plataforma ----
      "cargando" mientras se pregunta al servidor, "crear" la primera vez,
      "entrar" si ya hay clave, "ok" cuando la sesión es válida. */
@@ -3229,7 +3409,10 @@ function App(){
     return ()=>{ vivo=false; window.__sinAcceso=null; };
   },[]);
   /* Clave, accesos de otras personas y respaldos. */
-  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura"});
+  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura",correo:"",wsp:""});
+  /* Último acceso creado, para poder mandárselo a la persona. La clave vive
+     solo aquí, en la pantalla: el servidor guarda su huella, no la clave. */
+  const [ultAcceso,setUltAcceso]=useState(null);
   const [segBusy,setSegBusy]=useState(false);
   const [accesos,setAccesos]=useState([]);
   const [respaldos,setRespaldos]=useState([]);
@@ -3254,11 +3437,52 @@ function App(){
       const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol});
       const j=await r.json().catch(()=>({}));
       if(!r.ok) notify(j.error||"No se pudo crear el acceso",true);
-      else { setAccesos(j.accesos||[]); setSegForm(f=>({...f,nombre:"",claveInv:""}));
-        notify("Acceso creado. Entrégale esa clave a la persona."); }
+      else { setAccesos(j.accesos||[]);
+        setUltAcceso({nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol,correo:segForm.correo,wsp:segForm.wsp});
+        setSegForm(f=>({...f,nombre:"",claveInv:""}));
+        notify("Acceso creado. Ahora mándaselo por correo o WhatsApp."); }
     }catch(e){ notify("Sin conexión",true); }
     setSegBusy(false);
   };
+  /* ---- Entregarle el acceso a la persona ----
+     El correo sale desde contacto@aliviasoluciones.com si el servidor tiene
+     configurado el servicio de correo; si no, se abre el correo del teléfono
+     con el mensaje ya escrito. El WhatsApp se manda desde el número de la
+     administración (+56975549829), que es el que va firmado al pie. */
+  const CORREO_ADMIN="contacto@aliviasoluciones.com";
+  const textoAcceso=(a)=> [
+    "Hola "+(a.nombre||"")+":","",
+    "Te damos acceso a la plataforma donde administramos las propiedades.","",
+    "Dirección: "+window.location.origin,
+    "Tu clave: "+a.clave,
+    "Permiso: "+(a.rol==="lectura"?"solo lectura (puedes ver todo, no modificar)":"ver y modificar"),"",
+    "Entra a la dirección, escribe la clave y listo. No la compartas con nadie más.","",
+    "Cualquier duda, escríbenos a "+CORREO_ADMIN+" o al WhatsApp "+waRemitente(owner)+".","",
+    "ArriendoPro · Administración de propiedades",
+  ].join("\n");
+  const correoAcceso=async(a)=>{
+    const correo=String(a.correo||"").trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ notify("Escribe el correo de la persona",true); return; }
+    setSegBusy(true);
+    let enviado=false;
+    try{
+      const r=await apiJSON("/api/enviar-acceso",{nombre:a.nombre,email:correo,clave:a.clave,rol:a.rol,url:window.location.origin});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&j.ok){ enviado=true; notify("Acceso enviado a "+correo+" desde "+CORREO_ADMIN); }
+    }catch(_e){}
+    setSegBusy(false);
+    if(!enviado){
+      // Todavía no hay servicio de correo en el servidor: se manda desde el
+      // correo del teléfono con el mensaje ya escrito.
+      window.location.href="mailto:"+encodeURIComponent(correo)
+        +"?subject="+encodeURIComponent("Tu acceso a la plataforma — ArriendoPro")
+        +"&body="+encodeURIComponent(textoAcceso(a));
+      notify("Aún no hay servicio de correo en el servidor: te abrí el correo con el mensaje listo.");
+    }
+  };
+  const whatsappAcceso=(a)=>{ waEnviar(a.wsp||"", textoAcceso(a)); };
+  const copiarAcceso=(a)=>{ if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(textoAcceso(a)).then(()=>notify("Mensaje copiado")).catch(()=>notify("No se pudo copiar",true)); };
   const borrarAcceso=async(id)=>{
     try{ const r=await apiJSON("/api/acceso",{accion:"borrar_acceso",id}); const j=await r.json().catch(()=>({}));
       if(r.ok){ setAccesos(j.accesos||[]); notify("Acceso eliminado"); } }catch(_e){}
@@ -3430,6 +3654,11 @@ function App(){
   const [asAdj,setAsAdj]=useState([]); // archivos adjuntos del chat
   const [asLeadId,setAsLeadId]=useState(()=>store.get("ap_asesor_lead",""));
   const [asMet,setAsMet]=useState(()=>store.get(ASESOR_MET_KEY,{consultas:0,busquedas:0,leads:0,visitas:0,derivaciones:0,propiedades:{}}));
+  /* Orden elegido a mano: se mantiene presionada una ficha y se decide dónde va.
+     Se guarda por sección ("inicio", "props"). */
+  const [ordenes,setOrdenes]=useState(()=>store.get("ap_ordenes",{}));
+  useEffect(()=>{ store.set("ap_ordenes",ordenes); },[ordenes]);
+  const [mover,setMover]=useState(null);
   const asEnd=useRef(null);
   useEffect(()=>{ store.set(ASESOR_CHAT_KEY,asChat.slice(-60)); },[asChat]);
   useEffect(()=>{ store.set(ASESOR_CHAT_KEY+"_raw",asMsgs.slice(-40)); },[asMsgs]);
@@ -3528,6 +3757,15 @@ function App(){
           if(Array.isArray(e.plantillas) && e.plantillas.length) setPlantillas(e.plantillas);
           if(Array.isArray(e.leads)) setLeads(e.leads);
           if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
+          // Preferencias: el orden de las fichas y los contadores del asesor.
+          if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
+          if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
+          // Ajustes de las liquidaciones y del reajuste, para que sean los
+          // mismos en el teléfono y en el computador.
+          if(typeof e.comisionAdmin==="number") setComisionAdmin(e.comisionAdmin);
+          if(typeof e.ipcAcum==="number") setIpcAcum(e.ipcAcum);
+          if(typeof e.ufVarAnual==="number") setUfVarAnual(e.ufVarAnual);
+          if(typeof e.reajPeriodo==="number") setReajPeriodo(e.reajPeriodo);
         }
         // Solo desde aquí en adelante se puede guardar: si la carga falla y
         // guardáramos igual, se subiría la copia local vacía encima de los
@@ -3539,15 +3777,25 @@ function App(){
     })();
     return ()=>{ alive=false; };
   },[puerta]);
+  /* "guardando" mientras sube, "ok" cuando quedó guardado en el servidor y
+     "error" si no se pudo. Se muestra arriba para no dejar dudas de que todo
+     se guarda solo. */
+  const [guardado,setGuardado]=useState("");
   useEffect(()=>{
     if(!hydrated || puerta!=="ok") return;
     if(acceso && acceso.rol==="lectura") return; // acceso de solo lectura: no guarda
     if(saveTimer.current) clearTimeout(saveTimer.current);
+    setGuardado("guardando");
     saveTimer.current=setTimeout(()=>{
-      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies }) }).catch(()=>{});
+      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas,
+          leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo }) })
+        .then(r=>setGuardado(r&&r.ok?"ok":"error")).catch(()=>setGuardado("error"));
     }, 800);
     return ()=>{ if(saveTimer.current) clearTimeout(saveTimer.current); };
-  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies]);
+  },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo]);
+  /* El aviso de "guardado" se apaga solo; el de error se queda a la vista. */
+  useEffect(()=>{ if(guardado!=="ok") return; const t=setTimeout(()=>setGuardado(""),2200); return ()=>clearTimeout(t); },[guardado]);
 
   /* Indicadores económicos desde mindicador.cl (con respaldo / edición manual) */
   const migrarAUF=(v)=>{
@@ -3661,7 +3909,19 @@ function App(){
     return base;
   };
   const reglaUFTexto=(p)=>{ const r=ufParaCobro(p); return r.etiqueta+" ("+CLP(r.valor)+" del "+fmtF(r.fecha)+")"; };
-  const refrescarIndicadores=async()=>{ setIndLoading(true); await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]); setIndLoading(false); };
+  /* Al tocar "Actualizar" tiene que verse que algo pasó: gira mientras trabaja
+     y queda un visto unos segundos, aunque la respuesta llegue al instante. */
+  const [indRecien,setIndRecien]=useState(false);
+  const refrescarIndicadores=async()=>{
+    setIndLoading(true); setIndRecien(false);
+    const desde=Date.now();
+    await Promise.all([fetchUF(), fetchOtrosIndicadores(), fetchUFSerie()]);
+    // Medio segundo mínimo: si parpadea, el usuario no alcanza a ver nada.
+    const falta=600-(Date.now()-desde);
+    if(falta>0) await new Promise(r=>setTimeout(r,falta));
+    setIndLoading(false); setIndRecien(true);
+    setTimeout(()=>setIndRecien(false),2500);
+  };
 
   useEffect(()=>{ fetchUFSerie(); /* eslint-disable-next-line */ },[]);
   useEffect(()=>{ fetchUF(); /* eslint-disable-next-line */ },[]);
@@ -3683,20 +3943,21 @@ function App(){
   window.__UF__=uf;
 
   const gw=gateways.find(g=>g.id===owner.gateway)||gateways[0];
-  /* Orden elegido a mano: se mantiene presionada una ficha y se decide dónde va.
-     Se guarda por sección ("inicio", "props"). */
-  const [ordenes,setOrdenes]=useState(()=>store.get("ap_ordenes",{}));
-  useEffect(()=>{ store.set("ap_ordenes",ordenes); },[ordenes]);
-  const [mover,setMover]=useState(null);
   const guardarOrden=(clave,ids)=>setOrdenes(o=>({...o,[clave]:ids}));
   const reiniciarOrden=(clave)=>{ setOrdenes(o=>{ const n={...o}; delete n[clave]; return n; }); setMover(null); };
   /* Envuelve cada ficha para poder moverla. `lista` son {id, titulo, node}. */
   const bloquesOrdenados=(clave,lista)=>{
     const ord=ordenarPor(lista,ordenes[clave],x=>x.id);
     const items=ord.map(x=>({id:x.id,titulo:x.titulo}));
+    const ids=ord.map(x=>x.id);
     return ord.map((x,i)=>(
-      <div key={x.id} className="ord-wrap" {...pulsacionLarga(()=>setMover({clave,id:x.id,titulo:x.titulo,items}))}>
+      <div key={x.id} className="ord-wrap" data-ord-clave={clave}
+        {...arrastrable(clave, ids, i, (nuevos)=>guardarOrden(clave,nuevos))}
+        onContextMenu={(e)=>{ e.preventDefault(); setMover({clave,id:x.id,titulo:x.titulo,items}); }}
+        onClickCapture={(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } }}>
         {!!(ordenes[clave]&&ordenes[clave].length)&&<span className="ord-num">{i+1}</span>}
+        <span className="ord-asa" title="Mantén presionado y arrastra para mover"
+          onClick={(e)=>{ e.stopPropagation(); setMover({clave,id:x.id,titulo:x.titulo,items}); }}>⠿</span>
         {x.node}
       </div>));
   };
@@ -3768,6 +4029,24 @@ function App(){
   /* Datos para mover una propiedad de lugar dentro de "Mis propiedades". */
   const itemsProps=()=>propsOrd.map(p=>({id:String(p.id),titulo:p.name}));
   const moverPropiedad=(p)=>setMover({clave:"props",id:String(p.id),titulo:p.name,items:itemsProps()});
+  /* En "Mis propiedades" la lista puede venir filtrada (por uso o por
+     sociedad). Al arrastrar dentro de esa vista solo cambia el orden de lo que
+     se ve; el resto de las propiedades se queda donde estaba. */
+  const fusionarOrdenProps=(visibles)=>{
+    const base=propsOrd.map(p=>String(p.id));
+    const set=new Set(visibles); let k=0;
+    const out=base.map(g=>set.has(g)?visibles[k++]:g);
+    while(k<visibles.length){ if(out.indexOf(visibles[k])<0) out.push(visibles[k]); k++; }
+    return out;
+  };
+  /* Mantener presionada una propiedad y desplazarla con el dedo, igual que al
+     mover las aplicaciones del teléfono. El asa ⠿ abre el cuadro con las
+     posiciones, que sigue estando para quien lo prefiera. */
+  const arrastreProp=(ids,i,p)=>({
+    ...arrastrable("props", ids, i, (nuevos)=>guardarOrden("props", fusionarOrdenProps(nuevos))),
+    onContextMenu:(e)=>{ if(_plEditando(e.target)) return; e.preventDefault(); moverPropiedad(p); },
+    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } },
+  });
 
   const ingresos=rentals.reduce((s,p)=>s+num(p.rent),0);
   const dividendos=props.reduce((s,p)=>s+divCLP(p,uf),0);
@@ -4906,6 +5185,51 @@ function App(){
     const lineas=desc.map(d=>` • ${d.concepto}: ${CLP(d.monto)}`).join("\n") || " • Sin descuentos";
     return `LIQUIDACIÓN DE GARANTÍA — ${p.name}\nArrendatario: ${p.tenant||"—"}\nGarantía recibida: ${CLP(p.garantia&&p.garantia.monto)}\nDescuentos:\n${lineas}\nTotal descuentos: ${CLP(total)}\nSALDO A DEVOLVER: ${CLP(saldo)}\nEstado: ${(p.garantia&&p.garantia.estado)||"—"}\nEmitido: ${new Date().toLocaleDateString("es-CL")} · ArriendoPro`; };
   const copiarLiquidacion=(p)=>{ const t=generarLiquidacionTexto(p); if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>notify("Liquidación copiada")).catch(()=>notify("No se pudo copiar",true)); };
+  /* La liquidación de garantía como documento formal: se ve e imprime (o se
+     guarda como PDF) y también se descarga en Word para editarla. Es el papel
+     que se le entrega al arrendatario cuando entrega la propiedad, y deja por
+     escrito cuánto se le devuelve y por qué. */
+  const liquidacionGarantiaHTML=(p)=>{
+    const g=p.garantia||{}; const desc=g.descuentos||[];
+    const total=desc.reduce((a,d)=>a+num(d.monto),0);
+    const recibida=num(g.monto); const saldo=recibida-total;
+    const soc=socById(p.sociedad);
+    const filas = desc.length
+      ? desc.map(d=>`<tr><td>${esc(d.concepto)}</td><td style="text-align:right">${esc(CLP(num(d.monto)))}</td></tr>`).join("")
+        + `<tr class="tot"><td>Total descuentos</td><td style="text-align:right">${esc(CLP(total))}</td></tr>`
+      : `<tr><td colspan="2" class="muted">Sin descuentos: la garantía se devuelve completa.</td></tr>`;
+    return docPro("Liquidación de garantía", p.name+(p.address?" · "+p.address+(p.comuna?", "+p.comuna:""):""),
+      `<div class="kpis">
+         ${kpiBox("Garantía recibida",CLP(recibida))}
+         ${kpiBox("Total descuentos",CLP(total),total>0?"neg":"")}
+         ${kpiBox("Saldo a devolver",CLP(saldo),saldo>=0?"pos":"neg")}
+       </div>
+       <h2>1 · Antecedentes</h2>
+       ${filaDL([
+         ["Propiedad",p.name],["Dirección",[p.address,p.comuna].filter(Boolean).join(", ")],
+         ["Arrendatario",p.tenant||"—"],["RUT arrendatario",p.tenantRut||""],
+         ["Propietario",soc?soc.name:""],["RUT propietario",soc?soc.rut:""],
+         ["Garantía recibida",CLP(recibida)],["Fecha en que se recibió",(g.fechaRecibida||g.fecha||"")],
+         ["Estado",g.estado||"—"],["Notas",g.notas||""],
+       ])}
+       <h2>2 · Descuentos aplicados</h2>
+       <table><thead><tr><th>Concepto</th><th style="text-align:right">Monto</th></tr></thead><tbody>${filas}</tbody></table>
+       <div class="nota"><b>Qué es este documento.</b> La garantía es el dinero que el arrendatario entregó al firmar
+       (en Chile, normalmente un mes de arriendo) y que queda guardado para responder por lo que pueda quedar pendiente
+       al final: arriendos o cuentas impagas y daños que no sean por el uso normal. Al terminar el contrato se revisa la
+       propiedad, se descuenta de la garantía lo que corresponda y se devuelve el resto. Eso es esta liquidación: el
+       detalle, en un papel, de cuánto se recibió, cuánto se descuenta, por qué, y cuánto se devuelve.</div>
+       <h2>3 · Resultado</h2>
+       <p style="font-size:15px"><b>Saldo a devolver al arrendatario: ${esc(CLP(saldo))}</b>${saldo<0?" (los descuentos superan la garantía; la diferencia queda como deuda del arrendatario)":""}.</p>
+       <p class="muted">La devolución se realiza por transferencia a la cuenta que indique el arrendatario, una vez
+       entregada la propiedad y firmada esta liquidación por ambas partes.</p>
+       <h2>4 · Firmas</h2>
+       <table><tr><td style="height:70px">Arrendatario<br><span class="muted">${esc(p.tenant||"")}</span></td><td style="height:70px">Propietario o administrador<br><span class="muted">${esc(soc?soc.name:(owner.name||""))}</span></td></tr></table>`);
+  };
+  const verLiquidacionGarantia=(p)=>abrirImprimir(liquidacionGarantiaHTML(p));
+  const descargarLiquidacionGarantiaWord=(p)=>descargarBlob(
+    "Liquidacion-garantia-"+String(p.name||"propiedad").replace(/[^a-z0-9]+/gi,"-")+".doc",
+    liquidacionGarantiaHTML(p), "application/msword");
 
   /* ---------- Compartir propiedad ---------- */
   const setCompartir=(pid,patch)=> patchProp(pid, x=>({...x, compartir:{...getCompartir(x), ...patch}}));
@@ -5583,6 +5907,14 @@ function App(){
       {p.use==="arriendo" && (()=>{ const desc=(p.garantia&&p.garantia.descuentos)||[]; const total=desc.reduce((a,d)=>a+num(d.monto),0); const saldo=num(p.garantia&&p.garantia.monto)-total;
         return (<>
         <Collapsible icon="🔐" title="Liquidación de garantía" defaultOpen={false}>
+        <div className="help" style={{marginBottom:12}}>
+          <b>¿Qué es?</b> La <b>garantía</b> es el dinero que el arrendatario dejó al firmar el contrato (en Chile, casi siempre <b>un mes de arriendo</b>).
+          Queda guardada por si al final del arriendo hay algo pendiente. Cuando el arrendatario se va, se revisa la propiedad y se hace la <b>liquidación</b>:
+          se descuenta de la garantía lo que corresponda —arriendo o cuentas impagas, daños que no sean por el uso normal— y <b>el resto se le devuelve</b>.
+          <br/><b>Cómo se usa aquí:</b> agrega abajo un descuento por cada cosa (con su monto), y la plataforma calcula sola el <b>saldo a devolver</b>.
+          Después genera el documento: lo puedes ver, guardar en <b>PDF</b>, descargar en <b>Word</b> o copiarlo para mandarlo por WhatsApp.
+          <br/><span style={{color:"var(--muted)"}}>Ojo: los daños por el uso normal (pintura gastada, sellos, desgaste) no se descuentan; sí los desperfectos, las cuentas impagas y los arriendos que queden debiendo.</span>
+        </div>
         {desc.length>0 && <div style={{marginBottom:10}}>
           {desc.map(d=>(<div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid var(--line2)",padding:"8px 0"}}>
             <span style={{fontSize:15}}>{d.concepto}</span>
@@ -5602,7 +5934,13 @@ function App(){
             <span style={{fontWeight:800,fontSize:24,color:saldo>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(saldo)}</span>
           </div>
         </div>
-        <div style={{textAlign:"right",marginTop:10}}><button className="btn btn-out btn-sm" onClick={()=>copiarLiquidacion(p)}>Generar liquidación</button></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end",marginTop:12}}>
+          <button className="btn btn-red btn-sm" onClick={()=>verLiquidacionGarantia(p)}>Ver / Guardar en PDF</button>
+          <button className="btn btn-out btn-sm" onClick={()=>descargarLiquidacionGarantiaWord(p)}>Descargar Word</button>
+          <button className="btn btn-out btn-sm" onClick={()=>waEnviar(p.tenantWhatsapp||"",generarLiquidacionTexto(p))}>Enviar por WhatsApp</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>copiarLiquidacion(p)}>Copiar texto</button>
+        </div>
+        <div className="help g" style={{marginTop:10}}>El botón <b>Ver / Guardar en PDF</b> abre el documento listo para imprimir; en el celular elige <b>Compartir → Guardar en Archivos</b> o <b>Imprimir → Guardar como PDF</b>.</div>
         </Collapsible>
         </>); })()}
 
@@ -5668,6 +6006,38 @@ function App(){
 
   const [menuOpen,setMenuOpen]=useState(false);
   const [mBusca,setMBusca]=useState(false), [busca,setBusca]=useState(""), [busSel,setBusSel]=useState(0);
+
+  /* ---- Volver ----
+     Una sola función para toda la plataforma: primero cierra lo que esté
+     abierto encima, después la propiedad desplegada y, por último, devuelve a
+     la sección anterior. La usan la flecha ← de la barra superior, la flecha
+     flotante de las ventanas y el gesto de retroceso del teléfono. */
+  const PANELES=[
+    [mAdd,()=>setMAdd(false)], [mEdit,()=>setMEdit(null)], [mNewTenant,()=>setMNewTenant(false)],
+    [mDel,()=>setMDel(null)], [mSoc,()=>setMSoc(false)], [mSocDel,()=>setMSocDel(null)],
+    [mPay,()=>setMPay(null)], [mRem,()=>setMRem(null)], [mVac,()=>setMVac(null)],
+    [mInfo,()=>setMInfo(false)], [mFirma,()=>setMFirma(null)], [mContract,()=>setMContract(null)],
+    [mContact,()=>setMContact(false)], [mFicha,()=>setMFicha(null)], [mover,()=>setMover(null)],
+    [mInc,()=>setMInc(null)], [mBit,()=>setMBit(null)], [mShare,()=>setMShare(null)],
+    [mIncShare,()=>setMIncShare(null)], [mBusca,()=>cerrarBusca()], [menuOpen,()=>setMenuOpen(false)],
+  ];
+  const panelAbierto = PANELES.some(([v])=>!!v);
+  const cerrarPaneles = ()=>{ PANELES.forEach(([v,cerrar])=>{ if(v) cerrar(); }); };
+  const hayVolver = panelAbierto || !!sel || navHay || tab!=="inicio";
+  const volverAtras = ()=>{
+    if(panelAbierto){ cerrarPaneles(); return; }
+    if(sel){ setSel(null); return; }
+    const anterior = navPila.current.pop();
+    setNavHay(navPila.current.length>0);
+    _setTab(anterior!==undefined ? anterior : "inicio");
+    try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_e){ window.scrollTo(0,0); }
+  };
+  /* El gesto de retroceso del teléfono hace lo mismo que la flecha. */
+  useEffect(()=>{
+    const alVolver=()=>{ if(hayVolver) volverAtras(); };
+    window.addEventListener("popstate",alVolver);
+    return ()=>window.removeEventListener("popstate",alVolver);
+  });
   useEffect(()=>{ const h=(e)=>{ const k=e.key; const tn=((e.target&&e.target.tagName)||"").toLowerCase(); const editing=tn==="input"||tn==="textarea"||tn==="select"||(e.target&&e.target.isContentEditable);
       if((k==="k"||k==="K")&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); setMBusca(v=>!v); }
       else if(k==="/"&&!editing&&!mBusca){ e.preventDefault(); setMBusca(true); }
@@ -5733,6 +6103,10 @@ function App(){
   if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
   return (<div className={"app"+(soloLectura?" solo-lectura":"")}>
+    {/* Flecha flotante: cierra la ventana que esté abierta encima. En el
+        teléfono el botón "Cancelar" queda al final de formularios largos. */}
+    {panelAbierto && !mBusca && !menuOpen &&
+      <button className="volver-flot" onClick={cerrarPaneles} title="Volver" aria-label="Volver">← Volver</button>}
     {menuOpen && <div className="nav-overlay" onClick={()=>setMenuOpen(false)}></div>}
     <div className={"sidebar"+(menuOpen?" open":"")}>
       <div className="brand"><div className="brand-logo">A</div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú">✕</button></div>
@@ -5773,6 +6147,9 @@ function App(){
       <div className="topbar"><div className="topbar-row">
         <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
           <button className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          {/* Flecha para regresar: a la sección anterior o, si hay una
+              propiedad desplegada, a la lista. */}
+          {hayVolver && <button className="volver-btn" onClick={volverAtras} title="Volver" aria-label="Volver"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>}
           {/* Apunta al buscador que navega. El buscador global antiguo listaba
               campos internos de los datos (id, builtin, cuerpoWA…) que no
               llevaban a ninguna parte al tocarlos. */}
@@ -5781,6 +6158,10 @@ function App(){
         </div>
         <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <button className="btn btn-ghost btn-sm btn-busca" onClick={()=>setMBusca(true)}>Buscar <span className="kbd">/</span></button>
+          {/* Todo se guarda solo en el servidor; esto lo hace visible. */}
+          {guardado==="guardando" && <span className="guardado" title="Guardando en el servidor…"><span className="ind-spin"></span> Guardando…</span>}
+          {guardado==="ok" && <span className="guardado ok" title="Guardado en el servidor: lo verás igual en cualquier dispositivo">✓ Guardado</span>}
+          {guardado==="error" && <span className="guardado mal" title="Revisa tu conexión; volveré a intentarlo con el próximo cambio">⚠ No se pudo guardar</span>}
           <div className="pill grey">1 UF = {CLP(uf)}</div>
           <button className="btn btn-red" onClick={()=>{setNP({...blank,gastosExtra:SEED_GASTOS()});setMAdd(true);}}>＋ Nueva propiedad</button>
         </div>
@@ -5794,12 +6175,16 @@ function App(){
         <span className="pill grey" title="UTA = UTM × 12 (SII)">UTA {CLP(utm*12)}</span>
         <span className="pill grey" title={"Dólar observado — "+FUENTES_IND.dolar.org+", vía mindicador.cl"+(indInfo.dolar?" · valor del "+fmtF(indInfo.dolar):"")}>Dólar {CLP(dolar)}</span>
         <span className="pill grey" title={"IPC, variación mensual — "+FUENTES_IND.ipc.org+", vía mindicador.cl"+(indInfo.ipc?" · dato de "+fmtF(indInfo.ipc):"")}>IPC {pctFmt(ipc)}</span>
-        <button className="btn btn-ghost btn-sm" onClick={refrescarIndicadores} disabled={indLoading} style={{marginLeft:"auto"}}>{indLoading?"Actualizando…":"Actualizar"}</button>
+        <button className={"btn btn-sm ind-btn"+(indLoading?" cargando":"")} onClick={refrescarIndicadores} disabled={indLoading} style={{marginLeft:"auto"}}>
+          {indLoading ? <><span className="ind-spin"></span> Actualizando…</> : (indRecien ? "✓ Actualizado" : "↻ Actualizar")}
+        </button>
       </div>
       <div className="indfuente">
         <span className="viva"></span>
         En vivo desde <a href="https://mindicador.cl" target="_blank" rel="noopener">mindicador.cl</a>: UF y UTM del <b>SII</b>, dólar observado del <b>Banco Central</b>, IPC del <b>INE</b>.
-        {indInfo.at ? <> Actualizado a las {new Date(indInfo.at).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}{indInfo.uf?<> · UF del {fmtF(indInfo.uf)}</>:null}.</> : <> Actualizando…</>}
+        {indLoading ? <> <b>Actualizando…</b></>
+          : indInfo.at ? <> Actualizado a las {new Date(indInfo.at).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}{indInfo.uf?<> · UF del {fmtF(indInfo.uf)}</>:null}.</>
+          : <> Cargando…</>}
         {ufManual && <> <b>La UF está editada a mano</b>, así que no se actualiza sola (quita el valor manual en Configuración para volver a la automática).</>}
       </div>
 
@@ -5811,7 +6196,7 @@ function App(){
             Cada ficha se puede mover: se mantiene presionada y se elige el
             lugar donde debe aparecer. El orden queda guardado. */}
         {tab==="inicio" && <>
-        <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> cualquiera de estas fichas y elige dónde ponerla.</div>
+        <div className="help g">💡 ¿Quieres otro orden? <b>Mantén presionada</b> una ficha y, sin soltar, <b>arrástrala</b> con el dedo (o con el mouse) hasta donde quieras, igual que al mover las aplicaciones del teléfono. Si prefieres elegir la posición de una lista, toca el asa <b>⠿</b> de la ficha.</div>
         {bloquesOrdenados("inicio",[
          {id:"alertas",titulo:"Alertas",node:(
           <Collapsible icon="🔔" title={alertas.length?("Alertas ("+alertas.length+")"):"Alertas"}
@@ -5918,8 +6303,10 @@ function App(){
           <Collapsible icon="🏘️" title="Tus propiedades" subtitle={props.length+" inmueble(s) — toca para verlas"} defaultOpen={false}>
             <div style={{textAlign:"right",marginBottom:10}}><button className="btn btn-ghost" onClick={()=>setTab("props")}>Ver todas →</button></div>
             <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
-              {propsOrd.map(p=>(<div key={p.id} className="prop" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}
-                {...pulsacionLarga(()=>moverPropiedad(p))}>
+              {propsOrd.map((p,ip)=>(<div key={p.id} className="prop ord-wrap" data-ord-clave="props" onClick={()=>{setSel(p);setTab("props");setFilter("todas");}}
+                {...arrastreProp(propsOrd.map(x=>String(x.id)),ip,p)}>
+                <span className="asa-fila" title="Mantén presionada y arrástrala para moverla"
+                  onClick={(e)=>{ e.stopPropagation(); moverPropiedad(p); }}>⠿</span>
                 <span className="dot" style={{background:dotColor(p.status)}}></span>
                 <div style={{flex:1}}><div style={{fontWeight:700}}>{p.name} {p.use==="personal" && <span className="pill blue">Uso personal</span>}</div><div style={{fontSize:14,color:"var(--muted)",marginTop:2}}>{p.use==="arriendo"?p.tenant+" · ":""}{p.comuna}</div></div>
                 <div style={{textAlign:"right"}}><div style={{fontWeight:800}}>{p.use==="arriendo"?CLP(p.rent):"—"}</div>{p.use==="arriendo"&&<div style={{fontSize:12,color:"var(--faint)",fontWeight:600}}>{UFf(p.rentUF)}</div>}{p.use==="arriendo"?<Pill s={p.status}/>:<span className="pill blue">{p.subtype}</span>}</div>
@@ -6001,12 +6388,14 @@ function App(){
               {SOCIEDADES.map(s=><button key={s.id} className={socFilter===s.id?"on":""} onClick={()=>setSocFilter(s.id)}>{s.name.replace(/ SPA$/,"")} ({bySoc(s.id).length})</button>)}
             </div>
           </div>
-          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial. 💡 <b>Mantén presionada</b> una propiedad para cambiarla de lugar en la lista.</div>
+          <div className="help">Haz clic en cualquier propiedad para abrir su <b>ficha completa</b>: ubicación, dividendo, gastos, utilidad, garantía e historial. 💡 Para cambiarlas de lugar, <b>mantén presionada</b> una propiedad y <b>arrástrala</b> con el dedo (o con el mouse) hasta donde quieras. También puedes tocar el asa <b>⠿</b> y elegir la posición de una lista.</div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {view.map(p=>{ const on=sel&&sel.id===p.id; const util=utilidadMes(p,uf);
+            {view.map((p,ip)=>{ const on=sel&&sel.id===p.id; const util=utilidadMes(p,uf);
               return (<div key={p.id}>
-                <div className={"prop"+(on?" on":"")} onClick={()=>setSel(on?null:p)}
-                  {...pulsacionLarga(()=>moverPropiedad(p))}>
+                <div className={"prop ord-wrap"+(on?" on":"")} data-ord-clave="props" onClick={()=>setSel(on?null:p)}
+                  {...arrastreProp(view.map(x=>String(x.id)),ip,p)}>
+                  <span className="asa-fila" title="Mantén presionada y arrástrala para moverla"
+                    onClick={(e)=>{ e.stopPropagation(); moverPropiedad(p); }}>⠿</span>
                   <span className="dot" style={{background:dotColor(p.status),boxShadow:`0 0 0 4px ${dotColor(p.status)}22`}}></span>
                   {!!(p.fotos&&p.fotos.length) && <div className="cover-thumb" style={{backgroundImage:`url('${p.fotos[0].url}')`}}></div>}
                   <div style={{flex:1}}>
@@ -6023,8 +6412,10 @@ function App(){
                   </div>
                   {p.use==="arriendo" && <Pill s={p.status}/>}
                   <button className="btn btn-ghost btn-sm" title="Abrir ficha completa" onClick={e=>{e.stopPropagation();abrirFicha(p);}}></button>
+                  {/* Flecha: dice de un vistazo si está abierta y sirve para abrir y cerrar. */}
+                  <span className="chev-prop" aria-hidden="true" title={on?"Cerrar":"Abrir"}>▼</span>
                 </div>
-                {on && detalleProp({p})}
+                {on && <div className="prop-abierta">{detalleProp({p})}</div>}
               </div>);
             })}
           </div>
@@ -6307,13 +6698,36 @@ function App(){
           })()}
           <Collapsible icon="💵" title="Liquidación mensual al propietario" defaultOpen={true}>
             <div className="help">Genera <b>automáticamente</b> la liquidación del mes para cada propietario: arriendos cobrados, comisión de administración, gastos pagados por su cuenta y el <b>líquido a transferir</b>. Descárgala en PDF o Word y envíala por WhatsApp. Es el documento que más valoran los propietarios.</div>
+            {/* En palabras simples: es lo que más costaba entender de esta sección. */}
+            <Collapsible icon="❓" title="¿Qué significa cada cosa? (explicado simple)" defaultOpen={false}>
+              <div className="help" style={{marginBottom:10}}>
+                La liquidación mensual es la <b>cuenta del mes</b> que se le entrega al dueño de la propiedad: cuánta plata entró por el arriendo,
+                cuánto se descontó y cuánto se le deposita. Nada más que eso.
+              </div>
+              <div className="expl-lista">
+                <div><b>💰 Cobrado</b> — el arriendo que el arrendatario <b>efectivamente pagó</b> ese mes. Si el arriendo está en UF, es la UF convertida a pesos con la regla del contrato. Si no pagó, aparece en $0 y el estado queda como <b>Pendiente</b>.</div>
+                <div><b>🧾 Comisión de administración (%)</b> — es <b>tu pago</b> por administrar la propiedad. Se calcula como un porcentaje del arriendo cobrado. Ejemplo: si el arriendo es $600.000 y la comisión es 8%, la comisión es <b>$48.000</b>. En Chile lo habitual es entre <b>5% y 10%</b>. Si tú mismo eres el dueño y no cobras administración, deja el campo en <b>0</b> y no se descuenta nada.</div>
+                <div><b>🔧 Gastos</b> — lo que se pagó <b>por cuenta del propietario</b> durante el mes: reparaciones, gasto común, contribuciones, seguros, mantenciones. Son gastos que salieron del arriendo antes de depositarle.</div>
+                <div><b>🏦 Líquido a transferir</b> — lo que finalmente se le deposita al propietario: <b>Cobrado − Comisión − Gastos</b>. Si sale en rojo, significa que los gastos del mes fueron mayores que el arriendo cobrado y el propietario tiene que poner la diferencia.</div>
+                <div><b>📅 Mes</b> — el período que se está liquidando. <b>Propietario / sociedad</b> — para quién es esta liquidación; puedes hacer una por sociedad o una sola con todas.</div>
+              </div>
+              <div className="help g" style={{marginTop:10}}>Ejemplo completo: arriendo cobrado $600.000 · comisión 8% = $48.000 · gastos del mes $35.000 → <b>líquido a transferir $517.000</b>. Esa es la cifra que se le deposita al propietario ese mes. La explicación larga está también en <b>Preguntas frecuentes</b>.</div>
+            </Collapsible>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-end",margin:"12px 0"}}>
               <div className="field" style={{maxWidth:180}}><label className="label">Mes</label><input className="input" type="month" value={liqMes} onChange={e=>setLiqMes(e.target.value)}/></div>
               <div className="field" style={{maxWidth:260}}><label className="label">Propietario / sociedad</label><select value={liqSoc} onChange={e=>setLiqSoc(e.target.value)}><option value="todas">Todas las sociedades</option>{socs.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-              <div className="field" style={{maxWidth:170}}><label className="label">Comisión admin. (%)</label><input className="input" type="number" step="any" value={comisionAdmin} onChange={e=>setComisionAdmin(num(e.target.value))}/></div>
+              <div className="field" style={{maxWidth:230}}>
+                <label className="label">Comisión admin. (%)</label>
+                <input className="input" type="number" step="any" value={comisionAdmin} onChange={e=>setComisionAdmin(num(e.target.value))}/>
+                <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Lo que cobras por administrar, como % del arriendo. Si no cobras, deja 0.</div>
+              </div>
             </div>
             {(()=>{ const {rows,tot}=liquidacionData(liqSoc,liqMes); return (<>
-              <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Arrendatario</th><th>Estado</th><th>Cobrado</th><th>Comisión</th><th>Gastos</th><th>Líquido a transferir</th></tr></thead><tbody>
+              <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Arrendatario</th><th>Estado</th>
+                <th title="El arriendo que el arrendatario efectivamente pagó este mes.">Cobrado</th>
+                <th title="Lo que cobras por administrar: el porcentaje de arriba aplicado al arriendo cobrado.">Comisión</th>
+                <th title="Lo pagado por cuenta del propietario: reparaciones, gasto común, contribuciones, seguros.">Gastos</th>
+                <th title="Cobrado − Comisión − Gastos: lo que se le deposita al propietario.">Líquido a transferir</th></tr></thead><tbody>
                 {rows.map(r=>(<tr key={r.p.id}><td style={{fontWeight:700}}>{r.p.name}</td><td>{r.p.tenant||"—"}</td><td>{r.pagado?<span className="pill green">Pagado</span>:<span className="pill amber">Pendiente</span>}</td><td style={{color:"var(--green-d)",fontWeight:700}}>{CLP(r.bruto)}</td><td style={{color:"var(--red-d)"}}>{CLP(r.com)}</td><td style={{color:"var(--red-d)"}}>{CLP(r.gastos)}</td><td style={{fontWeight:800,color:r.liquido>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(r.liquido)}</td></tr>))}
                 {rows.length===0 && <tr><td colSpan="7" style={{color:"var(--muted)"}}>Sin propiedades en arriendo para esta selección.</td></tr>}
               </tbody><tfoot><tr style={{borderTop:"2px solid var(--line)"}}><td colSpan="3" style={{fontWeight:800}}>TOTAL</td><td style={{fontWeight:800,color:"var(--green-d)"}}>{CLP(tot.bruto)}</td><td style={{fontWeight:800,color:"var(--red-d)"}}>{CLP(tot.com)}</td><td style={{fontWeight:800,color:"var(--red-d)"}}>{CLP(tot.gastos)}</td><td style={{fontWeight:800,color:tot.liquido>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(tot.liquido)}</td></tr></tfoot></table></div>
@@ -6779,7 +7193,31 @@ function App(){
                 </select>
               </div>
             </div>
+            {/* Dónde mandarle el acceso. Antes se creaba la clave y no se le
+                avisaba a nadie: había que dictársela. */}
+            <div className="grid" style={{gridTemplateColumns:"1.4fr 1fr",gap:10}}>
+              <div className="field"><label className="label">Correo de la persona (para enviarle el acceso)</label><input className="input" type="email" placeholder="nombre@correo.cl" value={segForm.correo} onChange={e=>setSegForm(f=>({...f,correo:e.target.value}))}/></div>
+              <div className="field"><label className="label">WhatsApp de la persona</label><input className="input" placeholder="+56 9 …" value={segForm.wsp} onChange={e=>setSegForm(f=>({...f,wsp:e.target.value}))}/></div>
+            </div>
             <button className="btn btn-red btn-sm" disabled={segBusy||!segForm.nombre.trim()||segForm.claveInv.length<6} onClick={crearAcceso}>＋ Crear acceso</button>
+
+            {ultAcceso && <div className="card pad" style={{marginTop:14,background:"var(--brand-bg)",border:"1px solid var(--gold)"}}>
+              <div style={{fontWeight:800,marginBottom:6}}>✓ Acceso creado para {ultAcceso.nombre}</div>
+              <div className="help" style={{marginBottom:10}}>
+                Ahora entrégaselo. El correo sale desde <b>{CORREO_ADMIN}</b> y el WhatsApp desde <b>{waRemitente(owner)}</b>.
+                La clave se muestra <b>solo aquí y una vez</b>: el servidor guarda su huella, no la clave. Si se pierde, crea otro acceso.
+              </div>
+              <div className="grid" style={{gridTemplateColumns:"1.4fr 1fr",gap:10}}>
+                <div className="field"><label className="label">Correo</label><input className="input" type="email" placeholder="nombre@correo.cl" value={ultAcceso.correo||""} onChange={e=>setUltAcceso(a=>({...a,correo:e.target.value}))}/></div>
+                <div className="field"><label className="label">WhatsApp</label><input className="input" placeholder="+56 9 …" value={ultAcceso.wsp||""} onChange={e=>setUltAcceso(a=>({...a,wsp:e.target.value}))}/></div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button className="btn btn-red btn-sm" disabled={segBusy} onClick={()=>correoAcceso(ultAcceso)}>{segBusy?"Enviando…":"✉️ Enviar por correo"}</button>
+                <button className="btn btn-out btn-sm" onClick={()=>whatsappAcceso(ultAcceso)}>💬 Enviar por WhatsApp</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>copiarAcceso(ultAcceso)}>Copiar mensaje</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setUltAcceso(null)}>Listo, ocultar</button>
+              </div>
+            </div>}
           </Collapsible>
 
           <Collapsible icon="🛟" title="Respaldos" subtitle="Copias diarias para volver atrás si algo se borra" defaultOpen={false}>

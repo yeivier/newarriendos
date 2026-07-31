@@ -135,6 +135,9 @@
   }
 
   #searchBtn{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:18px;width:38px;height:38px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  /* Flecha para volver a la plataforma. Solo se muestra si se llegó desde ella. */
+  #backBtn{display:none;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:15px;font-weight:700;height:38px;padding:0 13px;border-radius:8px;cursor:pointer;align-items:center;gap:7px;flex-shrink:0;font-family:inherit;text-decoration:none;}
+  #backBtn.on{display:inline-flex;}
   #searchBtn:hover{background:rgba(255,255,255,.15);}
   #ufBar{max-width:940px;margin:0 auto;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#E9EFF6;border-bottom:1px solid var(--border);}
   .uf-lbl{font-size:12px;font-weight:700;color:var(--navy);} .uf-btn{border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;}
@@ -247,6 +250,7 @@
 <body>
 
 <div id="topbar">
+  <a id="backBtn" href="#" title="Volver a la plataforma">← Volver</a>
   <button id="searchBtn" type="button" title="Buscar" onclick="openSearch()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
   <h1>Ficha de Levantamiento de Propiedad</h1>
   <div id="progressWrap">
@@ -301,6 +305,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+/* Volver a la plataforma. La ficha se abre en una pestaña nueva, así que la
+   flecha del navegador no siempre sirve: si hay historial se retrocede y, si
+   no, se vuelve al sitio desde el que se llegó. Quien recibe el enlace
+   directo (sin venir de la plataforma) no ve el botón. */
+(function(){
+  try{
+    var ref = document.referrer || "";
+    if(!ref) return;
+    var origen = new URL(ref).origin;
+    if(origen === location.origin) return; // ya está dentro del mismo sitio
+    var b = document.getElementById("backBtn");
+    if(!b) return;
+    b.href = origen + "/";
+    b.classList.add("on");
+    b.addEventListener("click", function(e){
+      if(history.length > 1){ e.preventDefault(); history.back(); }
+    });
+  }catch(e){}
+})();
+
 /* SCHEMA — misma fuente unica que el documento Word */
 const SCHEMA = {
  "title": "FICHA DE LEVANTAMIENTO DE PROPIEDAD",

@@ -136,10 +136,14 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
 .lb .nav.l{left:0}.lb .nav.r{right:0}
 .lb .x{position:absolute;top:18px;right:22px;color:#fff;font-size:34px;cursor:pointer;z-index:2}
 .lb .cap{color:#cfd5df;margin-top:14px;font-weight:600}
+/* Barra para volver: solo aparece si se llegó desde la plataforma. */
+#volver{display:none;position:sticky;top:0;z-index:60;background:#0c1018;padding:9px 16px}
+#volver a{display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-weight:800;font-size:14.5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);border-radius:11px;padding:9px 15px}
 @media(max-width:640px){.hero h1{font-size:26px}.specs{grid-template-columns:repeat(2,1fr)}.gallery{grid-template-columns:repeat(2,1fr)}.section,.hero-in,.price,.contact{padding-left:20px;padding-right:20px}}
 </style>
 </head>
 <body>
+<div id="volver"><a href="${esc(origin)}/" id="volverA">← Volver a la plataforma</a></div>
 <div class="wrap">
   <div class="hero"><div class="hero-in">
     <span class="tag">🔑 ${esc(f.use === 'arriendo' ? 'En arriendo' : 'Propiedad')}</span>
@@ -190,6 +194,17 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
 <script>
 (function(){
   if(location.search.indexOf('print=1')>=0){ window.addEventListener('load',function(){ setTimeout(function(){ try{window.print();}catch(e){} },700); }); }
+  /* Quien administra llega aquí desde la plataforma y necesita volver. Quien
+     recibe el enlace compartido no ve esta barra: la ficha es para él. */
+  try{
+    var desdeLaPlataforma = document.referrer && document.referrer.indexOf(location.origin)===0;
+    if(desdeLaPlataforma){
+      var b=document.getElementById('volver'); b.style.display='block';
+      document.getElementById('volverA').addEventListener('click',function(e){
+        if(history.length>1){ e.preventDefault(); history.back(); }
+      });
+    }
+  }catch(e){}
   var fotos=${JSON.stringify(fotos.map(abs))};
   if(fotos.length){
     var lb=document.getElementById('lb'),img=document.getElementById('lbimg'),cap=document.getElementById('lbcap'),cur=0;
