@@ -2248,7 +2248,13 @@ const _arEscuchar = (poner)=>{
 };
 const _arLimpiar = ()=>{
   if(_ar.t){ clearTimeout(_ar.t); _ar.t=null; }
-  if(_ar.activo) _arEscuchar(false);
+  if(_ar.activo){
+    _arEscuchar(false);
+    /* Tras arrastrar, el toque no debe abrir la ficha. En el teléfono a veces
+       no llega ningún clic después de soltar, así que la marca se borra sola:
+       si no, se comería el siguiente toque de verdad. */
+    setTimeout(()=>{ _pl.sup=false; },700);
+  }
   document.querySelectorAll(".ord-wrap.arrastrando,.ord-wrap.hueco").forEach(el=>el.classList.remove("arrastrando","hueco"));
   _ar.activo=false; _ar.reclamado=false; _ar.clave=null; _ar.ids=null; _ar.desde=-1; _ar.sobre=-1; _ar.alSoltar=null;
 };
