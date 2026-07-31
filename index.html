@@ -379,6 +379,9 @@
   .tpl-item.on{border-color:var(--brand);background:var(--brand-bg)}
   .tpl-item .ic{width:34px;height:34px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
   .tpl-item.on .ic{background:var(--brand);color:#fff}
+  /* Explicaciones en palabras simples (liquidaciones, glosario). */
+  .expl-lista{display:flex;flex-direction:column;gap:10px}
+  .expl-lista>div{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:11px;padding:11px 14px;font-size:14.5px;line-height:1.55;color:var(--ink)}
   .ico-elige{display:flex;flex-wrap:wrap;gap:6px}
   .ico-op{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
   .ico-op:hover{border-color:var(--brand-soft)}
@@ -2426,8 +2429,15 @@ const FAQ=[
     {q:"¿Qué es la bitácora y qué anoto ahí?", a:"Es el cuaderno de notas con fecha de la propiedad. Anota acuerdos, conversaciones, mantenciones o cambios importantes para tener un respaldo. Por ejemplo: “Se pintó el living” o “El arrendatario avisó que viaja en julio”."},
     {q:"¿Qué es el dividendo hipotecario?", a:"Es la cuota mensual del crédito con que se compró la propiedad. Está en UF, por eso se reajusta solo. La plataforma te muestra cuánto llevas pagado y cuánto falta."},
     {q:"¿Qué son las contribuciones y el seguro?", a:"Las contribuciones son el impuesto territorial (normalmente se paga 4 veces al año) y el seguro de incendio y sismo protege el inmueble. Ambos se reparten por mes para calcular bien la utilidad."},
-    {q:"¿Qué es la garantía y cómo se liquida?", a:"Es el mes (o meses) que el arrendatario deja en depósito. Al terminar el arriendo registras los descuentos (daños, cuentas impagas) y la plataforma calcula el saldo a devolver."},
+    {q:"¿Qué es la garantía y cómo se liquida?", a:"La garantía es la plata que el arrendatario deja al firmar el contrato —en Chile casi siempre un mes de arriendo— y que queda guardada por si al final del arriendo hay algo pendiente. No es un pago adelantado del último mes: es un respaldo. Cuando el arrendatario se va, se revisa la propiedad y se hace la liquidación de garantía, que es simplemente la cuenta final: de la garantía recibida se descuenta lo que corresponda y el resto se le devuelve. Se descuentan los arriendos impagos, las cuentas de luz, agua, gas o gasto común que hayan quedado debiendo, y los daños que no sean por el uso normal (un vidrio roto, una puerta forzada, una pared con un hoyo). NO se descuenta el desgaste normal por haber vivido ahí: pintura gastada, sellos de baño amarillos, alfombra usada. En la plataforma vas a Mis propiedades → abre la propiedad → Liquidación de garantía: escribes un descuento por cada cosa, con su monto, y ella calcula sola el saldo a devolver. Después generas el documento: lo puedes ver y guardar en PDF, descargar en Word para editarlo, mandarlo por WhatsApp o copiar el texto. Conviene que ambas partes lo firmen y que la devolución se haga por transferencia una vez entregada la propiedad. Si los descuentos superan la garantía, el saldo sale negativo: esa diferencia queda como deuda del arrendatario."},
     {q:"¿Qué es la utilidad?", a:"Es lo que realmente ganas: todos los ingresos (arriendo más extras) menos todos los gastos (dividendo, contribuciones, seguro, gasto común, reparaciones, etc.). Puede ser positiva o negativa."}
+  ]},
+  {cat:"La liquidación mensual al propietario", items:[
+    {q:"¿Qué es la liquidación mensual y para qué sirve?", a:"Es la cuenta del mes que se le entrega al dueño de la propiedad. Responde tres preguntas: cuánta plata entró por el arriendo, qué se descontó y cuánto se le deposita. Se genera sola en Finanzas → Liquidación mensual al propietario: eliges el mes y la sociedad, y la plataforma arma la tabla con todas las propiedades. Después la ves en PDF, la descargas en Word o la mandas por WhatsApp. Es el documento que más valoran los propietarios porque les deja claro, en una hoja, en qué quedó su mes."},
+    {q:"¿Qué significa la comisión de administración y qué porcentaje pongo?", a:"Es tu pago por administrar la propiedad: cobrar el arriendo, atender al arrendatario, coordinar reparaciones, llevar las cuentas. Se calcula como un porcentaje del arriendo efectivamente cobrado, no del arriendo pactado: si el arrendatario no paga, no hay comisión ese mes. Ejemplo: arriendo cobrado $600.000 con una comisión del 8% = $48.000. En Chile lo habitual está entre 5% y 10%; los departamentos de arriendo residencial suelen ir cerca del 8%, y a mayor cantidad de propiedades del mismo dueño se suele bajar el porcentaje. Importante: si las propiedades son tuyas y tú mismo las administras, no te cobras comisión a ti mismo — deja el campo en 0 y la columna queda en cero."},
+    {q:"¿Qué son los ítems de la liquidación mensual?", a:"Cobrado: el arriendo que el arrendatario efectivamente pagó ese mes. Si el arriendo está pactado en UF, es la UF convertida a pesos con la regla del contrato; si no pagó, aparece en $0 y el estado dice Pendiente. Comisión: tu pago por administrar, o sea el porcentaje aplicado a lo cobrado. Gastos: todo lo que se pagó por cuenta del propietario durante el mes — reparaciones, gasto común, contribuciones, seguro de incendio y sismo, mantenciones. Líquido a transferir: lo que finalmente se le deposita al propietario, que es Cobrado menos Comisión menos Gastos. Si el líquido sale negativo (en rojo), significa que los gastos del mes fueron mayores que el arriendo cobrado y el propietario tiene que poner la diferencia; suele pasar los meses en que toca pagar contribuciones o una reparación grande."},
+    {q:"¿Me puedes dar un ejemplo con números?", a:"Departamento arrendado en $600.000. El arrendatario paga el 5 del mes, así que Cobrado = $600.000. La comisión de administración es 8%, entonces Comisión = $48.000. Ese mes se pagó el gasto común atrasado de $20.000 y se cambió un calefont por $15.000, así que Gastos = $35.000. El Líquido a transferir es 600.000 − 48.000 − 35.000 = $517.000. Esa es la cifra que se le deposita al propietario, y la liquidación en PDF le muestra exactamente de dónde sale cada número."},
+    {q:"¿Cuándo se hace y cómo se envía?", a:"Lo habitual es liquidar dentro de los primeros días del mes siguiente, una vez cobrado el arriendo y pagados los gastos del mes anterior. En Finanzas eliges el mes, revisas la tabla, tocas Ver / Imprimir liquidación (PDF) para guardarla, y Enviar por WhatsApp para mandarle el resumen al propietario junto con el depósito."}
   ]},
   {cat:"Documentos, informes y datos", items:[
     {q:"¿Cómo creo o edito un contrato?", a:"En Documentos Legales puedes crear un contrato de arriendo y enviarlo a firma online. También puedes verificar antecedentes de un postulante antes de arrendarle."},
@@ -5105,6 +5115,51 @@ function App(){
     const lineas=desc.map(d=>` • ${d.concepto}: ${CLP(d.monto)}`).join("\n") || " • Sin descuentos";
     return `LIQUIDACIÓN DE GARANTÍA — ${p.name}\nArrendatario: ${p.tenant||"—"}\nGarantía recibida: ${CLP(p.garantia&&p.garantia.monto)}\nDescuentos:\n${lineas}\nTotal descuentos: ${CLP(total)}\nSALDO A DEVOLVER: ${CLP(saldo)}\nEstado: ${(p.garantia&&p.garantia.estado)||"—"}\nEmitido: ${new Date().toLocaleDateString("es-CL")} · ArriendoPro`; };
   const copiarLiquidacion=(p)=>{ const t=generarLiquidacionTexto(p); if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>notify("Liquidación copiada")).catch(()=>notify("No se pudo copiar",true)); };
+  /* La liquidación de garantía como documento formal: se ve e imprime (o se
+     guarda como PDF) y también se descarga en Word para editarla. Es el papel
+     que se le entrega al arrendatario cuando entrega la propiedad, y deja por
+     escrito cuánto se le devuelve y por qué. */
+  const liquidacionGarantiaHTML=(p)=>{
+    const g=p.garantia||{}; const desc=g.descuentos||[];
+    const total=desc.reduce((a,d)=>a+num(d.monto),0);
+    const recibida=num(g.monto); const saldo=recibida-total;
+    const soc=socById(p.sociedad);
+    const filas = desc.length
+      ? desc.map(d=>`<tr><td>${esc(d.concepto)}</td><td style="text-align:right">${esc(CLP(num(d.monto)))}</td></tr>`).join("")
+        + `<tr class="tot"><td>Total descuentos</td><td style="text-align:right">${esc(CLP(total))}</td></tr>`
+      : `<tr><td colspan="2" class="muted">Sin descuentos: la garantía se devuelve completa.</td></tr>`;
+    return docPro("Liquidación de garantía", p.name+(p.address?" · "+p.address+(p.comuna?", "+p.comuna:""):""),
+      `<div class="kpis">
+         ${kpiBox("Garantía recibida",CLP(recibida))}
+         ${kpiBox("Total descuentos",CLP(total),total>0?"neg":"")}
+         ${kpiBox("Saldo a devolver",CLP(saldo),saldo>=0?"pos":"neg")}
+       </div>
+       <h2>1 · Antecedentes</h2>
+       ${filaDL([
+         ["Propiedad",p.name],["Dirección",[p.address,p.comuna].filter(Boolean).join(", ")],
+         ["Arrendatario",p.tenant||"—"],["RUT arrendatario",p.tenantRut||""],
+         ["Propietario",soc?soc.name:""],["RUT propietario",soc?soc.rut:""],
+         ["Garantía recibida",CLP(recibida)],["Fecha en que se recibió",(g.fechaRecibida||g.fecha||"")],
+         ["Estado",g.estado||"—"],["Notas",g.notas||""],
+       ])}
+       <h2>2 · Descuentos aplicados</h2>
+       <table><thead><tr><th>Concepto</th><th style="text-align:right">Monto</th></tr></thead><tbody>${filas}</tbody></table>
+       <div class="nota"><b>Qué es este documento.</b> La garantía es el dinero que el arrendatario entregó al firmar
+       (en Chile, normalmente un mes de arriendo) y que queda guardado para responder por lo que pueda quedar pendiente
+       al final: arriendos o cuentas impagas y daños que no sean por el uso normal. Al terminar el contrato se revisa la
+       propiedad, se descuenta de la garantía lo que corresponda y se devuelve el resto. Eso es esta liquidación: el
+       detalle, en un papel, de cuánto se recibió, cuánto se descuenta, por qué, y cuánto se devuelve.</div>
+       <h2>3 · Resultado</h2>
+       <p style="font-size:15px"><b>Saldo a devolver al arrendatario: ${esc(CLP(saldo))}</b>${saldo<0?" (los descuentos superan la garantía; la diferencia queda como deuda del arrendatario)":""}.</p>
+       <p class="muted">La devolución se realiza por transferencia a la cuenta que indique el arrendatario, una vez
+       entregada la propiedad y firmada esta liquidación por ambas partes.</p>
+       <h2>4 · Firmas</h2>
+       <table><tr><td style="height:70px">Arrendatario<br><span class="muted">${esc(p.tenant||"")}</span></td><td style="height:70px">Propietario o administrador<br><span class="muted">${esc(soc?soc.name:(owner.name||""))}</span></td></tr></table>`);
+  };
+  const verLiquidacionGarantia=(p)=>abrirImprimir(liquidacionGarantiaHTML(p));
+  const descargarLiquidacionGarantiaWord=(p)=>descargarBlob(
+    "Liquidacion-garantia-"+String(p.name||"propiedad").replace(/[^a-z0-9]+/gi,"-")+".doc",
+    liquidacionGarantiaHTML(p), "application/msword");
 
   /* ---------- Compartir propiedad ---------- */
   const setCompartir=(pid,patch)=> patchProp(pid, x=>({...x, compartir:{...getCompartir(x), ...patch}}));
@@ -5782,6 +5837,14 @@ function App(){
       {p.use==="arriendo" && (()=>{ const desc=(p.garantia&&p.garantia.descuentos)||[]; const total=desc.reduce((a,d)=>a+num(d.monto),0); const saldo=num(p.garantia&&p.garantia.monto)-total;
         return (<>
         <Collapsible icon="🔐" title="Liquidación de garantía" defaultOpen={false}>
+        <div className="help" style={{marginBottom:12}}>
+          <b>¿Qué es?</b> La <b>garantía</b> es el dinero que el arrendatario dejó al firmar el contrato (en Chile, casi siempre <b>un mes de arriendo</b>).
+          Queda guardada por si al final del arriendo hay algo pendiente. Cuando el arrendatario se va, se revisa la propiedad y se hace la <b>liquidación</b>:
+          se descuenta de la garantía lo que corresponda —arriendo o cuentas impagas, daños que no sean por el uso normal— y <b>el resto se le devuelve</b>.
+          <br/><b>Cómo se usa aquí:</b> agrega abajo un descuento por cada cosa (con su monto), y la plataforma calcula sola el <b>saldo a devolver</b>.
+          Después genera el documento: lo puedes ver, guardar en <b>PDF</b>, descargar en <b>Word</b> o copiarlo para mandarlo por WhatsApp.
+          <br/><span style={{color:"var(--muted)"}}>Ojo: los daños por el uso normal (pintura gastada, sellos, desgaste) no se descuentan; sí los desperfectos, las cuentas impagas y los arriendos que queden debiendo.</span>
+        </div>
         {desc.length>0 && <div style={{marginBottom:10}}>
           {desc.map(d=>(<div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid var(--line2)",padding:"8px 0"}}>
             <span style={{fontSize:15}}>{d.concepto}</span>
@@ -5801,7 +5864,13 @@ function App(){
             <span style={{fontWeight:800,fontSize:24,color:saldo>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(saldo)}</span>
           </div>
         </div>
-        <div style={{textAlign:"right",marginTop:10}}><button className="btn btn-out btn-sm" onClick={()=>copiarLiquidacion(p)}>Generar liquidación</button></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end",marginTop:12}}>
+          <button className="btn btn-red btn-sm" onClick={()=>verLiquidacionGarantia(p)}>Ver / Guardar en PDF</button>
+          <button className="btn btn-out btn-sm" onClick={()=>descargarLiquidacionGarantiaWord(p)}>Descargar Word</button>
+          <button className="btn btn-out btn-sm" onClick={()=>waEnviar(p.tenantWhatsapp||"",generarLiquidacionTexto(p))}>Enviar por WhatsApp</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>copiarLiquidacion(p)}>Copiar texto</button>
+        </div>
+        <div className="help g" style={{marginTop:10}}>El botón <b>Ver / Guardar en PDF</b> abre el documento listo para imprimir; en el celular elige <b>Compartir → Guardar en Archivos</b> o <b>Imprimir → Guardar como PDF</b>.</div>
         </Collapsible>
         </>); })()}
 
@@ -6555,13 +6624,36 @@ function App(){
           })()}
           <Collapsible icon="💵" title="Liquidación mensual al propietario" defaultOpen={true}>
             <div className="help">Genera <b>automáticamente</b> la liquidación del mes para cada propietario: arriendos cobrados, comisión de administración, gastos pagados por su cuenta y el <b>líquido a transferir</b>. Descárgala en PDF o Word y envíala por WhatsApp. Es el documento que más valoran los propietarios.</div>
+            {/* En palabras simples: es lo que más costaba entender de esta sección. */}
+            <Collapsible icon="❓" title="¿Qué significa cada cosa? (explicado simple)" defaultOpen={false}>
+              <div className="help" style={{marginBottom:10}}>
+                La liquidación mensual es la <b>cuenta del mes</b> que se le entrega al dueño de la propiedad: cuánta plata entró por el arriendo,
+                cuánto se descontó y cuánto se le deposita. Nada más que eso.
+              </div>
+              <div className="expl-lista">
+                <div><b>💰 Cobrado</b> — el arriendo que el arrendatario <b>efectivamente pagó</b> ese mes. Si el arriendo está en UF, es la UF convertida a pesos con la regla del contrato. Si no pagó, aparece en $0 y el estado queda como <b>Pendiente</b>.</div>
+                <div><b>🧾 Comisión de administración (%)</b> — es <b>tu pago</b> por administrar la propiedad. Se calcula como un porcentaje del arriendo cobrado. Ejemplo: si el arriendo es $600.000 y la comisión es 8%, la comisión es <b>$48.000</b>. En Chile lo habitual es entre <b>5% y 10%</b>. Si tú mismo eres el dueño y no cobras administración, deja el campo en <b>0</b> y no se descuenta nada.</div>
+                <div><b>🔧 Gastos</b> — lo que se pagó <b>por cuenta del propietario</b> durante el mes: reparaciones, gasto común, contribuciones, seguros, mantenciones. Son gastos que salieron del arriendo antes de depositarle.</div>
+                <div><b>🏦 Líquido a transferir</b> — lo que finalmente se le deposita al propietario: <b>Cobrado − Comisión − Gastos</b>. Si sale en rojo, significa que los gastos del mes fueron mayores que el arriendo cobrado y el propietario tiene que poner la diferencia.</div>
+                <div><b>📅 Mes</b> — el período que se está liquidando. <b>Propietario / sociedad</b> — para quién es esta liquidación; puedes hacer una por sociedad o una sola con todas.</div>
+              </div>
+              <div className="help g" style={{marginTop:10}}>Ejemplo completo: arriendo cobrado $600.000 · comisión 8% = $48.000 · gastos del mes $35.000 → <b>líquido a transferir $517.000</b>. Esa es la cifra que se le deposita al propietario ese mes. La explicación larga está también en <b>Preguntas frecuentes</b>.</div>
+            </Collapsible>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-end",margin:"12px 0"}}>
               <div className="field" style={{maxWidth:180}}><label className="label">Mes</label><input className="input" type="month" value={liqMes} onChange={e=>setLiqMes(e.target.value)}/></div>
               <div className="field" style={{maxWidth:260}}><label className="label">Propietario / sociedad</label><select value={liqSoc} onChange={e=>setLiqSoc(e.target.value)}><option value="todas">Todas las sociedades</option>{socs.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-              <div className="field" style={{maxWidth:170}}><label className="label">Comisión admin. (%)</label><input className="input" type="number" step="any" value={comisionAdmin} onChange={e=>setComisionAdmin(num(e.target.value))}/></div>
+              <div className="field" style={{maxWidth:230}}>
+                <label className="label">Comisión admin. (%)</label>
+                <input className="input" type="number" step="any" value={comisionAdmin} onChange={e=>setComisionAdmin(num(e.target.value))}/>
+                <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Lo que cobras por administrar, como % del arriendo. Si no cobras, deja 0.</div>
+              </div>
             </div>
             {(()=>{ const {rows,tot}=liquidacionData(liqSoc,liqMes); return (<>
-              <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Arrendatario</th><th>Estado</th><th>Cobrado</th><th>Comisión</th><th>Gastos</th><th>Líquido a transferir</th></tr></thead><tbody>
+              <div style={{overflowX:"auto"}}><table><thead><tr><th>Propiedad</th><th>Arrendatario</th><th>Estado</th>
+                <th title="El arriendo que el arrendatario efectivamente pagó este mes.">Cobrado</th>
+                <th title="Lo que cobras por administrar: el porcentaje de arriba aplicado al arriendo cobrado.">Comisión</th>
+                <th title="Lo pagado por cuenta del propietario: reparaciones, gasto común, contribuciones, seguros.">Gastos</th>
+                <th title="Cobrado − Comisión − Gastos: lo que se le deposita al propietario.">Líquido a transferir</th></tr></thead><tbody>
                 {rows.map(r=>(<tr key={r.p.id}><td style={{fontWeight:700}}>{r.p.name}</td><td>{r.p.tenant||"—"}</td><td>{r.pagado?<span className="pill green">Pagado</span>:<span className="pill amber">Pendiente</span>}</td><td style={{color:"var(--green-d)",fontWeight:700}}>{CLP(r.bruto)}</td><td style={{color:"var(--red-d)"}}>{CLP(r.com)}</td><td style={{color:"var(--red-d)"}}>{CLP(r.gastos)}</td><td style={{fontWeight:800,color:r.liquido>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(r.liquido)}</td></tr>))}
                 {rows.length===0 && <tr><td colSpan="7" style={{color:"var(--muted)"}}>Sin propiedades en arriendo para esta selección.</td></tr>}
               </tbody><tfoot><tr style={{borderTop:"2px solid var(--line)"}}><td colSpan="3" style={{fontWeight:800}}>TOTAL</td><td style={{fontWeight:800,color:"var(--green-d)"}}>{CLP(tot.bruto)}</td><td style={{fontWeight:800,color:"var(--red-d)"}}>{CLP(tot.com)}</td><td style={{fontWeight:800,color:"var(--red-d)"}}>{CLP(tot.gastos)}</td><td style={{fontWeight:800,color:tot.liquido>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(tot.liquido)}</td></tr></tfoot></table></div>
