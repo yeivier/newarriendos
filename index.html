@@ -657,6 +657,9 @@ const api = async (url, opts)=>{
 const apiJSON = (url, cuerpo, metodo)=>api(url,{method:metodo||"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo||{})});
 
 /* ---------- Helpers ---------- */
+/* Fecha corta legible (18 mar). La usan el CRM, los cobros y los indicadores,
+   así que vive aquí y no dentro de un componente. */
+const fmtF=(v)=>{ if(!v&&v!==0) return ""; let d; if(typeof v==="number") d=new Date(v); else d=new Date(String(v).length<=10?(v+"T00:00:00"):v); if(isNaN(d)) return String(v); return d.toLocaleDateString("es-CL",{day:"2-digit",month:"short"}); };
 const CLP = (n)=> new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0}).format(Math.round(n||0));
 const pctFmt = (n)=> (n>0?"+":"")+(n||0).toLocaleString("es-CL",{minimumFractionDigits:1,maximumFractionDigits:2})+"%";
 const UFf = (n)=> `${(n||0).toLocaleString("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2})} UF`;
@@ -2685,7 +2688,6 @@ const CRMPanel=({ leads, setLeads, qreplies, setQreplies, propiedades, uf, notif
   const [qrSel,setQrSel]=useState("");
 
   const est=(id)=>CRM_ESTADOS.find(e=>e.id===id)||CRM_ESTADOS[0];
-  const fmtF=(v)=>{ if(!v&&v!==0) return ""; let d; if(typeof v==="number") d=new Date(v); else d=new Date(String(v).length<=10?(v+"T00:00:00"):v); if(isNaN(d)) return String(v); return d.toLocaleDateString("es-CL",{day:"2-digit",month:"short"}); };
   const soloDig=(s)=>String(s||"").replace(/[^0-9]/g,""); const waNum=(t)=>{ let d=soloDig(t); if(!d) return ""; if(d.length<=9) d="56"+d; return d; };
   const propName=(id)=>{ const p=propiedades.find(x=>String(x.id)===String(id)); return p?p.name:""; };
   const tok=(txt,l)=> String(txt||"").replace(/{nombre}/g,(l&&(l.nombre||"").split(" ")[0])||"").replace(/{empresa}/g,empresa||"").replace(/{propiedad}/g,(l&&(propName(l.propInteres)||l.comuna))||"la propiedad").replace(/{monto}/g,(l&&l.presupuesto)?CLP(num(l.presupuesto)):"").replace(/{comuna}/g,(l&&l.comuna)||"").replace(/{dia}/g,"____").replace(/{hora}/g,"____");
