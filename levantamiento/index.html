@@ -176,7 +176,8 @@
   .card-header-toggle:hover{background:var(--navy-light);}
   .card-header .chev{margin-left:auto;display:flex;align-items:center;transition:transform .18s;color:#fff;opacity:.85;}
   .card-header .chev.open{transform:rotate(90deg);}
-  #backTop{position:fixed;right:14px;bottom:86px;z-index:95;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s;}
+  /* A la izquierda: el asesor nace a la derecha y así no se pisan. */
+  #backTop{position:fixed;left:14px;bottom:86px;z-index:95;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s;}
   #backTop.show{opacity:1;pointer-events:auto;}
   #backTop:hover{background:var(--navy-light);}
 
@@ -203,7 +204,11 @@
   .ai-res-sec{color:var(--text-muted);font-size:11px;}
 
   /* ---- Asistente inmobiliario de la ficha (el mismo de la plataforma) ---- */
-  #asFab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:190;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 14px 34px rgba(34,28,15,.3);cursor:pointer;font-size:25px;display:flex;align-items:center;justify-content:center;}
+  /* Se arrastra con el dedo a cualquier parte de la pantalla, así que nunca
+     queda tapando otro botón. `touch-action:none` es lo que deja moverlo sin
+     que la página se desplace debajo. */
+  #asFab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:190;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 14px 34px rgba(34,28,15,.3);cursor:grab;font-size:25px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;}
+  #asFab.moviendo{cursor:grabbing;transform:scale(1.12);box-shadow:0 22px 52px rgba(34,28,15,.42);transition:transform .1s;}
   #asFab .dot{position:absolute;right:5px;top:5px;width:11px;height:11px;border:2px solid #fff;border-radius:50%;background:#2E7D46;}
   #asPanel{position:fixed;right:18px;bottom:calc(144px + env(safe-area-inset-bottom,0px));z-index:189;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100vh - 210px));background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 70px rgba(16,24,40,.26);display:none;flex-direction:column;overflow:hidden;}
   #asPanel.open{display:flex;}
@@ -4512,9 +4517,73 @@ document.addEventListener('DOMContentLoaded', init);
     }
   }
 
+  /* El ícono del asesor tapaba la flecha de "volver arriba". En vez de dejarlo
+     fijo en otro rincón —donde tarde o temprano vuelve a estorbar—, se
+     arrastra con el dedo a cualquier parte de la pantalla, como los widgets
+     del teléfono, y se acuerda de dónde quedó. */
+  var MARGEN=8;
+  function hacerArrastrable(el, clave){
+    var g={activo:false,movio:false,dx:0,dy:0,bloquear:false};
+    function colocar(x,y){
+      var cx=Math.max(MARGEN, Math.min(window.innerWidth-el.offsetWidth-MARGEN, x));
+      var cy=Math.max(MARGEN, Math.min(window.innerHeight-el.offsetHeight-MARGEN, y));
+      el.style.left=cx+'px'; el.style.top=cy+'px'; el.style.right='auto'; el.style.bottom='auto';
+      return {x:cx,y:cy};
+    }
+    function guardar(p){ try{ localStorage.setItem(clave, JSON.stringify(p)); }catch(e){} }
+    try{
+      var p=JSON.parse(localStorage.getItem(clave)||'null');
+      if(p && typeof p.x==='number' && typeof p.y==='number') colocar(p.x,p.y);
+    }catch(e){}
+    function punto(e){ return (e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e; }
+    function empezar(e){
+      var q=punto(e), r=el.getBoundingClientRect();
+      g.activo=true; g.movio=false; g.dx=q.clientX-r.left; g.dy=q.clientY-r.top;
+      document.addEventListener('touchmove',mover,{passive:false});
+      document.addEventListener('mousemove',mover);
+      document.addEventListener('touchend',soltar); document.addEventListener('touchcancel',soltar);
+      document.addEventListener('mouseup',soltar);
+    }
+    function mover(e){
+      if(!g.activo) return;
+      var q=punto(e), x=q.clientX-g.dx, y=q.clientY-g.dy;
+      if(!g.movio){
+        var r=el.getBoundingClientRect();
+        if(Math.abs(x-r.left)<5 && Math.abs(y-r.top)<5) return; // todavía es un toque
+        g.movio=true; el.classList.add('moviendo');
+        try{ navigator.vibrate&&navigator.vibrate(12); }catch(_e){}
+      }
+      if(e.cancelable) e.preventDefault();
+      colocar(x,y);
+    }
+    function soltar(){
+      if(!g.activo) return;
+      g.activo=false;
+      document.removeEventListener('touchmove',mover);
+      document.removeEventListener('mousemove',mover);
+      document.removeEventListener('touchend',soltar); document.removeEventListener('touchcancel',soltar);
+      document.removeEventListener('mouseup',soltar);
+      el.classList.remove('moviendo');
+      if(g.movio){
+        var r=el.getBoundingClientRect();
+        guardar({x:r.left,y:r.top});
+        // El clic que llega después de arrastrar no debe abrir el panel.
+        g.bloquear=true; setTimeout(function(){ g.bloquear=false; },500);
+      }
+    }
+    el.addEventListener('touchstart',empezar,{passive:true});
+    el.addEventListener('mousedown',function(e){ if(e.button===0) empezar(e); });
+    el.addEventListener('click',function(e){ if(g.bloquear){ g.bloquear=false; e.preventDefault(); e.stopPropagation(); } },true);
+    window.addEventListener('resize',function(){
+      if(!el.style.left) return;
+      var r=el.getBoundingClientRect(); guardar(colocar(r.left,r.top));
+    });
+  }
+
   function montar(){
     var fab=$('asFab'); if(!fab) return;
     fab.onclick=abrir;
+    hacerArrastrable(fab,'ficha_fab_pos');
     $('asCerrar').onclick=function(){ $('asPanel').classList.remove('open'); };
     $('asSend').onclick=function(){ enviar($('asIn').value); };
     $('asMic').onclick=escuchar;

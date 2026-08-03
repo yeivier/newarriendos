@@ -493,8 +493,12 @@
   .app.solo-lectura .btn-red,.app.solo-lectura .btn-danger{display:none!important}
 
   /* ===== Chatbot IA flotante ===== */
-  .ai-fab{position:fixed;right:22px;bottom:22px;z-index:180;width:60px;height:60px;border:none;border-radius:19px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 16px 40px rgba(34,28,15,.28);cursor:pointer;font-size:27px;display:flex;align-items:center;justify-content:center;transition:.18s}
+  /* Se puede arrastrar con el dedo a cualquier parte de la pantalla, así que
+     nunca queda tapando otro botón. `touch-action:none` es lo que permite
+     moverlo sin que la página se desplace debajo. */
+  .ai-fab{position:fixed;right:22px;bottom:22px;z-index:180;width:60px;height:60px;border:none;border-radius:19px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 16px 40px rgba(34,28,15,.28);cursor:grab;font-size:27px;display:flex;align-items:center;justify-content:center;transition:.18s;touch-action:none;user-select:none;-webkit-user-select:none}
   .ai-fab:hover{transform:translateY(-2px) scale(1.02)}
+  .ai-fab.moviendo{cursor:grabbing;transform:scale(1.12);box-shadow:0 22px 52px rgba(34,28,15,.42);transition:transform .1s}
   .ai-fab .ai-dot{position:absolute;right:5px;top:5px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--green)}
 
   /* Botón para volver al inicio de la página sin arrastrar con el dedo. */
@@ -2273,6 +2277,99 @@ const _arDebajo = (x,y)=>{
   }
   return soloAltura;
 };
+
+/* ---- Botón flotante que se puede llevar a cualquier parte ----------------
+   El ícono del asesor tapaba la flecha de "volver arriba". En vez de moverlo
+   a otro rincón fijo —donde tarde o temprano vuelve a estorbar—, se arrastra
+   con el dedo a donde uno quiera, como los widgets del teléfono. La posición
+   queda guardada, así que al volver a entrar sigue donde se dejó.
+
+   El clic normal del botón se mantiene (así sigue funcionando con teclado);
+   lo único que se hace es tragarse el clic que llega justo después de un
+   arrastre, para que moverlo no abra el panel. Devuelve una función para
+   soltar los escuchas. */
+const FLOTA_MARGEN = 8;
+const flotanteArrastrable = (el, clave)=>{
+  if(!el) return ()=>{};
+  const g = { activo:false, movio:false, dx:0, dy:0, bloquear:false };
+
+  const limites = ()=>({ w: window.innerWidth, h: window.innerHeight, ew: el.offsetWidth, eh: el.offsetHeight });
+  const colocar = (x,y)=>{
+    const L = limites();
+    const cx = Math.max(FLOTA_MARGEN, Math.min(L.w - L.ew - FLOTA_MARGEN, x));
+    const cy = Math.max(FLOTA_MARGEN, Math.min(L.h - L.eh - FLOTA_MARGEN, y));
+    el.style.left = cx+"px"; el.style.top = cy+"px";
+    el.style.right = "auto"; el.style.bottom = "auto";
+    return { x:cx, y:cy };
+  };
+  const guardar = (p)=>{ try{ localStorage.setItem(clave, JSON.stringify(p)); }catch(_e){} };
+
+  // Posición guardada de la última vez (si todavía cabe en esta pantalla).
+  try{
+    const p = JSON.parse(localStorage.getItem(clave)||"null");
+    if(p && typeof p.x==="number" && typeof p.y==="number") colocar(p.x,p.y);
+  }catch(_e){}
+
+  const punto = (e)=> (e.touches&&e.touches[0]) || (e.changedTouches&&e.changedTouches[0]) || e;
+  const empezar = (e)=>{
+    const p = punto(e);
+    const r = el.getBoundingClientRect();
+    g.activo = true; g.movio = false; g.dx = p.clientX - r.left; g.dy = p.clientY - r.top;
+    document.addEventListener("touchmove", mover, {passive:false});
+    document.addEventListener("mousemove", mover);
+    document.addEventListener("touchend", soltar); document.addEventListener("touchcancel", soltar);
+    document.addEventListener("mouseup", soltar);
+  };
+  const mover = (e)=>{
+    if(!g.activo) return;
+    const p = punto(e);
+    const x = p.clientX - g.dx, y = p.clientY - g.dy;
+    if(!g.movio){
+      const r = el.getBoundingClientRect();
+      if(Math.abs(x-r.left)<5 && Math.abs(y-r.top)<5) return; // todavía es un toque
+      g.movio = true; el.classList.add("moviendo");
+      try{ navigator.vibrate&&navigator.vibrate(12); }catch(_e){}
+    }
+    if(e.cancelable) e.preventDefault();
+    colocar(x,y);
+  };
+  const soltar = ()=>{
+    if(!g.activo) return;
+    g.activo = false;
+    document.removeEventListener("touchmove", mover);
+    document.removeEventListener("mousemove", mover);
+    document.removeEventListener("touchend", soltar); document.removeEventListener("touchcancel", soltar);
+    document.removeEventListener("mouseup", soltar);
+    el.classList.remove("moviendo");
+    if(g.movio){
+      const r = el.getBoundingClientRect();
+      guardar({x:r.left, y:r.top});
+      // El clic que viene después de arrastrar no debe abrir el panel.
+      g.bloquear = true; setTimeout(()=>{ g.bloquear=false; }, 500);
+    }
+  };
+  const tragarClic = (e)=>{ if(g.bloquear){ g.bloquear=false; e.preventDefault(); e.stopPropagation(); } };
+  // Si gira el teléfono o cambia el tamaño, el botón no debe quedar fuera.
+  const reencajar = ()=>{
+    if(!el.style.left) return;
+    const r = el.getBoundingClientRect();
+    guardar(colocar(r.left, r.top));
+  };
+
+  const alMouse = (e)=>{ if(e.button===0) empezar(e); };
+  el.addEventListener("touchstart", empezar, {passive:true});
+  el.addEventListener("mousedown", alMouse);
+  el.addEventListener("click", tragarClic, true);
+  window.addEventListener("resize", reencajar);
+  return ()=>{
+    soltar();
+    el.removeEventListener("touchstart", empezar);
+    el.removeEventListener("mousedown", alMouse);
+    el.removeEventListener("click", tragarClic, true);
+    window.removeEventListener("resize", reencajar);
+  };
+};
+
 const arrastrable = (clave, ids, indice, alSoltar)=>{
   const empezar=(e)=>{
     if(_plEditando(e.target)) return;
@@ -3970,6 +4067,12 @@ function App(){
     return ()=>window.removeEventListener("scroll",h);
   },[]);
   const subirAlInicio=()=>{ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_e){ window.scrollTo(0,0); } };
+
+  /* El ícono del asesor se lleva con el dedo a donde uno quiera: así nunca
+     queda tapando otro botón. Se acuerda de dónde se dejó. */
+  const fabRef=useRef(null);
+  // Depende de `puerta` porque el botón recién existe cuando ya se entró.
+  useEffect(()=>flotanteArrastrable(fabRef.current,"ap_fab_pos"),[puerta]);
 
   /* ---- Reajuste del arriendo ----
      Por omisión es UF: el arriendo se guarda en UF y sube solo con ella, así
@@ -8154,7 +8257,7 @@ function App(){
         <div className="ai-disclaimer">Asesor con IA · puede equivocarse. Confirma valores y condiciones antes de decidir.</div>
       </div>
     </div>}
-    <button className="ai-fab" onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario">✦<span className="ai-dot"></span></button>
+    <button className="ai-fab" ref={fabRef} onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario · arrástralo con el dedo para moverlo">✦<span className="ai-dot"></span></button>
     {arriba && <button className="subir-fab" onClick={subirAlInicio} aria-label="Volver al inicio de la página" title="Volver arriba">↑</button>}
 
     {mover && (()=>{
