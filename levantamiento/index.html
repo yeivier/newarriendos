@@ -176,8 +176,9 @@
   .card-header-toggle:hover{background:var(--navy-light);}
   .card-header .chev{margin-left:auto;display:flex;align-items:center;transition:transform .18s;color:#fff;opacity:.85;}
   .card-header .chev.open{transform:rotate(90deg);}
-  /* A la izquierda: el asesor nace a la derecha y así no se pisan. */
-  #backTop{position:fixed;left:14px;bottom:86px;z-index:95;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s;}
+  /* Justo encima del asesor, no debajo: antes quedaban uno sobre el otro.
+     A la izquierda no sirve porque ahí va el menú de secciones. */
+  #backTop{position:fixed;right:16px;bottom:calc(146px + env(safe-area-inset-bottom,0px));z-index:95;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s;}
   #backTop.show{opacity:1;pointer-events:auto;}
   #backTop:hover{background:var(--navy-light);}
 
