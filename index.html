@@ -1006,7 +1006,13 @@ const getRecord = (p)=> ({ ...defRecord, ...(p.recordatorios||{}) });
 const getPasarelas = (p)=> p.pasarelas || ["webpay"];
 const defCompartir = { publicado:false, mostrarInfo:true, mostrarDeudas:false, mostrarValor:true, descripcionPublica:"", publicId:"" };
 const getCompartir = (p)=> ({ ...defCompartir, ...(p.compartir||{}) });
-const portalURL = ()=>{ try{ if(window.location && /^https?:/.test(window.location.origin)) return window.location.origin; }catch(e){} return "https://www.adminpropiedadescgvd.com"; };
+/* Dirección del sitio. Siempre la de la ventana, así los enlaces que se
+   comparten (fichas públicas, la ficha de levantamiento, los accesos) salen
+   con el dominio por el que se entró, sin tener que tocar el código cuando
+   cambia. DOMINIO es solo el respaldo para casos raros (abrir el archivo
+   desde el disco, sin http). */
+const DOMINIO = "https://adminpropiedadescgvd.com";
+const portalURL = ()=>{ try{ if(window.location && /^https?:/.test(window.location.origin)) return window.location.origin; }catch(e){} return DOMINIO; };
 
 /* ---------- Fotos y recorrido 360°: optimización en el navegador + subida a Netlify Blobs ---------- */
 // El navegador reduce y comprime las imágenes antes de enviarlas, así cargan rápido
@@ -5618,11 +5624,13 @@ function App(){
   const compartirFichaCompletaMail=(p,f)=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de propiedad: "+(f.alias||p.name))+"&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
   const compartirFichaCompletaSMS=(p,f)=>{ window.location.href="sms:?&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
 
-  /* ---------- Ficha de Levantamiento (formulario completo alojado en /levantamiento/) ---------- */
-  // La Ficha de Levantamiento vive en su propio sitio, con su lector de documentos.
-  const LEV_URL="https://fichacompletapropiedadescgvd.com";
-  const levLink=()=> LEV_URL;
-  const abrirLevantamiento=()=> window.open(LEV_URL,"_blank","noopener");
+  /* ---------- Ficha de Levantamiento (formulario completo alojado en /levantamiento/) ----------
+     Antes apuntaba a un sitio aparte, que había que actualizar a mano subiendo
+     un archivo cada vez que la ficha cambiaba. Ahora se sirve desde esta misma
+     dirección: así siempre es la versión al día, funcione la plataforma en el
+     dominio que funcione, y no hay nada que volver a subir. */
+  const levLink=()=> portalURL()+"/levantamiento/";
+  const abrirLevantamiento=()=> window.open(levLink(),"_blank","noopener");
   const compartirLevWA=()=>waEnviar("","Completa la Ficha de Levantamiento de la propiedad aquí: "+levLink());
   const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
   const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };

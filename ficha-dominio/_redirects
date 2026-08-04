@@ -1,9 +1,14 @@
-# fichacompletapropiedadescgvd.com apunta al sitio principal.
+# fichacompletapropiedadescgvd.com apunta al sitio principal, que ahora vive
+# en adminpropiedadescgvd.com.
 #
 # Con estas dos reglas el dominio de la ficha deja de tener su propia copia y
 # muestra siempre la ficha del sitio principal, que ya tiene la clave de la IA
 # configurada. Así no hay que volver a subir la ficha cada vez que cambia ni
 # mantener la clave en dos lugares.
+#
+# Se apunta a la dirección .netlify.app a propósito, y no al dominio nuevo: esa
+# nunca cambia ni depende de que el DNS esté propagado, así que la ficha sigue
+# funcionando aunque el dominio se mueva.
 #
 # El orden importa: primero la API, después el resto.
 /api/*  https://newarriendos.netlify.app/api/:splat  200!
