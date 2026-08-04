@@ -53,7 +53,11 @@
      quedaba fuera de la pantalla y no se podía tocar. */
   .sidebar{width:250px;background:var(--side);color:var(--side-tx);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;height:100dvh;flex-shrink:0;border-right:1px solid var(--line)}
   .brand{padding:18px 16px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:11px}
-  .brand-logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0}
+  /* El logo va sobre fondo negro (así viene el .png, con la montaña blanca).
+     `object-fit:cover` corta lo justo si el contenedor es cuadrado, sin
+     deformar la marca. */
+  .brand-logo{width:42px;height:42px;border-radius:11px;background:#000;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .brand-logo img{width:100%;height:100%;object-fit:cover;display:block}
   .brand h1{font-size:18px;font-weight:800;color:#141419;letter-spacing:-.2px}
   .brand p{font-size:12.5px;color:#8A8A93}
   .drawer-x{display:none;background:transparent;border:none;color:#8A8A93;font-size:20px;cursor:pointer;padding:4px 8px;margin-left:auto}
@@ -3450,7 +3454,7 @@ function Puerta({ modo, onEntrar }){
   };
   return (<div className="puerta">
     <div className="puerta-caja">
-      <div className="brand-logo" style={{width:52,height:52,fontSize:24,marginBottom:14}}>A</div>
+      <div className="brand-logo" style={{width:64,height:64,marginBottom:14}}><img src="/logo.png" alt="ArriendoPro"/></div>
       <h2>{crear?"Protege tu plataforma":"ArriendoPro"}</h2>
       <p>{crear
         ? "Crea la clave con la que entrarás desde ahora. Sin ella, nadie puede ver ni cambiar tus datos."
@@ -6220,7 +6224,7 @@ function App(){
       <button className="volver-flot" onClick={cerrarPaneles} title="Volver" aria-label="Volver">← Volver</button>}
     {menuOpen && <div className="nav-overlay" onClick={()=>setMenuOpen(false)}></div>}
     <div className={"sidebar"+(menuOpen?" open":"")}>
-      <div className="brand"><div className="brand-logo">A</div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú">✕</button></div>
+      <div className="brand"><div className="brand-logo"><img src="/logo.png" alt="ArriendoPro"/></div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú">✕</button></div>
       <div className="nav"><div className="nav-item" onClick={()=>{setMBusca(true);setMenuOpen(false);}} style={{marginBottom:4}}><span className="ico">🔍</span>Buscar<span className="kbd" style={{marginLeft:"auto"}}>/</span></div>{NAV_VIS.map(g=>(<React.Fragment key={g.label}>
         <div className="nav-group">{g.label}</div>
         {g.ids.map(id=>{ const n=navItem(id); return n?(<div key={id} className={"nav-item"+(tab===id?" on":"")} onClick={()=>{setTab(id);setSel(null);setMenuOpen(false);}}><span className="ico">{n.ico}</span>{n.label}</div>):null; })}
