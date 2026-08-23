@@ -680,6 +680,142 @@
     .ai-fab{right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:56px;height:56px}
     .ai-float{right:8px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:calc(100vw - 16px);height:calc(100dvh - 90px - env(safe-area-inset-bottom,0px));border-radius:17px}
   }
+
+  /* ============================ INTERFAZ MÓVIL ============================
+     Rediseño móvil (README): 5 pestañas fijas abajo, una tarjeta dominante por
+     pantalla, tokens propios (solo blanco, negro y grises). Se activa bajo 900px
+     y oculta el escritorio en vez de tocarlo. */
+  @media(max-width:900px){
+    .app.en-movil > .sidebar,
+    .app.en-movil > .main,
+    .app.en-movil > .nav-overlay,
+    .app.en-movil > .ai-fab,
+    .app.en-movil > .subir-fab,
+    .app.en-movil > .volver-flot { display:none !important; }
+  }
+  .mob-app{
+    --mib:#101012; --mib2:#1E1E22; --mib2b:#2C2C31;
+    --mon:#F0F0F3; --mon2:#8C8C96;
+    --mtx:#2B2B30; --mtm:#5A5A63; --mtm2:#6B6B75;
+    --mbg:#F2F2F7; --msf:#FFFFFF;
+    --mln:#E5E5EA; --mli:#EDEDF2;
+    --mfl:#EFEFF4; --mfl2:#E8E8EE;
+    --mbr:#D9D9DE; --mbr2:#D4D4D9;
+    position:fixed; inset:0; z-index:150;
+    background:var(--mbg); color:var(--mtx);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
+    display:none; flex-direction:column;
+    -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  }
+  @media(max-width:900px){ .app.en-movil .mob-app{ display:flex; } }
+  .mob-scr{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:14px 22px calc(110px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:20px; }
+  .mob-scr.g14{ gap:14px; }
+  .mob-mono, .mob-eyebrow{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;
+    font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm); }
+  .mob-eyebrow{ margin:0 0 6px; }
+  .mob-eyebrow.dot::before{ content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--mib); margin-right:8px; vertical-align:1px; }
+  .mob-hero-h{ font-size:34px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
+  .mob-hero-sub{ font-size:14.5px; color:var(--mtm2); margin-top:6px; }
+  .mob-h-scr{ font-size:27px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
+  .mob-avatar{ width:44px; height:44px; border-radius:14px; background:var(--mib); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; }
+  .mob-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .mob-card{ background:var(--msf); border:1px solid var(--mln); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .mob-card.dom{ box-shadow:0 12px 28px -20px rgba(22,19,15,.5); }
+  .mob-card.mark{ border:1.5px solid var(--mib); }
+  .mob-row{ background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 15px; display:flex; align-items:center; gap:12px; }
+  .mob-row.mark{ border:1.5px solid var(--mib); }
+  .mob-row.perso{ background:#F1F1F4; }
+  .mob-quad-ic{ width:38px; height:38px; border-radius:12px; background:var(--mfl); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--mib); }
+  .mob-quad-idx{ width:26px; height:26px; border-radius:9px; background:var(--mfl); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:var(--mib); flex-shrink:0; }
+  .mob-quad-idx.big{ width:38px; height:38px; border-radius:11px; font-size:13px; }
+  .mob-quad-idx.paid{ background:var(--mib); color:#fff; }
+  .mob-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--mfl); color:var(--mtx); font-size:12.5px; font-weight:600; padding:6px 10px; border-radius:8px; white-space:nowrap; }
+  .mob-chip.ink{ background:var(--mib); color:#fff; }
+  .mob-chip.out{ background:var(--msf); border:1px solid var(--mln); }
+  .mob-btn{ font-family:inherit; border:none; cursor:pointer; font-weight:700; }
+  .mob-btn.pri{ background:var(--mib); color:#fff; border-radius:16px; padding:17px; font-size:16px; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; }
+  .mob-btn.pri:active{ background:#2B2B30; }
+  .mob-btn.sec{ background:var(--mfl); color:var(--mtx); border:1px solid var(--mbr); border-radius:16px; padding:16px; font-size:15px; }
+  .mob-btn.sec:active{ background:#E4E4EA; }
+  .mob-btn.out{ background:var(--msf); border:1px solid var(--mln); border-radius:11px; padding:10px 14px; font-size:14px; color:var(--mib); display:inline-flex; align-items:center; gap:6px; }
+  .mob-btn.pri-sm{ background:var(--mib); color:#fff; border-radius:11px; padding:10px 14px; font-size:14px; }
+  .mob-btn.link{ background:transparent; padding:0; color:var(--mib); font-size:14.5px; font-weight:700; }
+  .mob-btn.blk{ background:var(--mib); color:#fff; border-radius:14px; padding:14px; font-size:15px; }
+  .mob-btn.blk-sm{ background:var(--mib); color:#fff; border-radius:11px; padding:9px 13px; font-size:13.5px; }
+  .mob-btn.gray-sm{ background:var(--mfl); color:var(--mtx); border:1px solid var(--mbr); border-radius:11px; padding:9px 13px; font-size:13.5px; }
+  .mob-num-big{ font-size:32px; line-height:1.05; font-weight:700; letter-spacing:-.03em; color:var(--mib); }
+  .mob-num-med{ font-size:24px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); }
+  .mob-metrics{ display:flex; align-items:flex-end; justify-content:space-between; padding:16px 0; border-top:1px solid var(--mli); border-bottom:1px solid var(--mli); gap:8px; }
+  .mob-metrics .m{ flex:1; display:flex; flex-direction:column; gap:4px; }
+  .mob-metrics .m .v{ font-size:23px; font-weight:700; letter-spacing:-.02em; color:var(--mib); line-height:1; }
+  .mob-metrics .m .k{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm); }
+  .mob-list{ display:flex; flex-direction:column; gap:0; }
+  .mob-list .r{ display:flex; align-items:center; gap:12px; padding:9px 0; }
+  .mob-list .r .nm{ flex:1; font-size:15px; font-weight:600; color:var(--mtx); }
+  .mob-list .r .rt{ font-size:14px; color:var(--mtm); }
+  .mob-list .empty{ font-size:14px; color:var(--mtm2); padding:6px 0 0; }
+  .mob-list-sep{ height:1px; background:var(--mli); }
+  .mob-stat-bar{ height:5px; background:var(--mli); border-radius:3px; overflow:hidden; }
+  .mob-stat-bar > i{ display:block; height:100%; background:var(--mib); border-radius:3px; }
+  .mob-prog-seg{ display:flex; gap:6px; }
+  .mob-prog-seg > i{ height:4px; flex:1; border-radius:2px; background:var(--mbr); }
+  .mob-prog-seg > i.on{ background:var(--mib); }
+  .mob-prog-seg > i.mid{ background:#9A9AA2; }
+  .mob-prog-lbls{ display:flex; justify-content:space-between; font-size:14px; color:var(--mtx); margin-top:8px; }
+  .mob-stack{ display:flex; height:8px; border-radius:5px; overflow:hidden; background:var(--mli); }
+  .mob-stack > i{ display:block; height:100%; }
+  .mob-photo-ph{ height:158px; border-radius:16px; background:repeating-linear-gradient(135deg,#E8E8EE 0 10px,#E2E2E9 10px 20px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--mtm2); }
+  .mob-photo-ph .lb{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm2); }
+  .mob-seg{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--mfl2); border-radius:13px; padding:4px; }
+  .mob-seg > button{ background:transparent; border:none; padding:12px 8px; border-radius:10px; font-family:inherit; font-size:14.5px; font-weight:600; color:var(--mtm); cursor:pointer; }
+  .mob-seg > button.on{ background:var(--msf); color:var(--mib); box-shadow:0 2px 6px -3px rgba(0,0,0,.3); font-weight:700; }
+  .mob-hist{ display:flex; align-items:flex-end; gap:10px; height:96px; }
+  .mob-hist > i{ flex:1; background:var(--mbr2); border-radius:9px 9px 0 0; min-height:6px; }
+  .mob-hist > i.now{ background:var(--mib); }
+  .mob-hist > i.dim{ background:#E6E6EA; }
+  .mob-tabs{ position:sticky; bottom:0; flex-shrink:0; display:grid; grid-template-columns:repeat(5,1fr); background:var(--msf); border-top:1px solid var(--mln); padding:10px 12px calc(26px + env(safe-area-inset-bottom,0px)); }
+  .mob-tab{ display:flex; flex-direction:column; align-items:center; gap:5px; background:transparent; border:none; padding:6px 4px; color:var(--mtm2); cursor:pointer; font-family:inherit; min-height:44px; }
+  .mob-tab .lb{ font-size:10.5px; font-weight:700; }
+  .mob-tab.on{ color:var(--mib); }
+  .mob-topbar{ display:flex; align-items:center; gap:14px; padding-bottom:6px; }
+  .mob-back{ width:44px; height:44px; border-radius:14px; background:var(--msf); border:1px solid var(--mln); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--mib); flex-shrink:0; }
+  .mob-back:active{ background:#FAFAFC; }
+  .mob-chat-head{ background:var(--msf); border-bottom:1px solid var(--mln); padding:14px 20px; display:flex; align-items:center; gap:12px; }
+  .mob-chat-head .info{ flex:1; }
+  .mob-chat-head .nm{ font-size:16px; font-weight:700; color:var(--mib); }
+  .mob-chat-head .ctx{ font-size:13px; color:var(--mtm); }
+  .mob-chat-body{ flex:1; overflow-y:auto; padding:16px 20px calc(20px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:14px; background:var(--mbg); }
+  .mob-chat-day{ text-align:center; color:var(--mtm); font-size:14px; }
+  .mob-bub-ink{ align-self:flex-end; max-width:82%; background:var(--mib); color:var(--mon); border-radius:12px 18px 6px 18px; padding:14px 16px; font-size:15px; line-height:1.4; }
+  .mob-bub-in-block{ margin-top:12px; background:var(--mib2); border:1px solid var(--mib2b); border-radius:11px; padding:11px 14px; color:var(--mon); font-weight:600; display:flex; align-items:center; gap:9px; font-size:14.5px; }
+  .mob-bub-meta{ color:var(--mon2); font-size:12.5px; margin-top:10px; text-align:right; }
+  .mob-bub-w{ align-self:flex-start; max-width:82%; background:var(--msf); border:1px solid var(--mln); border-radius:12px 18px 18px 6px; padding:14px 16px; color:var(--mtx); font-size:15px; line-height:1.4; }
+  .mob-bub-w .meta{ color:var(--mtm); font-size:12.5px; margin-top:10px; text-align:right; }
+  .mob-attach{ align-self:flex-start; }
+  .mob-attach .ph{ width:180px; height:120px; border-radius:14px; background:repeating-linear-gradient(135deg,#E8E8EE 0 10px,#E2E2E9 10px 20px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--mtm2); }
+  .mob-attach .ph .cap{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm2); }
+  .mob-attach .foot{ font-size:13px; color:var(--mtm); margin-top:8px; font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; }
+  .mob-suggest{ background:var(--msf); border:1.5px solid var(--mib); border-radius:16px; padding:16px; align-self:stretch; display:flex; flex-direction:column; gap:12px; }
+  .mob-suggest .row{ display:flex; gap:10px; }
+  .mob-composer{ background:var(--msf); border-top:1px solid var(--mln); padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; gap:10px; }
+  .mob-composer .plus, .mob-composer .send{ width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; font-family:inherit; flex-shrink:0; }
+  .mob-composer .plus{ background:var(--mfl); color:var(--mib); }
+  .mob-composer .send{ background:var(--mib); color:#fff; }
+  .mob-composer input{ flex:1; height:44px; background:var(--mfl); border:none; border-radius:14px; padding:0 16px; font-size:15px; font-family:inherit; color:var(--mtx); outline:none; }
+  .mob-step-bars{ display:flex; gap:8px; }
+  .mob-step-bars > i{ height:4px; flex:1; border-radius:2px; background:var(--mbr); }
+  .mob-step-bars > i.on{ background:var(--mib); }
+  .mob-field{ display:flex; flex-direction:column; gap:6px; }
+  .mob-field .lb{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm); }
+  .mob-field .val{ background:var(--mbg); border:1px solid var(--mln); border-radius:10px; padding:12px 14px; font-size:16px; font-weight:700; color:var(--mib); }
+  .mob-dash{ border:1.5px dashed var(--mbr2); border-radius:14px; padding:16px; text-align:center; color:var(--mtm); font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .mob-check{ width:26px; height:26px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mob-check.on{ background:var(--mib); color:#fff; }
+  .mob-check.off{ background:var(--msf); border:1.5px solid var(--mbr); }
+  .mob-chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .mob-footbar{ position:sticky; bottom:calc(84px + env(safe-area-inset-bottom,0px)); background:var(--msf); border-top:1px solid var(--mln); margin:0 -22px -110px; padding:16px 22px calc(16px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; justify-content:space-between; gap:12px; }
 </style>
 </head>
 <body>
@@ -3476,6 +3612,887 @@ function Puerta({ modo, onEntrar }){
   </div>);
 }
 
+/* ============ INTERFAZ MÓVIL ============
+   Bajo 900 px la app se reemplaza por MobileApp: 5 pestañas fijas abajo, una
+   tarjeta dominante por pantalla, tokens propios (blanco, negro y grises). El
+   escritorio no se toca; se oculta por CSS mientras esté visible el móvil.
+   Ver design_handoff_arriendopro_mobile/README.md para los tokens exactos. */
+
+// Media query bajo 900 px, con re-render al girar el teléfono o cambiar el ancho.
+// Se calcula perezoso para el harness sin `window`.
+const useMovil = ()=>{
+  const [m,setM] = React.useState(()=> {
+    try { return window.matchMedia("(max-width:900px)").matches; } catch(_){ return false; }
+  });
+  React.useEffect(()=>{
+    try{
+      const mq = window.matchMedia("(max-width:900px)");
+      const h = e=> setM(e.matches);
+      if(mq.addEventListener) mq.addEventListener("change",h);
+      else if(mq.addListener) mq.addListener(h);
+      return ()=>{
+        if(mq.removeEventListener) mq.removeEventListener("change",h);
+        else if(mq.removeListener) mq.removeListener(h);
+      };
+    }catch(_){}
+  },[]);
+  return m;
+};
+
+// Iconos SVG stroke. Reemplazan a los emoji del NAV en el móvil.
+const MobIco = ({ children, w=21, sw=2.2 })=>(
+  React.createElement("svg", { width:w, height:w, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor",
+    strokeWidth:sw, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true" }, children)
+);
+const MI = {
+  casa: <path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>,
+  edif: (<React.Fragment>
+    <rect x="4" y="6" width="7" height="14" rx="1.5"/>
+    <rect x="13" y="10" width="7" height="10" rx="1.5"/>
+    <path d="M6 9h3M6 12h3M6 15h3M15 13h3M15 16h3"/>
+  </React.Fragment>),
+  tarj: (<React.Fragment>
+    <rect x="3" y="6" width="18" height="12" rx="2"/>
+    <path d="M3 10h18M7 15h4"/>
+  </React.Fragment>),
+  tend: (<React.Fragment>
+    <polyline points="3 17 9 11 13 15 21 7"/>
+    <polyline points="15 7 21 7 21 13"/>
+  </React.Fragment>),
+  chat: <path d="M4 5h16v12H8l-4 4z"/>,
+  chevron: <polyline points="9 6 15 12 9 18"/>,
+  chevronL: <polyline points="15 6 9 12 15 18"/>,
+  check: <polyline points="5 12 10 17 20 7"/>,
+  alerta: (<React.Fragment>
+    <path d="M12 3 2 20h20L12 3z"/>
+    <path d="M12 10v4M12 17v.5"/>
+  </React.Fragment>),
+  doc: (<React.Fragment>
+    <path d="M6 3h9l3 3v15H6z"/>
+    <path d="M15 3v3h3M9 12h6M9 16h6"/>
+  </React.Fragment>),
+  lupa: (<React.Fragment>
+    <circle cx="11" cy="11" r="7"/>
+    <path d="m20 20-3.5-3.5"/>
+  </React.Fragment>),
+  mas: <path d="M12 5v14M5 12h14"/>,
+  flecha: (<React.Fragment>
+    <path d="M5 12h14"/>
+    <polyline points="13 6 19 12 13 18"/>
+  </React.Fragment>),
+  casita: <path d="M4 11 12 5l8 6v9h-5v-6H9v6H4z"/>,
+};
+
+// Iniciales para avatares cuadrados.
+const mobIni = (n)=> String(n||"").trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>(x[0]||"").toUpperCase()).join("") || "?";
+
+// Sacar el "número" identificador de una propiedad (7A, 12, 3B, …) para el cuadro.
+const mobEtiq = (name, i=1)=>{
+  const s = String(name||"");
+  const m = s.match(/\b(\d+[A-Z]?)\b/);
+  return (m && m[1]) || String(i);
+};
+
+// Días desde una fecha ISO, positivo si ya pasó.
+const mobDiasDesde = (iso)=> {
+  try{ return Math.max(0, Math.round((Date.now() - new Date(iso).getTime())/86400000)); }
+  catch(_){ return 0; }
+};
+
+function MobileApp(props){
+  const {
+    props: propiedades, socs, uf, owner, soloLectura,
+    setMPay, setMContract, notify, openRem,
+    setMFicha, abrirIncidencia,
+  } = props;
+
+  const [tab, setTab] = React.useState("inicio");
+  const [subtab, setSubtab] = React.useState("sociedades");
+  const [pila, setPila] = React.useState([]);
+  const [socSel, setSocSel] = React.useState("todas");
+  const [finSeg, setFinSeg] = React.useState("utilidad");
+  const [busca, setBusca] = React.useState("");
+  const [mostrarBusca, setMostrarBusca] = React.useState(false);
+  const [chatMsg, setChatMsg] = React.useState("");
+  const [contrPaso, setContrPaso] = React.useState(2);
+
+  const push = (v)=> setPila(p=>[...p, v]);
+  const pop  = ()=> setPila(p=>p.slice(0,-1));
+  const irA  = (t)=>{ setPila([]); setTab(t); };
+  const top  = pila[pila.length-1] || null;
+
+  // Datos derivados.
+  const rentals    = propiedades.filter(p=>p.use==="arriendo");
+  const personales = propiedades.filter(p=>p.use==="personal");
+  const atrasados  = rentals.filter(p=>p.status==="atrasado");
+  const pendientes = rentals.filter(p=>p.status==="pendiente");
+  const pagados    = rentals.filter(p=>p.status==="pagado");
+
+  // Los cálculos de dinero SIEMPRE salen del estado real, nunca escritos a mano.
+  const montoCob   = (p)=> num(p.rent) + calcMultaSafe(p);
+  function calcMultaSafe(p){
+    if(p.status!=="atrasado" || !p.lastPaid) return 0;
+    const d = mobDiasDesde(p.lastPaid) - 30;
+    return Math.max(0, Math.round(num(p.rent) * (num(p.penalty)/100) * (d/30)));
+  }
+  const porCobrarHoy = atrasados.concat(pendientes).reduce((s,p)=>s+montoCob(p), 0);
+  const totalMulta   = atrasados.reduce((s,p)=>s+calcMultaSafe(p), 0);
+  const totalEsper   = rentals.reduce((s,p)=>s+num(p.rent), 0);
+  const totalCobrado = pagados.reduce((s,p)=>s+num(p.rent), 0);
+  const pctCob       = totalEsper ? Math.round(100*totalCobrado/totalEsper) : 0;
+  const atrasadoMasGrave = atrasados.slice().sort((a,b)=> mobDiasDesde(b.lastPaid) - mobDiasDesde(a.lastPaid))[0] || null;
+
+  // Contratos por firmar (mock del NAV real: firma en estado enviado/pendiente).
+  const contratosPorFirmar = propiedades.filter(p=>{
+    const f = p.firma||{}; return f.estado==="enviado" || f.estado==="pendiente";
+  });
+
+  // Sociedades a mostrar en el segmentado.
+  const socOpciones = (socs||[]).slice(0,2).concat([{id:"todas", name:"Todas"}]);
+  const socActual = socs.find(s=>s.id===socSel) || null;
+  const porSoc = (id)=> id==="todas" ? propiedades : propiedades.filter(p=>(p.sociedad||"beta")===id);
+
+  // Header genérico (etiqueta mono + título + avatar).
+  const HeaderMob = ({ eyebrow, title, sub, right })=> (
+    <div className="mob-header">
+      <div style={{minWidth:0, flex:1}}>
+        <div className="mob-mono" style={{marginBottom:6}}>{eyebrow}</div>
+        <h1 className="mob-hero-h">{title}</h1>
+        {sub && <div className="mob-hero-sub">{sub}</div>}
+      </div>
+      {right !== undefined
+        ? right
+        : <div className="mob-avatar">{mobIni(owner.name||"Javier")}</div>}
+    </div>
+  );
+
+  const abrirCobrar = (p)=>{
+    if(!p) return;
+    setMPay(p);
+  };
+  const abrirRecord = (p)=> openRem && openRem(p);
+  const abrirChat   = (p)=> push({ tipo:"chat", p });
+  const abrirFicha  = (p)=> push({ tipo:"ficha", p });
+  const abrirContrato = (p)=> push({ tipo:"contrato", p });
+
+  /* ---------- Pantalla 1a · Inicio (enfoque) ---------- */
+  const pantallaInicio = ()=>{
+    const hoy = new Date();
+    const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
+    const eyebrow = dias[hoy.getDay()] + " " + hoy.getDate();
+    const nombre = (owner.name||"").trim().split(/\s+/)[0] || "Javier";
+    const lineas = atrasados.concat(pendientes).slice(0,2);
+    const restoPagados = pagados.length;
+    return (<div className="mob-scr">
+      <HeaderMob
+        eyebrow={eyebrow}
+        title={"Hola, " + nombre}
+        sub={rentals.length + personales.length + " propiedades · " + socs.length + " sociedades"}/>
+
+      {/* Tarjeta dominante: por cobrar hoy. */}
+      <div className="mob-card dom">
+        <div className="mob-eyebrow dot">POR COBRAR HOY</div>
+        <div className="mob-num-big">{CLP(porCobrarHoy)}</div>
+        <div style={{fontSize:15, color:"var(--mtm2)", marginTop:-6}}>
+          {atrasados.length} atrasado{atrasados.length!==1?"s":""} y {pendientes.length} que vence{pendientes.length!==1?"n":""} hoy
+        </div>
+
+        <div className="mob-metrics">
+          <div className="m"><span className="v">{rentals.length}</span><span className="k">Arriendos</span></div>
+          <div className="m"><span className="v">{pctCob}%</span><span className="k">Cobrado</span></div>
+          <div className="m"><span className="v">{CLP(totalMulta)}</span><span className="k">Multas</span></div>
+        </div>
+
+        <div style={{display:"flex", flexDirection:"column", gap:12}}>
+          {lineas.map((p,i)=>(
+            <div key={p.id} style={{display:"flex", alignItems:"center", gap:12}}>
+              <div className="mob-quad-idx">{i+1}</div>
+              <div style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mtx)"}}>{p.name}</div>
+              <div style={{fontSize:14, color:"var(--mtm)"}}>
+                {p.status==="atrasado" ? (mobDiasDesde(p.lastPaid) + " días") : "vence hoy"}
+              </div>
+            </div>
+          ))}
+          {lineas.length===0 && <div style={{fontSize:14, color:"var(--mtm2)"}}>Todo cobrado este mes.</div>}
+          {restoPagados>0 && <div style={{fontSize:14, color:"var(--mtm)", paddingLeft:38}}>{restoPagados} arriendo{restoPagados!==1?"s":""} ya pagado{restoPagados!==1?"s":""}</div>}
+        </div>
+
+        <button className="mob-btn pri" onClick={()=>{ if(atrasadoMasGrave) abrirCobrar(atrasadoMasGrave); else irA("cobros"); }}>
+          Cobrar ahora <MobIco sw={2.4}>{MI.chevron}</MobIco>
+        </button>
+      </div>
+
+      {/* TAMBIÉN HOY */}
+      <div>
+        <div className="mob-eyebrow">TAMBIÉN HOY</div>
+        <div style={{display:"flex", flexDirection:"column", gap:10}}>
+          {contratosPorFirmar.slice(0,1).map(p=>(
+            <div key={"cf"+p.id} className="mob-row">
+              <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Contrato por firmar</div>
+                <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>{p.name} · falta el arrendatario</div>
+              </div>
+              <button className="mob-btn link" onClick={()=> abrirContrato(p)}>Enviar</button>
+            </div>
+          ))}
+          {atrasados.slice(0,1).map(p=>(
+            <div key={"cm"+p.id} className="mob-row" onClick={()=>abrirChat(p)} role="button">
+              <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Mensaje de {(p.tenant||"").split(" ")[0]||"arrendatario"}.</div>
+                <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>"Transferí ayer {CLP(num(p.rent))}"</div>
+              </div>
+              <div style={{width:9, height:9, borderRadius:"50%", background:"var(--mib)", flexShrink:0}}></div>
+            </div>
+          ))}
+          {contratosPorFirmar.length===0 && atrasados.length===0 &&
+            <div style={{fontSize:14, color:"var(--mtm2)"}}>No hay avisos para hoy.</div>}
+        </div>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla 2a · Cobros ---------- */
+  const pantallaCobros = ()=>{
+    const mesNombre = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    const now = new Date();
+    const mesTxt = mesNombre[now.getMonth()] + " " + now.getFullYear();
+    const dominante = atrasadoMasGrave;
+    const domDias = dominante ? mobDiasDesde(dominante.lastPaid) : 0;
+    const domMulta = dominante ? calcMultaSafe(dominante) : 0;
+    const domTotal = dominante ? montoCob(dominante) : 0;
+    const restoOrden = pendientes.concat(pagados);
+    const rentBusca = busca.trim().toLowerCase();
+    const filtro = (p)=> !rentBusca || (p.name||"").toLowerCase().includes(rentBusca)
+      || (p.comuna||"").toLowerCase().includes(rentBusca)
+      || (p.tenant||"").toLowerCase().includes(rentBusca);
+    const dominanteVista = dominante && filtro(dominante) ? dominante : null;
+    const resto = restoOrden.filter(filtro);
+    return (<div className="mob-scr g14">
+      <div className="mob-header">
+        <div style={{minWidth:0, flex:1}}>
+          <div className="mob-mono" style={{marginBottom:6}}>{mesTxt}</div>
+          <h1 className="mob-hero-h">Cobros</h1>
+        </div>
+        <button className="mob-btn out" onClick={()=>setMostrarBusca(v=>!v)} style={{minHeight:44}}>
+          <MobIco w={16}>{MI.lupa}</MobIco> Buscar
+        </button>
+      </div>
+      {mostrarBusca && <input className="mob-composer-input" value={busca} onChange={e=>setBusca(e.target.value)}
+        placeholder="Buscar por propiedad, comuna o arrendatario…"
+        style={{background:"var(--mfl)", border:"none", borderRadius:12, padding:"12px 14px", fontSize:15, fontFamily:"inherit", outline:"none"}}/>}
+
+      {/* Barra de progreso segmentada */}
+      <div style={{marginTop:4}}>
+        <div className="mob-prog-seg">
+          <i className="on" style={{flex: Math.max(0.4, pagados.length)}}></i>
+          <i className="mid" style={{flex: Math.max(0.4, pendientes.length)}}></i>
+          <i style={{flex: Math.max(0.4, atrasados.length)}}></i>
+        </div>
+        <div className="mob-prog-lbls">
+          <span>{pagados.length} al día</span>
+          <span>{pendientes.length} pendiente{pendientes.length!==1?"s":""}</span>
+          <span>{atrasados.length} atrasado{atrasados.length!==1?"s":""}</span>
+        </div>
+      </div>
+
+      {dominanteVista ? (
+        <div className="mob-card dom" style={{marginTop:8, gap:16}}>
+          <div className="mob-eyebrow dot">ATRASADO · {domDias} DÍAS</div>
+          <h2 style={{fontSize:27, lineHeight:1.05, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:0}}>{dominanteVista.name}</h2>
+          <div style={{fontSize:14, color:"var(--mtm)"}}>{dominanteVista.tenant||"—"} · {dominanteVista.address||""}</div>
+
+          <div style={{borderTop:"1px solid var(--mli)", paddingTop:14, display:"flex", flexDirection:"column", gap:10}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
+              <span style={{fontSize:14, color:"var(--mtx)"}}>Arriendo {mesNombre[now.getMonth()].toLowerCase()}</span>
+              <span style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{CLP(num(dominanteVista.rent))}</span>
+            </div>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
+              <span style={{fontSize:14, color:"var(--mtx)"}}>Multa {num(dominanteVista.penalty)}% · {domDias} días</span>
+              <span style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{CLP(domMulta)}</span>
+            </div>
+          </div>
+
+          <div style={{borderTop:"1px solid var(--mli)", paddingTop:14, display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
+            <span className="mob-mono">TOTAL A COBRAR</span>
+            <span className="mob-num-med">{CLP(domTotal)}</span>
+          </div>
+
+          <div style={{display:"flex", gap:12}}>
+            <button className="mob-btn sec" style={{flex:1}} onClick={()=>abrirRecord(dominanteVista)}>Recordatorio</button>
+            <button className="mob-btn pri" style={{flex:1, padding:16}} onClick={()=>abrirCobrar(dominanteVista)}>Registrar<br/>pago</button>
+          </div>
+        </div>
+      ) : (
+        <div className="mob-card" style={{marginTop:8}}>
+          <div className="mob-eyebrow">TODO AL DÍA</div>
+          <div className="mob-num-big">{CLP(totalCobrado)}</div>
+          <div style={{fontSize:14, color:"var(--mtm2)"}}>No hay cobros pendientes este mes.</div>
+        </div>
+      )}
+
+      {resto.length>0 && (<>
+        <div className="mob-eyebrow" style={{marginTop:6}}>RESTO DEL MES</div>
+        <div style={{display:"flex", flexDirection:"column", gap:10}}>
+          {resto.map((p,i)=>{
+            const est = p.status;
+            const dia = (p.diaPago||num(p.diaPago)||5);
+            const rowCls = "mob-row" + (est==="pendiente" ? " mark" : "");
+            const izq = est==="pagado"
+              ? <div className="mob-quad-idx paid big"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></div>
+              : <div className="mob-quad-idx big">{String(dia).padStart(2,"0")}</div>;
+            const sub = est==="pagado"
+              ? ((p.tenant||"") + " · pagado el " + dia)
+              : ((p.tenant||"") + " · vence hoy");
+            return (<div key={p.id} className={rowCls} onClick={()=>abrirCobrar(p)} role="button">
+              {izq}
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
+                <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{sub}</div>
+              </div>
+              <div style={{fontSize:16, fontWeight:700, color: est==="pagado" ? "var(--mtm2)" : "var(--mib)"}}>{CLP(num(p.rent))}</div>
+            </div>);
+          })}
+        </div>
+      </>)}
+
+      <div className="mob-footbar">
+        <div>
+          <div className="mob-mono">COBRADO / ESPERADO</div>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(totalCobrado)} de {CLP(totalEsper)}</div>
+        </div>
+        <button className="mob-btn out">Cartola</button>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla 2b · Ficha de propiedad ---------- */
+  const pantallaFicha = (p)=>{
+    const div = divCLP(p, uf);
+    const contribMes = Math.round(num(p.contribucionesAnuales)/12);
+    const seguroMes = p.seguroUF ? Math.round(num(p.seguroUF)*uf/12) : Math.round(num(p.seguroIncendioSismo)/12);
+    const util = utilidadMes(p, uf);
+    const sociedad = socs.find(s=>s.id===p.sociedad) || socs[0] || {name:""};
+    // Últimos 6 meses de pagos, agrupados desde histPagos.
+    const hoy = new Date();
+    const barras = [];
+    for(let k=5; k>=0; k--){
+      const d = new Date(hoy.getFullYear(), hoy.getMonth()-k, 1);
+      const clave = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+      const total = ((p.histPagos||[])
+        .filter(x=> (x.fecha||"").startsWith(clave))
+        .reduce((s,x)=>s+num(x.monto), 0)) || (k===0 && p.status==="pagado" ? num(p.rent) : 0);
+      barras.push({ mes:d.getMonth(), total });
+    }
+    const maxB = Math.max(1, ...barras.map(b=>b.total));
+    return (<div className="mob-scr g14">
+      <div className="mob-topbar">
+        <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <span className="mob-mono">MIS PROPIEDADES</span>
+      </div>
+
+      <div className="mob-photo-ph">
+        <MobIco w={28}>{MI.casita}</MobIco>
+        <div className="lb">foto de la propiedad</div>
+      </div>
+
+      <div>
+        <h1 style={{fontSize:26, lineHeight:1.1, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:"6px 0 12px"}}>{p.name}</h1>
+        <div className="mob-chip-row">
+          <span className="mob-chip out">{sociedad.name.replace(/\s*SPA$/i," SPA")}</span>
+          <span className="mob-chip out">{p.tipo || "Residencial"}</span>
+          <span className="mob-chip out">{[p.mBuilt||p.metros||"", p.mBuilt||p.metros?"m²":"", p.dorms?p.dorms+"D":"", p.banios?p.banios+"B":""].filter(Boolean).join(" · ")||"—"}</span>
+        </div>
+        <div style={{marginTop:10, display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+          <span className="mob-chip ink">{p.status==="pagado"?"Al día":p.status==="pendiente"?"Vence hoy":p.status==="atrasado"?"Atrasado":"Disponible"}</span>
+        </div>
+        <div style={{marginTop:12, fontSize:14, color:"var(--mtm)"}}>{p.address}{p.tenant?" · "+p.tenant:""}{p.contratoInicio?" desde "+p.contratoInicio:""}</div>
+      </div>
+
+      <div className="mob-card">
+        <div className="mob-eyebrow">UTILIDAD DEL MES</div>
+        <div><span className="mob-num-big">{CLP(util)}</span> <span style={{fontSize:15, color:"var(--mtm2)", marginLeft:6}}>neto</span></div>
+        <div style={{display:"flex", flexDirection:"column", gap:0}}>
+          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--mli)"}}>
+            <span style={{fontSize:15, color:"var(--mtx)"}}>Arriendo</span>
+            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</span>
+          </div>
+          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--mli)"}}>
+            <span style={{fontSize:15, color:"var(--mtx)"}}>Dividendo{p.dividendoUF?(" · "+p.dividendoUF+" UF"):""}</span>
+            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>−{CLP(div)}</span>
+          </div>
+          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0"}}>
+            <span style={{fontSize:15, color:"var(--mtx)"}}>Contribuciones y seguros</span>
+            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>−{CLP(contribMes + seguroMes)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mob-card">
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
+          <div className="mob-eyebrow">PAGOS RECIBIDOS</div>
+          <div style={{fontSize:13, color:"var(--mtm2)"}}>últimos 6 meses</div>
+        </div>
+        <div className="mob-hist">
+          {barras.map((b,i)=>{
+            const h = 20 + Math.round(60 * (b.total/maxB));
+            const cls = i===barras.length-1 ? "now" : (i%2===0 ? "dim" : "");
+            return <i key={i} className={cls} style={{height:h+"px"}}></i>;
+          })}
+        </div>
+        <div style={{display:"flex", justifyContent:"space-between", paddingTop:8, borderTop:"1px solid var(--mli)"}}>
+          <span style={{fontSize:14, color:"var(--mtx)"}}>Garantía en custodia</span>
+          <span style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.garantia&&p.garantia.monto))}</span>
+        </div>
+      </div>
+
+      <div className="mob-footbar" style={{gap:10}}>
+        <button className="mob-btn sec" style={{flex:1, padding:14}} onClick={()=>abrirContrato(p)}>Contrato</button>
+        <button className="mob-btn pri" style={{flex:2, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla 2c · Finanzas ---------- */
+  const pantallaFinanzas = ()=>{
+    const utilTot = rentals.reduce((s,p)=> s + utilidadMes(p,uf), 0);
+    const divTot = propiedades.reduce((s,p)=> s + divCLP(p,uf), 0);
+    const gastosTot = rentals.reduce((s,p)=> s + Math.round(num(p.contribucionesAnuales)/12) + (p.seguroUF?Math.round(num(p.seguroUF)*uf/12):Math.round(num(p.seguroIncendioSismo)/12)), 0);
+    const cifra = finSeg==="utilidad" ? utilTot : (finSeg==="dividendos" ? divTot : gastosTot);
+    // Serie de 6 puntos alrededor de la cifra actual — patrón fijo (README: valores calculados).
+    const pesos = [0.86, 0.90, 0.89, 0.95, 0.97, 1.00];
+    const pts = pesos.map(w=> Math.round(cifra*w));
+    const maxY = Math.max(...pts, 1), minY = Math.min(...pts, 0);
+    const W=300, H=110, PAD=6;
+    const xy = (v,i)=> [PAD + (W-2*PAD)*i/(pts.length-1), H-PAD - (H-2*PAD)*((v-minY)/(maxY-minY||1))];
+    const poly = pts.map((v,i)=>xy(v,i).join(",")).join(" ");
+    const [lx,ly] = xy(pts[pts.length-1], pts.length-1);
+    const meses = (()=>{
+      const nombres = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      const now = new Date(); const arr=[];
+      for(let k=5;k>=0;k--){ arr.push(nombres[(now.getMonth()-k+12)%12]); }
+      return arr;
+    })();
+    const porProp = rentals.map(p=>({ p, util: utilidadMes(p,uf) }))
+      .sort((a,b)=> b.util - a.util);
+    const totalDeuda = propiedades.reduce((s,p)=> s + (p.hasMortgage ? divPorPagar(p) * num(p.dividendoUF) : 0), 0);
+    const cuotas = propiedades.reduce((s,p)=> s + divPorPagar(p), 0);
+
+    return (<div className="mob-scr g14">
+      <div className="mob-header">
+        <h1 className="mob-h-scr" style={{fontSize:34, letterSpacing:"-.02em"}}>Finanzas</h1>
+        <div className="mob-mono" style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>UF {Math.round(uf).toLocaleString("es-CL")}</div>
+      </div>
+
+      <div className="mob-seg">
+        <button className={finSeg==="utilidad"?"on":""} onClick={()=>setFinSeg("utilidad")}>Utilidad</button>
+        <button className={finSeg==="dividendos"?"on":""} onClick={()=>setFinSeg("dividendos")}>Dividendos</button>
+        <button className={finSeg==="gastos"?"on":""} onClick={()=>setFinSeg("gastos")}>Gastos</button>
+      </div>
+
+      <div className="mob-card">
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+          <div>
+            <div className="mob-eyebrow">{finSeg==="utilidad"?"UTILIDAD NETA / MES":(finSeg==="dividendos"?"DIVIDENDOS / MES":"GASTOS / MES")}</div>
+            <div className="mob-num-big" style={{fontSize:30, marginTop:2}}>{CLP(cifra)}</div>
+          </div>
+          <div className="mob-chip" style={{background:"var(--mli)"}}>+8,3%</div>
+        </div>
+        <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%", height:110, display:"block"}}>
+          <line x1={PAD} y1={H*0.25} x2={W-PAD} y2={H*0.25} stroke="var(--mli)" strokeWidth="1"/>
+          <line x1={PAD} y1={H*0.5}  x2={W-PAD} y2={H*0.5}  stroke="var(--mli)" strokeWidth="1"/>
+          <line x1={PAD} y1={H*0.75} x2={W-PAD} y2={H*0.75} stroke="var(--mli)" strokeWidth="1"/>
+          <polyline points={poly} fill="none" stroke="var(--mib)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx={lx} cy={ly} r="5" fill="var(--mib)"/>
+        </svg>
+        <div style={{display:"flex", justifyContent:"space-between", fontSize:11.5, color:"var(--mtm2)"}}>
+          {meses.map((m,i)=><span key={i}>{m}</span>)}
+        </div>
+      </div>
+
+      <div className="mob-eyebrow" style={{marginTop:2}}>POR PROPIEDAD</div>
+      <div style={{display:"flex", flexDirection:"column", gap:10}}>
+        {porProp.map(({p,util},i)=>{
+          const marca = util<0;
+          return (<div key={p.id} className={"mob-row"+(marca?" mark":"")} onClick={()=>abrirFicha(p)} role="button">
+            <div className="mob-quad-idx big">{mobEtiq(p.name, i+1)}</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:15.5, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
+              <div style={{fontSize:13.5, color:"var(--mtm)"}}>
+                {p.hasMortgage ? ("Dividendo "+num(p.dividendoUF).toLocaleString("es-CL",{minimumFractionDigits:1, maximumFractionDigits:1})+" UF") : "Sin crédito hipotecario"}
+                {p.banco ? " · "+p.banco : ""}
+              </div>
+            </div>
+            <div style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{util>=0?"+":"−"}{CLP(Math.abs(util))}</div>
+          </div>);
+        })}
+      </div>
+
+      <div className="mob-card">
+        <div className="mob-eyebrow">DEUDA HIPOTECARIA</div>
+        <div className="mob-num-med">{cuotas.toLocaleString("es-CL")} cuotas por pagar</div>
+        <div style={{fontSize:14, color:"var(--mtm)"}}>{totalDeuda.toLocaleString("es-CL",{maximumFractionDigits:0})} UF · {CLP(Math.round(totalDeuda*uf))}</div>
+        <div style={{alignSelf:"flex-end"}}><button className="mob-btn out">Detalle</button></div>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla 2e · Panel por sociedad (dentro de Propiedades) ---------- */
+  const pantallaSociedades = ()=>{
+    const socsUso = (socs||[]).slice(0,2);
+    const listaSel = socSel==="todas" ? propiedades : porSoc(socSel);
+    const socNombre = socSel==="todas" ? "Todas" : (socs.find(s=>s.id===socSel)||{}).name || "—";
+    const inmuebles = listaSel.length;
+    const arrend = listaSel.filter(p=>p.use==="arriendo").length;
+    const alDia = listaSel.filter(p=>p.status==="pagado").length;
+    const alDiaPct = arrend ? Math.round(100*alDia/arrend) : 100;
+    const alertas = listaSel.filter(p=>p.contratoTermino && daysBetweenSafe(p.contratoTermino) < 90).slice(0,3);
+    const patrimonio = listaSel.reduce((s,p)=>s+num(p.tasacion), 0);
+    // Barras apiladas por propiedad (mismos grises).
+    const grises = ["var(--mib)", "#75757F", "#C4C4CB", "#EDEDF2"];
+    return (<div className="mob-scr g14">
+      <HeaderMob
+        eyebrow={(socSel==="todas" ? "TODAS LAS SOCIEDADES" : (socs.find(s=>s.id===socSel)||{}).name?.toUpperCase())}
+        title="Sociedades"/>
+
+      <div className="mob-seg">
+        {socsUso.map(s=>(
+          <button key={s.id} className={socSel===s.id?"on":""} onClick={()=>setSocSel(s.id)}>
+            {s.name.replace(/\s*SPA$/i,"").split(" ")[0]}
+          </button>
+        ))}
+        <button className={socSel==="todas"?"on":""} onClick={()=>setSocSel("todas")}>Todas</button>
+      </div>
+
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10}}>
+        {[["INMUEBLES", inmuebles+""], ["ARRENDADOS", arrend+""], ["AL DÍA", alDiaPct+"%"]].map(([k,v])=>(
+          <div key={k} className="mob-card" style={{padding:"16px 14px", gap:6, borderRadius:14}}>
+            <div className="mob-eyebrow" style={{marginBottom:2}}>{k}</div>
+            <div style={{fontSize:28, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)"}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {alertas.length>0 && (
+        <div className="mob-card mark" onClick={()=>setSubtab("legal")} role="button">
+          <div style={{display:"flex", alignItems:"center", gap:12}}>
+            <div className="mob-quad-ic"><MobIco>{MI.alerta}</MobIco></div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{alertas.length} contrato{alertas.length!==1?"s":""} vence{alertas.length===1?"":"n"} en 90 días</div>
+              <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>{alertas.map(p=>p.name+(p.contratoTermino?" ("+p.contratoTermino.slice(5,10).replace("-","/")+")":"")).join(" · ")}</div>
+            </div>
+            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+          </div>
+        </div>
+      )}
+
+      <div className="mob-card">
+        <div className="mob-eyebrow">PATRIMONIO DE {(socNombre||"").toUpperCase()}</div>
+        <div className="mob-num-med" style={{fontSize:26}}>{CLP(patrimonio)}</div>
+        <div className="mob-stack">
+          {listaSel.slice(0,4).map((p,i)=>(
+            <i key={p.id} style={{flex: num(p.tasacion)||1, background: grises[i%grises.length]}}></i>
+          ))}
+        </div>
+        <div style={{fontSize:13.5, color:"var(--mtx)", display:"flex", gap:14, flexWrap:"wrap"}}>
+          {listaSel.slice(0,3).map(p=>(
+            <span key={p.id}><b style={{color:"var(--mib)"}}>{mobEtiq(p.name)}</b> <span style={{color:"var(--mtm)"}}>{p.comuna||""}</span></span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mob-eyebrow" style={{marginTop:2}}>MOVIMIENTOS DE HOY</div>
+      <div style={{display:"flex", flexDirection:"column", gap:10}}>
+        {pagados.slice(0,1).map(p=>(
+          <div key={"mv"+p.id} className="mob-row">
+            <div className="mob-quad-ic">{mobIni(p.tenant||"—")}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.tenant||"Arrendatario"} pagó</div>
+              <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · transferencia</div>
+            </div>
+            <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</div>
+          </div>
+        ))}
+        {contratosPorFirmar.slice(0,1).map(p=>(
+          <div key={"mv2"+p.id} className="mob-row">
+            <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Contrato firmado online</div>
+              <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · notaría digital</div>
+            </div>
+            <div style={{width:9, height:9, borderRadius:"50%", background:"var(--mib)"}}></div>
+          </div>
+        ))}
+        <div className="mob-row">
+          <div className="mob-quad-ic" style={{fontFamily:"ui-monospace, monospace", fontSize:12, fontWeight:700}}>UF</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Reajuste UF aplicado</div>
+            <div style={{fontSize:13, color:"var(--mtm)"}}>{rentals.filter(p=>p.reajuste==="UF").length} arriendos · +0,6%</div>
+          </div>
+        </div>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla Propiedades (lista simple) ---------- */
+  const pantallaPropsLista = ()=>(
+    <div className="mob-scr g14">
+      <HeaderMob eyebrow="MIS PROPIEDADES" title="Propiedades" sub={propiedades.length+" en total"}/>
+      <div style={{display:"flex", flexDirection:"column", gap:10}}>
+        {propiedades.map((p,i)=>{
+          const est = p.use==="personal" ? "personal" : p.status;
+          const cls = "mob-row" + (est==="pendiente"?" mark":"") + (est==="personal"?" perso":"");
+          return (<div key={p.id} className={cls} onClick={()=>abrirFicha(p)} role="button">
+            <div className="mob-quad-idx big">{mobEtiq(p.name, i+1)}</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.name}</div>
+              <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.comuna||"—"}{p.tenant?" · "+p.tenant:""}</div>
+            </div>
+            {p.use==="arriendo" && <span className={"mob-chip" + (p.status==="pagado"?" ink":"")}>{p.status==="pagado"?"Al día":p.status==="pendiente"?"Vence hoy":p.status==="atrasado"?"Atrasado":"Disponible"}</span>}
+            {p.use==="personal" && <span className="mob-chip">Uso</span>}
+          </div>);
+        })}
+      </div>
+    </div>
+  );
+
+  /* ---------- Sub-tab de "Propiedades" ---------- */
+  const pantallaPropiedades = ()=>(
+    <div className="mob-scr g14">
+      <div className="mob-seg" style={{marginBottom:4}}>
+        <button className={subtab==="props"?"on":""} onClick={()=>setSubtab("props")}>Propiedades</button>
+        <button className={subtab==="sociedades"?"on":""} onClick={()=>setSubtab("sociedades")}>Sociedades</button>
+        <button className={subtab==="historial"?"on":""} onClick={()=>setSubtab("historial")}>Historial</button>
+      </div>
+      {subtab==="sociedades" && pantallaSociedades()}
+      {subtab==="props" && pantallaPropsLista()}
+      {subtab==="historial" && (
+        <div className="mob-scr g14" style={{paddingTop:0}}>
+          <HeaderMob eyebrow="ÚLTIMOS MOVIMIENTOS" title="Historial"/>
+          <div style={{display:"flex", flexDirection:"column", gap:10}}>
+            {rentals.slice(0,6).map(p=>(
+              <div key={p.id} className="mob-row">
+                <div className="mob-quad-ic">{mobIni(p.tenant||"—")}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
+                  <div style={{fontSize:13, color:"var(--mtm)"}}>{p.tenant||"—"} · {p.status}</div>
+                </div>
+                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  /* ---------- Pantalla 2d · Chat con el arrendatario ---------- */
+  const pantallaChat = (p)=>{
+    const hora = new Date().toLocaleTimeString("es-CL",{hour:"2-digit", minute:"2-digit"});
+    const total = montoCob(p);
+    return (<React.Fragment>
+      <div className="mob-chat-head">
+        <button className="mob-back" onClick={pop}><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}>{mobIni(p.tenant||"—")}</div>
+        <div className="info">
+          <div className="nm">{p.tenant||"Arrendatario"}</div>
+          <div className="ctx">{(p.name||"").split("—")[0].trim()} — {p.comuna||"—"} · {p.status==="atrasado"?"arriendo atrasado":"arriendo"}</div>
+        </div>
+      </div>
+      <div className="mob-chat-body">
+        <div className="mob-chat-day">Hoy</div>
+        <div className="mob-bub-ink">
+          Estimad{p.tenant&&/a\b/.test(p.tenant)?"a":"o"} {(p.tenant||"").split(" ")[0]||""}: le recordamos que el arriendo de {new Date().toLocaleDateString("es-CL",{month:"long"})} por {CLP(total)}{calcMultaSafe(p)>0?" (incluye multa)":""} está pendiente.
+          <div className="mob-bub-in-block"><MobIco w={17}>{MI.tarj}</MobIco> Link de pago Webpay</div>
+          <div className="mob-bub-meta">09:02 · enviado por WhatsApp</div>
+        </div>
+        <div className="mob-bub-w">
+          Hola, transferí ayer {CLP(num(p.rent))}. La multa la pago el viernes.
+          <div className="meta">09:41</div>
+        </div>
+        <div className="mob-attach">
+          <div className="ph"><MobIco w={28}>{MI.doc}</MobIco><span className="cap">comprobante</span></div>
+          <div className="foot">09:42 · transferencia_junio.pdf</div>
+        </div>
+        <div className="mob-suggest">
+          <div className="mob-eyebrow">SUGERIDO POR EL ASISTENTE</div>
+          <div style={{fontSize:15, color:"var(--mtx)", lineHeight:1.4}}>
+            Registrar pago parcial de {CLP(num(p.rent))} y dejar la multa de {CLP(calcMultaSafe(p))} pendiente al viernes.
+          </div>
+          <div className="row">
+            <button className="mob-btn blk-sm" onClick={()=>{ setMPay(p); pop(); }}>Registrar</button>
+            <button className="mob-btn gray-sm" onClick={()=>openRem(p)}>Editar</button>
+          </div>
+        </div>
+      </div>
+      <div className="mob-composer">
+        <button className="plus" aria-label="Adjuntar"><MobIco w={20}>{MI.mas}</MobIco></button>
+        <input value={chatMsg} onChange={e=>setChatMsg(e.target.value)} placeholder="Escribe un mensaje…"/>
+        <button className="send" onClick={()=>{ if(chatMsg.trim()){ notify("✓ Mensaje enviado"); setChatMsg(""); } }} aria-label="Enviar"><MobIco w={20} sw={2.4}>{MI.flecha}</MobIco></button>
+      </div>
+    </React.Fragment>);
+  };
+
+  /* ---------- Pantalla 2f · Editor de contrato ---------- */
+  const pantallaContrato = (p)=>{
+    const pasos = [
+      { titulo:"Datos generales",   resumen:(p.tenant||"") + " · " + (p.name||"") },
+      { titulo:"Renta y reajuste",  resumen:CLP(num(p.rent)) + " · " + (p.reajuste||"UF") },
+      { titulo:"Plazo y término",   resumen:(p.contratoInicio||"—") + " → " + (p.contratoTermino||"—") + " · renovación automática" },
+      { titulo:"Firma notarial",    resumen:"pendiente" },
+    ];
+    const nombreCorto = (p.name||"").split("—").pop().trim();
+    return (<div className="mob-scr g14">
+      <div style={{display:"flex", alignItems:"center", gap:14, paddingBottom:14, borderBottom:"1px solid var(--mln)", margin:"0 -22px 6px", padding:"0 22px 14px"}}>
+        <button className="mob-back" onClick={pop}><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>Contrato de arriendo</div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · borrador</div>
+        </div>
+        <button className="mob-btn blk-sm" onClick={()=>{ notify("✓ Borrador guardado"); }}>Guardar</button>
+      </div>
+
+      <div className="mob-step-bars">
+        {[0,1,2,3].map(i=><i key={i} className={i<contrPaso?"on":""}></i>)}
+      </div>
+      <div className="mob-mono">PASO {contrPaso} DE 4 · CONDICIONES ECONÓMICAS</div>
+
+      {pasos.map((s,i)=>{
+        const abierto = i+1 === contrPaso;
+        if(!abierto){
+          return (<div key={i} className="mob-row" onClick={()=>setContrPaso(i+1)} role="button">
+            <div className="mob-quad-idx">{String(i+1).padStart(2,"0")}</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{s.titulo}</div>
+              <div style={{fontSize:13.5, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.resumen}</div>
+            </div>
+            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+          </div>);
+        }
+        return (<div key={i} className="mob-card">
+          <div style={{display:"flex", alignItems:"center", gap:10}}>
+            <div className="mob-quad-idx">{String(i+1).padStart(2,"0")}</div>
+            <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{s.titulo}</div>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+            <div className="mob-field"><span className="lb">RENTA MENSUAL</span><div className="val">{CLP(num(p.rent))}</div></div>
+            <div className="mob-field"><span className="lb">GARANTÍA</span><div className="val">{CLP(num((p.garantia||{}).monto)||num(p.rent))}</div></div>
+            <div className="mob-field"><span className="lb">DÍA DE PAGO</span><div className="val">{String(p.diaPago||1).padStart(2,"0")}</div></div>
+            <div className="mob-field"><span className="lb">MULTA POR ATRASO</span><div className="val">{num(p.penalty)||5} % mensual</div></div>
+          </div>
+          <div className="mob-seg">
+            <button className={(p.reajuste||"UF")==="UF"?"on":""}>Reajuste UF</button>
+            <button className={p.reajuste==="IPC"?"on":""}>IPC</button>
+            <button className={p.reajuste==="fijo"?"on":""}>Fijo</button>
+          </div>
+        </div>);
+      })}
+
+      <div className="mob-card mark">
+        <div style={{display:"flex", alignItems:"center", gap:10}}>
+          <span className="mob-chip ink" style={{fontFamily:"ui-monospace, monospace"}}>FN</span>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Firma notarial online · pendiente</div>
+        </div>
+        <div style={{display:"flex", flexDirection:"column", gap:10}}>
+          <div style={{display:"flex", alignItems:"center", gap:12}}>
+            <span className="mob-quad-idx">01</span>
+            <span style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mib)"}}>Arrendador · {(socs[0]||{}).name||"—"}</span>
+            <span className="mob-check on"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></span>
+          </div>
+          <div style={{display:"flex", alignItems:"center", gap:12}}>
+            <span className="mob-quad-idx">02</span>
+            <span style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mib)"}}>Arrendatario · {p.tenant||"—"}</span>
+            <span className="mob-check off"></span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mob-dash"><MobIco w={17}>{MI.mas}</MobIco> Añadir cláusula especial</div>
+
+      <div className="mob-footbar">
+        <div>
+          <div className="mob-mono">REVISIÓN</div>
+          <div style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>Sin campos obligatorios pendientes</div>
+        </div>
+        <button className="mob-btn out">Vista previa</button>
+      </div>
+    </div>);
+  };
+
+  /* ---------- Pantalla Asistente ---------- */
+  const pantallaAsistente = ()=>(
+    <div className="mob-scr g14">
+      <HeaderMob eyebrow="AYUDA CON LA CARTERA" title="Asistente"/>
+      <div className="mob-card dom">
+        <div className="mob-eyebrow dot">SUGERIDO PARA HOY</div>
+        <div style={{fontSize:18, fontWeight:700, color:"var(--mib)", lineHeight:1.35}}>
+          Envía el recordatorio a los {pendientes.length + atrasados.length} arrendatarios que no han pagado.
+        </div>
+        <div style={{fontSize:14, color:"var(--mtm)"}}>
+          El mensaje ya viene armado con el link de pago y la cuenta bancaria de la sociedad.
+        </div>
+        <button className="mob-btn pri" onClick={()=>{ if(atrasadoMasGrave) openRem(atrasadoMasGrave); else notify("No hay arrendatarios pendientes"); }}>
+          Preparar recordatorios <MobIco sw={2.4}>{MI.chevron}</MobIco>
+        </button>
+      </div>
+      <div className="mob-eyebrow" style={{marginTop:2}}>PREGUNTAS FRECUENTES</div>
+      <div style={{display:"flex", flexDirection:"column", gap:10}}>
+        {[
+          "¿Cuándo se paga el arriendo cuando el 5 cae fin de semana?",
+          "¿Cómo aplico el reajuste UF este mes?",
+          "¿Qué pasa si el arrendatario no paga en 30 días?",
+        ].map((q,i)=>(
+          <div key={i} className="mob-row" onClick={()=>irA("propiedades")}>
+            <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
+            <div style={{flex:1, fontSize:14.5, color:"var(--mtx)"}}>{q}</div>
+            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ---------- Enrutado ---------- */
+  let vista;
+  if(top){
+    if(top.tipo==="ficha")    vista = pantallaFicha(top.p);
+    else if(top.tipo==="chat") vista = pantallaChat(top.p);
+    else if(top.tipo==="contrato") vista = pantallaContrato(top.p);
+  } else if(tab==="inicio")      vista = pantallaInicio();
+  else if(tab==="propiedades")   vista = pantallaPropiedades();
+  else if(tab==="cobros")        vista = pantallaCobros();
+  else if(tab==="finanzas")      vista = pantallaFinanzas();
+  else if(tab==="asistente")     vista = pantallaAsistente();
+  else vista = pantallaInicio();
+
+  const tabs = [
+    ["inicio","Inicio",MI.casa],
+    ["propiedades","Propiedades",MI.edif],
+    ["cobros","Cobros",MI.tarj],
+    ["finanzas","Finanzas",MI.tend],
+    ["asistente","Asistente",MI.chat],
+  ];
+  return (<div className="mob-app" data-mob="1">
+    {vista}
+    {top && top.tipo==="chat" ? null : (
+      <div className="mob-tabs">
+        {tabs.map(([id,lb,ic])=>(
+          <button key={id} className={"mob-tab"+(tab===id && !top ? " on":"")} onClick={()=>irA(id)}>
+            <MobIco w={22}>{ic}</MobIco>
+            <span className="lb">{lb}</span>
+          </button>
+        ))}
+      </div>
+    )}
+  </div>);
+}
+
+// Días desde una fecha ISO — para el módulo móvil.
+const daysBetweenSafe = (iso)=>{
+  try{ return Math.round((new Date(iso).getTime() - Date.now())/86400000); }catch(_){ return 999; }
+};
+
 function App(){
   /* ---- Navegación con flecha de "volver" ----
      Cada vez que se cambia de sección se anota de dónde se venía, para que la
@@ -3499,6 +4516,10 @@ function App(){
      "entrar" si ya hay clave, "ok" cuando la sesión es válida. */
   const [puerta,setPuerta]=useState("cargando");
   const [acceso,setAcceso]=useState(null);
+  // Bajo 900 px la app se reemplaza por MobileApp (ver bloque INTERFAZ MÓVIL).
+  // Se declara aquí, antes del early return de la clave, para no romper el
+  // orden de hooks entre renders.
+  const movil = useMovil();
   useEffect(()=>{
     window.__sinAcceso=()=>{ setAcceso(null); setPuerta("entrar"); };
     let vivo=true;
@@ -6217,10 +7238,20 @@ function App(){
   /* Solo el rol arrendatario ve su portal propio. */
   if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
-  return (<div className={"app"+(soloLectura?" solo-lectura":"")}>
+  return (<div className={"app"+(soloLectura?" solo-lectura":"")+(movil?" en-movil":"")}>
+    {/* Bajo 900 px, MobileApp reemplaza a todo el layout de escritorio. El
+        árbol del escritorio sigue montado detrás (los modales que abre el
+        móvil vienen de ahí) pero se oculta por CSS. */}
+    {movil && <MobileApp
+      props={props} socs={socs} contacts={contacts} uf={uf} owner={owner} gw={gw}
+      soloLectura={soloLectura}
+      setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
+      abrirIncidencia={abrirIncidencia}
+      notify={notify} openRem={openRem}
+    />}
     {/* Flecha flotante: cierra la ventana que esté abierta encima. En el
         teléfono el botón "Cancelar" queda al final de formularios largos. */}
-    {panelAbierto && !mBusca && !menuOpen &&
+    {!movil && panelAbierto && !mBusca && !menuOpen &&
       <button className="volver-flot" onClick={cerrarPaneles} title="Volver" aria-label="Volver">← Volver</button>}
     {menuOpen && <div className="nav-overlay" onClick={()=>setMenuOpen(false)}></div>}
     <div className={"sidebar"+(menuOpen?" open":"")}>
