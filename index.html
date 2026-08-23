@@ -2226,8 +2226,8 @@ function RecepPresupuestosBox({ p, uf, onChange }){
 /* Acciones que propone la IA cuando el documento no encaja en los campos de una
    propiedad. Evita el callejón sin salida: en vez de "no encontré nada",
    explica qué hacer y lo ejecuta. */
-const ACC_ICO={gasto:"💸",bitacora:"📓",incidencia:"🛠️",ninguna:"ℹ️",actualizar_propiedad:"✏️",crear_propiedad:"🏠"};
-const ACC_TXT={gasto:"Registrar como gasto",bitacora:"Anotar en la bitácora",incidencia:"Crear incidencia",ninguna:"",actualizar_propiedad:"Corregir la ficha de la propiedad",crear_propiedad:"Crear una propiedad nueva"};
+const ACC_ICO={gasto:"💸",bitacora:"📓",incidencia:"🛠️",ninguna:"ℹ️",actualizar_propiedad:"✏️",crear_propiedad:"🏠",recep_presupuesto:"🧾",recep_doc:"🏛️"};
+const ACC_TXT={gasto:"Registrar como gasto",bitacora:"Anotar en la bitácora",incidencia:"Crear incidencia",ninguna:"",actualizar_propiedad:"Corregir la ficha de la propiedad",crear_propiedad:"Crear una propiedad nueva",recep_presupuesto:"Guardar como presupuesto — Recepción municipal",recep_doc:"Guardar en el checklist — Recepción municipal"};
 
 /* Selección múltiple: la IA puede proponer varias acciones y conviene poder
    hacerlas todas de una, no una por una. Vienen marcadas por defecto porque se
@@ -2261,7 +2261,8 @@ function Sugerencias({ res, props, onEjecutar }){
           {s.porque&&<div className="sug-porque">{s.porque}</div>}
           <div className="sug-meta">
             {prop&&<span>🏠 {prop}</span>}
-            {num(s.monto)>0&&<span>{CLP(num(s.monto))}{s.periodo&&s.periodo!=="una vez"?" / "+s.periodo:""}</span>}
+            {s.contratista&&<span>👷 {s.contratista}</span>}
+            {num(s.monto)>0&&<span>{s.moneda==="UF"?UFf(num(s.monto)):CLP(num(s.monto))}{s.periodo&&s.periodo!=="una vez"?" / "+s.periodo:""}</span>}
           </div>
           {!ok&&<div className="sug-nada">No hay nada que guardar en la plataforma.</div>}
         </div>
@@ -4819,7 +4820,7 @@ function App(){
       if(j.text) resumenes.push((partes.length>1?"• "+nombre+": ":"")+j.text);
       const d=j.datos||{};
       Object.keys(d).forEach(k=>{
-        if(k==="sugerencias"){ (d[k]||[]).forEach(s=>sugerencias.push(s)); return; }
+        if(k==="sugerencias"){ (d[k]||[]).forEach(s=>sugerencias.push({...s, _archivoNombre:nombre})); return; }
         const v=d[k];
         if(v&&typeof v==="object"&&!Array.isArray(v)){
           datos[k]=datos[k]||{};
@@ -4991,6 +4992,20 @@ function App(){
      boleta, un certificado). Así el usuario nunca queda sin salida. */
   /* Aplica una acción sin avisar ni limpiar: así se pueden encadenar varias y
      dar un solo aviso al final. Devuelve si alcanzó a hacer algo. */
+  /* Sube a la plataforma un archivo que ya se leyó con la IA (aiDocs, en base64
+     en memoria) para dejarlo adjunto en el registro que crea la sugerencia,
+     sin que el usuario tenga que volver a buscarlo y subirlo a mano. */
+  const subirAiDocComoAdjunto=async(nombreArchivo)=>{
+    const f=nombreArchivo && aiDocs.find(x=>x.name===nombreArchivo);
+    if(!f||!f.b64) return null;
+    try{
+      const dataUrl=`data:${f.media||"application/octet-stream"};base64,${f.b64}`;
+      const r=await fetch("/api/archivo/subir",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({dataUrl,name:f.name}) });
+      if(!r.ok) return null;
+      const j=await r.json();
+      return { url:j.url, name:j.name||f.name, contentType:j.contentType||f.media };
+    }catch(e){ return null; }
+  };
   const aplicarSugerencia=(s,i)=>{
     const pid=s.propiedadId&&props.some(p=>String(p.id)===String(s.propiedadId))?s.propiedadId:null;
     const titulo=s.titulo||"Documento leído con IA";
@@ -5015,6 +5030,29 @@ function App(){
       if(!destino) return false;
       patchProp(destino, x=>({...x, bitacora:[{ id:"bit-"+uid, fecha:todayISO(),
         tipo:"Nota", titulo, texto:detalle, adjuntos:[] }, ...(x.bitacora||[])]}));
+      return true;
+    }
+    if(s.accion==="recep_presupuesto"){
+      if(!pid) return false;
+      const rid="rp-"+uid;
+      patchProp(pid, x=>({...x, recepPresupuestos:[{ id:rid, contratista:s.contratista||"", trabajo:titulo,
+        monto:num(s.monto)?String(Math.round(num(s.monto))):"", moneda:s.moneda==="UF"?"UF":"CLP", fecha:todayISO(),
+        estado:"Por revisar", nota:detalle, adjuntos:[] }, ...(x.recepPresupuestos||[])]}));
+      if(s._archivoNombre) subirAiDocComoAdjunto(s._archivoNombre).then(adj=>{ if(!adj) return;
+        patchProp(pid, x=>({...x, recepPresupuestos:(x.recepPresupuestos||[]).map(d=>d.id===rid?{...d,adjuntos:[...(d.adjuntos||[]),adj]}:d)})); });
+      return true;
+    }
+    if(s.accion==="recep_doc"){
+      if(!pid) return false;
+      const rid="rd-"+uid, nombreDoc=titulo.trim().toLowerCase();
+      patchProp(pid, x=>{
+        const list=x.recepDocs||[];
+        const ix=list.findIndex(d=>(d.nombre||"").trim().toLowerCase()===nombreDoc);
+        if(ix>=0){ const copia=list.slice(); copia[ix]={...copia[ix], estado:"Listo", nota:copia[ix].nota||detalle}; return {...x, recepDocs:copia}; }
+        return {...x, recepDocs:[...list,{ id:rid, nombre:titulo, estado:"Listo", nota:detalle, adjuntos:[] }]};
+      });
+      if(s._archivoNombre) subirAiDocComoAdjunto(s._archivoNombre).then(adj=>{ if(!adj) return;
+        patchProp(pid, x=>({...x, recepDocs:(x.recepDocs||[]).map(d=>(d.id===rid||(d.nombre||"").trim().toLowerCase()===nombreDoc)?{...d,adjuntos:[...(d.adjuntos||[]),adj]}:d)})); });
       return true;
     }
     return false;
@@ -6199,6 +6237,7 @@ function App(){
 
       {/* RECEPCIÓN MUNICIPAL: checklist de documentos + presupuestos de contratistas */}
       <Collapsible icon="🏛️" title="Recepción municipal" subtitle={[(p.recepDocs||[]).length?(((p.recepDocs||[]).filter(d=>d.estado==="Listo").length)+"/"+(p.recepDocs||[]).length+" documentos listos"):"", (p.recepPresupuestos||[]).length?((p.recepPresupuestos||[]).length+" presupuesto(s)"):""].filter(Boolean).join(" · ")||"Checklist de documentos y comparador de presupuestos"} defaultOpen={false}>
+      <div className="help" style={{marginBottom:14}}>💡 Atajo: en <b>Asistente → Lector de documentos con IA</b> puedes soltar de una vez las fotos o PDF de los presupuestos y documentos que te lleguen; la IA los lee y te propone dejarlos guardados aquí, ya identificados, para que no tengas que revisarlos uno por uno. <button className="btn btn-out btn-sm" style={{marginLeft:6}} onClick={()=>setTab("ai")}>Ir al Asistente →</button></div>
       <div style={{fontWeight:800,fontSize:14,marginBottom:8}}>📋 Checklist de documentos</div>
       <RecepDocsBox p={p} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
       <div style={{fontWeight:800,fontSize:14,margin:"20px 0 8px",borderTop:"1px solid var(--line)",paddingTop:16}}>💰 Presupuestos de contratistas</div>

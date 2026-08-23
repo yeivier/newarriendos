@@ -52,12 +52,14 @@ guardar la información y por qué.
 
 "sugerencias": [
   {
-    "accion": "gasto" | "bitacora" | "incidencia" | "ninguna",
+    "accion": "gasto" | "bitacora" | "incidencia" | "recep_presupuesto" | "recep_doc" | "ninguna",
     "propiedadId": "id de la propiedad de la lista de existentes, o null si no aplica a una sola",
-    "titulo": "título corto de la anotación, gasto o incidencia",
+    "titulo": "título corto de la anotación, gasto, incidencia o documento",
     "detalle": "texto que quedará guardado, con las cifras y fechas relevantes",
     "monto": 0,
     "periodo": "mes" | "año" | "una vez",
+    "contratista": "nombre del contratista o proveedor que emite el presupuesto (solo para recep_presupuesto)",
+    "moneda": "CLP" | "UF",
     "porque": "una frase explicando por qué propones esto"
   }
 ]
@@ -68,8 +70,29 @@ Cuándo usar cada acción:
 - "bitacora": conviene dejar constancia de algo con fecha (una declaración
   presentada, un trámite, una comunicación, un certificado emitido).
 - "incidencia": el documento reporta un problema, daño o reclamo.
+- "recep_presupuesto": el documento es un PRESUPUESTO, COTIZACIÓN o
+  PROPUESTA DE PRECIO que un contratista o proveedor envía por un trabajo
+  (ej. instalación eléctrica, sanitaria, gas, regularización, arreglos para
+  la recepción municipal). "titulo" = el trabajo cotizado, "contratista" = el
+  nombre de quien cotiza, "monto" y "moneda" = lo cotizado, "detalle" = qué
+  incluye, plazo o forma de pago si el documento lo dice.
+- "recep_doc": el documento ES uno de los papeles que se presentan para la
+  RECEPCIÓN MUNICIPAL (recepción final de obras) ante la Dirección de Obras
+  Municipales: permiso de edificación, planos timbrados, certificado de
+  instalaciones eléctricas (SEC/TE1), certificado de la empresa sanitaria o
+  de gas, informe de revisor independiente, certificado de no expropiación,
+  comprobante de pago de derechos municipales, certificado de contribuciones,
+  fotografías de la obra terminada, etc. "titulo" = el nombre exacto del
+  documento (para que calce con el checklist ya guardado en la propiedad).
 - "ninguna": el documento no tiene relación con la administración de
   propiedades. Igual explica en "porque" qué es y qué haría el usuario con él.
+
+Un mismo documento nunca es a la vez "recep_presupuesto" y "recep_doc": un
+presupuesto es una cotización de un trabajo, no un documento oficial para la
+DOM. Si dudas entre "gasto" e "incidencia" por un lado y "recep_presupuesto" o
+"recep_doc" por otro, usa estas últimas cuando el documento mencione permiso
+de edificación, recepción final, recepción municipal, Dirección de Obras o
+sea una cotización de un contratista para esos trabajos.
 
 Propón entre 1 y 5 sugerencias, la más útil primero. El usuario puede marcar
 varias y ejecutarlas juntas, así que si el documento da pie a más de una cosa
