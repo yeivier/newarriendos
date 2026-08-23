@@ -977,6 +977,25 @@ const CAT_INC = ["Mantención","Servicios","Pago","Convivencia","Contrato","Otro
 const ESTADOS_INC = ["Abierta","En proceso","Resuelta"];
 const TIPOS_BIT = ["Nota","Contrato","Servicio","Antecedentes","Mantenciones"];
 const blankInc = { titulo:"", descripcion:"", prioridad:"Media", categoria:"Mantención", adjuntos:[] };
+const ESTADOS_DOC_RECEP = ["Pendiente","Solicitado","Listo"];
+const ESTADOS_PRESUP = ["Por revisar","Aprobado","Rechazado"];
+/* Checklist orientativo para pedir la recepción municipal (recepción final de
+   obras) en la Dirección de Obras Municipales. Varía según la comuna y el
+   tipo de obra (construcción nueva, ampliación, regularización); conviene
+   confirmarlo con el arquitecto o directamente en la DOM antes de presentar. */
+const CHECKLIST_RECEP_MUNICIPAL = [
+  "Solicitud de recepción (formulario DOM, firmado por propietario y arquitecto/constructor)",
+  "Permiso de edificación aprobado (copia)",
+  "Planos de arquitectura timbrados por la DOM",
+  "Certificado de la empresa sanitaria (agua potable y alcantarillado) o solución particular aprobada",
+  "Certificado de recepción de instalaciones eléctricas (SEC / TE1)",
+  "Certificado de instalación de gas (si corresponde)",
+  "Informe favorable del revisor independiente o revisor de cálculo (si aplica)",
+  "Certificado de no expropiación municipal vigente",
+  "Comprobante de pago de derechos municipales",
+  "Certificado de contribuciones al día (SII)",
+  "Fotografías de la obra terminada",
+];
 const blankBit = { tipo:"Nota", titulo:"", texto:"", adjuntos:[] };
 const CANALES_COBRO = [ {id:"correo",label:"Correo",ico:"📧"}, {id:"whatsapp",label:"WhatsApp",ico:"💬"}, {id:"sms",label:"SMS",ico:"📱"} ];
 
@@ -2126,6 +2145,80 @@ function EscriturasBox({ p, onChange }){
       </div>))}
     </div>
     <button className="btn btn-out btn-sm" style={{marginTop:10}} onClick={add}>＋ Agregar escritura / documento</button>
+  </div>);
+}
+
+/* ---------- Recepción municipal: checklist de documentos + comparador de presupuestos ----------
+   Pensado para ordenar el trámite de recepción final de obras: qué documento falta,
+   quién lo tiene y en qué estado, y qué presupuestos llegaron de los contratistas
+   para compararlos y decidir con cuál seguir. Todo con archivo adjunto. */
+function RecepDocsBox({ p, onChange }){
+  const list=p.recepDocs||[];
+  const upd=(id,k,v)=>onChange({ recepDocs:list.map(d=>d.id===id?{...d,[k]:v}:d)});
+  const add=(nombre)=>onChange({ recepDocs:[...list,{ id:"rd"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), nombre:nombre||"", estado:"Pendiente", nota:"", adjuntos:[] }]});
+  const del=(id)=>onChange({ recepDocs:list.filter(d=>d.id!==id)});
+  const cargarChecklist=()=>{
+    const yaEstan=new Set(list.map(d=>(d.nombre||"").trim().toLowerCase()));
+    const nuevos=CHECKLIST_RECEP_MUNICIPAL.filter(n=>!yaEstan.has(n.toLowerCase())).map(n=>({ id:"rd"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)+Math.random().toString(36).slice(2,4), nombre:n, estado:"Pendiente", nota:"", adjuntos:[] }));
+    if(nuevos.length) onChange({ recepDocs:[...list,...nuevos] });
+  };
+  const listos=list.filter(d=>d.estado==="Listo").length;
+  const pillCls=(e)=> e==="Listo"?"green":e==="Solicitado"?"amber":"grey";
+  return (<div>
+    <div className="help" style={{marginBottom:10}}>Lista de documentos que suele pedir la Dirección de Obras Municipales para la <b>recepción final</b>. Es orientativa: confírmala con tu arquitecto/constructor o con la DOM de tu comuna, porque varía según el tipo de obra. Marca el estado de cada uno y adjunta el archivo apenas lo tengas.</div>
+    {list.length>0 && <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>{listos} de {list.length} listo{listos===1?"":"s"}.</div>}
+    {list.length===0 && <div style={{color:"var(--muted)",fontSize:14,marginBottom:8}}>Sin documentos cargados todavía.</div>}
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {list.map(d=>(<div key={d.id} style={{border:"1px solid var(--line2)",borderRadius:10,padding:10,background:"var(--card)"}}>
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+          <input className="input" style={{flex:"2 1 220px"}} placeholder="Nombre del documento" value={d.nombre||""} onChange={ev=>upd(d.id,"nombre",ev.target.value)}/>
+          <select value={d.estado||"Pendiente"} onChange={ev=>upd(d.id,"estado",ev.target.value)}>{ESTADOS_DOC_RECEP.map(s=><option key={s}>{s}</option>)}</select>
+          <span className={"pill "+pillCls(d.estado)}>{d.estado||"Pendiente"}</span>
+          <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={()=>del(d.id)}>✕</button>
+        </div>
+        <input className="input" style={{marginTop:8}} placeholder="Nota (quién lo está tramitando, dónde se pide, etc.)" value={d.nota||""} onChange={ev=>upd(d.id,"nota",ev.target.value)}/>
+        <AdjuntosEditor items={d.adjuntos||[]} onChange={l=>upd(d.id,"adjuntos",l)}/>
+      </div>))}
+    </div>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+      <button className="btn btn-out btn-sm" onClick={()=>add()}>＋ Agregar documento</button>
+      <button className="btn btn-ghost btn-sm" onClick={cargarChecklist}>📋 Cargar checklist sugerido</button>
+    </div>
+  </div>);
+}
+function RecepPresupuestosBox({ p, uf, onChange }){
+  const list=p.recepPresupuestos||[];
+  const upd=(id,k,v)=>onChange({ recepPresupuestos:list.map(x=>x.id===id?{...x,[k]:v}:x)});
+  const add=()=>onChange({ recepPresupuestos:[...list,{ id:"rp"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), contratista:"", trabajo:"", monto:"", moneda:"CLP", fecha:todayISO(), estado:"Por revisar", nota:"", adjuntos:[] }]});
+  const del=(id)=>onChange({ recepPresupuestos:list.filter(x=>x.id!==id)});
+  const montoCLP=(x)=> x.moneda==="UF" ? Math.round(num(x.monto)*uf) : num(x.monto);
+  const aprobado=list.filter(x=>x.estado==="Aprobado").reduce((s,x)=>s+montoCLP(x),0);
+  const porRevisar=list.filter(x=>x.estado==="Por revisar").length;
+  const pillCls=(e)=> e==="Aprobado"?"green":e==="Rechazado"?"red":"amber";
+  return (<div>
+    <div className="help" style={{marginBottom:10}}>Registra aquí cada <b>presupuesto</b> que te envíen los contratistas para los trabajos de la recepción municipal, para compararlos uno al lado del otro y dejar constancia de cuál se aprobó. Adjunta el PDF que te mandaron.</div>
+    {list.length>0 && <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>{porRevisar} por revisar · Total aprobado: <b>{CLP(aprobado)}</b></div>}
+    {list.length===0 && <div style={{color:"var(--muted)",fontSize:14,marginBottom:8}}>Sin presupuestos cargados todavía.</div>}
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {list.map(x=>(<div key={x.id} style={{border:"1px solid var(--line2)",borderRadius:10,padding:10,background:"var(--card)"}}>
+        <div className="grid" style={{gridTemplateColumns:"1.3fr 1.3fr",gap:8}}>
+          <div className="field"><label className="label" style={{fontSize:12}}>Contratista / proveedor</label><input className="input" value={x.contratista||""} onChange={ev=>upd(x.id,"contratista",ev.target.value)}/></div>
+          <div className="field"><label className="label" style={{fontSize:12}}>Trabajo / ítem cotizado</label><input className="input" value={x.trabajo||""} onChange={ev=>upd(x.id,"trabajo",ev.target.value)}/></div>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginTop:8}}>
+          <input className="input" style={{flex:"1 1 100px",minWidth:90}} type="number" min="0" step="any" placeholder="0" value={x.monto??""} onChange={ev=>upd(x.id,"monto",ev.target.value)}/>
+          <select value={x.moneda||"CLP"} onChange={ev=>upd(x.id,"moneda",ev.target.value)} title="Moneda"><option value="CLP">CLP $</option><option value="UF">UF</option></select>
+          <input className="input" style={{flex:"1 1 130px",minWidth:120}} type="date" value={x.fecha||""} onChange={ev=>upd(x.id,"fecha",ev.target.value)}/>
+          <select value={x.estado||"Por revisar"} onChange={ev=>upd(x.id,"estado",ev.target.value)}>{ESTADOS_PRESUP.map(s=><option key={s}>{s}</option>)}</select>
+          <span className={"pill "+pillCls(x.estado)}>{x.estado||"Por revisar"}</span>
+          {x.moneda==="UF" && num(x.monto)>0 && <span style={{fontSize:12,color:"var(--faint)"}}>≈ {CLP(montoCLP(x))}</span>}
+          <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={()=>del(x.id)}>✕</button>
+        </div>
+        <input className="input" style={{marginTop:8}} placeholder="Nota (plazo, forma de pago, garantía, etc.)" value={x.nota||""} onChange={ev=>upd(x.id,"nota",ev.target.value)}/>
+        <AdjuntosEditor items={x.adjuntos||[]} onChange={l=>upd(x.id,"adjuntos",l)}/>
+      </div>))}
+    </div>
+    <button className="btn btn-out btn-sm" style={{marginTop:10}} onClick={add}>＋ Agregar presupuesto</button>
   </div>);
 }
 
@@ -6102,6 +6195,14 @@ function App(){
       <Collapsible icon="📜" title="Escrituras y documentos de compraventa" defaultOpen={false}>
       <EscriturasBox p={p} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
 
+      </Collapsible>
+
+      {/* RECEPCIÓN MUNICIPAL: checklist de documentos + presupuestos de contratistas */}
+      <Collapsible icon="🏛️" title="Recepción municipal" subtitle={[(p.recepDocs||[]).length?(((p.recepDocs||[]).filter(d=>d.estado==="Listo").length)+"/"+(p.recepDocs||[]).length+" documentos listos"):"", (p.recepPresupuestos||[]).length?((p.recepPresupuestos||[]).length+" presupuesto(s)"):""].filter(Boolean).join(" · ")||"Checklist de documentos y comparador de presupuestos"} defaultOpen={false}>
+      <div style={{fontWeight:800,fontSize:14,marginBottom:8}}>📋 Checklist de documentos</div>
+      <RecepDocsBox p={p} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
+      <div style={{fontWeight:800,fontSize:14,margin:"20px 0 8px",borderTop:"1px solid var(--line)",paddingTop:16}}>💰 Presupuestos de contratistas</div>
+      <RecepPresupuestosBox p={p} uf={uf} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
       </Collapsible>
 
       {/* FICHA COMPLETA INTERACTIVA */}
