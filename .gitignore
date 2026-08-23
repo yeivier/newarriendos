@@ -2,3 +2,7 @@ node_modules/
 dist/
 .netlify/
 scratchpad/
+# Paquete de referencias de diseño (README + PNGs + prototipo). Se descomprime
+# junto al repo para poder mirarlo mientras se implementa, pero no viaja al
+# repo: son ~1,8 MB de assets que no se despliegan.
+design_handoff_arriendopro_mobile/
