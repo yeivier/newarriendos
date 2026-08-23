@@ -706,7 +706,29 @@
     .app.en-movil > .ai-fab,
     .app.en-movil > .subir-fab,
     .app.en-movil > .volver-flot { display:none !important; }
+
+    /* Modo sección completa: las 5 pestañas cubren el día a día, pero todo lo
+       demás (bitácora, incidencias, comunicaciones, CRM, informes, legal, la
+       ficha entera de una propiedad…) sigue estando. En vez de recortarlo en
+       una versión móvil a medias, se abre la sección de verdad del escritorio
+       con una barra para volver. Así no hay ninguna función fuera de alcance
+       desde el teléfono. */
+    .app.en-movil.modo-completo > .main{ display:block !important; padding-top:46px; }
+    .app.en-movil.modo-completo > .ai-fab,
+    .app.en-movil.modo-completo > .subir-fab{ display:flex !important; }
+    .app.en-movil.modo-completo .mob-app{ display:none !important; }
+    /* La barra superior de la sección se pega bajo la de volver, no debajo. */
+    .app.en-movil.modo-completo > .main .topbar{ top:46px; }
   }
+  .mob-volver-barra{ display:none; position:fixed; top:0; left:0; right:0; z-index:170;
+    background:#101012; color:#fff; align-items:center; gap:12px;
+    padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px; }
+  .mob-volver-barra button{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.24);
+    color:#fff; font-family:inherit; font-size:14px; font-weight:700; padding:8px 13px; border-radius:10px;
+    cursor:pointer; display:inline-flex; align-items:center; gap:7px; flex-shrink:0; min-height:38px; }
+  .mob-volver-barra .tit{ font-size:14.5px; font-weight:700; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media(max-width:900px){ .app.en-movil.modo-completo .mob-volver-barra{ display:flex; } }
   .mob-app{
     --mib:#101012; --mib2:#1E1E22; --mib2b:#2C2C31;
     --mon:#F0F0F3; --mon2:#8C8C96;
@@ -3865,6 +3887,7 @@ function MobileApp(props){
     props: propiedades, socs, uf, owner, soloLectura,
     setMPay, setMContract, notify, openRem,
     setMFicha, abrirIncidencia,
+    buscar, secciones, abrirSeccion,
   } = props;
 
   const [tab, setTab] = React.useState("inicio");
@@ -3914,6 +3937,14 @@ function MobileApp(props){
   const porSoc = (id)=> id==="todas" ? propiedades : propiedades.filter(p=>(p.sociedad||"beta")===id);
 
   // Header genérico (etiqueta mono + título + avatar).
+  /* La lupa va en todos los encabezados: es el atajo para llegar a cualquier
+     sección, propiedad o arrendatario sin recorrer las pestañas. Abre el mismo
+     buscador de la plataforma, que ya sabe navegar a cada destino. */
+  const BotonBuscar = ()=> (
+    <button className="mob-back" onClick={buscar} title="Buscar en la plataforma" aria-label="Buscar en la plataforma">
+      <MobIco w={19}>{MI.lupa}</MobIco>
+    </button>
+  );
   const HeaderMob = ({ eyebrow, title, sub, right })=> (
     <div className="mob-header">
       <div style={{minWidth:0, flex:1}}>
@@ -3921,9 +3952,12 @@ function MobileApp(props){
         <h1 className="mob-hero-h">{title}</h1>
         {sub && <div className="mob-hero-sub">{sub}</div>}
       </div>
-      {right !== undefined
-        ? right
-        : <div className="mob-avatar">{mobIni(owner.name||"Javier")}</div>}
+      <div style={{display:"flex", alignItems:"center", gap:10, flexShrink:0}}>
+        <BotonBuscar/>
+        {right !== undefined
+          ? right
+          : <div className="mob-avatar">{mobIni(owner.name||"Javier")}</div>}
+      </div>
     </div>
   );
 
@@ -4222,6 +4256,19 @@ function MobileApp(props){
         </div>
       </div>
 
+      {/* La ficha móvil resume; todo lo demás de la propiedad —bitácora,
+          incidencias, documentos, garantía, gastos, fotos, mapa, contrato,
+          comunicaciones— vive en la ficha completa de la plataforma. */}
+      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+        onClick={()=>abrirSeccion("props", p)}>
+        <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Ver ficha completa</div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>Bitácora, incidencias, documentos, gastos y fotos</div>
+        </div>
+        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+      </button>
+
       <div className="mob-footbar" style={{gap:10}}>
         <button className="mob-btn sec" style={{flex:1, padding:14}} onClick={()=>abrirContrato(p)}>Contrato</button>
         <button className="mob-btn pri" style={{flex:2, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
@@ -4257,7 +4304,10 @@ function MobileApp(props){
     return (<div className="mob-scr g14">
       <div className="mob-header">
         <h1 className="mob-h-scr" style={{fontSize:34, letterSpacing:"-.02em"}}>Finanzas</h1>
-        <div className="mob-mono" style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>UF {Math.round(uf).toLocaleString("es-CL")}</div>
+        <div style={{display:"flex", alignItems:"center", gap:10, flexShrink:0}}>
+          <div className="mob-mono" style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>UF {Math.round(uf).toLocaleString("es-CL")}</div>
+          <BotonBuscar/>
+        </div>
       </div>
 
       <div className="mob-seg">
@@ -4438,27 +4488,27 @@ function MobileApp(props){
       <div className="mob-seg" style={{marginBottom:4}}>
         <button className={subtab==="props"?"on":""} onClick={()=>setSubtab("props")}>Propiedades</button>
         <button className={subtab==="sociedades"?"on":""} onClick={()=>setSubtab("sociedades")}>Sociedades</button>
-        <button className={subtab==="historial"?"on":""} onClick={()=>setSubtab("historial")}>Historial</button>
       </div>
       {subtab==="sociedades" && pantallaSociedades()}
       {subtab==="props" && pantallaPropsLista()}
-      {subtab==="historial" && (
-        <div className="mob-scr g14" style={{paddingTop:0}}>
-          <HeaderMob eyebrow="ÚLTIMOS MOVIMIENTOS" title="Historial"/>
-          <div style={{display:"flex", flexDirection:"column", gap:10}}>
-            {rentals.slice(0,6).map(p=>(
-              <div key={p.id} className="mob-row">
-                <div className="mob-quad-ic">{mobIni(p.tenant||"—")}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
-                  <div style={{fontSize:13, color:"var(--mtm)"}}>{p.tenant||"—"} · {p.status}</div>
-                </div>
-                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
+      {/* Las demás secciones que Propiedades absorbe se abren completas, tal
+          como están en la plataforma: antes había aquí un "Historial" resumido
+          a mano que no era la sección de verdad. */}
+      <div className="mob-eyebrow" style={{marginTop:6}}>TAMBIÉN EN PROPIEDADES</div>
+      <div style={{display:"flex", flexDirection:"column", gap:8}}>
+        {[["historial","🗂️","Historial"],["bitacora","📓","Bitácora"],["incidencias","🛠️","Incidencias"],
+          ["legal","⚖️","Documentos Legales"],["informes","📈","Informes"]]
+          .filter(([id])=>(secciones||[]).some(s=>s.id===id))
+          .map(([id,ico,label])=>(
+          <button key={id} className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+            onClick={()=>abrirSeccion(id)}>
+            <div className="mob-quad-ic" style={{fontSize:17}}>{ico}</div>
+            <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mib)"}}>{label}</div>
+            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -4611,18 +4661,29 @@ function MobileApp(props){
           Preparar recordatorios <MobIco sw={2.4}>{MI.chevron}</MobIco>
         </button>
       </div>
-      <div className="mob-eyebrow" style={{marginTop:2}}>PREGUNTAS FRECUENTES</div>
-      <div style={{display:"flex", flexDirection:"column", gap:10}}>
-        {[
-          "¿Cuándo se paga el arriendo cuando el 5 cae fin de semana?",
-          "¿Cómo aplico el reajuste UF este mes?",
-          "¿Qué pasa si el arrendatario no paga en 30 días?",
-        ].map((q,i)=>(
-          <div key={i} className="mob-row" onClick={()=>irA("propiedades")}>
-            <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
-            <div style={{flex:1, fontSize:14.5, color:"var(--mtx)"}}>{q}</div>
+      {/* Atajo al asesor con IA de verdad, el mismo del escritorio. */}
+      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+        onClick={()=>abrirSeccion("ai")}>
+        <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Preguntarle al asesor</div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>Sabe de tu cartera, contratos, UF y del rubro</div>
+        </div>
+        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+      </button>
+
+      {/* Las 5 pestañas cubren el día a día; el resto de la plataforma se
+          alcanza desde aquí, completo y sin recortes. */}
+      <div className="mob-eyebrow" style={{marginTop:2}}>TODAS LAS SECCIONES</div>
+      <div style={{display:"flex", flexDirection:"column", gap:8}}>
+        {(secciones||[]).map(s=>(
+          <button key={s.id} className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+            onClick={()=>abrirSeccion(s.id)}>
+            <div className="mob-quad-ic" style={{fontSize:17}}>{s.ico}</div>
+            <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mib)",
+              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.label}</div>
             <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -4695,6 +4756,10 @@ function App(){
   // Se declara aquí, antes del early return de la clave, para no romper el
   // orden de hooks entre renders.
   const movil = useMovil();
+  // Sección del escritorio abierta a pantalla completa desde el móvil (null =
+  // se ven las 5 pestañas). Es el puente para que nada quede fuera de alcance:
+  // bitácora, incidencias, comunicaciones, CRM, informes, la ficha entera…
+  const [movilCompleto,setMovilCompleto]=useState(null);
   useEffect(()=>{
     window.__sinAcceso=()=>{ setAcceso(null); setPuerta("entrar"); };
     let vivo=true;
@@ -7459,17 +7524,34 @@ function App(){
   /* Solo el rol arrendatario ve su portal propio. */
   if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
-  return (<div className={"app"+(soloLectura?" solo-lectura":"")+(movil?" en-movil":"")}>
+  return (<div className={"app"+(soloLectura?" solo-lectura":"")+(movil?" en-movil":"")+(movil&&movilCompleto?" modo-completo":"")}>
     {/* Bajo 900 px, MobileApp reemplaza a todo el layout de escritorio. El
-        árbol del escritorio sigue montado detrás (los modales que abre el
-        móvil vienen de ahí) pero se oculta por CSS. */}
+        árbol del escritorio sigue montado detrás (de ahí vienen los modales y
+        las secciones completas que el móvil abre) pero se oculta por CSS. */}
     {movil && <MobileApp
       props={props} socs={socs} contacts={contacts} uf={uf} owner={owner} gw={gw}
       soloLectura={soloLectura}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
       abrirIncidencia={abrirIncidencia}
       notify={notify} openRem={openRem}
+      buscar={()=>setMBusca(true)}
+      secciones={NAV.filter(n=>NAV_VIS.some(g=>g.ids.includes(n.id)))}
+      abrirSeccion={(id,prop)=>{
+        if(prop){ setSel(prop); setFilter("todas"); setSocFilter("todas"); }
+        setTab(id); setMovilCompleto(id);
+        try{ window.scrollTo(0,0); }catch(_e){}
+      }}
     />}
+    {/* Barra para salir de la sección completa y volver a las 5 pestañas. */}
+    {movil && movilCompleto && (
+      <div className="mob-volver-barra">
+        <button onClick={()=>setMovilCompleto(null)}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
+          Volver
+        </button>
+        <span className="tit">{(HEAD[tab]&&HEAD[tab][0])||"Sección"}</span>
+      </div>
+    )}
     {/* Flecha flotante: cierra la ventana que esté abierta encima. En el
         teléfono el botón "Cancelar" queda al final de formularios largos. */}
     {!movil && panelAbierto && !mBusca && !menuOpen &&
