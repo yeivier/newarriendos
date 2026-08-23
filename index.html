@@ -745,6 +745,24 @@
   .mob-eyebrow{ margin:0; display:flex; align-items:center; gap:8px; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mob-pt{ width:8px; height:8px; border-radius:50%; background:var(--mib); flex-shrink:0; }
+  /* Indicadores en vivo: se desplazan de lado para no comerse el alto útil. */
+  .mob-inds{ display:flex; gap:8px; overflow-x:auto; margin:0 -22px; padding:0 22px 2px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .mob-inds::-webkit-scrollbar{ display:none; }
+  .mob-ind{ flex-shrink:0; background:var(--msf); border:1px solid var(--mln); border-radius:9px;
+    padding:7px 11px; font-size:12.5px; color:var(--mtm); white-space:nowrap;
+    font-variant-numeric:tabular-nums; }
+  .mob-ind b{ color:var(--mib); font-weight:700; margin-right:3px; }
+  .mob-ind.act{ font-family:inherit; font-weight:700; color:var(--mib); cursor:pointer; min-height:36px; }
+  .mob-ind.act:disabled{ opacity:.6; }
+  /* Rejilla de acciones (ficha de propiedad, accesos globales). */
+  .mob-acciones{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .mob-accion{ display:flex; align-items:center; gap:9px; background:var(--msf);
+    border:1px solid var(--mln); border-radius:12px; padding:13px 12px; min-height:48px;
+    font-family:inherit; font-size:14px; font-weight:600; color:var(--mib); cursor:pointer;
+    text-align:left; min-width:0; }
+  .mob-accion:active{ background:#FAFAFC; }
+  .mob-accion span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mob-hero-h{ font-size:34px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
   .mob-hero-sub{ font-size:14.5px; color:var(--mtm2); margin-top:6px; }
   .mob-h-scr{ font-size:27px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
@@ -3741,7 +3759,11 @@ function MobileApp(props){
     setMPay, setMContract, notify, openRem,
     setMFicha, abrirIncidencia,
     buscar, secciones, abrirSeccion,
+    utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
+    alertas, irAlerta, usuarioActual, rolActual,
+    acciones = {},
   } = props;
+  const AC = acciones;
 
   const [tab, setTab] = React.useState("inicio");
   const [subtab, setSubtab] = React.useState("sociedades");
@@ -3816,7 +3838,7 @@ function MobileApp(props){
 
   const abrirCobrar = (p)=>{
     if(!p) return;
-    setMPay(p);
+    (AC.registrarPago || setMPay)(p);
   };
   const abrirRecord = (p)=> openRem && openRem(p);
   const abrirChat   = (p)=> push({ tipo:"chat", p });
@@ -3837,6 +3859,44 @@ function MobileApp(props){
         eyebrow={eyebrow}
         title={"Hola, " + nombre}
         sub={rentals.length + personales.length + " propiedades · " + socs.length + " sociedades"}/>
+
+      {/* Indicadores en vivo: estaban en el escritorio y faltaban en el móvil.
+          Se desplazan de lado para no comerse el alto de la pantalla. */}
+      <div className="mob-inds">
+        <span className="mob-ind"><b>UF</b> {CLP(uf)}</span>
+        <span className="mob-ind"><b>UTM</b> {CLP(utm)}</span>
+        <span className="mob-ind"><b>UTA</b> {CLP(utm*12)}</span>
+        <span className="mob-ind"><b>Dólar</b> {CLP(dolar)}</span>
+        <span className="mob-ind"><b>IPC</b> {(ipc||0).toFixed(1)}%</span>
+        <button className="mob-ind act" onClick={refrescarIndicadores} disabled={indLoading}>
+          {indLoading ? "Actualizando…" : (indRecien ? "✓ Actualizado" : "↻ Actualizar")}
+        </button>
+      </div>
+
+      {/* Alertas: contratos por vencer, cobros, contribuciones, seguros. */}
+      {!!(alertas && alertas.length) && (
+        <div>
+          <div className="mob-eyebrow">REQUIERE ATENCIÓN</div>
+          <div style={{display:"flex", flexDirection:"column", gap:8}}>
+            {alertas.slice(0,3).map((a,i)=>(
+              <button key={a.id||i} className={"mob-row"+(a.urgencia==="alta"?" mark":"")}
+                style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+                onClick={()=>irAlerta(a)}>
+                <div className="mob-quad-ic" style={{fontSize:17}}>{a.ico||"⚠️"}</div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:14.5, fontWeight:700, color:"var(--mib)"}}>{a.titulo}</div>
+                  {a.detalle && <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.detalle}</div>}
+                </div>
+                <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+              </button>
+            ))}
+            {alertas.length>3 && (
+              <button className="mob-btn link" style={{textAlign:"left", color:"var(--mtm)", fontWeight:600}}
+                onClick={()=>abrirSeccion("inicio")}>y {alertas.length-3} alerta{alertas.length-3!==1?"s":""} más →</button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tarjeta dominante: por cobrar hoy. */}
       <div className="mob-card dom">
@@ -4018,7 +4078,7 @@ function MobileApp(props){
           <div className="mob-mono">COBRADO / ESPERADO</div>
           <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(totalCobrado)} de {CLP(totalEsper)}</div>
         </div>
-        <button className="mob-btn out">Cartola</button>
+        <button className="mob-btn out" onClick={()=>abrirSeccion("informes")}>Cartola</button>
       </div>
     </div>);
   };
@@ -4109,15 +4169,40 @@ function MobileApp(props){
         </div>
       </div>
 
-      {/* La ficha móvil resume; todo lo demás de la propiedad —bitácora,
-          incidencias, documentos, garantía, gastos, fotos, mapa, contrato,
-          comunicaciones— vive en la ficha completa de la plataforma. */}
+      {/* Todo lo que se puede hacer con una propiedad en el escritorio. Cada
+          botón llama a la misma función de la plataforma, no a una copia. */}
+      <div className="mob-eyebrow" style={{marginTop:2}}>ACCIONES DE ESTA PROPIEDAD</div>
+      <div className="mob-acciones">
+        {[
+          ["Editar",        MI.doc,   ()=>AC.editarPropiedad && AC.editarPropiedad(p)],
+          ["Ficha completa",MI.doc,   ()=>AC.fichaCompleta   && AC.fichaCompleta(p)],
+          ["Incidencia",    MI.alerta,()=>AC.incidencia      && AC.incidencia(p)],
+          ["Bitácora",      MI.doc,   ()=>AC.bitacora        && AC.bitacora(p)],
+          ["Compartir",     MI.flecha,()=>AC.compartir       && AC.compartir(p)],
+          ["Firma",         MI.check, ()=>AC.firma           && AC.firma(p)],
+          ["Recordatorio",  MI.chat,  ()=>AC.recordatorio    && AC.recordatorio(p)],
+          ["Mover de lugar",MI.edif,  ()=>AC.moverPropiedad  && AC.moverPropiedad(p)],
+          ["Marcar vacante",MI.casita,()=>AC.vacancia        && AC.vacancia(p)],
+        ].map(([lb,ic,fn])=>(
+          <button key={lb} className="mob-accion" onClick={fn}>
+            <MobIco w={19}>{ic}</MobIco><span>{lb}</span>
+          </button>
+        ))}
+      </div>
+      {/* Aparte de la rejilla y en último lugar: borra la propiedad. */}
+      {!soloLectura && (
+        <button className="mob-btn link" style={{alignSelf:"flex-start", color:"var(--mtm2)", fontWeight:600, fontSize:13.5, minHeight:44}}
+          onClick={()=>AC.eliminarPropiedad && AC.eliminarPropiedad(p)}>Eliminar esta propiedad</button>
+      )}
+
+      {/* La ficha móvil resume; el detalle entero —documentos, garantía,
+          gastos, fotos, mapa, comunicaciones— vive en la sección Propiedades. */}
       <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
         onClick={()=>abrirSeccion("props", p)}>
-        <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
+        <div className="mob-quad-ic"><MobIco>{MI.edif}</MobIco></div>
         <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Ver ficha completa</div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>Bitácora, incidencias, documentos, gastos y fotos</div>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Abrir en la plataforma</div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>Documentos, garantía, gastos, fotos y mapa</div>
         </div>
         <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
       </button>
@@ -4211,7 +4296,7 @@ function MobileApp(props){
         <div className="mob-eyebrow">DEUDA HIPOTECARIA</div>
         <div className="mob-num-med">{cuotas.toLocaleString("es-CL")} cuotas por pagar</div>
         <div style={{fontSize:14, color:"var(--mtm)"}}>{totalDeuda.toLocaleString("es-CL",{maximumFractionDigits:0})} UF · {CLP(Math.round(totalDeuda*uf))}</div>
-        <div style={{alignSelf:"flex-end"}}><button className="mob-btn out">Detalle</button></div>
+        <div style={{alignSelf:"flex-end"}}><button className="mob-btn out" onClick={()=>abrirSeccion("finanzas")}>Detalle</button></div>
       </div>
     </div>);
   };
@@ -4317,6 +4402,9 @@ function MobileApp(props){
   const pantallaPropsLista = ()=>(
     <div className="mob-scr g14">
       <HeaderMob eyebrow="MIS PROPIEDADES" title="Propiedades" sub={propiedades.length+" en total"}/>
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
+      </button>}
       <div style={{display:"flex", flexDirection:"column", gap:10}}>
         {propiedades.map((p,i)=>{
           const est = p.use==="personal" ? "personal" : p.status;
@@ -4428,7 +4516,7 @@ function MobileApp(props){
           <div style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>Contrato de arriendo</div>
           <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · borrador</div>
         </div>
-        <button className="mob-btn blk-sm" onClick={()=>{ notify("✓ Borrador guardado"); }}>Guardar</button>
+        <button className="mob-btn blk-sm" onClick={()=>AC.contrato&&AC.contrato(p)}>Editar</button>
       </div>
 
       <div className="mob-step-bars">
@@ -4493,7 +4581,7 @@ function MobileApp(props){
           <div className="mob-mono">REVISIÓN</div>
           <div style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>Sin campos obligatorios pendientes</div>
         </div>
-        <button className="mob-btn out">Vista previa</button>
+        <button className="mob-btn out" onClick={()=>AC.contrato&&AC.contrato(p)}>Abrir generador</button>
       </div>
     </div>);
   };
@@ -4527,6 +4615,15 @@ function MobileApp(props){
 
       {/* Las 5 pestañas cubren el día a día; el resto de la plataforma se
           alcanza desde aquí, completo y sin recortes. */}
+      {/* Las acciones que en el escritorio viven en la barra superior. */}
+      <div className="mob-eyebrow" style={{marginTop:2}}>CREAR</div>
+      <div className="mob-acciones">
+        <button className="mob-accion" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}><MobIco w={19}>{MI.casita}</MobIco><span>Nueva propiedad</span></button>
+        <button className="mob-accion" onClick={()=>AC.nuevaSociedad&&AC.nuevaSociedad()}><MobIco w={19}>{MI.edif}</MobIco><span>Nueva sociedad</span></button>
+        <button className="mob-accion" onClick={()=>AC.contacto&&AC.contacto()}><MobIco w={19}>{MI.chat}</MobIco><span>Nuevo contacto</span></button>
+        <button className="mob-accion" onClick={()=>AC.infoCheck&&AC.infoCheck()}><MobIco w={19}>{MI.lupa}</MobIco><span>Consultar InfoCheck</span></button>
+      </div>
+
       <div className="mob-eyebrow" style={{marginTop:2}}>TODAS LAS SECCIONES</div>
       <div style={{display:"flex", flexDirection:"column", gap:8}}>
         {(secciones||[]).map(s=>(
@@ -4538,6 +4635,18 @@ function MobileApp(props){
             <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
           </button>
         ))}
+      </div>
+
+      {/* Quién está dentro y cómo salir: estaba al pie del menú lateral. */}
+      <div className="mob-row" style={{marginTop:4}}>
+        <div className="mob-avatar" style={{width:38, height:38, borderRadius:12, fontSize:13}}>{mobIni((usuarioActual&&usuarioActual.nombre)||owner.name||"U")}</div>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:14.5, fontWeight:700, color:"var(--mib)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
+            {((usuarioActual&&usuarioActual.nombre)||owner.name||"").split(" ")[0] || "Mi cuenta"}
+          </div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>{soloLectura ? "Solo lectura" : (rolActual||"Propietario")}</div>
+        </div>
+        <button className="mob-btn gray-sm" onClick={()=>AC.salir&&AC.salir()}>Salir</button>
       </div>
     </div>
   );
@@ -7342,6 +7451,31 @@ function App(){
       abrirIncidencia={abrirIncidencia}
       notify={notify} openRem={openRem}
       buscar={()=>setMBusca(true)}
+      utm={utm} dolar={dolar} ipc={ipc}
+      indLoading={indLoading} indRecien={indRecien} refrescarIndicadores={refrescarIndicadores}
+      alertas={alertas} irAlerta={(a)=>{ irAlerta(a); setMovilCompleto(a.ir==="cobros"?"cobros":"props"); }}
+      usuarioActual={usuarioActual} rolActual={rolActual}
+      /* Todas las acciones del escritorio, para que ninguna quede sin alcance
+         desde el teléfono. Son las mismas funciones, no copias. */
+      acciones={{
+        nuevaPropiedad:()=>{ setNP({...blank,gastosExtra:SEED_GASTOS()}); setMAdd(true); },
+        nuevaSociedad:openNewSoc,
+        editarPropiedad:(p)=>{ setEP({...p}); setMEdit(p); },
+        eliminarPropiedad:(p)=>setMDel(p),
+        fichaCompleta:abrirFicha,
+        contrato:openContract,
+        firma:(p)=>setMFirma(p),
+        compartir:(p)=>setMShare(p),
+        incidencia:abrirIncidencia,
+        bitacora:abrirBitacora,
+        recordatorio:openRem,
+        registrarPago:(p)=>setMPay(p),
+        vacancia:(p)=>setMVac(p),
+        infoCheck:()=>setMInfo(true),
+        contacto:()=>setMContact(true),
+        moverPropiedad:moverPropiedad,
+        salir:()=> sesion ? cerrarSesion() : salirDeLaCuenta(),
+      }}
       secciones={NAV.filter(n=>NAV_VIS.some(g=>g.ids.includes(n.id)))}
       abrirSeccion={(id,prop)=>{
         if(prop){ setSel(prop); setFilter("todas"); setSocFilter("todas"); }
