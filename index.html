@@ -712,26 +712,34 @@
     padding:14px 22px calc(110px + env(safe-area-inset-bottom,0px));
     display:flex; flex-direction:column; gap:20px; }
   .mob-scr.g14{ gap:14px; }
+  /* Con pie de página fijo hay que dejarle su alto libre abajo, o tapa la
+     última tarjeta (antes el pie era sticky y flotaba sobre el contenido). */
+  .mob-scr.con-pie{ padding-bottom:calc(190px + env(safe-area-inset-bottom,0px)); }
   .mob-mono, .mob-eyebrow{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;
-    font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm); }
-  .mob-eyebrow{ margin:0 0 6px; }
-  .mob-eyebrow.dot::before{ content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--mib); margin-right:8px; vertical-align:1px; }
+    font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm);
+    line-height:1.35; }
+  /* En una sola línea a propósito: si se parte, la cifra de abajo se le monta.
+     El punto es un <span> real y no ::before para poder alinearlo con flex. */
+  .mob-eyebrow{ margin:0; display:flex; align-items:center; gap:8px; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mob-pt{ width:8px; height:8px; border-radius:50%; background:var(--mib); flex-shrink:0; }
   .mob-hero-h{ font-size:34px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
   .mob-hero-sub{ font-size:14.5px; color:var(--mtm2); margin-top:6px; }
   .mob-h-scr{ font-size:27px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); margin:0; }
   .mob-avatar{ width:44px; height:44px; border-radius:14px; background:var(--mib); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; }
   .mob-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-  .mob-card{ background:var(--msf); border:1px solid var(--mln); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .mob-card{ background:var(--msf); border:1px solid var(--mln); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .mob-card > *{ min-width:0; }
   .mob-card.dom{ box-shadow:0 12px 28px -20px rgba(22,19,15,.5); }
   .mob-card.mark{ border:1.5px solid var(--mib); }
-  .mob-row{ background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 15px; display:flex; align-items:center; gap:12px; }
+  .mob-row{ background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 15px; display:flex; align-items:center; gap:12px; min-width:0; }
   .mob-row.mark{ border:1.5px solid var(--mib); }
   .mob-row.perso{ background:#F1F1F4; }
   .mob-quad-ic{ width:38px; height:38px; border-radius:12px; background:var(--mfl); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--mib); }
   .mob-quad-idx{ width:26px; height:26px; border-radius:9px; background:var(--mfl); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:var(--mib); flex-shrink:0; }
-  .mob-quad-idx.big{ width:38px; height:38px; border-radius:11px; font-size:13px; }
+  .mob-quad-idx.mob-g{ width:38px; height:38px; border-radius:11px; font-size:13px; }
   .mob-quad-idx.paid{ background:var(--mib); color:#fff; }
-  .mob-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--mfl); color:var(--mtx); font-size:12.5px; font-weight:600; padding:6px 10px; border-radius:8px; white-space:nowrap; }
+  .mob-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--mfl); color:var(--mtx); font-size:12.5px; font-weight:600; padding:6px 10px; border-radius:8px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
   .mob-chip.ink{ background:var(--mib); color:#fff; }
   .mob-chip.out{ background:var(--msf); border:1px solid var(--mln); }
   .mob-btn{ font-family:inherit; border:none; cursor:pointer; font-weight:700; }
@@ -745,11 +753,13 @@
   .mob-btn.blk{ background:var(--mib); color:#fff; border-radius:14px; padding:14px; font-size:15px; }
   .mob-btn.blk-sm{ background:var(--mib); color:#fff; border-radius:11px; padding:9px 13px; font-size:13.5px; }
   .mob-btn.gray-sm{ background:var(--mfl); color:var(--mtx); border:1px solid var(--mbr); border-radius:11px; padding:9px 13px; font-size:13.5px; }
-  .mob-num-big{ font-size:32px; line-height:1.05; font-weight:700; letter-spacing:-.03em; color:var(--mib); }
-  .mob-num-med{ font-size:24px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:var(--mib); }
+  .mob-num-big{ display:block; font-size:clamp(25px,8.2vw,32px); line-height:1.08; font-weight:700; letter-spacing:-.03em; color:var(--mib); font-variant-numeric:tabular-nums; }
+  .mob-num-med{ display:block; font-size:clamp(20px,6.4vw,24px); line-height:1.08; font-weight:700; letter-spacing:-.02em; color:var(--mib); font-variant-numeric:tabular-nums; }
   .mob-metrics{ display:flex; align-items:flex-end; justify-content:space-between; padding:16px 0; border-top:1px solid var(--mli); border-bottom:1px solid var(--mli); gap:8px; }
   .mob-metrics .m{ flex:1; display:flex; flex-direction:column; gap:4px; }
-  .mob-metrics .m .v{ font-size:23px; font-weight:700; letter-spacing:-.02em; color:var(--mib); line-height:1; }
+  .mob-metrics .m{ min-width:0; }
+  .mob-metrics .m .v{ font-size:clamp(17px,5.2vw,23px); font-weight:700; letter-spacing:-.02em; color:var(--mib); line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mob-metrics .m .k{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mob-metrics .m .k{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace; font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm); }
   .mob-list{ display:flex; flex-direction:column; gap:0; }
   .mob-list .r{ display:flex; align-items:center; gap:12px; padding:9px 0; }
@@ -815,7 +825,11 @@
   .mob-check.on{ background:var(--mib); color:#fff; }
   .mob-check.off{ background:var(--msf); border:1.5px solid var(--mbr); }
   .mob-chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
-  .mob-footbar{ position:sticky; bottom:calc(84px + env(safe-area-inset-bottom,0px)); background:var(--msf); border-top:1px solid var(--mln); margin:0 -22px -110px; padding:16px 22px calc(16px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .mob-footbar{ position:absolute; left:0; right:0; bottom:calc(80px + env(safe-area-inset-bottom,0px));
+    background:var(--msf); border-top:1px solid var(--mln); padding:14px 22px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:2; }
+  .mob-footbar > div{ min-width:0; }
+  .mob-footbar .mob-mono{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 </style>
 </head>
 <body>
@@ -3781,7 +3795,8 @@ function MobileApp(props){
     const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
     const eyebrow = dias[hoy.getDay()] + " " + hoy.getDate();
     const nombre = (owner.name||"").trim().split(/\s+/)[0] || "Javier";
-    const lineas = atrasados.concat(pendientes).slice(0,2);
+    const porCobrarLista = atrasados.concat(pendientes);
+    const lineas = porCobrarLista.slice(0,2);
     const restoPagados = pagados.length;
     return (<div className="mob-scr">
       <HeaderMob
@@ -3791,7 +3806,7 @@ function MobileApp(props){
 
       {/* Tarjeta dominante: por cobrar hoy. */}
       <div className="mob-card dom">
-        <div className="mob-eyebrow dot">POR COBRAR HOY</div>
+        <div className="mob-eyebrow"><span className="mob-pt"></span>POR COBRAR HOY</div>
         <div className="mob-num-big">{CLP(porCobrarHoy)}</div>
         <div style={{fontSize:15, color:"var(--mtm2)", marginTop:-6}}>
           {atrasados.length} atrasado{atrasados.length!==1?"s":""} y {pendientes.length} que vence{pendientes.length!==1?"n":""} hoy
@@ -3807,13 +3822,20 @@ function MobileApp(props){
           {lineas.map((p,i)=>(
             <div key={p.id} style={{display:"flex", alignItems:"center", gap:12}}>
               <div className="mob-quad-idx">{i+1}</div>
-              <div style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mtx)"}}>{p.name}</div>
-              <div style={{fontSize:14, color:"var(--mtm)"}}>
+              <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mtx)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.name}</div>
+              <div style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}>
                 {p.status==="atrasado" ? (mobDiasDesde(p.lastPaid) + " días") : "vence hoy"}
               </div>
             </div>
           ))}
           {lineas.length===0 && <div style={{fontSize:14, color:"var(--mtm2)"}}>Todo cobrado este mes.</div>}
+          {/* Se listan los 2 más urgentes; con la cartera real hay más, y
+              ocultarlos en silencio haría creer que solo faltan esos dos. */}
+          {porCobrarLista.length>2 && (
+            <button className="mob-btn link" style={{paddingLeft:38, textAlign:"left", fontWeight:600, color:"var(--mtm)"}} onClick={()=>irA("cobros")}>
+              y {porCobrarLista.length-2} más por cobrar →
+            </button>
+          )}
           {restoPagados>0 && <div style={{fontSize:14, color:"var(--mtm)", paddingLeft:38}}>{restoPagados} arriendo{restoPagados!==1?"s":""} ya pagado{restoPagados!==1?"s":""}</div>}
         </div>
 
@@ -3869,7 +3891,7 @@ function MobileApp(props){
       || (p.tenant||"").toLowerCase().includes(rentBusca);
     const dominanteVista = dominante && filtro(dominante) ? dominante : null;
     const resto = restoOrden.filter(filtro);
-    return (<div className="mob-scr g14">
+    return (<div className="mob-scr g14 con-pie">
       <div className="mob-header">
         <div style={{minWidth:0, flex:1}}>
           <div className="mob-mono" style={{marginBottom:6}}>{mesTxt}</div>
@@ -3899,7 +3921,7 @@ function MobileApp(props){
 
       {dominanteVista ? (
         <div className="mob-card dom" style={{marginTop:8, gap:16}}>
-          <div className="mob-eyebrow dot">ATRASADO · {domDias} DÍAS</div>
+          <div className="mob-eyebrow"><span className="mob-pt"></span>ATRASADO · {domDias} DÍAS</div>
           <h2 style={{fontSize:27, lineHeight:1.05, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:0}}>{dominanteVista.name}</h2>
           <div style={{fontSize:14, color:"var(--mtm)"}}>{dominanteVista.tenant||"—"} · {dominanteVista.address||""}</div>
 
@@ -3940,8 +3962,8 @@ function MobileApp(props){
             const dia = (p.diaPago||num(p.diaPago)||5);
             const rowCls = "mob-row" + (est==="pendiente" ? " mark" : "");
             const izq = est==="pagado"
-              ? <div className="mob-quad-idx paid big"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></div>
-              : <div className="mob-quad-idx big">{String(dia).padStart(2,"0")}</div>;
+              ? <div className="mob-quad-idx paid mob-g"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></div>
+              : <div className="mob-quad-idx mob-g">{String(dia).padStart(2,"0")}</div>;
             const sub = est==="pagado"
               ? ((p.tenant||"") + " · pagado el " + dia)
               : ((p.tenant||"") + " · vence hoy");
@@ -3974,6 +3996,10 @@ function MobileApp(props){
     const seguroMes = p.seguroUF ? Math.round(num(p.seguroUF)*uf/12) : Math.round(num(p.seguroIncendioSismo)/12);
     const util = utilidadMes(p, uf);
     const sociedad = socs.find(s=>s.id===p.sociedad) || socs[0] || {name:""};
+    // Metros y dormitorios en un solo chip; queda vacío si la ficha no los trae.
+    const sup = num(p.mBuilt) || num(p.metros) || num(p.surfaceBuilt);
+    const medidas = [ sup ? sup+" m²" : "", num(p.dorms)||num(p.bedrooms) ? (num(p.dorms)||num(p.bedrooms))+"D" : "",
+      num(p.banios)||num(p.bathrooms) ? (num(p.banios)||num(p.bathrooms))+"B" : "" ].filter(Boolean).join(" · ");
     // Últimos 6 meses de pagos, agrupados desde histPagos.
     const hoy = new Date();
     const barras = [];
@@ -3986,7 +4012,7 @@ function MobileApp(props){
       barras.push({ mes:d.getMonth(), total });
     }
     const maxB = Math.max(1, ...barras.map(b=>b.total));
-    return (<div className="mob-scr g14">
+    return (<div className="mob-scr g14 con-pie">
       <div className="mob-topbar">
         <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
         <span className="mob-mono">MIS PROPIEDADES</span>
@@ -4000,12 +4026,14 @@ function MobileApp(props){
       <div>
         <h1 style={{fontSize:26, lineHeight:1.1, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:"6px 0 12px"}}>{p.name}</h1>
         <div className="mob-chip-row">
-          <span className="mob-chip out">{sociedad.name.replace(/\s*SPA$/i," SPA")}</span>
-          <span className="mob-chip out">{p.tipo || "Residencial"}</span>
-          <span className="mob-chip out">{[p.mBuilt||p.metros||"", p.mBuilt||p.metros?"m²":"", p.dorms?p.dorms+"D":"", p.banios?p.banios+"B":""].filter(Boolean).join(" · ")||"—"}</span>
-        </div>
-        <div style={{marginTop:10, display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+          {/* El estado va primero: es lo que se busca de un vistazo. Los chips
+              sin dato no se dibujan (antes salía uno con solo un guion), y el
+              nombre de la sociedad se corta si es muy largo en vez de comerse
+              la fila entera. */}
           <span className="mob-chip ink">{p.status==="pagado"?"Al día":p.status==="pendiente"?"Vence hoy":p.status==="atrasado"?"Atrasado":"Disponible"}</span>
+          {!!sociedad.name && <span className="mob-chip out" title={sociedad.name} style={{maxWidth:"58%"}}>{sociedad.name.replace(/\s*SPA$/i," SPA")}</span>}
+          {!!p.tipo && <span className="mob-chip out">{p.tipo}</span>}
+          {!!medidas && <span className="mob-chip out">{medidas}</span>}
         </div>
         <div style={{marginTop:12, fontSize:14, color:"var(--mtm)"}}>{p.address}{p.tenant?" · "+p.tenant:""}{p.contratoInicio?" desde "+p.contratoInicio:""}</div>
       </div>
@@ -4116,7 +4144,7 @@ function MobileApp(props){
         {porProp.map(({p,util},i)=>{
           const marca = util<0;
           return (<div key={p.id} className={"mob-row"+(marca?" mark":"")} onClick={()=>abrirFicha(p)} role="button">
-            <div className="mob-quad-idx big">{mobEtiq(p.name, i+1)}</div>
+            <div className="mob-quad-idx mob-g">{mobEtiq(p.name, i+1)}</div>
             <div style={{flex:1, minWidth:0}}>
               <div style={{fontSize:15.5, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
               <div style={{fontSize:13.5, color:"var(--mtm)"}}>
@@ -4244,7 +4272,7 @@ function MobileApp(props){
           const est = p.use==="personal" ? "personal" : p.status;
           const cls = "mob-row" + (est==="pendiente"?" mark":"") + (est==="personal"?" perso":"");
           return (<div key={p.id} className={cls} onClick={()=>abrirFicha(p)} role="button">
-            <div className="mob-quad-idx big">{mobEtiq(p.name, i+1)}</div>
+            <div className="mob-quad-idx mob-g">{mobEtiq(p.name, i+1)}</div>
             <div style={{flex:1, minWidth:0}}>
               <div style={{fontSize:15, fontWeight:700, color:"var(--mib)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.name}</div>
               <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.comuna||"—"}{p.tenant?" · "+p.tenant:""}</div>
@@ -4343,7 +4371,7 @@ function MobileApp(props){
       { titulo:"Firma notarial",    resumen:"pendiente" },
     ];
     const nombreCorto = (p.name||"").split("—").pop().trim();
-    return (<div className="mob-scr g14">
+    return (<div className="mob-scr g14 con-pie">
       <div style={{display:"flex", alignItems:"center", gap:14, paddingBottom:14, borderBottom:"1px solid var(--mln)", margin:"0 -22px 6px", padding:"0 22px 14px"}}>
         <button className="mob-back" onClick={pop}><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
         <div style={{flex:1, minWidth:0}}>
@@ -4425,7 +4453,7 @@ function MobileApp(props){
     <div className="mob-scr g14">
       <HeaderMob eyebrow="AYUDA CON LA CARTERA" title="Asistente"/>
       <div className="mob-card dom">
-        <div className="mob-eyebrow dot">SUGERIDO PARA HOY</div>
+        <div className="mob-eyebrow"><span className="mob-pt"></span>SUGERIDO PARA HOY</div>
         <div style={{fontSize:18, fontWeight:700, color:"var(--mib)", lineHeight:1.35}}>
           Envía el recordatorio a los {pendientes.length + atrasados.length} arrendatarios que no han pagado.
         </div>
