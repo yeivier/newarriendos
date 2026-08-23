@@ -2186,37 +2186,72 @@ function RecepDocsBox({ p, onChange }){
     </div>
   </div>);
 }
-function RecepPresupuestosBox({ p, uf, onChange }){
+function RecepPresupuestosBox({ p, uf, onChange, quien }){
   const list=p.recepPresupuestos||[];
   const upd=(id,k,v)=>onChange({ recepPresupuestos:list.map(x=>x.id===id?{...x,[k]:v}:x)});
-  const add=()=>onChange({ recepPresupuestos:[...list,{ id:"rp"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), contratista:"", trabajo:"", monto:"", moneda:"CLP", fecha:todayISO(), estado:"Por revisar", nota:"", adjuntos:[] }]});
+  const add=()=>onChange({ recepPresupuestos:[...list,{ id:"rp"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), contratista:"", trabajo:"", monto:"", moneda:"CLP", fecha:todayISO(), estado:"Por revisar", nota:"", adjuntos:[], decididoPor:"", decididoEl:"" }]});
   const del=(id)=>onChange({ recepPresupuestos:list.filter(x=>x.id!==id)});
   const montoCLP=(x)=> x.moneda==="UF" ? Math.round(num(x.monto)*uf) : num(x.monto);
+  // Aprobar/Rechazar deja constancia de quién decidió y cuándo (no un select
+  // mudo que cualquiera mueve sin dejar rastro). Volver a "Por revisar" borra
+  // esa constancia porque la decisión anterior queda sin efecto.
+  const decidir=(id,estado)=>onChange({ recepPresupuestos:list.map(x=>x.id===id
+    ? {...x, estado, decididoPor: estado==="Por revisar"?"":(quien||""), decididoEl: estado==="Por revisar"?"":todayISO()}
+    : x) });
   const aprobado=list.filter(x=>x.estado==="Aprobado").reduce((s,x)=>s+montoCLP(x),0);
   const porRevisar=list.filter(x=>x.estado==="Por revisar").length;
-  const pillCls=(e)=> e==="Aprobado"?"green":e==="Rechazado"?"red":"amber";
+  // La comparación es el punto de esta lista: se ordena sola de más barato a
+  // más caro (los sin monto al final) y se marca el más barato, para que ver
+  // cuál conviene no obligue a hacer la cuenta a mano.
+  const conMonto=list.filter(x=>montoCLP(x)>0);
+  const masBarato=conMonto.length>1 ? conMonto.reduce((a,b)=>montoCLP(b)<montoCLP(a)?b:a) : null;
+  const ordenados=[...list].sort((a,b)=>{
+    const ma=montoCLP(a), mb=montoCLP(b);
+    if(ma>0 && mb>0) return ma-mb;
+    return (mb>0?1:0)-(ma>0?1:0);
+  });
   return (<div>
-    <div className="help" style={{marginBottom:10}}>Registra aquí cada <b>presupuesto</b> que te envíen los contratistas para los trabajos de la recepción municipal, para compararlos uno al lado del otro y dejar constancia de cuál se aprobó. Adjunta el PDF que te mandaron.</div>
-    {list.length>0 && <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>{porRevisar} por revisar · Total aprobado: <b>{CLP(aprobado)}</b></div>}
+    <div className="help" style={{marginBottom:10}}>Registra aquí cada <b>presupuesto</b> que te envíen los contratistas. Se ordenan solos del más barato al más caro para comparar de un vistazo, y adjunta el PDF que te mandaron.</div>
+    {list.length>0 && <div style={{display:"flex",justifyContent:"space-between",gap:10,flexWrap:"wrap",background:"var(--panel2)",border:"1px solid var(--line2)",borderRadius:10,padding:"9px 13px",marginBottom:14,fontSize:13,color:"var(--muted)"}}>
+      <span>{porRevisar ? (porRevisar+" por revisar") : "Ninguno pendiente de revisar"}</span>
+      <span>Total aprobado: <b style={{color:"var(--text)",fontVariantNumeric:"tabular-nums"}}>{CLP(aprobado)}</b></span>
+    </div>}
     {list.length===0 && <div style={{color:"var(--muted)",fontSize:14,marginBottom:8}}>Sin presupuestos cargados todavía.</div>}
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {list.map(x=>(<div key={x.id} style={{border:"1px solid var(--line2)",borderRadius:10,padding:10,background:"var(--card)"}}>
-        <div className="grid" style={{gridTemplateColumns:"1.3fr 1.3fr",gap:8}}>
-          <div className="field"><label className="label" style={{fontSize:12}}>Contratista / proveedor</label><input className="input" value={x.contratista||""} onChange={ev=>upd(x.id,"contratista",ev.target.value)}/></div>
-          <div className="field"><label className="label" style={{fontSize:12}}>Trabajo / ítem cotizado</label><input className="input" value={x.trabajo||""} onChange={ev=>upd(x.id,"trabajo",ev.target.value)}/></div>
+      {ordenados.map(x=>{
+        const cheapest = masBarato && x.id===masBarato.id;
+        const diff = (!cheapest && masBarato && montoCLP(x)>0) ? montoCLP(x)-montoCLP(masBarato) : 0;
+        return (<div key={x.id} style={{border:"1px solid "+(cheapest?"var(--green-soft)":"var(--line2)"),borderRadius:10,padding:12,background:cheapest?"var(--green-bg)":"var(--card)"}}>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
+          <input className="input" style={{flex:"1.3 1 150px",minWidth:120,fontWeight:800}} placeholder="Contratista / proveedor" value={x.contratista||""} onChange={ev=>upd(x.id,"contratista",ev.target.value)}/>
+          <div style={{textAlign:"right"}}>
+            <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"flex-end"}}>
+              <input className="input" style={{width:100,textAlign:"right",fontWeight:800,fontVariantNumeric:"tabular-nums"}} type="number" min="0" step="any" placeholder="0" value={x.monto??""} onChange={ev=>upd(x.id,"monto",ev.target.value)}/>
+              <select value={x.moneda||"CLP"} onChange={ev=>upd(x.id,"moneda",ev.target.value)} title="Moneda" style={{width:78}}><option value="CLP">CLP $</option><option value="UF">UF</option></select>
+            </div>
+            {x.moneda==="UF" && num(x.monto)>0 && <div style={{fontSize:11.5,color:"var(--faint)",marginTop:2}}>≈ {CLP(montoCLP(x))}</div>}
+          </div>
         </div>
-        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginTop:8}}>
-          <input className="input" style={{flex:"1 1 100px",minWidth:90}} type="number" min="0" step="any" placeholder="0" value={x.monto??""} onChange={ev=>upd(x.id,"monto",ev.target.value)}/>
-          <select value={x.moneda||"CLP"} onChange={ev=>upd(x.id,"moneda",ev.target.value)} title="Moneda"><option value="CLP">CLP $</option><option value="UF">UF</option></select>
-          <input className="input" style={{flex:"1 1 130px",minWidth:120}} type="date" value={x.fecha||""} onChange={ev=>upd(x.id,"fecha",ev.target.value)}/>
-          <select value={x.estado||"Por revisar"} onChange={ev=>upd(x.id,"estado",ev.target.value)}>{ESTADOS_PRESUP.map(s=><option key={s}>{s}</option>)}</select>
-          <span className={"pill "+pillCls(x.estado)}>{x.estado||"Por revisar"}</span>
-          {x.moneda==="UF" && num(x.monto)>0 && <span style={{fontSize:12,color:"var(--faint)"}}>≈ {CLP(montoCLP(x))}</span>}
-          <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={()=>del(x.id)}>✕</button>
+        <input className="input" style={{marginTop:6}} placeholder="Trabajo / ítem cotizado" value={x.trabajo||""} onChange={ev=>upd(x.id,"trabajo",ev.target.value)}/>
+        {(cheapest || diff>0) && <div style={{fontSize:12.5,fontWeight:700,marginTop:7,color:cheapest?"var(--green-d)":"var(--faint)"}}>
+          {cheapest ? "🏆 El más barato de este grupo" : ("＋"+CLP(diff)+" más caro que "+(masBarato.contratista||"el más barato"))}
+        </div>}
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:10,paddingTop:10,borderTop:"1px dashed var(--line2)"}}>
+          <input className="input" style={{width:150}} type="date" value={x.fecha||""} onChange={ev=>upd(x.id,"fecha",ev.target.value)}/>
+          {x.estado==="Por revisar" ? (<>
+            <button className="btn btn-green btn-sm" onClick={()=>decidir(x.id,"Aprobado")}>✓ Aprobar</button>
+            <button className="btn btn-danger btn-sm" onClick={()=>decidir(x.id,"Rechazado")}>✕ Rechazar</button>
+          </>) : (<>
+            <span className={"pill "+(x.estado==="Aprobado"?"green":"red")}>{x.estado==="Aprobado"?"✓ Aprobado":"✕ Rechazado"}</span>
+            <span style={{fontSize:12,color:"var(--faint)"}}>{x.decididoPor?("por "+x.decididoPor):""}{x.decididoEl?(" · "+x.decididoEl):""}</span>
+            <button className="btn btn-ghost btn-sm" onClick={()=>decidir(x.id,"Por revisar")}>↺ Volver a revisar</button>
+          </>)}
+          <div style={{flex:1}}/>
+          <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={()=>del(x.id)}>✕ Quitar</button>
         </div>
         <input className="input" style={{marginTop:8}} placeholder="Nota (plazo, forma de pago, garantía, etc.)" value={x.nota||""} onChange={ev=>upd(x.id,"nota",ev.target.value)}/>
         <AdjuntosEditor items={x.adjuntos||[]} onChange={l=>upd(x.id,"adjuntos",l)}/>
-      </div>))}
+      </div>); })}
     </div>
     <button className="btn btn-out btn-sm" style={{marginTop:10}} onClick={add}>＋ Agregar presupuesto</button>
   </div>);
@@ -6241,7 +6276,7 @@ function App(){
       <div style={{fontWeight:800,fontSize:14,marginBottom:8}}>📋 Checklist de documentos</div>
       <RecepDocsBox p={p} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
       <div style={{fontWeight:800,fontSize:14,margin:"20px 0 8px",borderTop:"1px solid var(--line)",paddingTop:16}}>💰 Presupuestos de contratistas</div>
-      <RecepPresupuestosBox p={p} uf={uf} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
+      <RecepPresupuestosBox p={p} uf={uf} quien={(acceso&&acceso.nombre)||(usuarioActual&&usuarioActual.nombre)||""} onChange={patch=>patchProp(p.id,x=>({...x,...patch}))}/>
       </Collapsible>
 
       {/* FICHA COMPLETA INTERACTIVA */}
