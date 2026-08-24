@@ -1146,6 +1146,36 @@
   .mob-kpis2 > div{ background:var(--msf); border-radius:16px; padding:16px;
     display:flex; flex-direction:column; gap:6px; min-width:0; }
   .mob-kpis2 .k{ font-size:14.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---- Fotos ----
+     Se dibujan con <img> y no con background-image: así el navegador elige la
+     mejor decodificación para la densidad real de la pantalla, la foto se
+     puede abrir a tamaño completo y además carga en diferido. */
+  .mob-foto-hero{ display:block; width:100%; padding:0; border:none; background:var(--mfl);
+    border-radius:20px; overflow:hidden; cursor:pointer; line-height:0; }
+  .mob-foto-hero img{ width:100%; height:210px; object-fit:cover; display:block; }
+  .mob-fotos{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .mob-fotos button{ padding:0; border:none; background:var(--mfl); border-radius:14px;
+    overflow:hidden; cursor:pointer; line-height:0; }
+  .mob-fotos img{ width:100%; height:112px; object-fit:cover; display:block; }
+
+  /* Visor a resolución nativa: toca para alternar entre "cabe en pantalla" y
+     el tamaño real, con desplazamiento para recorrerla. */
+  .mob-visor{ position:fixed; inset:0; z-index:400; background:#000; display:flex; flex-direction:column; }
+  .mob-visor .barra{ display:flex; align-items:center; gap:12px; flex-shrink:0;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px; }
+  .mob-visor .barra button, .mob-visor .barra a{ min-height:44px; display:inline-flex; align-items:center;
+    gap:7px; background:rgba(255,255,255,.16); color:#fff; border:none; border-radius:14px;
+    padding:0 15px; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer;
+    text-decoration:none; }
+  .mob-visor .barra .sp{ flex:1; }
+  .mob-visor .lienzo{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch;
+    display:flex; align-items:center; justify-content:center; }
+  .mob-visor img{ display:block; }
+  .mob-visor img.cabe{ max-width:100%; max-height:100%; object-fit:contain; }
+  .mob-visor img.real{ max-width:none; max-height:none; }
+  .mob-visor .pie{ flex-shrink:0; color:rgba(255,255,255,.6); font-size:13px; text-align:center;
+    padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px)); }
   .mob-kpis2 .v{ font-size:clamp(19px,5.6vw,26px); font-weight:700; letter-spacing:-.028em;
     color:var(--mib); font-variant-numeric:tabular-nums; line-height:1.08;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2042,22 +2072,128 @@ const leerArchivoParaIA = async (file)=>{
   if(!texto.trim()) throw new Error("“"+nombre+"” no tiene texto que se pueda leer. Si es un escaneo, súbelo como PDF o foto.");
   return { name:nombre, texto:texto.slice(0,120000), size:file.size };
 };
-function optimizeImage(file, maxDim, quality){
-  return new Promise(async (resolve)=>{
-    try{
-      const dataUrl = await readFileDataURL(file);
-      const img = new Image();
-      img.onload = ()=>{ try{
-        let w=img.naturalWidth, h=img.naturalHeight;
-        if(Math.max(w,h)>maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
-        const c=document.createElement("canvas"); c.width=w; c.height=h;
-        c.getContext("2d").drawImage(img,0,0,w,h);
-        resolve(c.toDataURL("image/jpeg",quality));
-      }catch(e){ resolve(dataUrl); } };
-      img.onerror=()=>resolve(dataUrl);
-      img.src=dataUrl;
-    }catch(e){ resolve(null); }
+/* ================= FOTOS EN LA MÁXIMA RESOLUCIÓN POSIBLE =================
+   Antes toda foto se reducía a 1600 px y se volvía a comprimir en JPEG 80.
+   En un iPhone moderno la pantalla tiene 1170 px reales de ancho y la foto se
+   puede ampliar con los dedos, así que 1600 px se veían blandos — y el detalle
+   perdido en esa recompresión no se recupera nunca más.
+
+   Ahora se sube lo más grande que quepa:
+
+   1. Si el archivo original ya cabe en lo que acepta el servidor y es un
+      formato que el navegador muestra, se sube TAL CUAL: sin recomprimir,
+      sin perder un solo píxel.
+   2. Si no cabe, se busca la mejor versión que sí quepa. Primero se baja la
+      calidad —que casi no se nota— y solo cuando ya no alcanza se reduce el
+      tamaño, estimando de una vez cuánto hay que bajar en vez de ir a tientas.
+   3. Se prefiere WebP a JPEG: a igual calidad pesa bastante menos, así que
+      permite conservar más píxeles dentro del mismo presupuesto.
+   4. El tope de tamaño lo pone el navegador, no un número escrito a mano:
+      Safari no dibuja lienzos de más de ~16,7 millones de píxeles.
+   ========================================================================= */
+
+// Lo que se puede mandar en una sola petición. El cuerpo viaja en base64, que
+// infla un tercio, y la función acepta ~6 MB: 3,8 MB de imagen quedan en
+// ~5,1 MB de petición, con margen.
+const SUBIDA_MAX_BYTES = 3800000;
+// Límites del lienzo del navegador (los de Safari, que son los más estrictos).
+const LIENZO_MAX_PX = 16777216;
+const LIENZO_MAX_LADO = 8192;
+// Formatos que el navegador muestra tal cual, sin convertir nada.
+const FORMATOS_DIRECTOS = /^image\/(jpeg|jpg|png|webp|avif|gif)$/i;
+
+let _webpOK = null;
+function soportaWebp(){
+  if(_webpOK !== null) return _webpOK;
+  try{
+    const c = document.createElement("canvas"); c.width = c.height = 1;
+    _webpOK = c.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+  }catch(_e){ _webpOK = false; }
+  return _webpOK;
+}
+// Cuántos bytes pesa de verdad un data URL (sin contar la cabecera ni el relleno).
+function bytesDeDataURL(u){
+  const i = String(u).indexOf(",");
+  if(i < 0) return 0;
+  const largo = u.length - i - 1;
+  const relleno = u.charCodeAt(u.length-1)===61 ? (u.charCodeAt(u.length-2)===61 ? 2 : 1) : 0;
+  return Math.floor(largo*3/4) - relleno;
+}
+function cargarImagen(dataUrl){
+  return new Promise((ok)=>{
+    const img = new Image();
+    img.onload = ()=>ok(img);
+    img.onerror = ()=>ok(null);
+    img.src = dataUrl;
   });
+}
+// Dibuja a un tamaño dado con el mejor remuestreo que ofrezca el navegador.
+// El fondo va blanco: si la imagen trae transparencia y termina en JPEG, sin
+// esto el transparente sale negro.
+function lienzoDe(img, w, h){
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  try{ ctx.imageSmoothingQuality = "high"; }catch(_e){}
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return c;
+}
+function optimizeImage(file){
+  return (async ()=>{
+    try{
+      // 1) Tal cual, sin tocar nada, si ya cabe.
+      if(FORMATOS_DIRECTOS.test(file.type||"") && file.size <= SUBIDA_MAX_BYTES){
+        return await readFileDataURL(file);
+      }
+      const dataUrl = await readFileDataURL(file);
+      const img = await cargarImagen(dataUrl);
+      if(!img) return dataUrl;
+      const w0 = img.naturalWidth || img.width;
+      const h0 = img.naturalHeight || img.height;
+      if(!w0 || !h0) return dataUrl;
+
+      // 2) Punto de partida: la imagen entera, recortada solo por lo que el
+      //    lienzo del navegador es capaz de dibujar.
+      let escala = Math.min(1,
+        LIENZO_MAX_LADO / Math.max(w0, h0),
+        Math.sqrt(LIENZO_MAX_PX / (w0 * h0)));
+
+      const tipo = soportaWebp() ? "image/webp" : "image/jpeg";
+      const calidades = [0.95, 0.92, 0.88, 0.84, 0.8];
+      let ultimo = null;
+      for(let paso = 0; paso < calidades.length; paso++){
+        const w = Math.max(1, Math.round(w0 * escala));
+        const h = Math.max(1, Math.round(h0 * escala));
+        const salida = lienzoDe(img, w, h).toDataURL(tipo, calidades[paso]);
+        const pesa = bytesDeDataURL(salida);
+        if(pesa <= SUBIDA_MAX_BYTES){
+          // Si sobró bastante presupuesto es que se encogió de más: se intenta
+          // una vez recuperar tamaño, para no dejar resolución sin usar.
+          if(escala < 1 && pesa < SUBIDA_MAX_BYTES * 0.72){
+            const subir = Math.min(1/escala, Math.sqrt(SUBIDA_MAX_BYTES * 0.92 / pesa));
+            const escala2 = Math.min(1, escala * subir);
+            if(escala2 > escala * 1.05){
+              const w2 = Math.max(1, Math.round(w0 * escala2));
+              const h2 = Math.max(1, Math.round(h0 * escala2));
+              const mayor = lienzoDe(img, w2, h2).toDataURL(tipo, calidades[paso]);
+              if(bytesDeDataURL(mayor) <= SUBIDA_MAX_BYTES) return mayor;
+            }
+          }
+          return salida;
+        }
+        ultimo = salida;
+        // Lo comprimido crece más o menos con la cantidad de píxeles, así que
+        // se estima de una vez cuánto hay que encoger en lugar de tantear.
+        const ajuste = Math.sqrt(SUBIDA_MAX_BYTES / pesa) * 0.96;
+        escala = escala * Math.min(0.94, Math.max(0.4, ajuste));
+        if(Math.round(w0 * escala) < 900) break;
+      }
+      return ultimo || dataUrl;
+    }catch(e){ return null; }
+  })();
 }
 async function uploadMedia(dataUrl, kind){
   const r = await fetch("/api/media/subir",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({dataUrl,kind}) });
@@ -2416,7 +2552,7 @@ function MediaSection({ d, set }){
       const added=[];
       for(const file of Array.from(files)){
         if(!/^image\//.test(file.type)){ continue; }
-        const opt = await optimizeImage(file, kind==="pano"?4096:1600, kind==="pano"?0.82:0.8);
+        const opt = await optimizeImage(file);
         if(!opt){ continue; }
         try{ const url = await uploadMedia(opt, kind); added.push({url, name:file.name.replace(/\.[^.]+$/,"")}); }
         catch(err){ note("No se pudo subir "+file.name, true); }
@@ -2434,7 +2570,7 @@ function MediaSection({ d, set }){
   const renPano=(i,name)=> set(p=>({...p, panoramas:(p.panoramas||[]).map((x,j)=>j===i?{...x,name}:x)}));
   return (<>
     <div className="sub-title dark">⑧ Fotos y recorrido virtual 360°</div>
-    <div className="help" style={{marginBottom:12}}>Sube todas las fotos que quieras: el navegador las optimiza y se guardan en la plataforma (no en el dispositivo), por lo que quedan disponibles desde cualquier teléfono o computador y viajan con el enlace al compartir. La <b>primera foto</b> es la portada.</div>
+    <div className="help" style={{marginBottom:12}}>Sube todas las fotos que quieras, en la mejor calidad que tengas: se guardan a máxima resolución en la plataforma (no en el dispositivo), así que quedan disponibles desde cualquier teléfono o computador y viajan con el enlace al compartir. Solo se reducen si el archivo no cabe en un envío, y en ese caso se conserva el tamaño más grande posible. La <b>primera foto</b> es la portada.</div>
     <label className="btn btn-out btn-sm" style={{marginBottom:10,opacity:busy?0.6:1,pointerEvents:busy?"none":"auto"}}>
       {busy?"Subiendo…":"Agregar fotos"}
       <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{ addFiles(e.target.files,"foto"); e.target.value=""; }}/>
@@ -5148,6 +5284,9 @@ function MobileApp(props){
   const [busca, setBusca] = React.useState("");
   const [buscaCob, setBuscaCob] = React.useState("");
   const [buscaCon, setBuscaCon] = React.useState("");
+  // Foto abierta a tamaño completo (null = ninguna).
+  const [visor, setVisor] = React.useState(null);
+  const [visorReal, setVisorReal] = React.useState(false);
 
   /* La pila guarda identificadores, nunca copias del objeto: si se edita una
      propiedad mientras está abierta, la pantalla muestra el dato nuevo. */
@@ -5678,6 +5817,13 @@ function MobileApp(props){
           <button className="mob-btn pri" style={{flex:1, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
         </div>) : null}>
 
+      {/* La portada, en la resolución con la que se subió. */}
+      {!!(p.fotos && p.fotos.length) && (
+        <button className="mob-foto-hero" onClick={()=>setVisor(p.fotos[0].url)} aria-label="Ver la foto de portada">
+          <img src={p.fotos[0].url} alt={"Foto de "+p.name} decoding="async"/>
+        </button>
+      )}
+
       {/* Resumen: estado, cifra, próximo pago y avance de la ficha. */}
       <div className="mob-hub-top">
         <div className="fila">
@@ -5961,14 +6107,15 @@ function MobileApp(props){
 
       {fotos.length>0 && (
         <div>
-          <div className="mob-gtit">Fotos de la propiedad</div>
-          <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8}}>
-            {fotos.slice(0,8).map((ft,i)=>(
-              <a key={i} href={ft.url} target="_blank" rel="noopener"
-                style={{display:"block", height:110, borderRadius:14, backgroundSize:"cover", backgroundPosition:"center",
-                  backgroundImage:"url('"+ft.url+"')"}} aria-label={"Foto "+(i+1)}></a>
+          <div className="mob-gtit">Fotos ({fotos.length})</div>
+          <div className="mob-fotos">
+            {fotos.map((ft,i)=>(
+              <button key={i} onClick={()=>setVisor(ft.url)} aria-label={"Ver la foto "+(i+1)+" a tamaño completo"}>
+                <img src={ft.url} alt={ft.name||("Foto "+(i+1))} loading="lazy" decoding="async"/>
+              </button>
             ))}
           </div>
+          <div className="mob-nota">Toca una foto para verla a tamaño completo. Se guardan tal como las subiste, sin recortar la resolución.</div>
         </div>
       )}
 
@@ -6509,6 +6656,29 @@ function MobileApp(props){
 
   return (<div className="mob-app" data-mob="1">
     {vista}
+    {/* Visor de foto a resolución nativa. Toca la imagen para alternar entre
+        "cabe en pantalla" y el tamaño real, y desplázala para recorrerla. */}
+    {visor && (
+      <div className="mob-visor" role="dialog" aria-label="Foto a tamaño completo">
+        <div className="barra">
+          <button onClick={()=>{ setVisor(null); setVisorReal(false); }} aria-label="Cerrar">
+            <MobIco w={18} sw={2.4}>{MI.cerrar}</MobIco> Cerrar
+          </button>
+          <span className="sp"></span>
+          <button onClick={()=>setVisorReal(v=>!v)}>
+            <MobIco w={17}>{MI.lupa}</MobIco> {visorReal ? "Ajustar" : "Tamaño real"}
+          </button>
+          <a href={visor} target="_blank" rel="noopener" aria-label="Abrir el archivo original">
+            <MobIco w={17}>{MI.descarga}</MobIco>
+          </a>
+        </div>
+        <div className="lienzo">
+          <img src={visor} className={visorReal?"real":"cabe"} alt=""
+            onClick={()=>setVisorReal(v=>!v)}/>
+        </div>
+        <div className="pie">{visorReal ? "Tamaño real · desliza para recorrerla" : "Toca la foto para verla a tamaño real"}</div>
+      </div>
+    )}
     {pantallaCompleta ? null : (
       <div className="mob-tabs" style={{gridTemplateColumns:"repeat("+tabs.length+",1fr)"}}>
         {tabs.map(([id,lb,ic])=>{
