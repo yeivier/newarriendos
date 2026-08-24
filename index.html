@@ -537,6 +537,12 @@
   .puerta-caja .brand-logo{margin-left:auto;margin-right:auto}
   .puerta-err{margin-top:10px;font-size:13.5px;font-weight:700;color:#fff;background:var(--ink);border-radius:9px;padding:9px 11px}
   .puerta-nota{margin-top:14px;font-size:12.5px;color:var(--faint);line-height:1.5}
+  /* Aviso de versión nueva: una pastilla arriba, se toca y recarga. */
+  .ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:400;
+    display:inline-flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);
+    background:var(--ink);color:#fff;border:none;border-radius:999px;padding:10px 16px;
+    font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 12px 32px rgba(16,16,18,.32)}
+  .ver-nueva span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* Entrar con la cara: el cuadro del ícono y la línea que separa las dos formas de entrar. */
   .puerta-cara{width:64px;height:64px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
   .puerta-o{display:flex;align-items:center;gap:10px;margin:0 0 12px;color:var(--faint);font-size:12.5px}
@@ -985,6 +991,47 @@ const api = async (url, opts)=>{
   return r;
 };
 const apiJSON = (url, cuerpo, metodo)=>api(url,{method:metodo||"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo||{})});
+
+/* ---------- Aviso de versión nueva ----------
+   En el teléfono la pestaña se queda abierta días, así que la persona sigue
+   viendo la versión vieja y parece que los arreglos no hubieran llegado. Cada
+   build deja su huella en window.__APV y en /version.txt; esto compara las dos
+   al volver a la pestaña (y cada 10 minutos) y avisa cuando cambió. */
+const useVersionNueva = ()=>{
+  const [hay,setHay] = React.useState(false);
+  React.useEffect(()=>{
+    let actual = "";
+    try{ actual = window.__APV || ""; }catch(_e){}
+    if(!actual) return;            // sin sello (código sin construir): nada que comparar
+    let vivo = true;
+    const mirar = async()=>{
+      if(!vivo) return;
+      try{
+        const r = await fetch("/version.txt", { cache:"no-store" });
+        if(!r.ok) return;
+        const v = (await r.text()).trim();
+        if(vivo && v && v !== actual) setHay(true);
+      }catch(_e){}
+    };
+    const alVolver = ()=>{ try{ if(document.visibilityState==="visible") mirar(); }catch(_e){ mirar(); } };
+    let t = null;
+    try{
+      t = setInterval(mirar, 10*60*1000);
+      document.addEventListener("visibilitychange", alVolver);
+      window.addEventListener("focus", alVolver);
+    }catch(_e){}
+    mirar();
+    return ()=>{
+      vivo = false;
+      try{
+        if(t) clearInterval(t);
+        document.removeEventListener("visibilitychange", alVolver);
+        window.removeEventListener("focus", alVolver);
+      }catch(_e){}
+    };
+  },[]);
+  return hay;
+};
 
 /* ---------- Entrar con Face ID / Touch ID ----------
    El teléfono guarda una llave secreta que solo se desbloquea con la cara o la
@@ -5621,6 +5668,7 @@ function App(){
   // se ven las 5 pestañas). Es el puente para que nada quede fuera de alcance:
   // bitácora, incidencias, comunicaciones, CRM, informes, la ficha entera…
   const [movilCompleto,setMovilCompleto]=useState(null);
+  const versionNueva = useVersionNueva();
   useEffect(()=>{
     window.__sinAcceso=()=>{ setAcceso(null); setPuerta("entrar"); };
     let vivo=true;
@@ -8421,6 +8469,9 @@ function App(){
   if(sesion && rolActual==="arrendatario") return (<PortalArrendatario u={usuarioActual} propiedades={props} uf={uf} owner={owner} cuentas={cuentas} montoCobro={montoCobro} calcMulta={calcMulta} onSalir={cerrarSesion}/>);
 
   return (<div className={"app"+(soloLectura?" solo-lectura":"")+(movil?" en-movil":"")+(movil&&movilCompleto?" modo-completo":"")}>
+    {/* Si se desplegó una versión nueva mientras la pestaña estaba abierta. */}
+    {versionNueva && <button className="ver-nueva" onClick={()=>{ try{ window.location.reload(); }catch(_e){} }}>
+      <Ic n="refrescar" w={16} sw={2.2}/><span>Hay una versión nueva · toca para actualizar</span></button>}
     {/* Bajo 900 px, MobileApp reemplaza a todo el layout de escritorio. El
         árbol del escritorio sigue montado detrás (de ahí vienen los modales y
         las secciones completas que el móvil abre) pero se oculta por CSS. */}

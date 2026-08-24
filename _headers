@@ -1,0 +1,8 @@
+# La página y el sello de versión se revalidan siempre: si no, el teléfono
+# se queda con la versión vieja abierta y parece que los cambios no llegaran.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/version.txt
+  Cache-Control: no-store

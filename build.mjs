@@ -14,6 +14,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
 import babel from '@babel/standalone'
 
 const root = process.cwd()
@@ -47,6 +48,17 @@ html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/, (m, code)
 if (!transpilado) throw new Error('No encontré el bloque <script type="text/babel"> en index.html')
 // El navegador ya no necesita Babel: se saca el CDN.
 html = html.replace(/\s*<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/babel-standalone[^"]*"><\/script>/, '')
-fs.writeFileSync(idx, html)
 
-console.log('Build listo: index.html pre-transpilado, Babel quitado del navegador.')
+// Sello de versión.
+//
+// El teléfono deja la pestaña abierta días enteros, así que la persona sigue
+// viendo la versión vieja y parece que los arreglos no llegaran. Se marca cada
+// build con la huella de su contenido y se deja esa misma huella en un archivo
+// diminuto (version.txt): la página lo mira de vez en cuando y, si cambió,
+// avisa que hay una versión nueva.
+const version = crypto.createHash('sha1').update(html).digest('hex').slice(0, 12)
+html = html.replace('</head>', '<script>window.__APV=' + JSON.stringify(version) + ';</script>\n</head>')
+fs.writeFileSync(idx, html)
+fs.writeFileSync(path.join(out, 'version.txt'), version + '\n')
+
+console.log('Build listo: index.html pre-transpilado, Babel quitado del navegador. Versión ' + version)
