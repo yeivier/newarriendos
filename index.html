@@ -5502,10 +5502,23 @@ function MobileApp(props){
   const [visor, setVisor] = React.useState(null);
   const [visorReal, setVisorReal] = React.useState(false);
 
+  /* Las últimas propiedades abiertas, para el acceso directo de "Más". Se
+     guardan en el aparato y no en la cartera: es una comodidad de quien lo usa,
+     así que cada quien tiene las suyas y no le mueve la pantalla al otro. */
+  const [recientes, setRecientes] = React.useState(()=>{
+    const g = store.get("ap_props_recientes", []);
+    return Array.isArray(g) ? g.map(String) : [];
+  });
+  const recordarProp = (id)=> setRecientes(prev=>{
+    const v = [String(id), ...prev.filter(x=>x!==String(id))].slice(0,8);
+    store.set("ap_props_recientes", v);
+    return v;
+  });
+
   /* La pila guarda identificadores, nunca copias del objeto: si se edita una
      propiedad mientras está abierta, la pantalla muestra el dato nuevo. */
   const top  = pila[pila.length-1] || null;
-  const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); setPila(p=>[...p, v]); subirArriba(); };
+  const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); if(v && v.t==="prop") recordarProp(v.id); setPila(p=>[...p, v]); subirArriba(); };
   const pop  = ()=> setPila(p=>p.slice(0,-1));
   const irA  = (t)=>{ if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
   const subirArriba = ()=>{ try{ const s=document.querySelector(".mob-app .mob-scr"); if(s) s.scrollTop=0; }catch(_e){} };
@@ -5973,12 +5986,37 @@ function MobileApp(props){
     const grupos = MOB_MAS_GRUPOS
       .map(g=>({ ...g, items:g.items.filter(it=> it.esp ? true : hay(it.id)) }))
       .filter(g=>g.items.length);
+    /* Las propiedades, directas. Primero las últimas que se abrieron y después
+       el resto por nombre: lo que se usa a diario queda siempre arriba. Antes
+       había que ir a la pestaña, buscar en la lista y recién ahí entrar. */
+    const pos = new Map(recientes.map((id,i)=>[id,i]));
+    const orden = propiedades.slice().sort((a,b)=>{
+      const ra = pos.has(String(a.id)) ? pos.get(String(a.id)) : 9e9;
+      const rb = pos.has(String(b.id)) ? pos.get(String(b.id)) : 9e9;
+      if(ra!==rb) return ra-rb;
+      return (a.name||"").localeCompare(b.name||"", "es", {numeric:true});
+    });
+    /* Si caben todas, van todas: una fila "Ver todas (6)" sobre seis sobra. */
+    const vista = orden.slice(0, orden.length<=6 ? 6 : 5);
     return (<div className="mob-scr g14">
       <HeaderMob title="Más" sub="El resto de la plataforma, por lo que quieres hacer"/>
       <div className="mob-buscar" onClick={buscar} role="button">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
         <input readOnly placeholder="Buscar en toda la plataforma" style={{pointerEvents:"none"}}/>
       </div>
+      {!!vista.length && (
+        <Grupo titulo="Mis propiedades">
+          {vista.map(p=>(
+            <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
+              sub={[p.comuna||"", p.use==="arriendo" ? (p.tenant||"Sin arrendatario") : "Uso propio"]
+                .filter(Boolean).join(" · ")}
+              onClick={()=>push({t:"prop", id:p.id})}/>
+          ))}
+          {orden.length>vista.length && (
+            <Fila icoNav="casas" titulo={"Ver todas ("+orden.length+")"} onClick={()=>irA("props")}/>
+          )}
+        </Grupo>
+      )}
       {grupos.map(g=>(
         <Grupo key={g.label} titulo={g.label}>
           {g.items.map(it=>(
@@ -12332,6 +12370,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function(){
   var KEY_LABELS={ap_props:"Propiedades",ap_socs:"Sociedades",ap_contacts:"Contactos",ap_cuentas:"Cuentas",ap_owner:"Propietario",ap_gastos:"Gastos",ap_pagos:"Pagos",ap_leads:"CRM / Leads",ap_crm:"CRM",ap_templates:"Plantillas",ap_incidencias:"Incidencias"};
+  /* Claves que no guardan contenido sino la sesión y los ajustes del aparato:
+     no hay nada que buscar en ellas y solo ensucian los resultados (el token
+     de la sesión, sin ir más lejos, no tiene por qué salir en una búsqueda). */
+  var KEY_OMITIR={ap_token:1,ap_sesion:1,ap_props_recientes:1,ap_faceid_ofrecido:1,ap_chat_visto:1,ap_trinidad_seed_v1:1,ap_fab_pos:1,ap_recarga:1};
   function nrm(s){return (s==null?"":String(s)).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
   function lev(a,b){var m=a.length,n=b.length;if(!m)return n;if(!n)return m;var p=[],i,j;for(j=0;j<=n;j++)p[j]=j;for(i=1;i<=m;i++){var c=[i];for(j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
   function labelize(k){return KEY_LABELS[k]||k.replace(/^ap_/,"").replace(/_/g," ");}
@@ -12348,7 +12390,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   function buildIndex(){
     var idx=[];
     for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i);if(!/^ap_/.test(k))continue;
+      var k=localStorage.key(i);if(!/^ap_/.test(k)||KEY_OMITIR[k])continue;
       var parsed;try{parsed=JSON.parse(localStorage.getItem(k));}catch(e){parsed=localStorage.getItem(k);}
       var rows=[];walk(parsed,[labelize(k)],rows,0);
       rows.forEach(function(r){
