@@ -726,6 +726,57 @@
     .app.en-movil.modo-completo > .sidebar{ display:flex !important; z-index:200; }
     .app.en-movil.modo-completo > .nav-overlay{ display:block !important; z-index:190; }
   }
+  /* ---- Chat del equipo ----
+     Mismo lenguaje del diseño móvil: lo mío en negro a la derecha, lo de los
+     demás en blanco a la izquierda. Sirve igual en el móvil (pantalla completa)
+     y en el escritorio (dentro de su sección, con .compacto). */
+  .chat-eq{ display:flex; flex-direction:column; background:#F2F2F7;
+    height:calc(100dvh - 46px - env(safe-area-inset-bottom,0px));
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif; }
+  .chat-eq.compacto{ height:min(620px,70vh); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .chat-eq-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 16px 10px;
+    display:flex; flex-direction:column; gap:10px; }
+  .chat-eq-vacio{ margin:auto; max-width:340px; text-align:center; color:#6B6B75; font-size:14.5px; line-height:1.55; }
+  .chat-eq-dia{ align-self:center; color:#5A5A63; font-size:12.5px; font-weight:700; margin:8px 0 2px; }
+  .chat-eq-fila{ display:flex; align-items:flex-end; gap:8px; max-width:100%; }
+  .chat-eq-fila.mio{ justify-content:flex-end; }
+  .chat-eq-av{ width:30px; height:30px; border-radius:10px; background:#101012; color:#fff; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+  .chat-eq-bub{ max-width:min(78%,460px); background:#fff; border:1px solid #E5E5EA;
+    border-radius:12px 18px 18px 6px; padding:11px 14px; min-width:0; }
+  .chat-eq-bub.mio{ background:#101012; border-color:#101012; color:#F0F0F3; border-radius:12px 18px 6px 18px; }
+  .chat-eq-autor{ font-size:12.5px; font-weight:700; color:#101012; margin-bottom:3px; }
+  .chat-eq-txt{ font-size:15px; line-height:1.45; color:#2B2B30; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .chat-eq-bub.mio .chat-eq-txt{ color:#F0F0F3; }
+  .chat-eq-adj{ display:flex; flex-direction:column; gap:7px; margin-top:9px; }
+  .chat-eq-img img{ display:block; max-width:100%; width:210px; border-radius:11px; }
+  .chat-eq-file{ display:flex; align-items:center; gap:9px; text-decoration:none;
+    background:#EFEFF4; border-radius:10px; padding:9px 11px; color:#2B2B30; font-size:13.5px; font-weight:600; min-width:0; }
+  .chat-eq-bub.mio .chat-eq-file{ background:#1E1E22; border:1px solid #2C2C31; color:#F0F0F3; }
+  .chat-eq-file .nm{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat-eq-meta{ display:flex; align-items:center; justify-content:flex-end; gap:10px;
+    font-size:11.5px; color:#6B6B75; margin-top:7px; }
+  .chat-eq-bub.mio .chat-eq-meta{ color:#8C8C96; }
+  .chat-eq-del{ background:none; border:none; padding:0; cursor:pointer; font:inherit;
+    color:inherit; text-decoration:underline; opacity:.85; }
+  .chat-eq-error{ background:var(--red-bg,#FDECEC); color:var(--red-d,#B4372B); font-size:13.5px;
+    padding:9px 16px; border-top:1px solid #E5E5EA; }
+  .chat-eq-pend{ display:flex; gap:7px; flex-wrap:wrap; padding:9px 16px; background:#fff; border-top:1px solid #E5E5EA; }
+  .chat-eq-chip{ display:inline-flex; align-items:center; gap:7px; background:#EFEFF4; border-radius:9px;
+    padding:6px 10px; font-size:12.5px; font-weight:600; color:#2B2B30; max-width:100%; }
+  .chat-eq-chip button{ background:none; border:none; cursor:pointer; color:#6B6B75; font-size:13px; padding:0; }
+  .chat-eq-comp{ display:flex; align-items:center; gap:9px; background:#fff; border-top:1px solid #E5E5EA;
+    padding:11px 14px calc(11px + env(safe-area-inset-bottom,0px)); }
+  .chat-eq.compacto .chat-eq-comp{ padding-bottom:11px; }
+  .chat-eq-comp input[type=text], .chat-eq-comp input:not([type]){ flex:1; min-width:0; height:44px;
+    background:#EFEFF4; border:none; border-radius:13px; padding:0 15px; font-size:15px;
+    font-family:inherit; color:#2B2B30; outline:none; }
+  .chat-eq-mas, .chat-eq-env{ width:44px; height:44px; border-radius:13px; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; font-family:inherit; }
+  .chat-eq-mas{ background:#EFEFF4; color:#101012; }
+  .chat-eq-env{ background:#101012; color:#fff; }
+  .chat-eq-env:disabled, .chat-eq-mas:disabled{ opacity:.45; cursor:default; }
+
   .mob-volver-barra{ display:none; position:fixed; top:0; left:0; right:0; z-index:170;
     background:#101012; color:#fff; align-items:center; gap:12px;
     padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px; }
@@ -4739,6 +4790,21 @@ function MobileApp(props){
     </div>);
   };
 
+  /* ---------- Chat del equipo (pantalla completa) ---------- */
+  const pantallaChatEquipo = ()=>(
+    <React.Fragment>
+      <div className="mob-chat-head">
+        <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}><MobIco w={19}>{MI.chat}</MobIco></div>
+        <div className="info">
+          <div className="nm">Chat del equipo</div>
+          <div className="ctx">Con quienes tienen acceso a la plataforma</div>
+        </div>
+      </div>
+      <ChatEquipo/>
+    </React.Fragment>
+  );
+
   /* ---------- Pantalla Asistente ---------- */
   const pantallaAsistente = ()=>(
     <div className="mob-scr g14">
@@ -4762,6 +4828,17 @@ function MobileApp(props){
         <div style={{flex:1, minWidth:0}}>
           <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Preguntarle al asesor</div>
           <div style={{fontSize:13, color:"var(--mtm)"}}>Sabe de tu cartera, contratos, UF y del rubro</div>
+        </div>
+        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+      </button>
+
+      {/* Conversación con el resto del equipo, guardada en la plataforma. */}
+      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
+        onClick={()=>push({tipo:"equipo"})}>
+        <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Chat del equipo</div>
+          <div style={{fontSize:13, color:"var(--mtm)"}}>Mensajes y archivos con quienes tienen acceso</div>
         </div>
         <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
       </button>
@@ -4809,6 +4886,7 @@ function MobileApp(props){
   if(top){
     if(top.tipo==="ficha")    vista = pantallaFicha(top.p);
     else if(top.tipo==="chat") vista = pantallaChat(top.p);
+    else if(top.tipo==="equipo") vista = pantallaChatEquipo();
     else if(top.tipo==="contrato") vista = pantallaContrato(top.p);
   } else if(tab==="inicio")      vista = pantallaInicio();
   else if(tab==="propiedades")   vista = pantallaPropiedades();
@@ -4826,7 +4904,7 @@ function MobileApp(props){
   ];
   return (<div className="mob-app" data-mob="1">
     {vista}
-    {top && top.tipo==="chat" ? null : (
+    {top && (top.tipo==="chat" || top.tipo==="equipo") ? null : (
       <div className="mob-tabs">
         {tabs.map(([id,lb,ic])=>(
           <button key={id} className={"mob-tab"+(tab===id && !top ? " on":"")} onClick={()=>irA(id)}>
@@ -4836,6 +4914,170 @@ function MobileApp(props){
         ))}
       </div>
     )}
+  </div>);
+}
+
+/* ============ CHAT DEL EQUIPO ============
+   Conversación entre quienes tienen acceso a la plataforma: el propietario, su
+   contador, quien administre con él. Mensajes y archivos quedan guardados en el
+   servidor, así que se ven igual desde el teléfono y el computador.
+
+   Mismo componente para las dos interfaces: en el móvil ocupa la pantalla
+   completa y en el escritorio va dentro de su sección. */
+
+const chatHora = (ts)=>{ try{ return new Date(ts).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}); }catch(_){ return ""; } };
+const chatDia = (ts)=>{
+  try{
+    const d=new Date(ts), h=new Date();
+    const soloDia=(x)=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+    const dif=Math.round((soloDia(h)-soloDia(d))/86400000);
+    if(dif===0) return "Hoy";
+    if(dif===1) return "Ayer";
+    return d.toLocaleDateString("es-CL",{day:"numeric",month:"long"});
+  }catch(_){ return ""; }
+};
+const esImagen = (t)=> String(t||"").startsWith("image/");
+
+function ChatEquipo({ compacto }){
+  const [msgs,setMsgs] = React.useState([]);
+  const [yo,setYo] = React.useState(null);
+  const [texto,setTexto] = React.useState("");
+  const [subiendo,setSubiendo] = React.useState(false);
+  const [pend,setPend] = React.useState([]);      // adjuntos ya subidos, sin enviar
+  const [cargando,setCargando] = React.useState(true);
+  const [error,setError] = React.useState("");
+  const finRef = React.useRef(null);
+  const clipRef = React.useRef(null);
+
+  const bajar = ()=>{ try{ finRef.current && finRef.current.scrollIntoView({block:"end"}); }catch(_){} };
+
+  const cargar = React.useCallback(async(silencioso)=>{
+    try{
+      const r = await api("/api/chat");
+      if(!r.ok) throw new Error("no");
+      const j = await r.json();
+      setMsgs(j.mensajes||[]); setYo(j.yo||null); setError("");
+      try{ localStorage.setItem("ap_chat_visto", String(Date.now())); }catch(_){}
+    }catch(_){ if(!silencioso) setError("No pude cargar la conversación. Revisa tu conexión."); }
+    setCargando(false);
+  },[]);
+
+  React.useEffect(()=>{ cargar(); },[cargar]);
+  // Se relee cada 15 s y al volver a la pestaña, para ver lo que escriben los
+  // demás sin tener que recargar la página.
+  React.useEffect(()=>{
+    const iv = setInterval(()=>cargar(true), 15000);
+    const alVolver = ()=>{ if(document.visibilityState==="visible") cargar(true); };
+    document.addEventListener("visibilitychange", alVolver);
+    return ()=>{ clearInterval(iv); document.removeEventListener("visibilitychange", alVolver); };
+  },[cargar]);
+  React.useEffect(()=>{ bajar(); },[msgs.length]);
+
+  const adjuntar = async(files)=>{
+    const lista = Array.prototype.slice.call(files||[]).slice(0,6);
+    if(!lista.length) return;
+    setSubiendo(true);
+    for(const f of lista){
+      try{ const a = await uploadArchivo(f); setPend(p=>[...p, a]); }
+      catch(e){ setError(e.message||"No se pudo subir el archivo"); }
+    }
+    setSubiendo(false);
+  };
+
+  const enviar = async()=>{
+    const t = texto.trim();
+    if(!t && !pend.length) return;
+    setTexto(""); setPend([]);
+    try{
+      const r = await api("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ texto:t, adjuntos:pend }) });
+      const j = await r.json().catch(()=>({}));
+      if(r.ok && j.mensaje) setMsgs(m=>[...m, j.mensaje]);
+      else { setError(j.error||"No se pudo enviar"); setTexto(t); setPend(pend); }
+    }catch(_){ setError("Sin conexión: el mensaje no se envió."); setTexto(t); setPend(pend); }
+  };
+
+  const borrar = async(m)=>{
+    if(!window.confirm("¿Borrar este mensaje para todos?")) return;
+    try{
+      const r = await api("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ accion:"borrar", id:m.id }) });
+      if(r.ok) setMsgs(x=>x.filter(y=>y.id!==m.id));
+      else { const j=await r.json().catch(()=>({})); setError(j.error||"No se pudo borrar"); }
+    }catch(_){ setError("Sin conexión"); }
+  };
+
+  const mio = (m)=> yo && m.autor===yo.nombre;
+
+  return (<div className={"chat-eq"+(compacto?" compacto":"")}>
+    <div className="chat-eq-body">
+      {cargando && <div className="chat-eq-vacio">Cargando la conversación…</div>}
+      {!cargando && !msgs.length && (
+        <div className="chat-eq-vacio">
+          Todavía no hay mensajes. Escribe el primero: lo que pongas aquí lo ven
+          todos los que tienen acceso a la plataforma, y queda guardado.
+        </div>
+      )}
+      {msgs.map((m,i)=>{
+        const nuevoDia = i===0 || chatDia(msgs[i-1].ts)!==chatDia(m.ts);
+        return (<React.Fragment key={m.id}>
+          {nuevoDia && <div className="chat-eq-dia">{chatDia(m.ts)}</div>}
+          <div className={"chat-eq-fila"+(mio(m)?" mio":"")}>
+            {!mio(m) && <div className="chat-eq-av">{mobIni(m.autor)}</div>}
+            <div className={"chat-eq-bub"+(mio(m)?" mio":"")}>
+              {!mio(m) && <div className="chat-eq-autor">{m.autor}</div>}
+              {!!m.texto && <div className="chat-eq-txt">{m.texto}</div>}
+              {!!(m.adjuntos||[]).length && (
+                <div className="chat-eq-adj">
+                  {m.adjuntos.map((a,k)=> esImagen(a.contentType)
+                    ? <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-img">
+                        <img src={a.url} alt={a.name} loading="lazy"/>
+                      </a>
+                    : <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-file">
+                        <span className="ic">📄</span>
+                        <span className="nm">{a.name}</span>
+                      </a>
+                  )}
+                </div>
+              )}
+              <div className="chat-eq-meta">
+                {chatHora(m.ts)}
+                {(mio(m) || (yo&&yo.rol==="dueño")) &&
+                  <button className="chat-eq-del" onClick={()=>borrar(m)} title="Borrar mensaje">Borrar</button>}
+              </div>
+            </div>
+          </div>
+        </React.Fragment>);
+      })}
+      <div ref={finRef}></div>
+    </div>
+
+    {!!error && <div className="chat-eq-error">{error}</div>}
+
+    {!!pend.length && (
+      <div className="chat-eq-pend">
+        {pend.map((a,i)=>(
+          <span key={i} className="chat-eq-chip">
+            {esImagen(a.contentType)?"🖼️":"📄"} {a.name}
+            <button onClick={()=>setPend(p=>p.filter((_,k)=>k!==i))} aria-label="Quitar">✕</button>
+          </span>
+        ))}
+      </div>
+    )}
+
+    <div className="chat-eq-comp">
+      <input ref={clipRef} type="file" multiple style={{display:"none"}}
+        onChange={e=>{ const f=e.target.files; e.target.value=""; adjuntar(f); }}/>
+      <button className="chat-eq-mas" onClick={()=>clipRef.current&&clipRef.current.click()}
+        disabled={subiendo} title="Adjuntar foto o documento" aria-label="Adjuntar foto o documento">
+        {subiendo ? "…" : "＋"}
+      </button>
+      <input value={texto} onChange={e=>setTexto(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); enviar(); } }}
+        placeholder="Escribe un mensaje…"/>
+      <button className="chat-eq-env" onClick={enviar} disabled={!texto.trim() && !pend.length}
+        aria-label="Enviar">→</button>
+    </div>
   </div>);
 }
 
@@ -7081,6 +7323,7 @@ function App(){
     {id:"legal",ico:"⚖️",label:"Documentos Legales"},
     {id:"informes",ico:"📈",label:"Informes"},
     {id:"equipo",ico:"🔐",label:"Equipo y accesos"},
+    {id:"chat",ico:"💬",label:"Chat del equipo"},
     {id:"config",ico:"⚙️",label:"Configuración"},
     {id:"ai",ico:"🤖",label:"Asistente"},
     {id:"faq",ico:"❓",label:"Preguntas frecuentes"}
@@ -7093,7 +7336,7 @@ function App(){
     {label:"Ventas y clientes", ids:["crm"]},
     {label:"Finanzas y balance", ids:["finanzas","informes"]},
     {label:"Documentos y comunicación", ids:["legal","comunicaciones"]},
-    {label:"Configuración y ayuda", ids:["equipo","config","ai","faq"]}
+    {label:"Configuración y ayuda", ids:["equipo","chat","config","ai","faq"]}
   ];
   const NAV_VIS = rolActual==="invitado"
     ? NAV_GROUPS.map(g=>({...g,ids:g.ids.filter(id=>PERMISOS_TABS.invitado.includes(id))})).filter(g=>g.ids.length)
@@ -7115,6 +7358,7 @@ function App(){
     historial:["Historial","Pagos, arrendatarios anteriores, lagunas de arriendo y garantías de cada propiedad. Todo queda guardado."],
     legal:["Documentos Legales","Crea contratos con firma notarial online y verifica antecedentes de arrendatarios."],
     informes:["Informes","Genera e imprime informes para ti, para tu contador o para los dueños."],
+    chat:["Chat del equipo","Conversa con quienes tienen acceso a la plataforma. Los mensajes y los archivos quedan guardados aquí, así que se ven igual desde el teléfono y desde el computador."],
     equipo:["Equipo y accesos","Invita a más propietarios, colaboradores, invitados y arrendatarios. Cada uno entra con su correo y contraseña, y los arrendatarios ven un portal para pagar su arriendo."],
     config:["Configuración","Tus datos, datos bancarios, valor de la UF y plataforma de pago."],
     ai:["Asistente","Pregúntale lo que quieras sobre tus propiedades, dividendos, utilidad y cobros."],
@@ -8695,6 +8939,17 @@ function App(){
             </div>
           </div>
         </>); })()}
+
+        {/* ============ CHAT DEL EQUIPO ============ */}
+        {tab==="chat" && <>
+          <div className="help" style={{marginBottom:14}}>
+            Aquí conversan quienes tienen acceso a la plataforma. Puedes escribir y adjuntar
+            <b> fotos, PDF, Word o cualquier archivo</b>: todo queda guardado en la plataforma, no en el
+            teléfono, así que la conversación se ve igual desde cualquier dispositivo. Para sumar a
+            alguien, créale un acceso en <b>Equipo y accesos</b>.
+          </div>
+          <ChatEquipo compacto/>
+        </>}
 
         {/* ============ CONFIGURACIÓN ============ */}
         {tab==="equipo" && <>
