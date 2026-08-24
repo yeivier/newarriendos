@@ -113,7 +113,7 @@
   .file-chip img{width:26px; height:26px; object-fit:cover; border-radius:4px;}
   .file-chip .fx{width:26px; height:26px; border-radius:4px; background:var(--accent-fill); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--navy); font-weight:700;}
   .file-chip .fname{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;}
-  .file-chip .rm{cursor:pointer; color:var(--danger); font-weight:700; padding:0 3px;}
+  .file-chip .rm{cursor:pointer; color:var(--danger); padding:0 3px; display:inline-flex; align-items:center;}
   .sig-pad-wrap{border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;}
   canvas.sigpad{display:block; width:100%; height:130px; touch-action:none; background:#fff;}
   .sig-actions{margin-top:6px; display:flex; gap:8px;}
@@ -208,7 +208,7 @@
   /* Se arrastra con el dedo a cualquier parte de la pantalla, así que nunca
      queda tapando otro botón. `touch-action:none` es lo que deja moverlo sin
      que la página se desplace debajo. */
-  #asFab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:190;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 14px 34px rgba(34,28,15,.3);cursor:grab;font-size:25px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;}
+  #asFab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:190;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;box-shadow:0 14px 34px rgba(34,28,15,.3);cursor:grab;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;}
   #asFab.moviendo{cursor:grabbing;transform:scale(1.12);box-shadow:0 22px 52px rgba(34,28,15,.42);transition:transform .1s;}
   #asFab .dot{position:absolute;right:5px;top:5px;width:11px;height:11px;border:2px solid #fff;border-radius:50%;background:#2E7D46;}
   #asPanel{position:fixed;right:18px;bottom:calc(144px + env(safe-area-inset-bottom,0px));z-index:189;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100vh - 210px));background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 70px rgba(16,24,40,.26);display:none;flex-direction:column;overflow:hidden;}
@@ -217,7 +217,7 @@
   #asHead .av{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#E6C98A,#A07E33);color:#141419;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0;}
   #asHead .t{font-weight:800;font-size:15px;}
   #asHead .s{font-size:11.5px;opacity:.72;margin-top:1px;}
-  #asHead .x{margin-left:auto;background:transparent;border:none;color:#fff;opacity:.7;font-size:20px;cursor:pointer;padding:2px 6px;}
+  #asHead .x{margin-left:auto;background:transparent;border:none;color:#fff;opacity:.7;cursor:pointer;padding:2px 6px;display:flex;align-items:center;}
   #asMsgs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
   #asMsgs > *{flex-shrink:0;}
   .as-row{display:flex;}
@@ -232,10 +232,11 @@
   .as-sug button:hover{background:var(--accent-fill);}
   #asForm{display:flex;gap:8px;padding:11px;border-top:1px solid var(--border);background:var(--card);align-items:flex-end;}
   #asIn{flex:1;min-height:44px;max-height:110px;resize:none;font-size:16px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;font-family:inherit;}
-  #asForm button{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:18px;cursor:pointer;flex-shrink:0;}
+  #asForm button{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--navy);}
   #asForm button.send{background:var(--navy);color:#fff;border-color:var(--navy);}
+  #asForm button.send svg{margin-left:-1px;}
   #asForm button.on{background:var(--danger);color:#fff;border-color:var(--danger);}
-  #asForm .clip{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  #asForm .clip{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--navy);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
   #asForm .clip:hover{background:var(--accent-fill);}
   #asAdj{display:flex;flex-wrap:wrap;gap:6px;padding:0 11px 8px;background:var(--card);}
   #asAdj:empty{display:none;}
@@ -287,23 +288,23 @@
 <div id="toast"></div>
 
 <!-- Asistente inmobiliario: el mismo de la plataforma, adaptado a la ficha. -->
-<button id="asFab" type="button" title="Asesor inmobiliario" aria-label="Abrir el asesor inmobiliario">✦<span class="dot"></span></button>
+<button id="asFab" type="button" title="Asesor inmobiliario" aria-label="Abrir el asesor inmobiliario"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.4 3.6 13.1 9l5.4 1.7-5.4 1.7-1.7 5.4-1.7-5.4L4.3 10.7 9.7 9z"/><path d="M18.6 3v3.2M20.2 4.6H17"/><path d="M6.4 17.4v2.8M7.8 18.8H5"/></svg><span class="dot"></span></button>
 <div id="asPanel" role="dialog" aria-label="Asesor inmobiliario">
   <div id="asHead">
-    <div class="av">✦</div>
+    <div class="av"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.4 3.6 13.1 9l5.4 1.7-5.4 1.7-1.7 5.4-1.7-5.4L4.3 10.7 9.7 9z"/><path d="M18.6 3v3.2M20.2 4.6H17"/><path d="M6.4 17.4v2.8M7.8 18.8H5"/></svg></div>
     <div><div class="t">Asesor inmobiliario</div><div class="s">Te ayuda a llenar la ficha y responde tus dudas</div></div>
-    <button class="x" type="button" id="asCerrar" aria-label="Cerrar">✕</button>
+    <button class="x" type="button" id="asCerrar" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/></svg></button>
   </div>
   <div id="asMsgs"></div>
   <div class="as-sug" id="asSug"></div>
   <div id="asAdj"></div>
   <div id="asForm">
-    <label class="clip" id="asClipLbl" title="Adjuntar archivo">📎
+    <label class="clip" id="asClipLbl" title="Adjuntar archivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.6 11.4 12 19a5 5 0 0 1-7.1-7.1l7.8-7.8a3.4 3.4 0 0 1 4.8 4.8l-7.8 7.8a1.8 1.8 0 0 1-2.5-2.5l7.2-7.2"/></svg>
       <input type="file" id="asClip" multiple accept="image/*,.pdf,.docx,.xlsx,.xlsm,.txt,.csv,.md,.json,.xml,.html,.rtf" style="display:none;">
     </label>
     <textarea id="asIn" rows="1" placeholder="Ej: ¿qué es el CIP y dónde lo saco?"></textarea>
-    <button type="button" id="asMic" title="Hablarle al asesor" aria-label="Hablarle al asesor">🎙️</button>
-    <button type="button" id="asSend" class="send" title="Enviar" aria-label="Enviar">➤</button>
+    <button type="button" id="asMic" title="Hablarle al asesor" aria-label="Hablarle al asesor"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.6" width="6" height="11.4" rx="3"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0"/><path d="M12 17.8v3.6"/></svg></button>
+    <button type="button" id="asSend" class="send" title="Enviar" aria-label="Enviar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3.4 10.6 13.8"/><path d="M21 3.4 14.4 21l-3.8-7.2L3.4 10z"/></svg></button>
   </div>
 </div>
 
@@ -2901,6 +2902,11 @@ function toast(msg, ms=2600){
   toast._h = setTimeout(()=>t.classList.remove('show'), ms);
 }
 
+// Íconos de trazo (mismo estilo que los del sistema en el iPhone), para lo
+// que se crea desde JavaScript.
+const ICO_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/></svg>';
+const ICO_DOC = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3M9 12h6M9 16h6"/></svg>';
+const ICO_IMG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.6" width="18" height="14.8" rx="2.4"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="m4 17 4.8-4.4 3.6 3.2 3-2.6L20 17"/></svg>';
 function el(tag, attrs={}, children=[]){
   const e = document.createElement(tag);
   for(const k in attrs){
@@ -3409,7 +3415,7 @@ function renderAttachmentRow(container, att){
       if(fobj.isImage && fobj.previewUrl) chip.appendChild(el('img',{src:fobj.previewUrl}));
       else chip.appendChild(el('div',{class:'fx'}, extShort(fobj.name)));
       chip.appendChild(el('span',{class:'fname'}, fobj.name));
-      const rm=el('span',{class:'rm'},'✕');
+      const rm=el('span',{class:'rm'}); rm.innerHTML=ICO_X;
       rm.addEventListener('click',()=>{ state.files[att.id].splice(idx,1); refreshChips(); updateProgress(); });
       chip.appendChild(rm);
       chipList.appendChild(chip);
@@ -4160,7 +4166,7 @@ function renderInlineAttach(f){
       if(fobj.isImage && fobj.previewUrl) chip.appendChild(el('img',{src:fobj.previewUrl}));
       else chip.appendChild(el('div',{class:'fx'}, extShort(fobj.name)));
       chip.appendChild(el('span',{class:'fname'}, fobj.name));
-      const rm = el('span',{class:'rm'},'✕');
+      const rm = el('span',{class:'rm'}); rm.innerHTML=ICO_X;
       rm.addEventListener('click', ()=>{ state.files[f.id].splice(idx,1); refresh(); updateProgress(); });
       chip.appendChild(rm); list.appendChild(chip);
     });
@@ -4206,7 +4212,7 @@ function attachFieldExtras(wrap, f){
   bCom.addEventListener('click',()=>toggle('com'));
   bar.appendChild(bNote); bar.appendChild(bCom);
   if(f.custom){
-    const bDel = el('button',{class:'fx-btn',type:'button',style:'color:var(--danger);border-color:#f0c9c6;'},'✕ Quitar campo');
+    const bDel = el('button',{class:'fx-btn',type:'button',style:'color:var(--danger);border-color:#f0c9c6;'}); bDel.innerHTML=ICO_X+' Quitar campo';
     bDel.addEventListener('click', ()=>{ for(const k in state.customFields){ state.customFields[k]=state.customFields[k].filter(x=>x.id!==f.id); } delete state.values[f.id]; rerenderPreserveScroll(); });
     bar.appendChild(bDel);
   }
@@ -4436,8 +4442,8 @@ document.addEventListener('DOMContentLoaded', init);
     c.innerHTML='';
     adjuntos.forEach(function(a,i){
       var chip=document.createElement('span'); chip.className='chip';
-      var t=document.createElement('span'); t.textContent=(a.texto?'📄 ':'🖼 ')+a.name;
-      var x=document.createElement('button'); x.type='button'; x.textContent='✕'; x.title='Quitar';
+      var t=document.createElement('span'); t.innerHTML=(a.texto?ICO_DOC:ICO_IMG)+' '; t.appendChild(document.createTextNode(a.name));
+      var x=document.createElement('button'); x.type='button'; x.innerHTML=ICO_X; x.title='Quitar';
       x.onclick=function(){ adjuntos.splice(i,1); pintarAdjuntos(); };
       chip.appendChild(t); chip.appendChild(x); c.appendChild(chip);
     });
