@@ -6,7 +6,8 @@
     "build": "node build.mjs"
   },
   "dependencies": {
-    "@babel/standalone": "7.23.2"
+    "@babel/standalone": "7.23.2",
+    "@simplewebauthn/server": "^13.3.2"
   },
   "devDependencies": {
     "@netlify/blobs": "^9.0.0",

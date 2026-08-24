@@ -537,6 +537,10 @@
   .puerta-caja .brand-logo{margin-left:auto;margin-right:auto}
   .puerta-err{margin-top:10px;font-size:13.5px;font-weight:700;color:#fff;background:var(--ink);border-radius:9px;padding:9px 11px}
   .puerta-nota{margin-top:14px;font-size:12.5px;color:var(--faint);line-height:1.5}
+  /* Entrar con la cara: el cuadro del ícono y la línea que separa las dos formas de entrar. */
+  .puerta-cara{width:64px;height:64px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  .puerta-o{display:flex;align-items:center;gap:10px;margin:0 0 12px;color:var(--faint);font-size:12.5px}
+  .puerta-o:before,.puerta-o:after{content:"";flex:1;height:1px;background:var(--line)}
 
   .subir-fab{position:fixed;left:22px;bottom:22px;z-index:178;width:52px;height:52px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 10px 28px rgba(16,16,18,.18);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;transition:.18s}
   .subir-fab:hover{transform:translateY(-2px)}
@@ -981,6 +985,93 @@ const api = async (url, opts)=>{
   return r;
 };
 const apiJSON = (url, cuerpo, metodo)=>api(url,{method:metodo||"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo||{})});
+
+/* ---------- Entrar con Face ID / Touch ID ----------
+   El teléfono guarda una llave secreta que solo se desbloquea con la cara o la
+   huella de su dueño, y firma con ella para entrar. La llave nunca sale del
+   teléfono: aquí solo viaja la firma. Por eso no hay clave que escribir, ni
+   que recordar, ni que se pueda robar del servidor.
+   La clave sigue existiendo: sirve para activar Face ID la primera vez y como
+   respaldo si se pierde el teléfono. */
+const _b64uBuf = (s)=>{ const b=atob(String(s).replace(/-/g,"+").replace(/_/g,"/")); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u.buffer; };
+const _bufB64u = (b)=>{ const u=new Uint8Array(b); let s=""; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
+
+/** ¿Este aparato puede pedir la cara o la huella? */
+const faceIDPosible = async ()=>{
+  try{
+    if(!window.PublicKeyCredential || !navigator.credentials) return false;
+    return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  }catch(_e){ return false; }
+};
+
+/** ¿Hay algún dispositivo ya activado? (para saber si ofrecer el botón) */
+const faceIDHayAlguno = async ()=>{
+  try{
+    const r = await apiJSON("/api/passkey",{accion:"hay"});
+    const j = await r.json().catch(()=>({}));
+    return !!j.hay;
+  }catch(_e){ return false; }
+};
+
+/** Activa la cara/huella en este aparato. Hay que haber entrado con la clave. */
+const faceIDActivar = async ()=>{
+  const r = await apiJSON("/api/passkey",{accion:"activar_opciones"});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||"No se pudo preparar la activación");
+  const o = j.opciones;
+  const cred = await navigator.credentials.create({ publicKey: {
+    ...o,
+    challenge: _b64uBuf(o.challenge),
+    user: { ...o.user, id: _b64uBuf(o.user.id) },
+    excludeCredentials: (o.excludeCredentials||[]).map(c=>({...c, id:_b64uBuf(c.id)})),
+  }});
+  if(!cred) throw new Error("No se completó");
+  const r2 = await apiJSON("/api/passkey",{ accion:"activar", reto:j.reto, respuesta:{
+    id: cred.id, rawId: _bufB64u(cred.rawId), type: cred.type,
+    clientExtensionResults: cred.getClientExtensionResults(),
+    response: {
+      clientDataJSON: _bufB64u(cred.response.clientDataJSON),
+      attestationObject: _bufB64u(cred.response.attestationObject),
+      transports: (cred.response.getTransports && cred.response.getTransports()) || [],
+    },
+  }});
+  const j2 = await r2.json().catch(()=>({}));
+  if(!r2.ok) throw new Error(j2.error||"No se pudo activar");
+  return j2.dispositivos||[];
+};
+
+/** Entra con la cara o la huella. Devuelve {token, rol, nombre}. */
+const faceIDEntrar = async ()=>{
+  const r = await apiJSON("/api/passkey",{accion:"entrar_opciones"});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||"No se pudo preparar el ingreso");
+  const o = j.opciones;
+  const cred = await navigator.credentials.get({ publicKey: {
+    ...o,
+    challenge: _b64uBuf(o.challenge),
+    allowCredentials: (o.allowCredentials||[]).map(c=>({...c, id:_b64uBuf(c.id)})),
+  }});
+  if(!cred) throw new Error("No se completó");
+  const r2 = await apiJSON("/api/passkey",{ accion:"entrar", reto:j.reto, respuesta:{
+    id: cred.id, rawId: _bufB64u(cred.rawId), type: cred.type,
+    clientExtensionResults: cred.getClientExtensionResults(),
+    response: {
+      clientDataJSON: _bufB64u(cred.response.clientDataJSON),
+      authenticatorData: _bufB64u(cred.response.authenticatorData),
+      signature: _bufB64u(cred.response.signature),
+      userHandle: cred.response.userHandle ? _bufB64u(cred.response.userHandle) : undefined,
+    },
+  }});
+  const j2 = await r2.json().catch(()=>({}));
+  if(!r2.ok||!j2.token) throw new Error(j2.error||"No se pudo entrar");
+  return j2;
+};
+
+/* Si la persona canceló el gesto (tocó "Cancelar" en el aviso del sistema) no
+   es un error que valga la pena mostrar en rojo. */
+const faceIDCancelado = (e)=> !!e && (e.name==="NotAllowedError" || e.name==="AbortError");
+/* El aparato avisa así cuando ya estaba activado; no es una falla. */
+const faceIDYaEstaba = (e)=> !!e && e.name==="InvalidStateError";
 
 /* ---------- Helpers ---------- */
 /* Fecha corta legible (18 mar). La usan el CRM, los cobros y los indicadores,
@@ -3851,9 +3942,31 @@ function Puerta({ modo, onEntrar }){
   const [clave2,setClave2]=useState("");
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
+  // Face ID: si este aparato puede pedirlo y alguien ya lo activó, se ofrece
+  // el botón. Recién entrado con la clave, se ofrece activarlo para la próxima.
+  const [puedeCara,setPuedeCara]=useState(false);
+  const [hayCara,setHayCara]=useState(false);
+  const [ofrecer,setOfrecer]=useState(null);   // {rol,nombre} tras entrar con la clave
   const crear = modo==="crear";
   const corta = clave.length<6;
   const noCalza = crear && clave!==clave2;
+
+  useEffect(()=>{ let vivo=true;
+    (async()=>{
+      const puede = await faceIDPosible();
+      if(!vivo) return;
+      setPuedeCara(puede);
+      if(puede && !crear) setHayCara(await faceIDHayAlguno());
+    })();
+    return ()=>{ vivo=false; };
+  },[crear]);
+
+  // Al terminar de entrar, ofrecerlo una sola vez por aparato.
+  const yaOfrecido = ()=>{ try{ return localStorage.getItem("ap_faceid_ofrecido")==="1"; }catch(_e){ return true; } };
+  const marcarOfrecido = ()=>{ try{ localStorage.setItem("ap_faceid_ofrecido","1"); }catch(_e){} };
+
+  const listo = (a)=>{ onEntrar(a); };
+
   const entrar=async()=>{
     if(busy||corta||noCalza) return;
     setBusy(true); setErr("");
@@ -3862,18 +3975,64 @@ function Puerta({ modo, onEntrar }){
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.token){ setErr(j.error||"No se pudo entrar"); setBusy(false); return; }
       guardarToken(j.token);
-      onEntrar({rol:j.rol,nombre:j.nombre});
-    }catch(e){ setErr("Sin conexión con el servidor"); }
-    setBusy(false);
+      setBusy(false);
+      // Acaba de escribir la clave: es el momento de ofrecerle no escribirla más.
+      if(puedeCara && !yaOfrecido()) { setOfrecer({rol:j.rol,nombre:j.nombre}); return; }
+      listo({rol:j.rol,nombre:j.nombre});
+    }catch(e){ setErr("Sin conexión con el servidor"); setBusy(false); }
   };
+
+  const entrarCara=async()=>{
+    if(busy) return;
+    setBusy(true); setErr("");
+    try{
+      const j = await faceIDEntrar();
+      guardarToken(j.token);
+      listo({rol:j.rol,nombre:j.nombre});
+    }catch(e){
+      if(!faceIDCancelado(e)) setErr(e.message||"No se pudo entrar con Face ID");
+      setBusy(false);
+    }
+  };
+
+  const activarAhora=async()=>{
+    setBusy(true); setErr("");
+    try{ await faceIDActivar(); marcarOfrecido(); listo(ofrecer); }
+    catch(e){
+      // Cancelar, o que ya estuviera activado, no son fallas: se sigue igual.
+      if(faceIDCancelado(e)||faceIDYaEstaba(e)){ marcarOfrecido(); listo(ofrecer); return; }
+      setErr(e.message||"No se pudo activar"); setBusy(false);
+    }
+  };
+
+  // Pantalla de ofrecimiento, justo después de entrar con la clave.
+  if(ofrecer) return (<div className="puerta">
+    <div className="puerta-caja">
+      <div className="puerta-cara"><Ic n="cara" w={34} sw={1.6}/></div>
+      <h2>¿Entrar con Face ID?</h2>
+      <p>Así no tienes que escribir la clave nunca más en este {puerta_aparato()}. Se abre con tu cara o tu huella, como el banco.</p>
+      {err && <div className="puerta-err">{err}</div>}
+      <button className="btn btn-red" style={{width:"100%",marginTop:14,padding:"14px"}} disabled={busy} onClick={activarAhora}>
+        {busy?"Activando…":"Activar Face ID"}</button>
+      <button className="btn btn-ghost" style={{width:"100%",marginTop:8}} disabled={busy}
+        onClick={()=>{ marcarOfrecido(); listo(ofrecer); }}>Ahora no</button>
+      <div className="puerta-nota">Tu clave sigue funcionando: queda de respaldo por si cambias de teléfono. Puedes activarlo o quitarlo cuando quieras en Configuración.</div>
+    </div>
+  </div>);
+
   return (<div className="puerta">
     <div className="puerta-caja">
       <div className="brand-logo" style={{width:64,height:64,marginBottom:14}}><img src="/logo.png" alt="ArriendoPro"/></div>
       <h2>{crear?"Protege tu plataforma":"ArriendoPro"}</h2>
       <p>{crear
         ? "Crea la clave con la que entrarás desde ahora. Sin ella, nadie puede ver ni cambiar tus datos."
-        : "Ingresa tu clave para entrar."}</p>
-      <input className="input" type="password" value={clave} autoFocus
+        : (hayCara ? "Entra con tu cara, o con tu clave." : "Ingresa tu clave para entrar.")}</p>
+      {hayCara && !crear && <>
+        <button className="btn btn-red" style={{width:"100%",padding:"14px",marginBottom:14}} disabled={busy} onClick={entrarCara}>
+          <Ic n="cara" w={19}/> {busy?"Abriendo…":"Entrar con Face ID"}</button>
+        <div className="puerta-o"><span>o con tu clave</span></div>
+      </>}
+      <input className="input" type="password" value={clave} autoFocus={!hayCara}
         placeholder={crear?"Clave nueva (mínimo 6 caracteres)":"Tu clave"}
         onChange={e=>setClave(e.target.value)}
         onKeyDown={e=>{ if(e.key==="Enter"&&!crear) entrar(); }}/>
@@ -3881,13 +4040,24 @@ function Puerta({ modo, onEntrar }){
         style={{marginTop:10}} onChange={e=>setClave2(e.target.value)}
         onKeyDown={e=>{ if(e.key==="Enter") entrar(); }}/>}
       {err && <div className="puerta-err">{err}</div>}
-      <button className="btn btn-red" style={{width:"100%",marginTop:14,padding:"14px"}}
+      <button className={"btn "+(hayCara&&!crear?"btn-out":"btn-red")} style={{width:"100%",marginTop:14,padding:"14px"}}
         disabled={busy||corta||noCalza} onClick={entrar}>
         {busy?"Entrando…":(crear?"Crear clave y entrar":"Entrar")}</button>
       {crear && <div className="puerta-nota">Anótala en un lugar seguro: no hay forma de recuperarla desde acá.</div>}
       {!crear && <div className="puerta-nota">Si alguien más administra contigo, pídele su propio acceso al dueño de la cuenta.</div>}
     </div>
   </div>);
+}
+/* Cómo llamarle al aparato en el texto, para que suene natural. */
+function puerta_aparato(){
+  try{
+    const s = navigator.userAgent||"";
+    if(/iPhone/i.test(s)) return "iPhone";
+    if(/iPad/i.test(s)) return "iPad";
+    if(/Android/i.test(s)) return "teléfono";
+    if(/Macintosh|Mac OS X/i.test(s)) return "Mac";
+  }catch(_e){}
+  return "dispositivo";
 }
 
 /* ============ INTERFAZ MÓVIL ============
@@ -4197,6 +4367,12 @@ const MI = {
   gasto: (<React.Fragment>
     <circle cx="12" cy="12" r="8.8"/>
     <path d="M8.4 12h7.2"/>
+  </React.Fragment>),
+  cara: (<React.Fragment>
+    <path d="M3.5 8.6V6.3a2.8 2.8 0 0 1 2.8-2.8h2.3M15.4 3.5h2.3a2.8 2.8 0 0 1 2.8 2.8v2.3M20.5 15.4v2.3a2.8 2.8 0 0 1-2.8 2.8h-2.3M8.6 20.5H6.3a2.8 2.8 0 0 1-2.8-2.8v-2.3"/>
+    <path d="M8.7 9.4v1.7M15.3 9.4v1.7"/>
+    <path d="M12 9.4v3.5h-1.2"/>
+    <path d="M9.1 15.6c1.7 1.4 4.1 1.4 5.8 0"/>
   </React.Fragment>),
   cerrar: <path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/>,
   avion: (<React.Fragment>
@@ -5484,6 +5660,39 @@ function App(){
     try{ const r=await apiJSON("/api/acceso",{accion:"accesos"}); const j=await r.json().catch(()=>({}));
       if(r.ok&&Array.isArray(j.accesos)) setAccesos(j.accesos); }catch(_e){}
   };
+  /* Entrar con Face ID o huella: activar este aparato y ver los ya activados. */
+  const [caraPosible,setCaraPosible]=useState(false);
+  const [caraLista,setCaraLista]=useState([]);
+  const [caraBusy,setCaraBusy]=useState(false);
+  const cargarCara=async()=>{
+    try{
+      setCaraPosible(await faceIDPosible());
+      const r=await apiJSON("/api/passkey",{accion:"dispositivos"});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&Array.isArray(j.dispositivos)) setCaraLista(j.dispositivos);
+    }catch(_e){}
+  };
+  const activarCara=async()=>{
+    setCaraBusy(true);
+    try{
+      setCaraLista(await faceIDActivar());
+      try{ localStorage.setItem("ap_faceid_ofrecido","1"); }catch(_e){}
+      notify("Listo: ahora entras con tu cara o tu huella");
+    }catch(e){
+      if(faceIDYaEstaba(e)) notify("Este aparato ya estaba activado");
+      else if(!faceIDCancelado(e)) notify(e.message||"No se pudo activar",true);
+    }
+    setCaraBusy(false);
+  };
+  const olvidarCara=async(id)=>{
+    if(!window.confirm("¿Quitar este dispositivo? Dejará de poder entrar con la cara.")) return;
+    try{
+      const r=await apiJSON("/api/passkey",{accion:"olvidar",id});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok) notify(j.error||"No se pudo quitar",true);
+      else { setCaraLista(j.dispositivos||[]); notify("Dispositivo quitado"); }
+    }catch(e){ notify("Sin conexión",true); }
+  };
   const crearAcceso=async()=>{
     setSegBusy(true);
     try{
@@ -5592,7 +5801,7 @@ function App(){
       notify("Respaldo restaurado desde el archivo");
     }catch(err){ notify("No pude leer ese archivo",true); }
   };
-  useEffect(()=>{ if(puerta==="ok"&&tab==="config") cargarAccesos(); },[puerta,tab]);
+  useEffect(()=>{ if(puerta==="ok"&&tab==="config"){ cargarAccesos(); cargarCara(); } },[puerta,tab]);
 
   const salirDeLaCuenta=async()=>{
     try{ await apiJSON("/api/acceso",{accion:"salir"}); }catch(_e){}
@@ -9342,7 +9551,31 @@ function App(){
           <Collapsible icon="candado" title="Clave y accesos" subtitle="Quién puede entrar a la plataforma" defaultOpen={false}>
             <div className="help" style={{marginBottom:14}}>Tus datos (arrendatarios, contratos, cuentas) solo se ven con la clave. Puedes crear accesos aparte para tu mamá, tu contador o quien administre contigo: los de <b>solo lectura</b> ven todo pero no pueden cambiar nada.</div>
 
-            <div className="sub-title">Cambiar mi clave</div>
+            {/* Entrar con la cara o la huella. La clave no desaparece: es la
+                que activa esto y la que queda de respaldo. */}
+            <div className="sub-title" style={{display:"flex",alignItems:"center",gap:7}}><Ic n="cara" w={17}/> Entrar con Face ID o huella</div>
+            <div className="help" style={{marginBottom:10}}>En vez de escribir la clave, entras con tu cara o tu huella. La llave se guarda dentro del aparato y no sale de ahí; aquí no queda nada que se pueda robar. Actívalo en cada aparato que uses.</div>
+            {!caraPosible
+              ? <div className="help" style={{marginBottom:12}}>Este aparato no ofrece Face ID ni huella. Ábrelo desde tu iPhone o un computador que lo tenga.</div>
+              : <>
+                  {caraLista.length>0 && <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+                    {caraLista.map(d=>(<div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+                        <Ic n="cara" w={18} style={{color:"var(--muted)"}}/>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontWeight:700}}>{d.dispositivo}</div>
+                          <div style={{fontSize:13,color:"var(--muted)"}}>{d.nombre} · activado el {fmtF(d.creado)}</div>
+                        </div>
+                      </div>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>olvidarCara(d.id)}><Ic n="cerrar" w={15}/> Quitar</button>
+                    </div>))}
+                  </div>}
+                  <button className="btn btn-green btn-sm" disabled={caraBusy} onClick={activarCara}>
+                    {caraBusy?"Activando…":<><Ic n="cara" w={15}/> Activar en este {puerta_aparato()}</>}</button>
+                  {caraLista.length>0 && <div className="help" style={{marginTop:10}}>Si pierdes un aparato, quítalo de esta lista: deja de servir al instante. Tu clave sigue funcionando en cualquier caso.</div>}
+                </>}
+
+            <div className="sub-title" style={{marginTop:20}}>Cambiar mi clave</div>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               <div className="field"><label className="label">Clave actual</label><input className="input" type="password" value={segForm.actual} onChange={e=>setSegForm(f=>({...f,actual:e.target.value}))}/></div>
               <div className="field"><label className="label">Clave nueva</label><input className="input" type="password" value={segForm.nueva} onChange={e=>setSegForm(f=>({...f,nueva:e.target.value}))}/></div>
