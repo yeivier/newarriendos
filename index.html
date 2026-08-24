@@ -1099,23 +1099,44 @@ const useVersionNueva = ()=>{
     try{ actual = window.__APV || ""; }catch(_e){}
     if(!actual) return;            // sin sello (código sin construir): nada que comparar
     let vivo = true;
-    const mirar = async()=>{
+    // Si la copia que tiene el navegador quedó vieja, se recarga sola una vez,
+    // con la versión en la dirección: así el teléfono pide el archivo de nuevo
+    // en vez de devolver el que tenía guardado. Solo una vez por versión, y
+    // nunca mientras se está escribiendo algo, para no borrarle nada a nadie.
+    const yaRecargue = (v)=>{ try{ return sessionStorage.getItem("ap_recarga") === v; }catch(_e){ return true; } };
+    const anotarRecarga = (v)=>{ try{ sessionStorage.setItem("ap_recarga", v); }catch(_e){} };
+    const escribiendo = ()=>{
+      try{
+        const e = document.activeElement;
+        if(!e) return false;
+        const t = (e.tagName||"").toLowerCase();
+        return t==="input" || t==="textarea" || t==="select" || e.isContentEditable;
+      }catch(_e){ return false; }
+    };
+    const mirar = async(puedeRecargar)=>{
       if(!vivo) return;
       try{
         const r = await fetch("/version.txt", { cache:"no-store" });
         if(!r.ok) return;
         const v = (await r.text()).trim();
-        if(vivo && v && v !== actual) setHay(true);
+        if(!vivo || !v || v === actual) return;
+        if(puedeRecargar && !yaRecargue(v) && !escribiendo()){
+          anotarRecarga(v);
+          try{ window.location.replace(window.location.pathname + "?v=" + encodeURIComponent(v)); return; }catch(_e){}
+        }
+        setHay(true);
       }catch(_e){}
     };
-    const alVolver = ()=>{ try{ if(document.visibilityState==="visible") mirar(); }catch(_e){ mirar(); } };
+    // Al volver a la pestaña solo se avisa: recargar ahí podría interrumpir algo.
+    const alVolver = ()=>{ try{ if(document.visibilityState==="visible") mirar(false); }catch(_e){ mirar(false); } };
     let t = null;
     try{
-      t = setInterval(mirar, 10*60*1000);
+      t = setInterval(()=>mirar(false), 10*60*1000);
       document.addEventListener("visibilitychange", alVolver);
       window.addEventListener("focus", alVolver);
     }catch(_e){}
-    mirar();
+    // Al abrir: aquí sí se recarga sola, porque todavía no hay nada escrito.
+    mirar(true);
     return ()=>{
       vivo = false;
       try{
