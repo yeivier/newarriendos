@@ -1223,6 +1223,73 @@
   /* Estado vacío: una frase, nunca una pantalla en blanco. */
   .mob-vacio{ text-align:center; color:var(--mtm); font-size:15px; line-height:1.45; padding:26px 10px; }
 
+  /* ---- Inicio: encabezados grandes y tarjetas sueltas ----
+     Inicio no es una lista de ajustes, es el panel de acción: sus secciones se
+     anuncian con un título grande y negro, cada prioridad va en su propia
+     tarjeta con el icono en un cuadro, y las acciones son una cuadrícula de
+     cuatro con el nombre debajo del icono. */
+  .mob-h2{ font-size:26px; font-weight:700; letter-spacing:-.024em; color:var(--mib); margin:10px 2px 0; }
+  .mob-bloque{ display:flex; flex-direction:column; gap:12px; }
+
+  .mob-prio{ display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+    background:var(--msf); border:none; border-radius:18px; padding:16px; min-height:80px;
+    font-family:inherit; color:var(--mtx); cursor:pointer; min-width:0; }
+  .mob-prio:active{ background:#FAFAFC; }
+  .mob-prio.quieta{ cursor:default; }
+  .mob-prio.quieta:active{ background:var(--msf); }
+  .mob-prio .tile{ width:48px; height:48px; border-radius:14px; background:var(--mfl);
+    display:flex; align-items:center; justify-content:center; color:var(--mib); flex-shrink:0; }
+  .mob-prio .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  /* El título puede ocupar dos líneas: los avisos reales son más largos que
+     "3 cobros pendientes" y cortarlos deja frases a medias. */
+  .mob-prio .tx .t{ font-size:19px; font-weight:700; letter-spacing:-.018em; color:var(--mib);
+    line-height:1.22; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .mob-prio .tx .s{ font-size:15px; color:var(--mtm); line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mob-prio .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+
+  .mob-acc2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .mob-acc2 > button{ background:var(--msf); border:none; border-radius:18px; padding:18px;
+    min-height:112px; display:flex; flex-direction:column; align-items:flex-start;
+    justify-content:space-between; gap:18px; font-family:inherit; text-align:left;
+    color:var(--mib); cursor:pointer; min-width:0; }
+  .mob-acc2 > button:active{ background:#FAFAFC; }
+  .mob-acc2 > button .nb{ width:100%; min-width:0; font-size:17.5px; font-weight:700;
+    letter-spacing:-.018em; line-height:1.2; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+
+  .mob-act{ background:var(--msf); border-radius:18px; overflow:hidden; }
+  .mob-act > *{ display:flex; align-items:center; gap:12px; width:100%; padding:15px 16px;
+    background:transparent; border:none; font-family:inherit; text-align:left;
+    color:var(--mtx); position:relative; min-height:64px; min-width:0; cursor:pointer; }
+  .mob-act > *:active{ background:rgba(120,120,128,.12); }
+  .mob-act > * + *::before{ content:""; position:absolute; left:16px; right:0; top:0;
+    height:1px; background:var(--mln); }
+  .mob-act .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .mob-act .tx .t{ font-size:17px; font-weight:700; letter-spacing:-.015em; color:var(--mib);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-act .tx .s{ font-size:14.5px; color:var(--mtm);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-act .val{ font-size:17px; font-weight:700; color:var(--mib); flex-shrink:0;
+    font-variant-numeric:tabular-nums; }
+  .mob-act .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+
+  @media(max-width:359px){
+    .mob-h2{ font-size:23px; }
+    .mob-prio{ padding:14px; gap:12px; }
+    .mob-prio .tile{ width:44px; height:44px; border-radius:13px; }
+    .mob-prio .tx .t{ font-size:17.5px; }
+    .mob-acc2{ gap:10px; }
+    .mob-acc2 > button{ min-height:100px; padding:15px; gap:14px; }
+    .mob-acc2 > button .nb{ font-size:16px; }
+    /* En 320 px el monto es lo más ancho de la fila: si no cede, se come el
+       nombre del movimiento. */
+    .mob-act > *{ padding:14px; gap:10px; }
+    .mob-act .tx .t{ font-size:16px; }
+    .mob-act .val{ font-size:15.5px; }
+  }
+
   /* Resumen superior de un hub: la cifra que manda, y debajo tres apoyos. */
   .mob-hub-top{ background:var(--msf); border-radius:18px; padding:20px; display:flex;
     flex-direction:column; gap:16px; }
@@ -4792,6 +4859,19 @@ const mobEtiq = (name, i=1)=>{
 // Dinero con signo delante: Intl deja "$-1.322.750", que se lee mal.
 const mobPlata = (n)=> (n<0 ? "−"+CLP(Math.abs(n)) : CLP(n));
 
+// "hoy", "ayer" o la fecha corta: así se lee una actividad reciente.
+const mobCuando = (iso)=>{
+  if(!iso) return "";
+  try{
+    const d=new Date(iso), h=new Date();
+    const soloDia=(x)=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+    const dif=Math.round((soloDia(h)-soloDia(d))/86400000);
+    if(dif===0) return "hoy";
+    if(dif===1) return "ayer";
+    return d.toLocaleDateString("es-CL",{day:"numeric",month:"short"});
+  }catch(_e){ return iso; }
+};
+
 // Etiqueta de estado del arriendo, en palabras y sin color.
 const mobEstado = (p)=> p.status==="pagado" ? "Al día"
   : p.status==="pendiente" ? "Vence hoy"
@@ -5183,18 +5263,32 @@ function MobileApp(props){
       if(p) push({t:"prop", id:p.id}); else irSeccion(a.ir||"props");
     };
 
-    /* ACTIVIDAD RECIENTE · sale de los datos guardados, no de un ejemplo. */
+    /* ACTIVIDAD RECIENTE · sale de los datos guardados, no de un ejemplo.
+       El monto va aparte, a la derecha, como en un movimiento de cuenta. */
     const act = [];
     propiedades.forEach(p=>{
-      (p.histPagos||[]).slice(-3).forEach(h=> act.push({ f:h.fecha||"", ico:MI.tarj,
-        t:"Pago recibido · "+CLP(num(h.monto)), s:p.name, go:()=>push({t:"pagos", id:p.id}) }));
-      (p.incidencias||[]).slice(0,2).forEach(x=> act.push({ f:x.fecha||"", ico:MI.llaveInglesa,
-        t:x.titulo||"Incidencia", s:p.name, go:()=>push({t:"incid", id:p.id}) }));
-      (p.bitacora||[]).slice(0,2).forEach(b=> act.push({ f:b.fecha||"", ico:MI.libreta,
-        t:b.titulo||b.tipo||"Nota de bitácora", s:p.name, go:()=>push({t:"bitac", id:p.id}) }));
+      const donde = (f)=> (f ? mobCuando(f) + " · " : "") + p.name;
+      (p.histPagos||[]).slice(0,3).forEach(h=> act.push({ f:h.fecha||"",
+        t:"Pago registrado", s:donde(h.fecha), val:"+"+CLP(num(h.monto)), go:()=>push({t:"pagos", id:p.id}) }));
+      (p.incidencias||[]).slice(0,2).forEach(x=> act.push({ f:x.fecha||"",
+        t:x.titulo||"Incidencia", s:donde(x.fecha), go:()=>push({t:"incid", id:p.id}) }));
+      (p.bitacora||[]).slice(0,2).forEach(b=> act.push({ f:b.fecha||"",
+        t:b.titulo||b.tipo||"Nota de bitácora", s:donde(b.fecha), go:()=>push({t:"bitac", id:p.id}) }));
     });
     act.sort((a,b)=> String(b.f).localeCompare(String(a.f)));
     const reciente = act.slice(0,4);
+
+    /* ACCIONES RÁPIDAS · cuatro como tope, y solo las que el rol permite. */
+    const accionesRapidas = [
+      !soloLectura && { k:"prop", ico:MI.mas, lb:"Nueva propiedad", go:()=>AC.nuevaPropiedad&&AC.nuevaPropiedad() },
+      !soloLectura && { k:"pago", ico:MI.dinero, lb:"Registrar pago",
+        go:()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); } },
+      !soloLectura && { k:"cont", ico:MI.personas, lb:"Nuevo contacto", go:()=>AC.contacto&&AC.contacto() },
+      hay("ai")
+        ? { k:"ia", ico:MI.chispas, lb:"Preguntar a IA", go:()=>irSeccion("ai") }
+        : (!soloLectura && { k:"rec", ico:MI.sobre, lb:"Recordatorio",
+            go:()=>{ const p=atrasadoMasGrave||pendientes[0]; p?abrirRecord(p):notify("No hay arriendos pendientes"); } })
+    ].filter(Boolean).slice(0,4);
 
     return (<div className="mob-scr g14">
       <HeaderMob eyebrow={eyebrow} title={"Hola, " + nombre}
@@ -5227,41 +5321,55 @@ function MobileApp(props){
         </div>
       </button>
 
-      {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. */}
-      {prioridades.length>0 ? (
-        <Grupo titulo="Necesita atención">
-          {prioridades.map(a=>(
-            <Fila key={a.id} icoNav={a.ico} titulo={a.titulo} sub={a.detalle} onClick={()=>abrirAlerta(a)}/>
-          ))}
-        </Grupo>
-      ) : (
-        <Grupo titulo="Necesita atención">
-          <div className="mob-vacio" style={{padding:"20px 16px"}}>Nada pendiente por ahora: los arriendos del mes están al día y no hay contratos por vencer.</div>
-        </Grupo>
-      )}
-
-      {/* ACCIONES RÁPIDAS · cuatro como tope. */}
-      <div>
-        <div className="mob-gtit">Acciones rápidas</div>
-        <div className="mob-acciones">
-          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); }}>
-            <MobIco w={19}>{MI.tarj}</MobIco><span>Registrar pago</span></button>
-          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]; p?abrirRecord(p):notify("No hay arriendos pendientes"); }}>
-            <MobIco w={19}>{MI.sobre}</MobIco><span>Recordatorio</span></button>
-          {!soloLectura && <button className="mob-accion" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
-            <MobIco w={19}>{MI.mas}</MobIco><span>Nueva propiedad</span></button>}
-          {!soloLectura && <button className="mob-accion" onClick={()=>{ const p=rentals[0]||propiedades[0]; p?(AC.incidencia&&AC.incidencia(p)):notify("Primero agrega una propiedad"); }}>
-            <MobIco w={19}>{MI.llaveInglesa}</MobIco><span>Nueva incidencia</span></button>}
-        </div>
+      {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. Cada una en
+          su tarjeta: se lee de un vistazo y se toca sin apuntar. */}
+      <div className="mob-bloque">
+        <h2 className="mob-h2">Necesita atención</h2>
+        {prioridades.length>0 ? prioridades.map(a=>(
+          <button key={a.id} className="mob-prio" onClick={()=>abrirAlerta(a)}>
+            <span className="tile"><Ic n={a.ico} w={23} sw={1.9}/></span>
+            <span className="tx"><span className="t">{a.titulo}</span><span className="s">{a.detalle}</span></span>
+            <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>
+          </button>
+        )) : (
+          <div className="mob-prio quieta">
+            <span className="tile"><MobIco w={23} sw={2}>{MI.check}</MobIco></span>
+            <span className="tx"><span className="t">Todo al día</span>
+              <span className="s">No hay arriendos atrasados ni contratos por vencer.</span></span>
+          </div>
+        )}
       </div>
 
-      {/* ACTIVIDAD RECIENTE · qué cambió. */}
+      {/* ACCIONES RÁPIDAS · cuadrícula de cuatro, icono arriba y nombre abajo. */}
+      {accionesRapidas.length>0 && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Acciones rápidas</h2>
+          <div className="mob-acc2">
+            {accionesRapidas.map(a=>(
+              <button key={a.k} onClick={a.go}>
+                <MobIco w={24} sw={2}>{a.ico}</MobIco>
+                <span className="nb">{a.lb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ACTIVIDAD RECIENTE · qué cambió, con el monto a la derecha. */}
       {reciente.length>0 && (
-        <Grupo titulo="Actividad reciente">
-          {reciente.map((a,i)=>(
-            <Fila key={i} ico={a.ico} titulo={a.t} sub={(a.f? a.f+" · ":"")+a.s} onClick={a.go}/>
-          ))}
-        </Grupo>
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Actividad reciente</h2>
+          <div className="mob-act">
+            {reciente.map((a,i)=>(
+              <button key={i} onClick={a.go}>
+                <span className="tx"><span className="t">{a.t}</span><span className="s">{a.s}</span></span>
+                {a.val
+                  ? <span className="val">{a.val}</span>
+                  : <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
     </div>);
