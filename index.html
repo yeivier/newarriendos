@@ -719,6 +719,12 @@
     .app.en-movil.modo-completo .mob-app{ display:none !important; }
     /* La barra superior de la sección se pega bajo la de volver, no debajo. */
     .app.en-movil.modo-completo > .main .topbar{ top:46px; }
+    /* El menú lateral tiene que abrirse desde dentro de una sección: si no,
+       el botón ☰ no hace nada y se queda uno atrapado ahí, teniendo que
+       volver a las pestañas para cambiar de sección. Va por encima de la
+       barra de volver, que si no le taparía la cabecera. */
+    .app.en-movil.modo-completo > .sidebar{ display:flex !important; z-index:200; }
+    .app.en-movil.modo-completo > .nav-overlay{ display:block !important; z-index:190; }
   }
   .mob-volver-barra{ display:none; position:fixed; top:0; left:0; right:0; z-index:170;
     background:#101012; color:#fff; align-items:center; gap:12px;
