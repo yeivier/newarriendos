@@ -5476,6 +5476,67 @@ function MobTextoLargo({ valor, onCommit, placeholder, bloqueado }){
       timer.current = setTimeout(()=>onCommit(nv), 600); }}/>);
 }
 
+/* Deslizar de lado sobre una tarjeta para pasar a la vista siguiente, como en
+   iOS. La tarjeta sigue al dedo mientras se arrastra y la nueva entra por el
+   lado contrario al soltar.
+
+   Solo toma el gesto cuando el movimiento es claramente horizontal: si el dedo
+   va hacia abajo, la pantalla se desplaza como siempre. De eso se encarga
+   `touch-action:pan-y`, que le deja al navegador el desplazamiento vertical y
+   nos deja a nosotros el de lado (React escucha los toques en modo pasivo, así
+   que no se puede frenar el desplazamiento a mano). */
+const DESLIZ_UMBRAL = 9;      // px antes de decidir si el gesto es de lado o de arriba abajo
+const DESLIZ_TOPE   = 0.22;   // en el primero y el último el dedo pesa: no hay nada más allá
+function MobDeslizable({ idx, total, onCambio, className, style, children }){
+  const [dx, setDx] = React.useState(0);
+  const [suave, setSuave] = React.useState(true);
+  const g = React.useRef(null);
+  const el = React.useRef(null);
+
+  const inicio = (e)=>{
+    const t = e.touches ? e.touches[0] : e;
+    g.current = { x:t.clientX, y:t.clientY, eje:null, dx:0 };
+    setSuave(false);
+  };
+  const mover = (e)=>{
+    const G = g.current; if(!G) return;
+    const t = e.touches ? e.touches[0] : e;
+    const mx = t.clientX - G.x, my = t.clientY - G.y;
+    if(!G.eje){
+      if(Math.abs(mx)<DESLIZ_UMBRAL && Math.abs(my)<DESLIZ_UMBRAL) return;
+      G.eje = Math.abs(mx) > Math.abs(my) ? "x" : "y";
+    }
+    if(G.eje!=="x") return;
+    const tope = (mx>0 && idx<=0) || (mx<0 && idx>=total-1);
+    G.dx = tope ? mx*DESLIZ_TOPE : mx;
+    setDx(G.dx);
+  };
+  const soltar = ()=>{
+    const G = g.current; g.current = null;
+    if(!G || G.eje!=="x"){ setSuave(true); setDx(0); return; }
+    const w = (el.current && el.current.offsetWidth) || 320;
+    const paso = Math.max(44, w*0.2);
+    const avanza = G.dx <= -paso && idx < total-1;
+    const vuelve = G.dx >=  paso && idx > 0;
+    if(!avanza && !vuelve){ setSuave(true); setDx(0); return; }
+    onCambio(avanza ? idx+1 : idx-1);
+    // La nueva vista arranca del lado contrario y se acomoda sola.
+    setSuave(false); setDx(avanza ? w*0.28 : -w*0.28);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ setSuave(true); setDx(0); }));
+  };
+
+  return (<div ref={el} className={className}
+    onTouchStart={inicio} onTouchMove={mover} onTouchEnd={soltar} onTouchCancel={soltar}
+    style={Object.assign({
+      touchAction:"pan-y",
+      transform: dx ? "translateX("+Math.round(dx)+"px)" : "none",
+      transition: suave ? "transform .3s cubic-bezier(.32,.72,0,1)" : "none"
+    }, style||{})}>{children}</div>);
+}
+
+/* Las tres vistas de Finanzas, en el orden en que se ven. */
+const MOB_FIN_SEGS = ["utilidad","dividendos","gastos"];
+
 function MobileApp(props){
   const {
     props: propiedades, socs, contacts, uf, owner, soloLectura,
@@ -5734,6 +5795,21 @@ function MobileApp(props){
         </div>
       </button>
 
+      {/* ACCIONES RÁPIDAS · cuadrícula de cuatro, icono arriba y nombre abajo. */}
+      {accionesRapidas.length>0 && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Acciones rápidas</h2>
+          <div className="mob-acc2">
+            {accionesRapidas.map(a=>(
+              <button key={a.k} onClick={a.go}>
+                <MobIco w={24} sw={2}>{a.ico}</MobIco>
+                <span className="nb">{a.lb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. Cada una en
           su tarjeta: se lee de un vistazo y se toca sin apuntar. */}
       <div className="mob-bloque">
@@ -5755,21 +5831,6 @@ function MobileApp(props){
           </div>
         )}
       </div>
-
-      {/* ACCIONES RÁPIDAS · cuadrícula de cuatro, icono arriba y nombre abajo. */}
-      {accionesRapidas.length>0 && (
-        <div className="mob-bloque">
-          <h2 className="mob-h2">Acciones rápidas</h2>
-          <div className="mob-acc2">
-            {accionesRapidas.map(a=>(
-              <button key={a.k} onClick={a.go}>
-                <MobIco w={24} sw={2}>{a.ico}</MobIco>
-                <span className="nb">{a.lb}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ACTIVIDAD RECIENTE · qué cambió, con el monto a la derecha. */}
       {reciente.length>0 && (
@@ -5956,14 +6017,17 @@ function MobileApp(props){
         <button className={finSeg==="dividendos"?"on":""} onClick={()=>setFinSeg("dividendos")}>Dividendos</button>
         <button className={finSeg==="gastos"?"on":""} onClick={()=>setFinSeg("gastos")}>Gastos</button>
       </div>
-      <div className="mob-hub-top">
+      {/* Se cambia de vista tocando arriba o deslizando la tarjeta de lado. */}
+      <MobDeslizable className="mob-hub-top"
+        idx={Math.max(0, MOB_FIN_SEGS.indexOf(finSeg))} total={MOB_FIN_SEGS.length}
+        onCambio={i=>setFinSeg(MOB_FIN_SEGS[i])}>
         <div className="fila"><span className="lb">{rotulo}</span><span className="lb">{mesFin}</span></div>
         <div className="cifra">{mobPlata(cifra)}</div>
         <div className="fila">
           <span className="lb">{finSeg==="utilidad" ? "Después de gastos" : finSeg==="dividendos" ? "Créditos hipotecarios" : "Contribuciones, seguros y gastos"}</span>
           <span className="lb">{propiedades.length} propiedades</span>
         </div>
-      </div>
+      </MobDeslizable>
       <Grupo titulo="Por propiedad" nota="Cada propiedad abre su propio balance: ingresos, dividendo, contribuciones, seguros y gastos.">
         {orden.map(p=>(
           <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
