@@ -1392,6 +1392,123 @@
   /* La cabecera de perfil no es una cifra: no le toca el negro. */
   .mob-hub-top.claro{ background:var(--msf); color:var(--mtx); }
   .mob-hub-top.claro .mob-p2{ color:var(--mtm); }
+  /* ============================================================
+     ESCALA · un punto más chica
+     ------------------------------------------------------------
+     La interfaz se veía con demasiado aumento: cabía poco en pantalla y había
+     que desplazarse de más para ver algo que debería entrar de una vez. Aquí
+     baja todo un escalón —los títulos dos, que eran los que más pesaban— sin
+     tocar dos suelos que no se pueden bajar:
+
+       · nada que se toque queda bajo 44 px;
+       · los campos se quedan en 16 px, porque bajo eso el iPhone hace zoom
+         solo al escribir, que es justo lo contrario de lo que se busca.
+
+     Va al final del bloque a propósito: así manda sobre todo lo anterior y la
+     escala vive en un solo lugar. ============================================ */
+
+  /* Títulos */
+  .mob-hero-h{ font-size:27px; letter-spacing:-.024em; }
+  .mob-h-scr{ font-size:23px; }
+  .mob-h2, .mob-gtit{ font-size:20px; letter-spacing:-.02em; margin:8px 2px 0; }
+  .mob-gtit-accion{ font-size:15px; }
+  .mob-hero-sub{ font-size:14px; }
+  .mob-titulo .ctx{ font-size:13px; }
+  .mob-t2{ font-size:19px; }
+  .mob-eyebrow, .mob-mono{ font-size:11px; }
+  .mob-nota{ font-size:12.5px; }
+  .mob-vacio{ font-size:14px; padding:22px 10px; }
+
+  /* Aire de pantalla */
+  .mob-scr{ padding-left:17px; padding-right:17px; gap:16px; }
+  .mob-scr.g14{ gap:12px; }
+  .mob-bloque{ gap:10px; }
+  .mob-inds{ margin-left:-17px; margin-right:-17px; padding-left:17px; padding-right:17px; }
+  .mob-nav{ margin:0 -17px; padding-left:17px; padding-right:17px; }
+
+  /* Tarjeta de resumen */
+  .mob-hub-top{ padding:18px; gap:12px; border-radius:18px; }
+  .mob-hub-top .cifra{ font-size:clamp(26px,7.4vw,34px); }
+  .mob-hub-top .lb{ font-size:14px; }
+  .mob-metrics{ padding:13px 0; }
+  .mob-metrics .m .v{ font-size:clamp(15px,4.4vw,19px); }
+  .mob-metrics .m .k{ font-size:10px; }
+
+  /* Filas de lista */
+  .mob-cell{ min-height:50px; padding:8px 14px; gap:11px; }
+  .mob-cell + .mob-cell::before{ left:53px; }
+  .mob-cell.sin-ico + .mob-cell::before, .mob-cell + .mob-cell.sin-ico::before{ left:14px; }
+  .mob-cell .ic{ width:26px; height:26px; }
+  .mob-cell .tx .t{ font-size:15.5px; }
+  .mob-cell .tx .s{ font-size:12.5px; }
+  .mob-cell .val{ font-size:14.5px; }
+  .mob-group{ border-radius:14px; margin-top:10px; }
+
+  /* Prioridades de Inicio */
+  .mob-prio{ min-height:68px; padding:14px; gap:12px; border-radius:16px; }
+  .mob-prio .tile{ width:40px; height:40px; border-radius:12px; }
+  .mob-prio .tx .t{ font-size:16.5px; }
+  .mob-prio .tx .s{ font-size:13.5px; }
+
+  /* Acciones rápidas */
+  .mob-acc2{ gap:10px; }
+  .mob-acc2 > button{ min-height:88px; padding:15px; gap:12px; border-radius:16px; }
+  .mob-acc2 > button .nb{ font-size:15.5px; }
+
+  /* Actividad reciente */
+  .mob-act{ border-radius:16px; }
+  .mob-act > *{ min-height:56px; padding:13px 14px; }
+  .mob-act > * + *::before{ left:14px; }
+  .mob-act .tx .t{ font-size:15.5px; }
+  .mob-act .tx .s{ font-size:13px; }
+  .mob-act .val{ font-size:15.5px; }
+
+  /* Cifras de apoyo */
+  .mob-kpis2{ gap:10px; }
+  .mob-kpis2 > div{ padding:14px; border-radius:14px; }
+  .mob-kpis2 .k{ font-size:13px; }
+  .mob-kpis2 .v{ font-size:clamp(17px,4.8vw,22px); }
+
+  /* Campos: el texto no baja de 16 px (si no, el iPhone hace zoom al escribir) */
+  .mob-inp{ min-height:44px; padding:11px 13px; font-size:16px; border-radius:10px; }
+  textarea.mob-inp{ min-height:92px; }
+  .mob-lab{ font-size:12.5px; }
+  .mob-campo{ padding:12px 14px; gap:6px; }
+  .mob-campo + .mob-campo::before{ left:14px; right:14px; }
+  .mob-buscar{ min-height:44px; padding:0 12px; }
+  .mob-buscar input{ height:44px; font-size:16px; }
+
+  /* Botones y tarjetas */
+  .mob-btn.pri{ padding:14px; font-size:15.5px; border-radius:13px; }
+  .mob-btn.sec{ padding:13px; font-size:15px; border-radius:13px; }
+  .mob-card{ padding:15px; gap:12px; border-radius:14px; }
+  .mob-row{ min-height:50px; padding:11px 13px; border-radius:12px; }
+  .mob-accion{ min-height:48px; font-size:13.5px; border-radius:12px; }
+  .mob-chip{ font-size:12px; padding:5px 9px; }
+  .mob-seg{ padding:3px; border-radius:10px; }
+  .mob-seg > button{ min-height:36px; padding:7px; font-size:14px; }
+  .mob-quad-ic{ width:34px; height:34px; border-radius:10px; }
+
+  /* Fotos */
+  .mob-foto-hero img{ height:180px; }
+  .mob-foto-hero{ border-radius:18px; }
+  .mob-fotos img{ height:96px; }
+
+  /* Barra inferior: el alto táctil se queda en 44 px */
+  .mob-tabs{ padding:6px 6px calc(18px + env(safe-area-inset-bottom,0px)); }
+  .mob-tab{ min-height:44px; gap:3px; }
+  .mob-tab .lb{ font-size:10px; }
+
+  @media(max-width:359px){
+    .mob-scr{ padding-left:14px; padding-right:14px; }
+    .mob-inds{ margin-left:-14px; margin-right:-14px; padding-left:14px; padding-right:14px; }
+    .mob-nav{ margin:0 -14px; padding-left:14px; padding-right:14px; }
+    .mob-hero-h{ font-size:24px; }
+    .mob-h2, .mob-gtit{ font-size:18.5px; }
+    .mob-acc2 > button{ min-height:80px; padding:13px; }
+    .mob-acc2 > button .nb{ font-size:14.5px; }
+  }
+
 </style>
 </head>
 <body>
