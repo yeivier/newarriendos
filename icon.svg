@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E6C98A"/>
-      <stop offset="1" stop-color="#A07E33"/>
-    </linearGradient>
-  </defs>
-  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#g)"/>
-  <text x="256" y="352" font-family="Georgia, 'Times New Roman', serif" font-size="300" font-weight="700" text-anchor="middle" fill="#141419">A</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ArriendoPro">
+  <!-- Marca de ArriendoPro.
+       Una sola idea, dibujada con el mismo trazo que los iconos de la app: el
+       techo, la casa y la puerta en arco. Sin degradados, sin color y sin
+       adornos, para que se reconozca igual a 16 px que en la pantalla de inicio
+       del teléfono. Es vectorial, así que nunca se pixela. -->
+  <rect width="512" height="512" rx="114" fill="#000"/>
+  <g fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M104 246 256 128l152 118"/>
+    <path d="M142 228v146a22 22 0 0 0 22 22h184a22 22 0 0 0 22-22V228"/>
+    <path d="M214 396v-74a42 42 0 0 1 84 0v74"/>
+  </g>
 </svg>

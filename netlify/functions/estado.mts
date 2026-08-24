@@ -16,8 +16,22 @@ import { quienLlama, sinAcceso, soloDueno } from '../lib/auth.mts'
 // Cada guardado deja además la copia del día en 'app-respaldos', para poder
 // volver atrás si algo se sobrescribe por error.
 //
-// GET  /api/estado  -> { estado, updatedAt } | { estado:null }
-// PUT  /api/estado  -> guarda el cuerpo JSON recibido
+// Varias personas pueden estar dentro al mismo tiempo, desde distintos
+// dispositivos y lugares. Antes cada guardado escribía el documento completo a
+// ciegas: si dos editaban a la vez, el último borraba el trabajo del otro sin
+// avisar. Ahora cada guardado dice sobre qué versión se hizo:
+//
+//   · si nadie guardó en el intermedio, se escribe y se devuelve la versión nueva;
+//   · si alguien guardó antes, se responde 409 con el estado que hay ahora para
+//     que quien guarda lo fusione con lo suyo y reintente.
+//
+// Y hay una consulta barata de versión, para que cada dispositivo sepa cuándo
+// traerse lo que hicieron los demás sin descargar todo el documento.
+//
+// GET  /api/estado          -> { estado, updatedAt } | { estado:null }
+// GET  /api/estado?v=1      -> { updatedAt }   (solo la versión)
+// PUT  /api/estado          -> guarda; cabecera X-Estado-Base con la versión sobre
+//                              la que se editó (si falta, se guarda sin comprobar)
 
 const KEY = 'workspace'
 const DIAS_RESPALDO = 30
@@ -47,7 +61,14 @@ export default async (req: Request, _context: Context) => {
   const store = getStore({ name: 'app-estado', consistency: 'strong' })
 
   if (req.method === 'GET') {
-    const data = await store.get(KEY, { type: 'json' }).catch(() => null)
+    const data = (await store.get(KEY, { type: 'json' }).catch(() => null)) as
+      | { estado: unknown; updatedAt?: number }
+      | null
+    // Consulta de versión: la usan los dispositivos para saber si alguien más
+    // guardó algo, sin traerse el documento entero cada vez.
+    if (new URL(req.url).searchParams.get('v')) {
+      return Response.json({ updatedAt: data?.updatedAt ?? 0 })
+    }
     return Response.json(data ?? { estado: null })
   }
 
@@ -61,6 +82,21 @@ export default async (req: Request, _context: Context) => {
     }
     if (!estado || typeof estado !== 'object') {
       return Response.json({ error: 'Estado inválido' }, { status: 400 })
+    }
+    // ¿Sobre qué versión se editó? Si alguien guardó en el intermedio, no se
+    // pisa: se devuelve lo que hay para que el cliente lo fusione y reintente.
+    const base = Number(req.headers.get('x-estado-base') || '')
+    if (Number.isFinite(base) && base > 0) {
+      const actual = (await store.get(KEY, { type: 'json' }).catch(() => null)) as
+        | { estado: unknown; updatedAt?: number }
+        | null
+      const versionActual = actual?.updatedAt ?? 0
+      if (versionActual > base) {
+        return Response.json(
+          { error: 'desactualizado', estado: actual?.estado ?? null, updatedAt: versionActual },
+          { status: 409 },
+        )
+      }
     }
     const updatedAt = Date.now()
     await store.setJSON(KEY, { estado, updatedAt })
