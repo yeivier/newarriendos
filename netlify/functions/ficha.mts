@@ -15,6 +15,26 @@ const esc = (s: unknown) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
+// Íconos de trazo, del mismo estilo que los del sistema en el iPhone. Antes
+// aquí había emoji: se ven de un color distinto en cada teléfono y no combinan
+// con el resto de la ficha.
+const TRAZOS: Record<string, string> = {
+  cama: '<path d="M3 19.4v-9.6"/><path d="M3 14.6h18v4.8"/><path d="M21 14.6v-3.4a2 2 0 0 0-2-2h-8v5.4"/><circle cx="7" cy="11.4" r="2"/>',
+  bano: '<path d="M4 12h16v3a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M7 12V5.6A2.1 2.1 0 0 1 9.1 3.5c1 0 1.8.6 2 1.6"/><path d="M6.5 20.5 5.5 22M17.5 20.5l1 1.5"/>',
+  regla: '<rect x="2.6" y="8.4" width="18.8" height="7.2" rx="2.2"/><path d="M7 8.4v2.8M11 8.4v3.8M15 8.4v2.8M19 8.4v3.8"/>',
+  arbol: '<path d="M12 21v-5"/><path d="M12 3 6 12h3.5L5.5 17h13L14.5 12H18z"/>',
+  auto: '<path d="M3.2 16.4v-3l1.9-4.5A2 2 0 0 1 7 7.6h10a2 2 0 0 1 1.9 1.3l1.9 4.5v3z"/><path d="M3.6 13.4h16.8"/><path d="M6.4 16.4v2.2M17.6 16.4v2.2"/>',
+  caja: '<path d="M3.4 7.6 12 3.6l8.6 4v8.8L12 20.4l-8.6-4z"/><path d="m3.4 7.6 8.6 4 8.6-4M12 11.6v8.8"/>',
+  calendario: '<rect x="3.4" y="5.2" width="17.2" height="15.4" rx="2.6"/><path d="M3.4 10h17.2M8 3.2v3.8M16 3.2v3.8"/>',
+  casa: '<path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  llave: '<circle cx="8.4" cy="15.6" r="4.4"/><path d="m11.7 12.4 8.1-8.1"/><path d="m16.9 5.9 2.2 2.2M14.5 8.3l2.2 2.2"/>',
+  pin: '<path d="M12 21.2s6.6-6.4 6.6-10.7a6.6 6.6 0 0 0-13.2 0C5.4 14.8 12 21.2 12 21.2z"/><circle cx="12" cy="10.4" r="2.4"/>',
+  burbuja: '<path d="M20.4 15.4a2.1 2.1 0 0 1-2.1 2.1H9.2l-4.6 3.6a.6.6 0 0 1-1-.5V6.2a2.1 2.1 0 0 1 2.1-2.1h12.6a2.1 2.1 0 0 1 2.1 2.1z"/>',
+  sobre: '<rect x="3" y="5.2" width="18" height="13.6" rx="2.4"/><path d="m3.6 7 8.4 5.8L20.4 7"/>',
+}
+const ico = (n: string, tam = 18, ancho = 1.9) =>
+  `<svg width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${ancho}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TRAZOS[n] || TRAZOS.casa}</svg>`
+
 const CLP = (n: number) =>
   '$' + Math.round(Number(n) || 0).toLocaleString('es-CL')
 
@@ -52,14 +72,14 @@ export default async (req: Request, context: Context) => {
       .join(' · ')}`.trim()
 
   const specs: [string, string, string][] = [
-    ['🛏️', 'Dormitorios', f.bedrooms],
-    ['🛁', 'Baños', f.bathrooms],
-    ['📐', 'm² construidos', f.surfaceBuilt],
-    ['🌳', 'm² terreno', f.surfaceTerrain],
-    ['🚗', 'Estacionamientos', f.parking],
-    ['📦', 'Bodegas', f.bodega],
-    ['🏗️', 'Año', f.constructionYear],
-    ['🏠', 'Tipo', f.type],
+    ['cama', 'Dormitorios', f.bedrooms],
+    ['bano', 'Baños', f.bathrooms],
+    ['regla', 'm² construidos', f.surfaceBuilt],
+    ['arbol', 'm² terreno', f.surfaceTerrain],
+    ['auto', 'Estacionamientos', f.parking],
+    ['caja', 'Bodegas', f.bodega],
+    ['calendario', 'Año', f.constructionYear],
+    ['casa', 'Tipo', f.type],
   ].filter(([, , v]) => v !== undefined && v !== null && v !== '' && v !== 0) as [string, string, string][]
 
   const soc = f.sociedad || {}
@@ -100,9 +120,9 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
 .hero{position:relative;height:${cover ? '52vh' : '180px'};min-height:${cover ? '340px' : '180px'};background:${cover ? `#1a1f2b center/cover no-repeat url('${esc(cover)}')` : 'linear-gradient(135deg,#9c1c1c,#5c1010)'};display:flex;align-items:flex-end;color:#fff}
 .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(8,10,15,.82),rgba(8,10,15,.15) 55%,rgba(8,10,15,.35))}
 .hero-in{position:relative;z-index:2;padding:32px 34px;width:100%}
-.tag{display:inline-block;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);padding:5px 13px;border-radius:30px;font-size:13px;font-weight:700;letter-spacing:.3px;margin-bottom:12px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);padding:5px 13px;border-radius:30px;font-size:13px;font-weight:700;letter-spacing:.3px;margin-bottom:12px}
 .hero h1{font-size:34px;font-weight:900;letter-spacing:-.5px;line-height:1.1;text-shadow:0 2px 18px rgba(0,0,0,.4)}
-.hero .loc{font-size:16px;font-weight:600;opacity:.95;margin-top:8px}
+.hero .loc{font-size:16px;font-weight:600;opacity:.95;margin-top:8px;display:flex;align-items:center;gap:7px}
 .price{padding:22px 34px;background:var(--green);color:#fff;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .price .n{font-size:30px;font-weight:900;letter-spacing:-.5px}
 .price .l{font-size:14px;font-weight:700;opacity:.9}
@@ -110,7 +130,7 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
 .section h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--red);font-weight:800;margin-bottom:16px}
 .specs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .spec{background:#f6f8fb;border:1px solid var(--line);border-radius:14px;padding:16px 12px;text-align:center}
-.spec .e{font-size:24px}
+.spec .e{color:var(--red);display:flex;justify-content:center}
 .spec .v{font-size:20px;font-weight:900;margin-top:4px}
 .spec .k{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
 .desc{font-size:17px;color:#2a323f;white-space:pre-line}
@@ -146,9 +166,9 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
 <div id="volver"><a href="${esc(origin)}/" id="volverA">← Volver a la plataforma</a></div>
 <div class="wrap">
   <div class="hero"><div class="hero-in">
-    <span class="tag">🔑 ${esc(f.use === 'arriendo' ? 'En arriendo' : 'Propiedad')}</span>
+    <span class="tag">${ico('llave', 15, 2)} ${esc(f.use === 'arriendo' ? 'En arriendo' : 'Propiedad')}</span>
     <h1>${esc(title)}</h1>
-    ${place ? `<div class="loc">📍 ${esc(f.address ? f.address + ' · ' : '')}${esc(place)}</div>` : ''}
+    ${place ? `<div class="loc">${ico('pin', 16, 2)} ${esc(f.address ? f.address + ' · ' : '')}${esc(place)}</div>` : ''}
   </div></div>
 
   ${f.mostrarValor && f.rent ? `<div class="price"><span class="n">${esc(CLP(f.rent))}</span><span class="l">/ mes${f.rentUF ? ' · ' + esc(f.rentUF) + ' UF' : ''}</span>${f.mostrarDeudas && f.gastoComun ? `<span class="l">· Gasto común ${esc(CLP(f.gastoComun))}</span>` : ''}</div>` : ''}
@@ -156,7 +176,7 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
   ${
     f.mostrarInfo && specs.length
       ? `<div class="section"><h2>Características</h2><div class="specs">${specs
-          .map(([e, k, v]) => `<div class="spec"><div class="e">${e}</div><div class="v">${esc(v)}</div><div class="k">${esc(k)}</div></div>`)
+          .map(([e, k, v]) => `<div class="spec"><div class="e">${ico(e, 24, 1.7)}</div><div class="v">${esc(v)}</div><div class="k">${esc(k)}</div></div>`)
           .join('')}</div></div>`
       : ''
   }
@@ -169,7 +189,7 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
     panoramas.length
       ? `<div class="section"><h2>Recorrido virtual 360°</h2><div class="panobar">${panoBtns}</div><div id="pano"></div><p style="font-size:13px;color:var(--muted);margin-top:10px">Arrastra para mirar en todas las direcciones, como si estuvieras dentro de la propiedad.</p></div>`
       : f.virtualTour
-        ? `<div class="section"><h2>Recorrido virtual</h2><a class="btn btn-wa" style="background:var(--red);color:#fff" href="${esc(f.virtualTour)}" target="_blank" rel="noopener">🏠 Ver recorrido 360°</a></div>`
+        ? `<div class="section"><h2>Recorrido virtual</h2><a class="btn btn-wa" style="background:var(--red);color:#fff" href="${esc(f.virtualTour)}" target="_blank" rel="noopener">${ico('casa', 17, 2)} Ver recorrido 360°</a></div>`
         : ''
   }
 
@@ -182,8 +202,8 @@ body{font-family:'Public Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);ba
   <div class="contact">
     <h2>¿Te interesa esta propiedad?</h2>
     <p>Coordina una visita con ${esc(soc.name || 'la administración')}.</p>
-    ${waNum ? `<a class="btn btn-wa" href="https://wa.me/${esc(waNum)}?text=${waMsg}" target="_blank" rel="noopener">💬 Contactar por WhatsApp</a>` : ''}
-    ${soc.email ? `<div style="margin-top:14px"><a class="btn btn-out2" href="mailto:${esc(soc.email)}?subject=${encodeURIComponent('Consulta: ' + title)}">✉️ Escribir un correo</a></div>` : ''}
+    ${waNum ? `<a class="btn btn-wa" href="https://wa.me/${esc(waNum)}?text=${waMsg}" target="_blank" rel="noopener">${ico('burbuja', 17, 2)} Contactar por WhatsApp</a>` : ''}
+    ${soc.email ? `<div style="margin-top:14px"><a class="btn btn-out2" href="mailto:${esc(soc.email)}?subject=${encodeURIComponent('Consulta: ' + title)}">${ico('sobre', 17, 2)} Escribir un correo</a></div>` : ''}
   </div>
 
   <div class="foot">Ficha generada con ArriendoPro · ${esc(soc.name || '')}</div>
