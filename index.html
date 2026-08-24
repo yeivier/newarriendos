@@ -725,18 +725,107 @@
        una versión móvil a medias, se abre la sección de verdad del escritorio
        con una barra para volver. Así no hay ninguna función fuera de alcance
        desde el teléfono. */
-    .app.en-movil.modo-completo > .main{ display:block !important; padding-top:46px; }
+    .app.en-movil.modo-completo > .main{ display:block !important; padding-top:calc(58px + env(safe-area-inset-top,0px)); }
     .app.en-movil.modo-completo > .ai-fab,
     .app.en-movil.modo-completo > .subir-fab{ display:flex !important; }
-    .app.en-movil.modo-completo .mob-app{ display:none !important; }
     /* La barra superior de la sección se pega bajo la de volver, no debajo. */
-    .app.en-movil.modo-completo > .main .topbar{ top:46px; }
+    .app.en-movil.modo-completo > .main .topbar{ top:auto; }
     /* El menú lateral tiene que abrirse desde dentro de una sección: si no,
        el botón ☰ no hace nada y se queda uno atrapado ahí, teniendo que
        volver a las pestañas para cambiar de sección. Va por encima de la
        barra de volver, que si no le taparía la cabecera. */
     .app.en-movil.modo-completo > .sidebar{ display:flex !important; z-index:200; }
     .app.en-movil.modo-completo > .nav-overlay{ display:block !important; z-index:190; }
+
+    /* ---- La sección, con el diseño de la app ----
+       Antes, al abrir una sección desde el móvil aparecía la plataforma de
+       escritorio encogida: barra ancha, tarjetas apretadas, tablas que se
+       salían. Aquí esa misma sección se viste con el lenguaje del móvil —
+       fondo gris, tarjetas blancas redondeadas, una sola columna, botones
+       que se pueden tocar— sin tocar el escritorio ni perder una sola
+       función, porque el contenido es el mismo. */
+    .app.en-movil.modo-completo > .main{
+      background:#F2F2F7;
+      padding:calc(58px + env(safe-area-inset-top,0px)) 0 calc(96px + env(safe-area-inset-bottom,0px));
+      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    /* El asistente flotante, por encima de la barra de pestañas. */
+    .app.en-movil.modo-completo > .ai-fab{ bottom:calc(96px + env(safe-area-inset-bottom,0px)); }
+    .app.en-movil.modo-completo > .subir-fab{ bottom:calc(164px + env(safe-area-inset-bottom,0px)); }
+    /* La barra de pestañas sigue abajo: nunca se queda uno encerrado. */
+    .app.en-movil.modo-completo .mob-app{
+      display:flex !important; inset:auto 0 0 0; background:transparent;
+      pointer-events:none; z-index:175;
+    }
+    .app.en-movil.modo-completo .mob-app > :not(.mob-tabs){ display:none !important; }
+    .app.en-movil.modo-completo .mob-tabs{ pointer-events:auto; }
+
+    /* Cabecera: volver + título grande, como en las 5 pestañas. */
+    .app.en-movil.modo-completo > .main .topbar{
+      position:static; background:transparent; border:none; box-shadow:none;
+      padding:2px 20px 8px;
+    }
+    .app.en-movil.modo-completo > .main .topbar-row{ flex-direction:column; align-items:stretch; gap:12px; }
+    .app.en-movil.modo-completo .topbar .menu-btn,
+    .app.en-movil.modo-completo .topbar .gs-top,
+    .app.en-movil.modo-completo .topbar .volver-btn,
+    .app.en-movil.modo-completo .topbar .btn-busca,
+    .app.en-movil.modo-completo .topbar .guardado{ display:none !important; }
+    .app.en-movil.modo-completo .topbar h2{
+      font-size:clamp(28px,8.6vw,34px); font-weight:800; letter-spacing:-.03em;
+      color:#101012; line-height:1.1; margin:0;
+    }
+    .app.en-movil.modo-completo .topbar .desc{ font-size:14px; line-height:1.45; color:#5A5A63; margin-top:6px; }
+    .app.en-movil.modo-completo .topbar-row > div:last-child{ gap:8px; }
+
+    /* El cuerpo de la sección. */
+    .app.en-movil.modo-completo > .main > .content{ padding:4px 16px 0; gap:12px; }
+    .app.en-movil.modo-completo .card,
+    .app.en-movil.modo-completo .collapse{
+      border-radius:18px; border:1px solid #E5E5EA; background:#fff; box-shadow:none;
+    }
+    /* La tira de indicadores se desliza de lado en vez de salirse. */
+    /* La tira de indicadores y los botones de la barra superior son del
+       escritorio: en el teléfono la UF y compañía ya están en Inicio, y crear
+       está en Asistente. Aquí solo estorbaban en todas las secciones. */
+    .app.en-movil.modo-completo .indbar,
+    .app.en-movil.modo-completo .indfuente,
+    .app.en-movil.modo-completo .topbar-row > div:last-child{ display:none !important; }
+    /* Las etiquetas se acomodan en varias líneas en vez de salirse. */
+    .app.en-movil.modo-completo .card .pill,
+    .app.en-movil.modo-completo .cbody .pill{ white-space:normal; }
+    .app.en-movil.modo-completo .card > div,
+    .app.en-movil.modo-completo .cbody > div{ min-width:0; }
+    .app.en-movil.modo-completo .collapse > .chead{ padding:16px 16px; gap:12px; }
+    .app.en-movil.modo-completo .collapse > .chead .ctitle{ font-size:16px; }
+    .app.en-movil.modo-completo .collapse > .chead .csub{ font-size:13px; }
+    .app.en-movil.modo-completo .cbody{ padding:0 16px 16px; }
+    .app.en-movil.modo-completo .pad{ padding:16px; }
+    /* Todo en una columna: las rejillas de escritorio no caben. */
+    .app.en-movil.modo-completo .grid,
+    .app.en-movil.modo-completo .grid.c2,
+    .app.en-movil.modo-completo .grid.c3{ grid-template-columns:1fr !important; gap:12px !important; }
+    .app.en-movil.modo-completo .stats,
+    .app.en-movil.modo-completo .kpis,
+    .app.en-movil.modo-completo .grid:has(> .stat){ grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+    .app.en-movil.modo-completo .stat{ padding:14px 12px; border-radius:16px; min-width:0; }
+    .app.en-movil.modo-completo .stat .val{ font-size:clamp(19px,5.8vw,24px); font-variant-numeric:tabular-nums; }
+    /* Las tablas se desplazan dentro de su tarjeta, nunca empujan la página. */
+    .app.en-movil.modo-completo .tabla-wrap,
+    .app.en-movil.modo-completo .tbl-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .app.en-movil.modo-completo table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+    /* Cómodo de tocar y sin el zoom automático de iOS al escribir. */
+    .app.en-movil.modo-completo input,
+    .app.en-movil.modo-completo select,
+    .app.en-movil.modo-completo textarea{ font-size:16px; border-radius:12px; }
+    .app.en-movil.modo-completo .input{ min-height:46px; }
+    .app.en-movil.modo-completo .btn{ min-height:46px; border-radius:13px; }
+    .app.en-movil.modo-completo .btn-sm{ min-height:42px; }
+    .app.en-movil.modo-completo .sub-title{ font-size:12px; letter-spacing:.06em; }
+    .app.en-movil.modo-completo .help{ font-size:13.5px; line-height:1.5; }
+    /* Nada puede empujar la página de lado. */
+    .app.en-movil.modo-completo > .main{ overflow-x:hidden; }
   }
   /* ---- Chat del equipo ----
      Mismo lenguaje del diseño móvil: lo mío en negro a la derecha, lo de los
@@ -789,13 +878,19 @@
   .chat-eq-env{ background:#101012; color:#fff; }
   .chat-eq-env:disabled, .chat-eq-mas:disabled{ opacity:.45; cursor:default; }
 
+  /* Volver a las pestañas. Va con el lenguaje de la app —fondo claro, botón
+     cuadrado— y no con una franja negra, que se veía pegada de otra parte.
+     El título no se repite aquí: lo pone la propia sección, en grande. */
   .mob-volver-barra{ display:none; position:fixed; top:0; left:0; right:0; z-index:170;
-    background:#101012; color:#fff; align-items:center; gap:12px;
-    padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px; }
-  .mob-volver-barra button{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.24);
-    color:#fff; font-family:inherit; font-size:14px; font-weight:700; padding:8px 13px; border-radius:10px;
-    cursor:pointer; display:inline-flex; align-items:center; gap:7px; flex-shrink:0; min-height:38px; }
-  .mob-volver-barra .tit{ font-size:14.5px; font-weight:700; min-width:0;
+    background:#F2F2F7; color:#101012; align-items:center; gap:12px;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 20px 4px;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif; }
+  .mob-volver-barra button{ width:44px; height:44px; border-radius:14px; background:#fff;
+    border:1px solid #E5E5EA; color:#101012; font-family:inherit; padding:0;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mob-volver-barra button:active{ background:#FAFAFC; }
+  .mob-volver-barra .tit{ font-size:11.5px; font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:#5A5A63; min-width:0;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   @media(max-width:900px){ .app.en-movil.modo-completo .mob-volver-barra{ display:flex; } }
   .mob-app{
@@ -8517,11 +8612,10 @@ function App(){
     {/* Barra para salir de la sección completa y volver a las 5 pestañas. */}
     {movil && movilCompleto && (
       <div className="mob-volver-barra">
-        <button onClick={()=>setMovilCompleto(null)}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
-          Volver
+        <button onClick={()=>setMovilCompleto(null)} aria-label="Volver a las pestañas" title="Volver">
+          <Ic n="chevronL" w={20} sw={2.4}/>
         </button>
-        <span className="tit">{(HEAD[tab]&&HEAD[tab][0])||"Sección"}</span>
+        <span className="tit">{(NAV_GROUPS.find(g=>g.ids.includes(tab))||{}).label||"Plataforma"}</span>
       </div>
     )}
     {/* Flecha flotante: cierra la ventana que esté abierta encima. En el
