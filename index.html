@@ -4387,6 +4387,7 @@ function MobileApp(props){
           ["Recordatorio",  MI.chat,  ()=>AC.recordatorio    && AC.recordatorio(p)],
           ["Mover de lugar",MI.edif,  ()=>AC.moverPropiedad  && AC.moverPropiedad(p)],
           ["Marcar vacante",MI.casita,()=>AC.vacancia        && AC.vacancia(p)],
+          ["Recepción municipal",MI.doc,()=>abrirSeccion("props", p)],
         ].map(([lb,ic,fn])=>(
           <button key={lb} className="mob-accion" onClick={fn}>
             <MobIco w={19}>{ic}</MobIco><span>{lb}</span>
