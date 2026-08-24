@@ -1392,6 +1392,7 @@
   /* La cabecera de perfil no es una cifra: no le toca el negro. */
   .mob-hub-top.claro{ background:var(--msf); color:var(--mtx); }
   .mob-hub-top.claro .mob-p2{ color:var(--mtm); }
+  .mob-seg.tres > button{ font-size:13px; padding:11px 4px; }
   /* ===== Bandeja, comparar presupuestos y trámites ===== */
   /* Campana con su punto: rojo solo cuando hay algo sin ver. */
   .mob-campana{ position:relative; }
@@ -1454,6 +1455,29 @@
   .chat-eq-priv{ display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase;
     letter-spacing:.03em; color:var(--mtm); background:var(--mfl2); border-radius:5px; padding:1px 6px; margin-left:7px; }
   .chat-eq-priv.solo{ margin:0 0 5px; background:rgba(255,255,255,.18); color:rgba(255,255,255,.9); }
+  /* ===== Aportes, subida y agente de planos ===== */
+  .mob-tipos{ display:flex; flex-wrap:wrap; gap:8px; }
+  .mob-tipo{ display:flex; align-items:center; gap:7px; background:var(--mfl2); border:1px solid var(--mln);
+    border-radius:12px; padding:10px 13px; font-family:inherit; font-size:13.5px; font-weight:600;
+    color:var(--mtx); cursor:pointer; min-height:44px; }
+  .mob-tipo.on{ background:var(--mib); color:#fff; border-color:var(--mib); }
+  .mob-adjs{ display:flex; flex-direction:column; gap:7px; }
+  .mob-adj{ display:flex; align-items:center; gap:10px; background:var(--msf); border:1px solid var(--mln);
+    border-radius:12px; padding:11px 13px; }
+  .mob-adj .ic{ color:var(--mtx); flex-shrink:0; }
+  .mob-adj .nm{ flex:1; min-width:0; font-size:14px; color:var(--mtx); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-adj button{ background:none; border:none; color:var(--mtm); cursor:pointer; padding:4px; flex-shrink:0; }
+  .mob-fotos-aporte{ display:flex; flex-direction:column; gap:10px; }
+  .mob-fotos-aporte .mob-foto-hero{ width:100%; border:none; padding:0; background:none; cursor:pointer; }
+  /* Conversación con el agente de planos. */
+  .mob-iachat{ display:flex; flex-direction:column; gap:10px; }
+  .mob-iamsg{ max-width:92%; border-radius:16px; padding:12px 14px; font-size:14.5px; line-height:1.45; white-space:pre-wrap; }
+  .mob-iamsg.yo{ align-self:flex-end; background:var(--mib); color:#fff; border-bottom-right-radius:5px; }
+  .mob-iamsg.ia{ align-self:flex-start; background:var(--msf); border:1px solid var(--mln); color:var(--mtx); border-bottom-left-radius:5px; }
+  .mob-iamsg .et{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mtm); margin-bottom:4px; }
+  .mob-iabar{ display:flex; gap:8px; align-items:flex-end; }
+  .mob-iabar .mob-inp{ flex:1; }
+
 
 
   /* ============================================================
@@ -5428,6 +5452,8 @@ const MOB_MAS_GRUPOS = [
     { id:"finanzas", ico:"grafico",   label:"Balance por propiedad", sub:"Dividendos, gastos y utilidad" }
   ]},
   { label:"Herramientas", items:[
+    { esp:"aportes", ico:"carpeta",      label:"Material del equipo", sub:"Planos, presupuestos, fotos y archivos" },
+    { esp:"planos",  ico:"regla",        label:"Planos y lectura con IA", sub:"Súbelos y léelos con el agente experto" },
     { esp:"cotiz",   ico:"balanza",      label:"Comparar presupuestos", sub:"Cotizaciones lado a lado, con una recomendación" },
     { esp:"tramites",ico:"portapapeles", label:"Trámites", sub:"El orden más conveniente para avanzar" },
     { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tu cartera" },
@@ -5794,7 +5820,7 @@ function MobileApp(props){
     utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
     alertas, irAlerta, usuarioActual, rolActual,
     guardado, ficha, patchProp, nav, accesos,
-    cotiz, setCotiz, tramites, setTramites,
+    cotiz, setCotiz, tramites, setTramites, esArquitecto, nombreAcceso,
     acciones = {},
   } = props;
   const AC = acciones;
@@ -5992,7 +6018,51 @@ function MobileApp(props){
      Inicio responde cuatro preguntas y nada más: qué hay que hacer ahora, qué
      necesita atención, qué puedo hacer en un toque y qué cambió. No es un
      menú ni una cuadrícula de accesos: para eso está "Más". */
+  /* Inicio del arquitecto: su trabajo es aportar, así que la pantalla lo pone
+     todo a un toque —subir un plano, subir material, ver lo suyo, escribir— sin
+     cobros ni finanzas, que no le tocan. */
+  const pantallaArqInicio = ()=>{
+    const nombre = nombreAcceso || (usuarioActual&&usuarioActual.nombre) || "arquitecto/a";
+    const mios = (aportes||[]).slice(0,6);
+    const planos = (aportes||[]).filter(a=>a.tipo==="plano");
+    return (<div className="mob-scr g14">
+      <HeaderMob title={"Hola, "+String(nombre).split(" ")[0]}
+        sub={"Arquitecto/a · "+propiedades.length+" propiedades a la vista"}/>
+      <div className="mob-acc2">
+        <button onClick={()=>{ setApForm(f=>({...f, tipo:"plano"})); push({t:"subirAporte"}); }}>
+          <MobIco w={24} sw={2}>{MI.regla}</MobIco><span className="nb">Subir plano</span>
+        </button>
+        <button onClick={()=>push({t:"subirAporte"})}>
+          <MobIco w={24} sw={2}>{MI.clip}</MobIco><span className="nb">Subir material</span>
+        </button>
+        <button onClick={()=>push({t:"planos"})}>
+          <MobIco w={24} sw={2}>{MI.chispas}</MobIco><span className="nb">Leer planos IA</span>
+        </button>
+        <button onClick={()=>push({t:"equipo"})}>
+          <MobIco w={24} sw={2}>{MI.burbuja}</MobIco><span className="nb">Chat</span>
+        </button>
+      </div>
+      {planos.length>0 && (
+        <Grupo titulo="Planos">
+          {planos.slice(0,4).map(a=>{ const pp=a.pid?propPorId(a.pid):null;
+            return <Fila key={a.id} icoNav="regla" titulo={a.titulo||"Plano"} sub={pp?pp.name:mobCuando(new Date(a.ts).toISOString())}
+              onClick={()=>push({t:"plano", ap:a.id})}/>; })}
+        </Grupo>
+      )}
+      <Grupo titulo="Lo último que subiste">
+        {mios.length ? mios.map(a=>{ const t=aporteTipo(a.tipo); const pp=a.pid?propPorId(a.pid):null;
+          return <Fila key={a.id} icoNav={t.ico} titulo={a.titulo||t.n} sub={[t.n, pp?pp.name:""].filter(Boolean).join(" · ")}
+            onClick={()=> a.tipo==="plano"?push({t:"plano",ap:a.id}):push({t:"aporte",ap:a.id})}/>;
+        }) : <Fila sinIco titulo="Todavía nada" sub="Sube el primer plano o presupuesto" chevron={false}/>}
+      </Grupo>
+      <Grupo titulo="Propiedades">
+        <Fila icoNav="casas" titulo="Ver las propiedades" sub={propiedades.length+" a la vista"} onClick={()=>saltarA("props")}/>
+      </Grupo>
+    </div>);
+  };
+
   const pantallaInicio = ()=>{
+    if(esArquitecto) return pantallaArqInicio();
     const hoy = new Date();
     const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
     const eyebrow = dias[hoy.getDay()] + " " + hoy.getDate();
@@ -6321,8 +6391,18 @@ function MobileApp(props){
   /* ==================== NIVEL 1 · MÁS ====================
      Todo lo que no cabe (ni debe caber) en la barra inferior, agrupado por
      intención y no por orden histórico. Estilo Ajustes de iOS. */
+  const MAS_ARQ = [
+    { label:"Tu trabajo", items:[
+      { esp:"aportes", ico:"carpeta", label:"Material del equipo", sub:"Planos, presupuestos, fotos y archivos" },
+      { esp:"planos",  ico:"regla",   label:"Planos y lectura con IA", sub:"Súbelos y léelos con el agente experto" },
+      { esp:"equipo",  ico:"burbuja", label:"Chat del equipo", sub:"Mensajes y notas de voz" }
+    ]},
+    { label:"Cuenta", items:[
+      { esp:"cuenta", ico:"persona", label:"Mi perfil", sub:"Tus datos" }
+    ]}
+  ];
   const pantallaMas = ()=>{
-    const grupos = MOB_MAS_GRUPOS
+    const grupos = (esArquitecto ? MAS_ARQ : MOB_MAS_GRUPOS)
       .map(g=>({ ...g, items:g.items.filter(it=> it.esp ? true : hay(it.id)) }))
       .filter(g=>g.items.length);
     /* Las propiedades, directas. Primero las últimas que se abrieron y después
@@ -7161,7 +7241,7 @@ function MobileApp(props){
       {acNuevo && (
         <div className="mob-hub-top">
           <div className="fila"><span className="lb">Acceso creado</span>
-            <span className="mob-chip ink">{acNuevo.rol==="lectura"?"Solo mirar":"Puede modificar"}</span></div>
+            <span className="mob-chip ink">{acNuevo.rol==="lectura"?"Solo mirar":acNuevo.rol==="arquitecto"?"Arquitecto/a":"Puede editar"}</span></div>
           <div className="cifra" style={{fontSize:"clamp(22px,6.4vw,28px)"}}>{acNuevo.nombre}</div>
           <div className="fila"><span className="lb">Clave</span><span className="lb fuerte">{acNuevo.clave}</span></div>
           <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
@@ -7179,10 +7259,16 @@ function MobileApp(props){
           <input className="mob-inp" value={acNombre} onChange={e=>setAcNombre(e.target.value)}
             placeholder="Ej: Claudia, mi contadora" disabled={soloLectura}/></div>
         <div className="mob-campo"><span className="mob-lab">Qué puede hacer</span>
-          <div className="mob-seg">
+          <div className="mob-seg tres">
             <button className={acRol==="lectura"?"on":""} onClick={()=>setAcRol("lectura")}>Solo mirar</button>
-            <button className={acRol==="dueño"?"on":""} onClick={()=>setAcRol("dueño")}>Ver y modificar</button>
-          </div></div>
+            <button className={acRol==="arquitecto"?"on":""} onClick={()=>setAcRol("arquitecto")}>Arquitecto/a</button>
+            <button className={acRol==="dueño"?"on":""} onClick={()=>setAcRol("dueño")}>Ver y editar</button>
+          </div>
+          <div className="mob-nota" style={{marginTop:2}}>{
+            acRol==="dueño" ? "Ve y edita todo, como tú."
+            : acRol==="arquitecto" ? "Ve las propiedades y sube planos, presupuestos, fotos y archivos, y escribe en el chat. No toca cuentas ni datos."
+            : "Solo mira. No edita ni sube nada."
+          }</div></div>
         <div className="mob-campo"><span className="mob-lab">Clave</span>
           <div style={{display:"flex", gap:8}}>
             <input className="mob-inp" value={acClave} onChange={e=>setAcClave(e.target.value)}
@@ -7200,7 +7286,7 @@ function MobileApp(props){
       <Grupo titulo={"Con acceso ("+lista.length+")"}>
         {lista.length ? lista.map(x=>(
           <Fila key={x.id} ico={MI.persona} titulo={x.nombre||"Sin nombre"}
-            sub={x.rol==="lectura"?"Solo mirar":"Ver y modificar"}
+            sub={x.rol==="lectura"?"Solo mirar":x.rol==="arquitecto"?"Arquitecto/a · sube material":"Ver y editar"}
             extra={soloLectura?null:<button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
               onClick={()=>quitar(x)}>Quitar</button>}
             chevron={false}/>
@@ -7353,6 +7439,13 @@ function MobileApp(props){
         s:(c.ofertas||[]).length+" presupuestos · conviene "+((cmp.mejor&&cmp.mejor.prov)||"—")+" con "+CLP(cmp.mejor?cmp.mejor.total:0),
         ir: ()=> push({t:"cotiz1", id:c.id}) };
     });
+    const material = (aportes||[]).filter(a=> a.autor!==yo).slice(0,12).map(a=>{
+      const t = aporteTipo(a.tipo); const pr = a.pid ? propPorId(a.pid) : null;
+      return { id:"ap:"+a.id, ico:a.tipo==="plano"?"regla":t.ico,
+        t: t.n+" de "+a.autor+": "+(a.titulo||(a.archivos[0]&&a.archivos[0].name)||"sin título"),
+        s: [pr?pr.name:"", a.tipo==="plano"?"toca para leerlo con IA":"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · "),
+        ir: ()=> a.tipo==="plano" ? push({t:"plano", ap:a.id}) : push({t:"aporte", ap:a.id}) };
+    });
     const avanzar = (tramites||[]).map(t=>{
       const pl = tramitePlantilla(t.k), pn = planTramite(pl, t.hechos);
       if(!pn.listos.length) return null;
@@ -7363,6 +7456,7 @@ function MobileApp(props){
     }).filter(Boolean);
     const grupos = [
       { titulo:"Mensajes", items:mensajes },
+      { titulo:"Material nuevo", items:material },
       { titulo:"Necesita atención", items:atencion },
       { titulo:"Falta decidir", items:decidir },
       { titulo:"Se puede avanzar", items:avanzar }
@@ -7397,11 +7491,327 @@ function MobileApp(props){
       <Grupo titulo="Ir directo">
         <Fila icoNav="burbuja" titulo="Chat del equipo" sub="Escribirle a todos o a alguien en particular"
           onClick={()=>push({t:"equipo"})}/>
+        <Fila icoNav="carpeta" titulo="Material del equipo" sub="Planos, presupuestos, fotos y archivos"
+          onClick={()=>push({t:"aportes"})}/>
         <Fila icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado"
           onClick={()=>push({t:"cotiz"})}/>
         <Fila icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy"
           onClick={()=>push({t:"tramites"})}/>
       </Grupo>
+    </Pantalla>);
+  };
+
+  /* ============ APORTES DEL EQUIPO ============
+     Lo que un colaborador —una arquitecta, un maestro, el contador— sube para
+     que quede guardado y ordenado: planos, presupuestos, fotos, archivos y
+     notas, cada uno con su categoría y su propiedad. El arquitecto entra a la
+     plataforma y trabaja sobre todo aquí; el dueño lo ve y lo usa. Se guarda en
+     su propio lugar del servidor, así que subir material nunca pisa el panel. */
+  const APORTE_TIPOS = [
+    { k:"plano",       n:"Plano",       ico:"regla",   sub:"Planta, corte, elevación…" },
+    { k:"presupuesto", n:"Presupuesto", ico:"balanza", sub:"Cotización o partida" },
+    { k:"foto",        n:"Foto",        ico:"camara",  sub:"Estado, avance, terreno" },
+    { k:"archivo",     n:"Archivo",     ico:"doc",     sub:"PDF, Word, Excel" },
+    { k:"nota",        n:"Nota",        ico:"libreta", sub:"Un mensaje, un recordatorio" }
+  ];
+  const aporteTipo = (k)=> APORTE_TIPOS.find(t=>t.k===k) || APORTE_TIPOS[3];
+  const [aportes, setAportes] = React.useState([]);
+  const [aportesCargando, setAportesCargando] = React.useState(true);
+  const cargarAportes = React.useCallback(async(silencioso)=>{
+    try{
+      const r = await api("/api/aportes");
+      if(r.ok){ const j = await r.json(); setAportes(j.aportes||[]); }
+    }catch(_e){}
+    if(!silencioso) setAportesCargando(false);
+  },[]);
+  React.useEffect(()=>{ cargarAportes(); },[cargarAportes]);
+  React.useEffect(()=>{
+    const iv = setInterval(()=>{ if(document.visibilityState==="visible") cargarAportes(true); }, 30000);
+    const alVolver = ()=>{ if(document.visibilityState==="visible") cargarAportes(true); };
+    document.addEventListener("visibilitychange", alVolver);
+    return ()=>{ clearInterval(iv); document.removeEventListener("visibilitychange", alVolver); };
+  },[cargarAportes]);
+
+  /* Estado del formulario de subida. Fuera de la pantalla para que no se pierda
+     al volver a dibujar mientras suben los archivos. */
+  const [apForm, setApForm] = React.useState({ tipo:"plano", titulo:"", pid:"", nota:"", archivos:[] });
+  const [apSubiendo, setApSubiendo] = React.useState(false);
+  const apFileRef = React.useRef(null);
+  const apPlanoRef = React.useRef(null);
+
+  const enviarAporte = async()=>{
+    const f = apForm;
+    if(!f.archivos.length && !f.titulo.trim() && !f.nota.trim()){ notify("Agrega un archivo o al menos un título", true); return; }
+    setApSubiendo(true);
+    try{
+      const r = await api("/api/aportes",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ tipo:f.tipo, titulo:f.titulo.trim(), pid:f.pid, nota:f.nota.trim(), archivos:f.archivos }) });
+      const j = await r.json().catch(()=>({}));
+      if(r.ok && j.aporte){ setAportes(a=>[j.aporte, ...a]); setApForm({ tipo:f.tipo, titulo:"", pid:f.pid, nota:"", archivos:[] });
+        notify("Subido"); pop(); }
+      else notify(j.error||"No se pudo subir", true);
+    }catch(_e){ notify("Sin conexión: no se subió", true); }
+    setApSubiendo(false);
+  };
+  const adjuntarAporte = async(files)=>{
+    const lista = Array.prototype.slice.call(files||[]).slice(0,12);
+    if(!lista.length) return;
+    setApSubiendo(true);
+    for(const file of lista){
+      try{ const a = await uploadArchivo(file); setApForm(f=>({...f, archivos:[...f.archivos, a]})); }
+      catch(e){ notify(e.message||"No se pudo subir un archivo", true); }
+    }
+    setApSubiendo(false);
+  };
+
+  const pantallaSubirAporte = ()=>{
+    const f = apForm, set=(k,v)=>setApForm(x=>({...x,[k]:v}));
+    const t = aporteTipo(f.tipo);
+    return (<Pantalla titulo="Subir material" contexto="Queda guardado y ordenado por categoría" gap="14">
+      <Grupo titulo="Qué es">
+        <div className="mob-campo"><span className="mob-lab">Categoría</span>
+          <div className="mob-tipos">
+            {APORTE_TIPOS.map(x=>(
+              <button key={x.k} className={"mob-tipo"+(f.tipo===x.k?" on":"")} onClick={()=>set("tipo",x.k)}>
+                <Ic n={x.ico} w={20}/><span>{x.n}</span>
+              </button>
+            ))}
+          </div></div>
+      </Grupo>
+      <input ref={apFileRef} type="file" multiple style={{display:"none"}}
+        accept={f.tipo==="foto"?"image/*":undefined}
+        onChange={e=>{ const x=Array.from(e.target.files||[]); e.target.value=""; adjuntarAporte(x); }}/>
+      <button className="mob-btn sec" onClick={()=>apFileRef.current&&apFileRef.current.click()} disabled={apSubiendo}>
+        <MobIco w={18}>{MI.clip}</MobIco> {apSubiendo?"Subiendo…":(f.tipo==="foto"?"Elegir fotos":f.tipo==="plano"?"Subir plano":"Adjuntar archivo")}
+      </button>
+      {!!f.archivos.length && (
+        <div className="mob-adjs">
+          {f.archivos.map((a,i)=>(
+            <div key={i} className="mob-adj">
+              <span className="ic"><Ic n={fileIcon(a.contentType)} w={16}/></span>
+              <span className="nm">{a.name}</span>
+              <button onClick={()=>set("archivos", f.archivos.filter((_,k)=>k!==i))} aria-label="Quitar"><Ic n="cerrar" w={15}/></button>
+            </div>
+          ))}
+        </div>
+      )}
+      <Grupo>
+        <div className="mob-campo"><span className="mob-lab">Título</span>
+          <input className="mob-inp" value={f.titulo} onChange={e=>set("titulo",e.target.value)}
+            placeholder={f.tipo==="plano"?"Ej: Planta primer piso":f.tipo==="presupuesto"?"Ej: Ampliación cocina":"Ponle un nombre"}/></div>
+        <div className="mob-campo"><span className="mob-lab">Propiedad</span>
+          <select className="mob-inp" value={f.pid} onChange={e=>set("pid",e.target.value)}>
+            <option value="">Sin propiedad</option>
+            {propiedades.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+          </select></div>
+        <div className="mob-campo"><span className="mob-lab">Nota</span>
+          <textarea className="mob-inp" rows={3} value={f.nota} onChange={e=>set("nota",e.target.value)}
+            placeholder="Lo que haga falta explicar"/></div>
+      </Grupo>
+      <button className="mob-btn pri" onClick={enviarAporte} disabled={apSubiendo}>
+        {apSubiendo?"Subiendo…":"Guardar en la plataforma"}
+      </button>
+    </Pantalla>);
+  };
+
+  const pantallaAportes = ()=>{
+    const porTipo = {};
+    APORTE_TIPOS.forEach(t=>{ porTipo[t.k]=[]; });
+    (aportes||[]).forEach(a=>{ (porTipo[a.tipo]||porTipo.archivo).push(a); });
+    const hayAlgo = (aportes||[]).length>0;
+    return (<Pantalla titulo="Material del equipo" contexto={hayAlgo ? ((aportes||[]).length+" cosas guardadas") : "Todavía nada subido"} gap="14">
+      {!soloLectura || esArquitecto ? (
+        <button className="mob-btn pri" onClick={()=>push({t:"subirAporte"})}>
+          <MobIco w={18}>{MI.mas}</MobIco> Subir material
+        </button>
+      ) : null}
+      {aportesCargando && !hayAlgo && <div className="mob-vacio">Cargando…</div>}
+      {!aportesCargando && !hayAlgo && (
+        <div className="mob-vacio">Cuando alguien suba un plano, un presupuesto o una foto, aparece acá, ordenado por categoría.</div>
+      )}
+      {APORTE_TIPOS.map(t=> porTipo[t.k].length ? (
+        <Grupo key={t.k} titulo={t.n==="Plano"?"Planos":t.n+"s"}>
+          {porTipo[t.k].map(a=>{
+            const p = a.pid ? propPorId(a.pid) : null;
+            return (<Fila key={a.id} icoNav={t.ico} titulo={a.titulo|| (a.archivos[0]&&a.archivos[0].name) || t.n}
+              sub={[a.autor, p?p.name:"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · ")}
+              extra={a.archivos.length>1 ? <span className="mob-chip">{a.archivos.length}</span> : null}
+              onClick={()=> a.tipo==="plano" ? push({t:"plano", ap:a.id}) : push({t:"aporte", ap:a.id})}/>);
+          })}
+        </Grupo>
+      ) : null)}
+    </Pantalla>);
+  };
+
+  const aportePorId = (id)=> (aportes||[]).find(a=>a.id===id) || null;
+  const borrarAporte = async(a)=>{
+    if(!window.confirm("¿Borrar este aporte?")) return;
+    try{
+      const r = await api("/api/aportes",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ accion:"borrar", id:a.id }) });
+      if(r.ok){ setAportes(x=>x.filter(y=>y.id!==a.id)); pop(); }
+      else { const j=await r.json().catch(()=>({})); notify(j.error||"No se pudo borrar", true); }
+    }catch(_e){ notify("Sin conexión", true); }
+  };
+
+  const pantallaAporte = (a)=>{
+    if(!a) return (<Pantalla titulo="Aporte"><div className="mob-vacio">Este aporte ya no está.</div></Pantalla>);
+    const t = aporteTipo(a.tipo); const p = a.pid ? propPorId(a.pid) : null;
+    return (<Pantalla titulo={a.titulo|| t.n} contexto={[a.autor, p?p.name:""].filter(Boolean).join(" · ")} gap="14">
+      <div className="mob-hub-top claro">
+        <div className="fila"><span className="lb">{t.n}</span><span className="lb">{mobCuando(new Date(a.ts).toISOString())}</span></div>
+        {!!a.nota && <div className="mob-porque" style={{color:"var(--mtx)", borderTopColor:"var(--mln)"}}>{a.nota}</div>}
+      </div>
+      {!!a.archivos.length && (
+        <div className="mob-fotos-aporte">
+          {a.archivos.map((f,k)=> esImagen(f.contentType)
+            ? <button key={k} className="mob-foto-hero" onClick={()=>{ setVisor(f.url); setVisorReal(false); }}>
+                <img src={f.url} alt={f.name} loading="lazy"/>
+              </button>
+            : <a key={k} href={f.url} target="_blank" rel="noopener" className="mob-cell" style={{borderRadius:14, border:"1px solid var(--mln)"}}>
+                <span className="ic"><Ic n={fileIcon(f.contentType)} w={20}/></span>
+                <span className="tx"><span className="t">{f.name}</span></span>
+                <span className="chev"><MobIco w={17} sw={2.4}>{MI.chevron}</MobIco></span>
+              </a>
+          )}
+        </div>
+      )}
+      {a.tipo==="plano" && !!a.archivos.length && (
+        <button className="mob-btn pri" onClick={()=>push({t:"plano", ap:a.id})}>
+          <MobIco w={18}>{MI.chispas}</MobIco> Leer el plano con IA
+        </button>
+      )}
+      <Grupo titulo="Contactar a quien lo subió">
+        <Fila icoNav="burbuja" titulo={"Escribir a "+a.autor} onClick={()=>push({t:"equipo", con:a.autor})}/>
+      </Grupo>
+      {(!soloLectura || esArquitecto) && (
+        <button className="mob-btn sec" onClick={()=>borrarAporte(a)}>Borrar</button>
+      )}
+    </Pantalla>);
+  };
+
+  /* ============ LEER UN PLANO CON IA ============
+     Un agente experto en planos de arquitectura: identifica el plano, lo lee,
+     estima superficies si están acotadas y sugiere mejoras. La conversación
+     vive en el aparato mientras se mira el plano; el plano viaja a la IA como
+     imagen. */
+  const planoImgIA = async(url)=>{
+    // El plano está servido por la plataforma (/a/…). Se baja y se pasa a
+    // base64 para mandárselo a la IA como imagen.
+    const r = await fetch(url); const blob = await r.blob();
+    const dataUrl = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
+    const m = /^data:([^;]+);base64,(.+)$/s.exec(String(dataUrl));
+    if(!m) throw new Error("plano");
+    return { media:m[1], data:m[2] };
+  };
+
+  const [planoChat, setPlanoChat] = React.useState({});   // { [apId]: [{role,content}] }
+  const [planoBusy, setPlanoBusy] = React.useState(false);
+  const [planoPreg, setPlanoPreg] = React.useState("");
+
+  const preguntarPlano = async(a, textoPreg, primera)=>{
+    const img = (a.archivos||[]).find(f=>esImagen(f.contentType)) || a.archivos[0];
+    if(!img){ notify("Este aporte no tiene una imagen de plano", true); return; }
+    const previos = planoChat[a.id] || [];
+    const nuevo = primera
+      ? [{ role:"user", content:"Analiza este plano: dime qué es, qué se ve, superficies aproximadas si están acotadas y qué mejorarías." }]
+      : [...previos, { role:"user", content:textoPreg }];
+    setPlanoChat(c=>({...c, [a.id]: nuevo}));
+    setPlanoBusy(true); setPlanoPreg("");
+    try{
+      const plano = await planoImgIA(img.url);
+      const p = a.pid ? propPorId(a.pid) : null;
+      const contexto = p ? (p.name+(p.comuna?" · "+p.comuna:"")+(p.address?" · "+p.address:"")) : "";
+      const r = await api("/api/planos-ia",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ messages:nuevo.slice(-8), plano, contexto }) });
+      const j = await r.json().catch(()=>({}));
+      const txt = j.text || j.error || "No pude leer el plano.";
+      setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:txt }]}));
+    }catch(_e){
+      setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez." }]}));
+    }
+    setPlanoBusy(false);
+  };
+
+  const pantallaPlano = (a)=>{
+    if(!a) return (<Pantalla titulo="Plano"><div className="mob-vacio">Este plano ya no está.</div></Pantalla>);
+    const img = (a.archivos||[]).find(f=>esImagen(f.contentType)) || (a.archivos||[])[0];
+    const conv = planoChat[a.id] || [];
+    const p = a.pid ? propPorId(a.pid) : null;
+    return (<Pantalla titulo={a.titulo||"Plano"} contexto={[a.autor, p?p.name:""].filter(Boolean).join(" · ")} gap="14">
+      {img && esImagen(img.contentType) && (
+        <button className="mob-foto-hero" onClick={()=>{ setVisor(img.url); setVisorReal(false); }}>
+          <img src={img.url} alt={a.titulo||"Plano"} loading="lazy"/>
+        </button>
+      )}
+      {img && !esImagen(img.contentType) && (
+        <a href={img.url} target="_blank" rel="noopener" className="mob-btn sec">
+          <MobIco w={18}>{MI.doc}</MobIco> Abrir {img.name}
+        </a>
+      )}
+
+      {!conv.length ? (
+        <div className="mob-bloque">
+          <div className="mob-hub-top">
+            <div className="fila"><span className="lb">Agente experto</span>
+              <span className="mob-chip ink">IA</span></div>
+            <div className="cifra" style={{fontSize:"clamp(19px,5.4vw,24px)"}}>Leer este plano</div>
+            <div className="mob-porque">Identifica qué es, lee los recintos y las medidas acotadas, estima superficies y sugiere mejoras con criterio de arquitecto.</div>
+          </div>
+          <button className="mob-btn pri" disabled={planoBusy || !img} onClick={()=>preguntarPlano(a, "", true)}>
+            {planoBusy ? "Leyendo el plano…" : "Analizar con IA"}
+          </button>
+        </div>
+      ) : (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Lectura del plano</h2>
+          <div className="mob-iachat">
+            {conv.map((m,i)=>(
+              <div key={i} className={"mob-iamsg "+(m.role==="user"?"yo":"ia")}>
+                {m.role==="assistant" && <span className="et">Agente de planos</span>}
+                <div className="tx">{m.content}</div>
+              </div>
+            ))}
+            {planoBusy && <div className="mob-iamsg ia"><span className="et">Agente de planos</span><div className="tx">Pensando…</div></div>}
+          </div>
+          <div className="mob-iabar">
+            <input className="mob-inp" value={planoPreg} onChange={e=>setPlanoPreg(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"&&planoPreg.trim()&&!planoBusy) preguntarPlano(a, planoPreg.trim(), false); }}
+              placeholder="Pregúntale algo del plano…" disabled={planoBusy}/>
+            <button className="mob-btn pri" style={{minWidth:56}} disabled={!planoPreg.trim()||planoBusy}
+              onClick={()=>preguntarPlano(a, planoPreg.trim(), false)}>→</button>
+          </div>
+          <div className="mob-nota">Lectura orientativa: un plano no reemplaza el trabajo en terreno ni la revisión municipal.</div>
+        </div>
+      )}
+
+      <Grupo titulo="Del aporte">
+        <Fila icoNav="burbuja" titulo={"Escribir a "+a.autor} onClick={()=>push({t:"equipo", con:a.autor})}/>
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ============ PLANOS (lista) ============ */
+  const pantallaPlanos = ()=>{
+    const planos = (aportes||[]).filter(a=>a.tipo==="plano");
+    return (<Pantalla titulo="Planos" contexto="Súbelos y léelos con el agente experto" gap="14">
+      {(!soloLectura || esArquitecto) && (
+        <button className="mob-btn pri" onClick={()=>{ setApForm(f=>({...f, tipo:"plano"})); push({t:"subirAporte"}); }}>
+          <MobIco w={18}>{MI.mas}</MobIco> Subir un plano
+        </button>
+      )}
+      {planos.length ? (
+        <Grupo>
+          {planos.map(a=>{
+            const p = a.pid ? propPorId(a.pid) : null;
+            return (<Fila key={a.id} icoNav="regla" titulo={a.titulo||(a.archivos[0]&&a.archivos[0].name)||"Plano"}
+              sub={[a.autor, p?p.name:"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · ")}
+              onClick={()=>push({t:"plano", ap:a.id})}/>);
+          })}
+        </Grupo>
+      ) : (
+        <div className="mob-vacio">Ningún plano todavía. Cuando una arquitecta suba uno, aparece acá para leerlo con la IA.</div>
+      )}
     </Pantalla>);
   };
 
@@ -7803,6 +8213,11 @@ function MobileApp(props){
     else if(top.t==="tramites")     vista = pantallaTramites();
     else if(top.t==="tramNuevo")    vista = pantallaTramNuevo();
     else if(top.t==="tram1")        vista = pantallaTram1(tramPorId(top.id) || {hechos:{}, k:"arriendo"});
+    else if(top.t==="aportes")      vista = pantallaAportes();
+    else if(top.t==="subirAporte")  vista = pantallaSubirAporte();
+    else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
+    else if(top.t==="planos")       vista = pantallaPlanos();
+    else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
@@ -7849,7 +8264,11 @@ function MobileApp(props){
     ["finanzas","Finanzas",MI.tend,"finanzas"],
     ["mas","Más",MI.puntos,null],
   ];
-  const tabs = tabsTodas.filter(t=> !t[3] || hay(t[3]));
+  let tabs = tabsTodas.filter(t=> !t[3] || hay(t[3]));
+  if(esArquitecto){
+    // El arquitecto no ve dinero: su barra es Inicio, Propiedades y Más.
+    tabs = tabs.filter(t=> t[0]==="inicio" || t[0]==="props" || t[0]==="mas");
+  }
   const pantallaCompleta = top && top.t==="equipo";
 
   return (<div className="mob-app" data-mob="1">
@@ -8134,7 +8553,7 @@ function ChatEquipo({ compacto, conInicial }){
     ) : (
       <div className="chat-eq-comp">
         <input ref={clipRef} type="file" multiple style={{display:"none"}}
-          onChange={e=>{ const f=e.target.files; e.target.value=""; adjuntar(f); }}/>
+          onChange={e=>{ const f=Array.from(e.target.files||[]); e.target.value=""; adjuntar(f); }}/>
         <button className="chat-eq-mas" onClick={()=>clipRef.current&&clipRef.current.click()}
           disabled={subiendo} title="Adjuntar foto o documento" aria-label="Adjuntar foto o documento">
           {subiendo ? "…" : "＋"}
@@ -8388,7 +8807,10 @@ function App(){
   const usuarioActual = sesion ? (usuarios.find(u=>u.id===sesion.id)||sesion) : SESION_DEMO;
   const rolActual = usuarioActual ? (usuarioActual.rol||"propietario") : "propietario";
   const esProp = rolActual==="propietario";
-  const soloLectura = rolActual==="invitado" || !!(acceso && acceso.rol==="lectura");
+  const esArquitecto = !!(acceso && acceso.rol==="arquitecto");
+  // El arquitecto no guarda el panel (propiedades, cuentas), como el de solo
+  // lectura, pero sí puede aportar material (planos, presupuestos, fotos).
+  const soloLectura = rolActual==="invitado" || !!(acceso && (acceso.rol==="lectura" || acceso.rol==="arquitecto"));
   const iniciarSesion=(u)=>{ setSesion({id:u.id,nombre:u.nombre,email:u.email,rol:u.rol,propiedadId:u.propiedadId||null}); };
   const cerrarSesion=()=>{ setSesion(null); };
   const [invForm,setInvForm]=useState({nombre:"",email:"",rol:"colaborador",propiedadId:""});
@@ -11119,7 +11541,7 @@ function App(){
         las secciones completas que el móvil abre) pero se oculta por CSS. */}
     {movil && <MobileApp
       props={props} socs={socs} contacts={contacts} uf={uf} owner={owner} gw={gw}
-      soloLectura={soloLectura}
+      soloLectura={soloLectura} esArquitecto={esArquitecto} nombreAcceso={(acceso&&acceso.nombre)||""}
       cotiz={cotiz} setCotiz={setCotiz} tramites={tramites} setTramites={setTramites}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
       abrirIncidencia={abrirIncidencia}

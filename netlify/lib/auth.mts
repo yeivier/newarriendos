@@ -8,15 +8,18 @@ import { getStore } from '@netlify/blobs'
 // entrega un token de sesión que el navegador manda en cada llamada.
 //
 // Roles:
-//   dueño   -> puede ver y guardar todo
-//   lectura -> puede ver, no puede guardar (para la mamá, el contador, etc.)
+//   dueño      -> puede ver y guardar todo
+//   lectura    -> puede ver, no puede guardar (para la mamá, el contador, etc.)
+//   arquitecto -> puede ver, no guarda el panel, pero SÍ aporta: sube planos,
+//                 presupuestos, fotos y archivos, y escribe en el chat. Es un
+//                 colaborador acotado: nunca toca las propiedades ni las cuentas.
 
 const TIENDA_AUTH = 'app-auth'
 const TIENDA_SES = 'app-sesiones'
 const LLAVE = 'config'
 const DIAS_SESION = 30
 
-export type Rol = 'dueño' | 'lectura'
+export type Rol = 'dueño' | 'lectura' | 'arquitecto'
 export type Acceso = { rol: Rol; nombre: string; token: string }
 export type AccesoInvitado = { id: string; nombre: string; rol: Rol; salt: string; hash: string; creado: number }
 export type ConfigAuth = { salt: string; hash: string; creado: number; invitados: AccesoInvitado[] }
@@ -77,7 +80,8 @@ export async function quienLlama(req: Request): Promise<Acceso | null> {
     | { rol: Rol; nombre: string; exp: number }
     | null
   if (!s || !s.exp || s.exp < Date.now()) return null
-  return { rol: s.rol === 'lectura' ? 'lectura' : 'dueño', nombre: s.nombre || '', token }
+  const rol: Rol = s.rol === 'lectura' ? 'lectura' : s.rol === 'arquitecto' ? 'arquitecto' : 'dueño'
+  return { rol, nombre: s.nombre || '', token }
 }
 
 export const sinAcceso = () =>
@@ -85,3 +89,7 @@ export const sinAcceso = () =>
 
 export const soloDueno = () =>
   Response.json({ error: 'Este acceso es de solo lectura', codigo: 'solo_lectura' }, { status: 403 })
+
+/** Quien puede aportar material (planos, presupuestos, fotos, archivos): el
+ *  dueño y el arquitecto. El acceso de solo lectura, no. */
+export const puedeAportar = (rol: Rol) => rol === 'dueño' || rol === 'arquitecto'

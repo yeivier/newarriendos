@@ -95,7 +95,7 @@ export default async (req: Request, _context: Context) => {
 
   if (accion === 'crear_acceso') {
     const nombre = String(body.nombre || '').trim()
-    const rol: Rol = body.rol === 'dueño' ? 'dueño' : 'lectura'
+    const rol: Rol = body.rol === 'dueño' ? 'dueño' : body.rol === 'arquitecto' ? 'arquitecto' : 'lectura'
     if (!nombre) return Response.json({ error: 'Ponle un nombre a este acceso' }, { status: 400 })
     if (clave.length < CLAVE_MIN) {
       return Response.json({ error: `La clave debe tener al menos ${CLAVE_MIN} caracteres` }, { status: 400 })
