@@ -1113,9 +1113,17 @@
   /* ---- Listas agrupadas estilo Ajustes de iOS ----
      Tarjeta blanca, filas de 56 px, separador fino que arranca después del
      icono, chevron a la derecha. Es el patrón de navegación por defecto. */
-  .mob-gtit{ font-size:13px; font-weight:600; color:var(--mtm); letter-spacing:-.01em;
-    margin:14px 4px 7px; text-transform:none; font-family:inherit; }
-  .mob-group{ background:var(--msf); border-radius:16px; overflow:hidden; }
+  /* Un solo tamaño de título de sección en todo el teléfono: grande y negro,
+     como en el diseño. Antes era un rótulo chico en gris y las secciones se
+     perdían dentro del scroll. */
+  .mob-gtit{ font-size:26px; font-weight:700; color:var(--mib); letter-spacing:-.024em;
+    margin:10px 2px 2px; text-transform:none; font-family:inherit; }
+  .mob-group{ background:var(--msf); border-radius:16px; overflow:hidden; margin-top:12px; }
+  /* Título con una acción a la derecha ("Prioridad · Ver cobros"). */
+  .mob-gtit-fila{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .mob-gtit-fila .mob-gtit{ margin-bottom:0; }
+  .mob-gtit-accion{ background:none; border:none; padding:0 2px; font-family:inherit;
+    font-size:16px; font-weight:600; color:var(--mib); cursor:pointer; flex-shrink:0; min-height:44px; }
   .mob-cell{ display:flex; align-items:center; gap:13px; width:100%; min-height:56px;
     padding:9px 15px; background:transparent; border:none; font-family:inherit;
     text-align:left; color:var(--mtx); cursor:pointer; position:relative; min-width:0; }
@@ -1132,6 +1140,45 @@
   .mob-cell .val{ font-size:15.5px; color:var(--mtm); flex-shrink:0; font-variant-numeric:tabular-nums;
     max-width:44%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mob-cell .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+  .mob-cell .mob-chip{ flex-shrink:0; max-width:40%; }
+  .mob-cell .val.dato{ color:var(--mib); font-weight:700; }
+  .mob-kpis2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .mob-kpis2 > div{ background:var(--msf); border-radius:16px; padding:16px;
+    display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .mob-kpis2 .k{ font-size:14.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---- Fotos ----
+     Se dibujan con <img> y no con background-image: así el navegador elige la
+     mejor decodificación para la densidad real de la pantalla, la foto se
+     puede abrir a tamaño completo y además carga en diferido. */
+  .mob-foto-hero{ display:block; width:100%; padding:0; border:none; background:var(--mfl);
+    border-radius:20px; overflow:hidden; cursor:pointer; line-height:0; }
+  .mob-foto-hero img{ width:100%; height:210px; object-fit:cover; display:block; }
+  .mob-fotos{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .mob-fotos button{ padding:0; border:none; background:var(--mfl); border-radius:14px;
+    overflow:hidden; cursor:pointer; line-height:0; }
+  .mob-fotos img{ width:100%; height:112px; object-fit:cover; display:block; }
+
+  /* Visor a resolución nativa: toca para alternar entre "cabe en pantalla" y
+     el tamaño real, con desplazamiento para recorrerla. */
+  .mob-visor{ position:fixed; inset:0; z-index:400; background:#000; display:flex; flex-direction:column; }
+  .mob-visor .barra{ display:flex; align-items:center; gap:12px; flex-shrink:0;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px; }
+  .mob-visor .barra button, .mob-visor .barra a{ min-height:44px; display:inline-flex; align-items:center;
+    gap:7px; background:rgba(255,255,255,.16); color:#fff; border:none; border-radius:14px;
+    padding:0 15px; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer;
+    text-decoration:none; }
+  .mob-visor .barra .sp{ flex:1; }
+  .mob-visor .lienzo{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch;
+    display:flex; align-items:center; justify-content:center; }
+  .mob-visor img{ display:block; }
+  .mob-visor img.cabe{ max-width:100%; max-height:100%; object-fit:contain; }
+  .mob-visor img.real{ max-width:none; max-height:none; }
+  .mob-visor .pie{ flex-shrink:0; color:rgba(255,255,255,.6); font-size:13px; text-align:center;
+    padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px)); }
+  .mob-kpis2 .v{ font-size:clamp(19px,5.6vw,26px); font-weight:700; letter-spacing:-.028em;
+    color:var(--mib); font-variant-numeric:tabular-nums; line-height:1.08;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mob-cell.destruct .tx .t{ color:var(--mib); font-weight:600; }
   /* Una pantalla es una columna flex: sin esto, las tarjetas altas (un bloque
      de la ficha, la fila de indicadores) se comprimen y se ven cortadas. */
@@ -1223,11 +1270,104 @@
   /* Estado vacío: una frase, nunca una pantalla en blanco. */
   .mob-vacio{ text-align:center; color:var(--mtm); font-size:15px; line-height:1.45; padding:26px 10px; }
 
-  /* Resumen superior de un hub: la cifra que manda, y debajo tres apoyos. */
-  .mob-hub-top{ background:var(--msf); border-radius:18px; padding:20px; display:flex;
-    flex-direction:column; gap:16px; }
-  .mob-hub-top .cifra{ font-size:34px; font-weight:740; letter-spacing:-.03em; line-height:1.05;
-    color:var(--mib); font-variant-numeric:tabular-nums; }
+  /* ---- Inicio: encabezados grandes y tarjetas sueltas ----
+     Inicio no es una lista de ajustes, es el panel de acción: sus secciones se
+     anuncian con un título grande y negro, cada prioridad va en su propia
+     tarjeta con el icono en un cuadro, y las acciones son una cuadrícula de
+     cuatro con el nombre debajo del icono. */
+  .mob-h2{ font-size:26px; font-weight:700; letter-spacing:-.024em; color:var(--mib); margin:10px 2px 0; }
+  .mob-bloque{ display:flex; flex-direction:column; gap:12px; }
+
+  .mob-prio{ display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+    background:var(--msf); border:none; border-radius:18px; padding:16px; min-height:80px;
+    font-family:inherit; color:var(--mtx); cursor:pointer; min-width:0; }
+  .mob-prio:active{ background:#FAFAFC; }
+  .mob-prio.quieta{ cursor:default; }
+  .mob-prio.quieta:active{ background:var(--msf); }
+  .mob-prio .tile{ width:48px; height:48px; border-radius:14px; background:var(--mfl);
+    display:flex; align-items:center; justify-content:center; color:var(--mib); flex-shrink:0; }
+  .mob-prio .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  /* El título puede ocupar dos líneas: los avisos reales son más largos que
+     "3 cobros pendientes" y cortarlos deja frases a medias. */
+  .mob-prio .tx .t{ font-size:19px; font-weight:700; letter-spacing:-.018em; color:var(--mib);
+    line-height:1.22; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .mob-prio .tx .s{ font-size:15px; color:var(--mtm); line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mob-prio .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+
+  .mob-acc2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .mob-acc2 > button{ background:var(--msf); border:none; border-radius:18px; padding:18px;
+    min-height:112px; display:flex; flex-direction:column; align-items:flex-start;
+    justify-content:space-between; gap:18px; font-family:inherit; text-align:left;
+    color:var(--mib); cursor:pointer; min-width:0; }
+  .mob-acc2 > button:active{ background:#FAFAFC; }
+  .mob-acc2 > button .nb{ width:100%; min-width:0; font-size:17.5px; font-weight:700;
+    letter-spacing:-.018em; line-height:1.2; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+
+  .mob-act{ background:var(--msf); border-radius:18px; overflow:hidden; }
+  .mob-act > *{ display:flex; align-items:center; gap:12px; width:100%; padding:15px 16px;
+    background:transparent; border:none; font-family:inherit; text-align:left;
+    color:var(--mtx); position:relative; min-height:64px; min-width:0; cursor:pointer; }
+  .mob-act > *:active{ background:rgba(120,120,128,.12); }
+  .mob-act > * + *::before{ content:""; position:absolute; left:16px; right:0; top:0;
+    height:1px; background:var(--mln); }
+  .mob-act .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .mob-act .tx .t{ font-size:17px; font-weight:700; letter-spacing:-.015em; color:var(--mib);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-act .tx .s{ font-size:14.5px; color:var(--mtm);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-act .val{ font-size:17px; font-weight:700; color:var(--mib); flex-shrink:0;
+    font-variant-numeric:tabular-nums; }
+  .mob-act .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+
+  @media(max-width:359px){
+    .mob-h2, .mob-gtit{ font-size:23px; }
+    .mob-gtit-accion{ font-size:15px; }
+    .mob-prio{ padding:14px; gap:12px; }
+    .mob-prio .tile{ width:44px; height:44px; border-radius:13px; }
+    .mob-prio .tx .t{ font-size:17.5px; }
+    .mob-acc2{ gap:10px; }
+    .mob-acc2 > button{ min-height:100px; padding:15px; gap:14px; }
+    .mob-acc2 > button .nb{ font-size:16px; }
+    /* En 320 px el monto es lo más ancho de la fila: si no cede, se come el
+       nombre del movimiento. */
+    .mob-act > *{ padding:14px; gap:10px; }
+    .mob-act .tx .t{ font-size:16px; }
+    .mob-act .val{ font-size:15.5px; }
+  }
+
+  /* ---- La tarjeta de resumen: negra ----
+     El negro sólido está reservado para una sola cosa por pantalla: la cifra
+     que la manda. Todo lo demás vive en blanco sobre gris, así que la tarjeta
+     negra es el ancla de la vista y no compite con nada.
+     El resto del negro de la app sigue la misma regla: botón principal, chip
+     de lo ya resuelto, relleno de la barra de progreso y pestaña activa. */
+  .mob-hub-top{ background:var(--mib); color:#fff; border:none; border-radius:20px; padding:22px;
+    display:flex; flex-direction:column; gap:14px; width:100%; text-align:left;
+    font-family:inherit; min-width:0; }
+  .mob-hub-top .cifra{ font-size:clamp(31px,9.4vw,42px); font-weight:740; letter-spacing:-.032em;
+    line-height:1.04; color:#fff; font-variant-numeric:tabular-nums; }
+  /* Fila de apoyo: rótulo a la izquierda, contexto a la derecha. */
+  .mob-hub-top .fila{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; min-width:0; }
+  .mob-hub-top .lb{ font-size:15px; color:rgba(255,255,255,.62); min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-hub-top .lb.fuerte{ color:#fff; font-weight:600; }
+  /* Lo que dentro de la tarjeta era negro, ahora es blanco. */
+  .mob-hub-top .mob-eyebrow, .mob-hub-top .mob-mono, .mob-hub-top .mob-p2{ color:rgba(255,255,255,.62); }
+  .mob-hub-top .mob-pt{ background:#fff; }
+  .mob-hub-top .mob-stat-bar{ background:rgba(255,255,255,.24); }
+  .mob-hub-top .mob-stat-bar > i{ background:#fff; }
+  .mob-hub-top .mob-metrics{ border-top:1px solid rgba(255,255,255,.2); border-bottom:none; padding-bottom:0; }
+  .mob-hub-top .mob-metrics .m .v{ color:#fff; }
+  .mob-hub-top .mob-metrics .m .k{ color:rgba(255,255,255,.62); }
+  .mob-hub-top .mob-chip{ background:rgba(255,255,255,.16); color:#fff; }
+  .mob-hub-top .mob-chip.ink{ background:#fff; color:var(--mib); }
+  .mob-hub-top .mob-chip.out{ background:transparent; border:1px solid rgba(255,255,255,.28); color:#fff; }
+  /* La cabecera de perfil no es una cifra: no le toca el negro. */
+  .mob-hub-top.claro{ background:var(--msf); color:var(--mtx); }
+  .mob-hub-top.claro .mob-p2{ color:var(--mtm); }
 </style>
 </head>
 <body>
@@ -1932,22 +2072,128 @@ const leerArchivoParaIA = async (file)=>{
   if(!texto.trim()) throw new Error("“"+nombre+"” no tiene texto que se pueda leer. Si es un escaneo, súbelo como PDF o foto.");
   return { name:nombre, texto:texto.slice(0,120000), size:file.size };
 };
-function optimizeImage(file, maxDim, quality){
-  return new Promise(async (resolve)=>{
-    try{
-      const dataUrl = await readFileDataURL(file);
-      const img = new Image();
-      img.onload = ()=>{ try{
-        let w=img.naturalWidth, h=img.naturalHeight;
-        if(Math.max(w,h)>maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
-        const c=document.createElement("canvas"); c.width=w; c.height=h;
-        c.getContext("2d").drawImage(img,0,0,w,h);
-        resolve(c.toDataURL("image/jpeg",quality));
-      }catch(e){ resolve(dataUrl); } };
-      img.onerror=()=>resolve(dataUrl);
-      img.src=dataUrl;
-    }catch(e){ resolve(null); }
+/* ================= FOTOS EN LA MÁXIMA RESOLUCIÓN POSIBLE =================
+   Antes toda foto se reducía a 1600 px y se volvía a comprimir en JPEG 80.
+   En un iPhone moderno la pantalla tiene 1170 px reales de ancho y la foto se
+   puede ampliar con los dedos, así que 1600 px se veían blandos — y el detalle
+   perdido en esa recompresión no se recupera nunca más.
+
+   Ahora se sube lo más grande que quepa:
+
+   1. Si el archivo original ya cabe en lo que acepta el servidor y es un
+      formato que el navegador muestra, se sube TAL CUAL: sin recomprimir,
+      sin perder un solo píxel.
+   2. Si no cabe, se busca la mejor versión que sí quepa. Primero se baja la
+      calidad —que casi no se nota— y solo cuando ya no alcanza se reduce el
+      tamaño, estimando de una vez cuánto hay que bajar en vez de ir a tientas.
+   3. Se prefiere WebP a JPEG: a igual calidad pesa bastante menos, así que
+      permite conservar más píxeles dentro del mismo presupuesto.
+   4. El tope de tamaño lo pone el navegador, no un número escrito a mano:
+      Safari no dibuja lienzos de más de ~16,7 millones de píxeles.
+   ========================================================================= */
+
+// Lo que se puede mandar en una sola petición. El cuerpo viaja en base64, que
+// infla un tercio, y la función acepta ~6 MB: 3,8 MB de imagen quedan en
+// ~5,1 MB de petición, con margen.
+const SUBIDA_MAX_BYTES = 3800000;
+// Límites del lienzo del navegador (los de Safari, que son los más estrictos).
+const LIENZO_MAX_PX = 16777216;
+const LIENZO_MAX_LADO = 8192;
+// Formatos que el navegador muestra tal cual, sin convertir nada.
+const FORMATOS_DIRECTOS = /^image\/(jpeg|jpg|png|webp|avif|gif)$/i;
+
+let _webpOK = null;
+function soportaWebp(){
+  if(_webpOK !== null) return _webpOK;
+  try{
+    const c = document.createElement("canvas"); c.width = c.height = 1;
+    _webpOK = c.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+  }catch(_e){ _webpOK = false; }
+  return _webpOK;
+}
+// Cuántos bytes pesa de verdad un data URL (sin contar la cabecera ni el relleno).
+function bytesDeDataURL(u){
+  const i = String(u).indexOf(",");
+  if(i < 0) return 0;
+  const largo = u.length - i - 1;
+  const relleno = u.charCodeAt(u.length-1)===61 ? (u.charCodeAt(u.length-2)===61 ? 2 : 1) : 0;
+  return Math.floor(largo*3/4) - relleno;
+}
+function cargarImagen(dataUrl){
+  return new Promise((ok)=>{
+    const img = new Image();
+    img.onload = ()=>ok(img);
+    img.onerror = ()=>ok(null);
+    img.src = dataUrl;
   });
+}
+// Dibuja a un tamaño dado con el mejor remuestreo que ofrezca el navegador.
+// El fondo va blanco: si la imagen trae transparencia y termina en JPEG, sin
+// esto el transparente sale negro.
+function lienzoDe(img, w, h){
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  try{ ctx.imageSmoothingQuality = "high"; }catch(_e){}
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return c;
+}
+function optimizeImage(file){
+  return (async ()=>{
+    try{
+      // 1) Tal cual, sin tocar nada, si ya cabe.
+      if(FORMATOS_DIRECTOS.test(file.type||"") && file.size <= SUBIDA_MAX_BYTES){
+        return await readFileDataURL(file);
+      }
+      const dataUrl = await readFileDataURL(file);
+      const img = await cargarImagen(dataUrl);
+      if(!img) return dataUrl;
+      const w0 = img.naturalWidth || img.width;
+      const h0 = img.naturalHeight || img.height;
+      if(!w0 || !h0) return dataUrl;
+
+      // 2) Punto de partida: la imagen entera, recortada solo por lo que el
+      //    lienzo del navegador es capaz de dibujar.
+      let escala = Math.min(1,
+        LIENZO_MAX_LADO / Math.max(w0, h0),
+        Math.sqrt(LIENZO_MAX_PX / (w0 * h0)));
+
+      const tipo = soportaWebp() ? "image/webp" : "image/jpeg";
+      const calidades = [0.95, 0.92, 0.88, 0.84, 0.8];
+      let ultimo = null;
+      for(let paso = 0; paso < calidades.length; paso++){
+        const w = Math.max(1, Math.round(w0 * escala));
+        const h = Math.max(1, Math.round(h0 * escala));
+        const salida = lienzoDe(img, w, h).toDataURL(tipo, calidades[paso]);
+        const pesa = bytesDeDataURL(salida);
+        if(pesa <= SUBIDA_MAX_BYTES){
+          // Si sobró bastante presupuesto es que se encogió de más: se intenta
+          // una vez recuperar tamaño, para no dejar resolución sin usar.
+          if(escala < 1 && pesa < SUBIDA_MAX_BYTES * 0.72){
+            const subir = Math.min(1/escala, Math.sqrt(SUBIDA_MAX_BYTES * 0.92 / pesa));
+            const escala2 = Math.min(1, escala * subir);
+            if(escala2 > escala * 1.05){
+              const w2 = Math.max(1, Math.round(w0 * escala2));
+              const h2 = Math.max(1, Math.round(h0 * escala2));
+              const mayor = lienzoDe(img, w2, h2).toDataURL(tipo, calidades[paso]);
+              if(bytesDeDataURL(mayor) <= SUBIDA_MAX_BYTES) return mayor;
+            }
+          }
+          return salida;
+        }
+        ultimo = salida;
+        // Lo comprimido crece más o menos con la cantidad de píxeles, así que
+        // se estima de una vez cuánto hay que encoger en lugar de tantear.
+        const ajuste = Math.sqrt(SUBIDA_MAX_BYTES / pesa) * 0.96;
+        escala = escala * Math.min(0.94, Math.max(0.4, ajuste));
+        if(Math.round(w0 * escala) < 900) break;
+      }
+      return ultimo || dataUrl;
+    }catch(e){ return null; }
+  })();
 }
 async function uploadMedia(dataUrl, kind){
   const r = await fetch("/api/media/subir",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({dataUrl,kind}) });
@@ -2306,7 +2552,7 @@ function MediaSection({ d, set }){
       const added=[];
       for(const file of Array.from(files)){
         if(!/^image\//.test(file.type)){ continue; }
-        const opt = await optimizeImage(file, kind==="pano"?4096:1600, kind==="pano"?0.82:0.8);
+        const opt = await optimizeImage(file);
         if(!opt){ continue; }
         try{ const url = await uploadMedia(opt, kind); added.push({url, name:file.name.replace(/\.[^.]+$/,"")}); }
         catch(err){ note("No se pudo subir "+file.name, true); }
@@ -2324,7 +2570,7 @@ function MediaSection({ d, set }){
   const renPano=(i,name)=> set(p=>({...p, panoramas:(p.panoramas||[]).map((x,j)=>j===i?{...x,name}:x)}));
   return (<>
     <div className="sub-title dark">⑧ Fotos y recorrido virtual 360°</div>
-    <div className="help" style={{marginBottom:12}}>Sube todas las fotos que quieras: el navegador las optimiza y se guardan en la plataforma (no en el dispositivo), por lo que quedan disponibles desde cualquier teléfono o computador y viajan con el enlace al compartir. La <b>primera foto</b> es la portada.</div>
+    <div className="help" style={{marginBottom:12}}>Sube todas las fotos que quieras, en la mejor calidad que tengas: se guardan a máxima resolución en la plataforma (no en el dispositivo), así que quedan disponibles desde cualquier teléfono o computador y viajan con el enlace al compartir. Solo se reducen si el archivo no cabe en un envío, y en ese caso se conserva el tamaño más grande posible. La <b>primera foto</b> es la portada.</div>
     <label className="btn btn-out btn-sm" style={{marginBottom:10,opacity:busy?0.6:1,pointerEvents:busy?"none":"auto"}}>
       {busy?"Subiendo…":"Agregar fotos"}
       <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{ addFiles(e.target.files,"foto"); e.target.value=""; }}/>
@@ -4792,6 +5038,19 @@ const mobEtiq = (name, i=1)=>{
 // Dinero con signo delante: Intl deja "$-1.322.750", que se lee mal.
 const mobPlata = (n)=> (n<0 ? "−"+CLP(Math.abs(n)) : CLP(n));
 
+// "hoy", "ayer" o la fecha corta: así se lee una actividad reciente.
+const mobCuando = (iso)=>{
+  if(!iso) return "";
+  try{
+    const d=new Date(iso), h=new Date();
+    const soloDia=(x)=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+    const dif=Math.round((soloDia(h)-soloDia(d))/86400000);
+    if(dif===0) return "hoy";
+    if(dif===1) return "ayer";
+    return d.toLocaleDateString("es-CL",{day:"numeric",month:"short"});
+  }catch(_e){ return iso; }
+};
+
 // Etiqueta de estado del arriendo, en palabras y sin color.
 const mobEstado = (p)=> p.status==="pagado" ? "Al día"
   : p.status==="pendiente" ? "Vence hoy"
@@ -5025,6 +5284,9 @@ function MobileApp(props){
   const [busca, setBusca] = React.useState("");
   const [buscaCob, setBuscaCob] = React.useState("");
   const [buscaCon, setBuscaCon] = React.useState("");
+  // Foto abierta a tamaño completo (null = ninguna).
+  const [visor, setVisor] = React.useState(null);
+  const [visorReal, setVisorReal] = React.useState(false);
 
   /* La pila guarda identificadores, nunca copias del objeto: si se edita una
      propiedad mientras está abierta, la pantalla muestra el dato nuevo. */
@@ -5084,12 +5346,12 @@ function MobileApp(props){
   const Chev = ()=> <span className="chev"><MobIco w={17} sw={2.4}>{MI.chevron}</MobIco></span>;
 
   /* Fila de lista agrupada (el patrón de Ajustes de iOS). */
-  const Fila = ({ ico, icoNav, titulo, sub, valor, extra, onClick, chevron, sinIco })=>{
+  const Fila = ({ ico, icoNav, titulo, sub, valor, valorFuerte, extra, onClick, chevron, sinIco })=>{
     const dentro = (<React.Fragment>
       {!sinIco && <span className="ic">{icoNav ? <Ic n={icoNav} w={21} sw={1.9}/> : <MobIco w={21} sw={1.9}>{ico}</MobIco>}</span>}
       <span className="tx"><span className="t">{titulo}</span>{sub?<span className="s">{sub}</span>:null}</span>
       {extra||null}
-      {valor!=null && valor!=="" ? <span className="val">{valor}</span> : null}
+      {valor!=null && valor!=="" ? <span className={"val"+(valorFuerte?" dato":"")}>{valor}</span> : null}
       {(chevron===undefined ? !!onClick : chevron) ? <Chev/> : null}
     </React.Fragment>);
     const cls = "mob-cell"+(sinIco?" sin-ico":"")+(onClick?"":" quieta");
@@ -5170,6 +5432,8 @@ function MobileApp(props){
     const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
     const eyebrow = dias[hoy.getDay()] + " " + hoy.getDate();
     const nombre = (owner.name||"").trim().split(/\s+/)[0] || "Javier";
+    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const mesActual = meses[hoy.getMonth()];
 
     /* PRIORIDADES · salen del motor de alertas de la plataforma (el mismo que
        usa el escritorio), ordenadas por urgencia y recortadas a cuatro. */
@@ -5183,18 +5447,32 @@ function MobileApp(props){
       if(p) push({t:"prop", id:p.id}); else irSeccion(a.ir||"props");
     };
 
-    /* ACTIVIDAD RECIENTE · sale de los datos guardados, no de un ejemplo. */
+    /* ACTIVIDAD RECIENTE · sale de los datos guardados, no de un ejemplo.
+       El monto va aparte, a la derecha, como en un movimiento de cuenta. */
     const act = [];
     propiedades.forEach(p=>{
-      (p.histPagos||[]).slice(-3).forEach(h=> act.push({ f:h.fecha||"", ico:MI.tarj,
-        t:"Pago recibido · "+CLP(num(h.monto)), s:p.name, go:()=>push({t:"pagos", id:p.id}) }));
-      (p.incidencias||[]).slice(0,2).forEach(x=> act.push({ f:x.fecha||"", ico:MI.llaveInglesa,
-        t:x.titulo||"Incidencia", s:p.name, go:()=>push({t:"incid", id:p.id}) }));
-      (p.bitacora||[]).slice(0,2).forEach(b=> act.push({ f:b.fecha||"", ico:MI.libreta,
-        t:b.titulo||b.tipo||"Nota de bitácora", s:p.name, go:()=>push({t:"bitac", id:p.id}) }));
+      const donde = (f)=> (f ? mobCuando(f) + " · " : "") + p.name;
+      (p.histPagos||[]).slice(0,3).forEach(h=> act.push({ f:h.fecha||"",
+        t:"Pago registrado", s:donde(h.fecha), val:"+"+CLP(num(h.monto)), go:()=>push({t:"pagos", id:p.id}) }));
+      (p.incidencias||[]).slice(0,2).forEach(x=> act.push({ f:x.fecha||"",
+        t:x.titulo||"Incidencia", s:donde(x.fecha), go:()=>push({t:"incid", id:p.id}) }));
+      (p.bitacora||[]).slice(0,2).forEach(b=> act.push({ f:b.fecha||"",
+        t:b.titulo||b.tipo||"Nota de bitácora", s:donde(b.fecha), go:()=>push({t:"bitac", id:p.id}) }));
     });
     act.sort((a,b)=> String(b.f).localeCompare(String(a.f)));
     const reciente = act.slice(0,4);
+
+    /* ACCIONES RÁPIDAS · cuatro como tope, y solo las que el rol permite. */
+    const accionesRapidas = [
+      !soloLectura && { k:"prop", ico:MI.mas, lb:"Nueva propiedad", go:()=>AC.nuevaPropiedad&&AC.nuevaPropiedad() },
+      !soloLectura && { k:"pago", ico:MI.dinero, lb:"Registrar pago",
+        go:()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); } },
+      !soloLectura && { k:"cont", ico:MI.personas, lb:"Nuevo contacto", go:()=>AC.contacto&&AC.contacto() },
+      hay("ai")
+        ? { k:"ia", ico:MI.chispas, lb:"Preguntar a IA", go:()=>irSeccion("ai") }
+        : (!soloLectura && { k:"rec", ico:MI.sobre, lb:"Recordatorio",
+            go:()=>{ const p=atrasadoMasGrave||pendientes[0]; p?abrirRecord(p):notify("No hay arriendos pendientes"); } })
+    ].filter(Boolean).slice(0,4);
 
     return (<div className="mob-scr g14">
       <HeaderMob eyebrow={eyebrow} title={"Hola, " + nombre}
@@ -5213,55 +5491,72 @@ function MobileApp(props){
         </button>
       </div>
 
-      {/* RESUMEN PRINCIPAL · una sola cifra manda la pantalla. */}
-      <button className="mob-hub-top" style={{border:"none", fontFamily:"inherit", textAlign:"left", cursor:"pointer", width:"100%"}}
-        onClick={()=>irA("cobros")}>
-        <div className="mob-eyebrow">{porCobrarHoy>0 ? <><span className="mob-pt"></span>POR COBRAR ESTE MES</> : "COBRADO ESTE MES"}</div>
+      {/* RESUMEN PRINCIPAL · la única cifra que manda la pantalla, en negro. */}
+      <button className="mob-hub-top" style={{cursor:"pointer"}} onClick={()=>irA("cobros")}>
+        <div className="fila">
+          <span className="lb">{porCobrarHoy>0 ? "Por cobrar este mes" : "Cobrado este mes"}</span>
+          <span className="lb">{mesActual}</span>
+        </div>
         <div className="cifra">{CLP(porCobrarHoy>0 ? porCobrarHoy : totalCobrado)}</div>
-        <div>
-          <div className="mob-stat-bar"><i style={{width:pctCob+"%"}}></i></div>
-          <div style={{display:"flex", justifyContent:"space-between", marginTop:9}}>
-            <span className="mob-p2">{CLP(totalCobrado)} cobrado de {CLP(totalEsper)}</span>
-            <span className="mob-p2" style={{fontWeight:600, color:"var(--mib)"}}>{pctCob}%</span>
-          </div>
+        <div className="mob-stat-bar"><i style={{width:pctCob+"%"}}></i></div>
+        <div className="fila">
+          <span className="lb">{CLP(totalCobrado)} de {CLP(totalEsper)}</span>
+          <span className="lb fuerte">{pctCob}%</span>
         </div>
       </button>
 
-      {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. */}
-      {prioridades.length>0 ? (
-        <Grupo titulo="Necesita atención">
-          {prioridades.map(a=>(
-            <Fila key={a.id} icoNav={a.ico} titulo={a.titulo} sub={a.detalle} onClick={()=>abrirAlerta(a)}/>
-          ))}
-        </Grupo>
-      ) : (
-        <Grupo titulo="Necesita atención">
-          <div className="mob-vacio" style={{padding:"20px 16px"}}>Nada pendiente por ahora: los arriendos del mes están al día y no hay contratos por vencer.</div>
-        </Grupo>
-      )}
-
-      {/* ACCIONES RÁPIDAS · cuatro como tope. */}
-      <div>
-        <div className="mob-gtit">Acciones rápidas</div>
-        <div className="mob-acciones">
-          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); }}>
-            <MobIco w={19}>{MI.tarj}</MobIco><span>Registrar pago</span></button>
-          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]; p?abrirRecord(p):notify("No hay arriendos pendientes"); }}>
-            <MobIco w={19}>{MI.sobre}</MobIco><span>Recordatorio</span></button>
-          {!soloLectura && <button className="mob-accion" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
-            <MobIco w={19}>{MI.mas}</MobIco><span>Nueva propiedad</span></button>}
-          {!soloLectura && <button className="mob-accion" onClick={()=>{ const p=rentals[0]||propiedades[0]; p?(AC.incidencia&&AC.incidencia(p)):notify("Primero agrega una propiedad"); }}>
-            <MobIco w={19}>{MI.llaveInglesa}</MobIco><span>Nueva incidencia</span></button>}
+      {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. Cada una en
+          su tarjeta: se lee de un vistazo y se toca sin apuntar. */}
+      <div className="mob-bloque">
+        <div className="mob-gtit-fila">
+          <h2 className="mob-h2">Prioridad</h2>
+          <button className="mob-gtit-accion" onClick={()=>irA("cobros")}>Ver cobros</button>
         </div>
+        {prioridades.length>0 ? prioridades.map(a=>(
+          <button key={a.id} className="mob-prio" onClick={()=>abrirAlerta(a)}>
+            <span className="tile"><Ic n={a.ico} w={23} sw={1.9}/></span>
+            <span className="tx"><span className="t">{a.titulo}</span><span className="s">{a.detalle}</span></span>
+            <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>
+          </button>
+        )) : (
+          <div className="mob-prio quieta">
+            <span className="tile"><MobIco w={23} sw={2}>{MI.check}</MobIco></span>
+            <span className="tx"><span className="t">Todo al día</span>
+              <span className="s">No hay arriendos atrasados ni contratos por vencer.</span></span>
+          </div>
+        )}
       </div>
 
-      {/* ACTIVIDAD RECIENTE · qué cambió. */}
+      {/* ACCIONES RÁPIDAS · cuadrícula de cuatro, icono arriba y nombre abajo. */}
+      {accionesRapidas.length>0 && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Acciones rápidas</h2>
+          <div className="mob-acc2">
+            {accionesRapidas.map(a=>(
+              <button key={a.k} onClick={a.go}>
+                <MobIco w={24} sw={2}>{a.ico}</MobIco>
+                <span className="nb">{a.lb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ACTIVIDAD RECIENTE · qué cambió, con el monto a la derecha. */}
       {reciente.length>0 && (
-        <Grupo titulo="Actividad reciente">
-          {reciente.map((a,i)=>(
-            <Fila key={i} ico={a.ico} titulo={a.t} sub={(a.f? a.f+" · ":"")+a.s} onClick={a.go}/>
-          ))}
-        </Grupo>
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Actividad reciente</h2>
+          <div className="mob-act">
+            {reciente.map((a,i)=>(
+              <button key={i} onClick={a.go}>
+                <span className="tx"><span className="t">{a.t}</span><span className="s">{a.s}</span></span>
+                {a.val
+                  ? <span className="val">{a.val}</span>
+                  : <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
     </div>);
@@ -5297,7 +5592,8 @@ function MobileApp(props){
             <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
               titulo={p.name}
               sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")||"Sin arrendatario"}
-              valor={p.use==="arriendo" ? mobEstado(p) : "Uso propio"}
+              extra={<span className={"mob-chip"+(p.use==="arriendo"&&p.status==="pagado"?" ink":"")}>
+                {p.use==="arriendo" ? mobEstado(p) : "Uso propio"}</span>}
               onClick={()=>push({t:"prop", id:p.id})}/>
           ))}
         </Grupo>
@@ -5327,10 +5623,15 @@ function MobileApp(props){
     const resto = pendientes.concat(atrasados.filter(p=>p!==dominante)).concat(pagados).filter(filtro);
 
     return (<div className="mob-scr g14 con-pie">
-      <HeaderMob eyebrow={mesTxt} title="Cobros" sub={pagados.length+" al día · "+pendientes.length+" por vencer · "+atrasados.length+" atrasados"}/>
+      <HeaderMob eyebrow={mesTxt} title="Cobros" sub={pagados.length+" al día · "+pendientes.length+" por vencer · "+atrasados.length+" atrasado"+(atrasados.length===1?"":"s")}/>
       <div className="mob-buscar">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
         <input value={buscaCob} onChange={e=>setBuscaCob(e.target.value)} placeholder="Buscar propiedad o arrendatario"/>
+      </div>
+
+      <div className="mob-kpis2">
+        <div><span className="k">Cobrado</span><span className="v">{pctCob}%</span></div>
+        <div><span className="k">Pendiente</span><span className="v">{CLP(porCobrarHoy)}</span></div>
       </div>
 
       <div>
@@ -5384,19 +5685,25 @@ function MobileApp(props){
             <Fila key={p.id}
               ico={p.status==="pagado"?MI.check:MI.reloj}
               titulo={p.name}
-              sub={(p.tenant||"Sin arrendatario")+" · "+(p.status==="pagado"?"pagado":"vence el "+(p.dueDay||5))}
-              valor={CLP(num(p.rent))}
+              sub={(p.tenant||"Sin arrendatario")+" · "+CLP(num(p.rent))+" · "+(p.status==="pagado"?"pagado":"vence el "+(p.dueDay||5))}
+              extra={<span className={"mob-chip"+(p.status==="pagado"?" ink":"")}>{mobEstado(p)}</span>}
               onClick={()=>push({t:"prop", id:p.id})}/>
           ))}
         </Grupo>
       )}
 
+      {hay("informes") && (
+        <Grupo>
+          <Fila icoNav="tendencia" titulo="Cartola del mes" sub={CLP(totalCobrado)+" de "+CLP(totalEsper)+" cobrado"}
+            onClick={()=>irSeccion("informes")}/>
+        </Grupo>
+      )}
+
       <div className="mob-footbar">
-        <div>
-          <div className="mob-mono">COBRADO / ESPERADO</div>
-          <div style={{fontSize:15.5, fontWeight:700, color:"var(--mib)"}}>{CLP(totalCobrado)} de {CLP(totalEsper)}</div>
-        </div>
-        {hay("informes") && <button className="mob-btn out" onClick={()=>irSeccion("informes")}>Cartola</button>}
+        <button className="mob-btn pri" style={{width:"100%"}}
+          onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); }}>
+          <MobIco w={19}>{MI.mas}</MobIco> Registrar pago
+        </button>
       </div>
     </div>);
   };
@@ -5407,7 +5714,8 @@ function MobileApp(props){
     const divTot    = propiedades.reduce((s,p)=> s + divCLP(p,uf), 0);
     const gastosTot = propiedades.reduce((s,p)=> s + contribMes(p) + seguroMes(p,uf) + gastosExtraMes(p,uf), 0);
     const cifra = finSeg==="utilidad" ? utilTot : (finSeg==="dividendos" ? divTot : gastosTot);
-    const rotulo = finSeg==="utilidad" ? "UTILIDAD DEL MES" : finSeg==="dividendos" ? "DIVIDENDOS DEL MES" : "GASTOS DEL MES";
+    const rotulo = finSeg==="utilidad" ? "Utilidad del mes" : finSeg==="dividendos" ? "Dividendos del mes" : "Gastos del mes";
+    const mesFin = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][new Date().getMonth()];
     const valorDe = (p)=> finSeg==="utilidad" ? utilidadMes(p,uf)
       : finSeg==="dividendos" ? divCLP(p,uf)
       : (contribMes(p) + seguroMes(p,uf) + gastosExtraMes(p,uf));
@@ -5420,16 +5728,17 @@ function MobileApp(props){
         <button className={finSeg==="gastos"?"on":""} onClick={()=>setFinSeg("gastos")}>Gastos</button>
       </div>
       <div className="mob-hub-top">
-        <div className="mob-eyebrow">{rotulo}</div>
+        <div className="fila"><span className="lb">{rotulo}</span><span className="lb">{mesFin}</span></div>
         <div className="cifra">{mobPlata(cifra)}</div>
-        <div className="mob-p2">
-          Arriendos {CLP(rentals.reduce((s,p)=>s+ingresoMes(p,uf),0))} · dividendos {CLP(divTot)} · gastos {CLP(gastosTot)}
+        <div className="fila">
+          <span className="lb">{finSeg==="utilidad" ? "Después de gastos" : finSeg==="dividendos" ? "Créditos hipotecarios" : "Contribuciones, seguros y gastos"}</span>
+          <span className="lb">{propiedades.length} propiedades</span>
         </div>
       </div>
       <Grupo titulo="Por propiedad" nota="Cada propiedad abre su propio balance: ingresos, dividendo, contribuciones, seguros y gastos.">
         {orden.map(p=>(
           <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
-            sub={socDe(p).name||p.comuna||""} valor={mobPlata(valorDe(p))}
+            sub={socDe(p).name||p.comuna||""} valor={mobPlata(valorDe(p))} valorFuerte
             onClick={()=>push({t:"finProp", id:p.id})}/>
         ))}
       </Grupo>
@@ -5508,20 +5817,28 @@ function MobileApp(props){
           <button className="mob-btn pri" style={{flex:1, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
         </div>) : null}>
 
+      {/* La portada, en la resolución con la que se subió. */}
+      {!!(p.fotos && p.fotos.length) && (
+        <button className="mob-foto-hero" onClick={()=>setVisor(p.fotos[0].url)} aria-label="Ver la foto de portada">
+          <img src={p.fotos[0].url} alt={"Foto de "+p.name} decoding="async"/>
+        </button>
+      )}
+
       {/* Resumen: estado, cifra, próximo pago y avance de la ficha. */}
       <div className="mob-hub-top">
-        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:10}}>
-          <span className={"mob-chip"+(arrendado && p.status!=="pagado"?" ink":"")}>{arrendado?mobEstado(p):"Uso personal"}</span>
-          <span className="mob-p2">{tipoTxt(p)||""}</span>
+        <div className="fila">
+          <span className="lb">{arrendado?"Arriendo mensual":"Valor estimado"}</span>
+          <span className={"mob-chip"+(arrendado && p.status==="pagado"?" ink":" out")}>{arrendado?mobEstado(p):"Uso personal"}</span>
         </div>
         <div>
-          <div className="mob-eyebrow" style={{marginBottom:6}}>{arrendado?"ARRIENDO MENSUAL":"VALOR ESTIMADO"}</div>
           <div className="cifra">{CLP(arrendado ? num(p.rent) : num(p.tasacion))}</div>
-          {arrendado && !!p.rentUF && <div className="mob-p2" style={{marginTop:4}}>{UFf(num(p.rentUF))} · reajuste {p.adjustment||"UF"}</div>}
+          <div className="lb" style={{marginTop:6}}>
+            {arrendado && !!p.rentUF ? UFf(num(p.rentUF))+" · reajuste "+(p.adjustment||"UF") : (tipoTxt(p)||"")}
+          </div>
         </div>
         <div className="mob-metrics">
           <div className="m"><span className="v">{arrendado ? (p.dueDay||5) : "—"}</span><span className="k">DÍA DE PAGO</span></div>
-          <div className="m"><span className="v">{mobPlata(util)}</span><span className="k">UTILIDAD/MES</span></div>
+          <div className="m"><span className="v">{mobPlata(util)}</span><span className="k">UTILIDAD</span></div>
           <div className="m"><span className="v">{fic.pct}%</span><span className="k">FICHA</span></div>
         </div>
       </div>
@@ -5559,7 +5876,7 @@ function MobileApp(props){
 
       <Grupo titulo="Dinero">
         <Fila ico={MI.grafico} titulo="Balance de la propiedad" sub="Ingresos, dividendo, contribuciones y gastos"
-          valor={mobPlata(util)} onClick={()=>push({t:"finProp", id:p.id})}/>
+          valor={mobPlata(util)} valorFuerte onClick={()=>push({t:"finProp", id:p.id})}/>
       </Grupo>
 
       <Grupo titulo="Compartir y administrar">
@@ -5708,7 +6025,7 @@ function MobileApp(props){
           {lista.map((h,i)=>(
             <Fila key={i} ico={MI.tarj} titulo={h.concepto||"Arriendo"}
               sub={(h.fecha||"")+(h.metodo?" · "+h.metodo:"")}
-              valor={CLP(num(h.monto))}/>
+              valor={CLP(num(h.monto))} valorFuerte/>
           ))}
         </Grupo>
       ) : <div className="mob-vacio">Todavía no hay pagos registrados en esta propiedad.</div>}
@@ -5729,19 +6046,19 @@ function MobileApp(props){
     const util = ing - (div+cont+seg+extra);
     return (<Pantalla titulo="Balance" contexto={p.name} gap="14">
       <div className="mob-hub-top">
-        <div className="mob-eyebrow">UTILIDAD DEL MES</div>
+        <div className="fila"><span className="lb">Utilidad del mes</span><span className="lb">{p.comuna||""}</span></div>
         <div className="cifra">{mobPlata(util)}</div>
-        <div className="mob-p2">{util>=0 ? "Lo que queda después de pagar dividendo, contribuciones, seguros y gastos." : "Este mes la propiedad cuesta más de lo que renta."}</div>
+        <div className="fila"><span className="lb">{util>=0 ? "Después de dividendo, contribuciones, seguros y gastos" : "La propiedad cuesta más de lo que renta"}</span></div>
       </div>
       <Grupo titulo="Entra">
-        <Fila sinIco titulo="Arriendo" valor={CLP(p.use==="arriendo"?num(p.rent):0)}/>
-        <Fila sinIco titulo="Otros ingresos" valor={CLP(ingresosExtraMes(p,uf))}/>
+        <Fila sinIco titulo="Arriendo" valor={CLP(p.use==="arriendo"?num(p.rent):0)} valorFuerte/>
+        <Fila sinIco titulo="Otros ingresos" valor={CLP(ingresosExtraMes(p,uf))} valorFuerte/>
       </Grupo>
       <Grupo titulo="Sale">
-        <Fila sinIco titulo={"Dividendo"+(p.dividendoUF?" · "+p.dividendoUF+" UF":"")} valor={"−"+CLP(div)}/>
-        <Fila sinIco titulo="Contribuciones" valor={"−"+CLP(cont)}/>
-        <Fila sinIco titulo="Seguros" valor={"−"+CLP(seg)}/>
-        <Fila sinIco titulo="Gastos editables" valor={"−"+CLP(extra)}/>
+        <Fila sinIco titulo={"Dividendo"+(p.dividendoUF?" · "+p.dividendoUF+" UF":"")} valor={"−"+CLP(div)} valorFuerte/>
+        <Fila sinIco titulo="Contribuciones" valor={"−"+CLP(cont)} valorFuerte/>
+        <Fila sinIco titulo="Seguros" valor={"−"+CLP(seg)} valorFuerte/>
+        <Fila sinIco titulo="Gastos editables" valor={"−"+CLP(extra)} valorFuerte/>
       </Grupo>
       <Grupo titulo="Editar el detalle" nota="Los gastos e ingresos con periodicidad, subítems y adjuntos se administran en la sección Finanzas.">
         <Fila ico={MI.banco} titulo="Crédito hipotecario" sub="Banco, dividendo y plazos"
@@ -5790,14 +6107,15 @@ function MobileApp(props){
 
       {fotos.length>0 && (
         <div>
-          <div className="mob-gtit">Fotos de la propiedad</div>
-          <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8}}>
-            {fotos.slice(0,8).map((ft,i)=>(
-              <a key={i} href={ft.url} target="_blank" rel="noopener"
-                style={{display:"block", height:110, borderRadius:14, backgroundSize:"cover", backgroundPosition:"center",
-                  backgroundImage:"url('"+ft.url+"')"}} aria-label={"Foto "+(i+1)}></a>
+          <div className="mob-gtit">Fotos ({fotos.length})</div>
+          <div className="mob-fotos">
+            {fotos.map((ft,i)=>(
+              <button key={i} onClick={()=>setVisor(ft.url)} aria-label={"Ver la foto "+(i+1)+" a tamaño completo"}>
+                <img src={ft.url} alt={ft.name||("Foto "+(i+1))} loading="lazy" decoding="async"/>
+              </button>
             ))}
           </div>
+          <div className="mob-nota">Toca una foto para verla a tamaño completo. Se guardan tal como las subiste, sin recortar la resolución.</div>
         </div>
       )}
 
@@ -5945,12 +6263,10 @@ function MobileApp(props){
 
     return (<Pantalla titulo="Ficha completa" contexto={p.name} gap="14" accion={<Guardado/>}>
       <div className="mob-hub-top">
-        <div className="mob-eyebrow">AVANCE DE LA FICHA</div>
+        <div className="fila"><span className="lb">Avance de la ficha</span><span className="lb">{SECS.length} bloques</span></div>
         <div className="cifra">{pct}%</div>
-        <div>
-          <div className="mob-stat-bar"><i style={{width:pct+"%"}}></i></div>
-          <div className="mob-p2" style={{marginTop:9}}>{hechos} de {total} campos completos, en {SECS.length} bloques. Se guarda solo a medida que escribes.</div>
-        </div>
+        <div className="mob-stat-bar"><i style={{width:pct+"%"}}></i></div>
+        <div className="fila"><span className="lb">{hechos} de {total} campos completos</span><span className="lb">Se guarda solo</span></div>
       </div>
 
       {areas.map(a=>(
@@ -6050,15 +6366,16 @@ function MobileApp(props){
     const g = p.garantia||{};
     return (<Pantalla titulo="Contrato y firma" contexto={p.name} gap="14">
       <div className="mob-hub-top">
-        <div className="mob-eyebrow">{f.estado==="firmado" ? "CONTRATO" : <><span className="mob-pt"></span>CONTRATO</>}</div>
-        <div style={{fontSize:22, fontWeight:700, letterSpacing:"-.02em"}}>{estado}</div>
-        <div className="mob-p2">
-          {p.contractStart||"—"} → {p.contractEnd||"—"}
-          {p.contractEnd ? (daysBetweenSafe(p.contractEnd)>=0 ? " · quedan "+daysBetweenSafe(p.contractEnd)+" días" : " · vencido") : ""}
-        </div>
+        <div className="fila"><span className="lb">Contrato</span>
+          <span className={"mob-chip"+(f.estado==="firmado"?" ink":" out")}>{f.estado==="firmado"?"Firmado":"En curso"}</span></div>
+        <div className="cifra" style={{fontSize:"clamp(24px,7vw,30px)"}}>{estado}</div>
+        <div className="fila"><span className="lb">
+          {(p.contractStart||"—")+" → "+(p.contractEnd||"—")
+            + (p.contractEnd ? (daysBetweenSafe(p.contractEnd)>=0 ? " · quedan "+daysBetweenSafe(p.contractEnd)+" días" : " · vencido") : "")}
+        </span></div>
       </div>
       <Grupo titulo="Condiciones pactadas" nota="Se editan en “Arriendo y cobro”; lo que cambies allí se guarda solo.">
-        <Fila sinIco titulo="Renta mensual" valor={CLP(num(p.rent))}/>
+        <Fila sinIco titulo="Renta mensual" valor={CLP(num(p.rent))} valorFuerte/>
         <Fila sinIco titulo="Reajuste" valor={p.adjustment||"UF"}/>
         <Fila sinIco titulo="Día de pago" valor={String(p.dueDay||5)}/>
         <Fila sinIco titulo="Multa por atraso" valor={(num(p.penalty)||0)+"%"}/>
@@ -6105,7 +6422,7 @@ function MobileApp(props){
     const utilidad = lista.reduce((t,p)=>t+utilidadMes(p,uf), 0);
     return (<Pantalla titulo={s.name} contexto={s.rut? ("RUT "+s.rut) : "Sociedad propietaria"} gap="14">
       <div className="mob-hub-top">
-        <div className="mob-eyebrow">PATRIMONIO</div>
+        <div className="fila"><span className="lb">Patrimonio</span><span className="lb">{s.name}</span></div>
         <div className="cifra">{CLP(patrimonio)}</div>
         <div className="mob-metrics">
           <div className="m"><span className="v">{lista.length}</span><span className="k">INMUEBLES</span></div>
@@ -6117,13 +6434,14 @@ function MobileApp(props){
         {lista.length ? lista.map(p=>(
           <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
             sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")}
-            valor={p.use==="arriendo"?mobEstado(p):"Uso propio"}
+            extra={<span className={"mob-chip"+(p.use==="arriendo"&&p.status==="pagado"?" ink":"")}>
+              {p.use==="arriendo"?mobEstado(p):"Uso propio"}</span>}
             onClick={()=>push({t:"prop", id:p.id})}/>
         )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Esta sociedad todavía no tiene propiedades.</div>}
       </Grupo>
       <Grupo titulo="Resultado del mes">
-        <Fila sinIco titulo="Utilidad" valor={mobPlata(utilidad)}/>
-        <Fila sinIco titulo="Dividendos" valor={CLP(lista.reduce((t,p)=>t+divCLP(p,uf),0))}/>
+        <Fila sinIco titulo="Utilidad" valor={mobPlata(utilidad)} valorFuerte/>
+        <Fila sinIco titulo="Dividendos" valor={CLP(lista.reduce((t,p)=>t+divCLP(p,uf),0))} valorFuerte/>
       </Grupo>
       <Grupo titulo="Datos">
         <Fila sinIco titulo="Representante" valor={s.rep||"—"}/>
@@ -6152,7 +6470,8 @@ function MobileApp(props){
         <Grupo titulo="Arrendatarios vigentes">
           {va.map((x,i)=>(
             <Fila key={"v"+i} ico={MI.persona} titulo={x.nombre} sub={x.sub}
-              valor={mobEstado(x.p)} onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
+              extra={<span className={"mob-chip"+(x.p.status==="pagado"?" ink":"")}>{mobEstado(x.p)}</span>}
+              onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
           ))}
         </Grupo>
       )}
@@ -6207,7 +6526,7 @@ function MobileApp(props){
   /* ============ NIVEL 2 · MI CUENTA ============ */
   const pantallaCuenta = ()=>(
     <Pantalla titulo="Mi cuenta" contexto={(usuarioActual&&usuarioActual.email)||owner.email||""} gap="14">
-      <div className="mob-hub-top" style={{alignItems:"center", textAlign:"center"}}>
+      <div className="mob-hub-top claro" style={{alignItems:"center", textAlign:"center"}}>
         <div className="mob-avatar" style={{width:64, height:64, borderRadius:22, fontSize:22, margin:"0 auto"}}>
           {mobIni((usuarioActual&&usuarioActual.nombre)||owner.name||"U")}
         </div>
@@ -6337,6 +6656,29 @@ function MobileApp(props){
 
   return (<div className="mob-app" data-mob="1">
     {vista}
+    {/* Visor de foto a resolución nativa. Toca la imagen para alternar entre
+        "cabe en pantalla" y el tamaño real, y desplázala para recorrerla. */}
+    {visor && (
+      <div className="mob-visor" role="dialog" aria-label="Foto a tamaño completo">
+        <div className="barra">
+          <button onClick={()=>{ setVisor(null); setVisorReal(false); }} aria-label="Cerrar">
+            <MobIco w={18} sw={2.4}>{MI.cerrar}</MobIco> Cerrar
+          </button>
+          <span className="sp"></span>
+          <button onClick={()=>setVisorReal(v=>!v)}>
+            <MobIco w={17}>{MI.lupa}</MobIco> {visorReal ? "Ajustar" : "Tamaño real"}
+          </button>
+          <a href={visor} target="_blank" rel="noopener" aria-label="Abrir el archivo original">
+            <MobIco w={17}>{MI.descarga}</MobIco>
+          </a>
+        </div>
+        <div className="lienzo">
+          <img src={visor} className={visorReal?"real":"cabe"} alt=""
+            onClick={()=>setVisorReal(v=>!v)}/>
+        </div>
+        <div className="pie">{visorReal ? "Tamaño real · desliza para recorrerla" : "Toca la foto para verla a tamaño real"}</div>
+      </div>
+    )}
     {pantallaCompleta ? null : (
       <div className="mob-tabs" style={{gridTemplateColumns:"repeat("+tabs.length+",1fr)"}}>
         {tabs.map(([id,lb,ic])=>{
