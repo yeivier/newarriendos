@@ -1392,6 +1392,70 @@
   /* La cabecera de perfil no es una cifra: no le toca el negro. */
   .mob-hub-top.claro{ background:var(--msf); color:var(--mtx); }
   .mob-hub-top.claro .mob-p2{ color:var(--mtm); }
+  /* ===== Bandeja, comparar presupuestos y trámites ===== */
+  /* Campana con su punto: rojo solo cuando hay algo sin ver. */
+  .mob-campana{ position:relative; }
+  .mob-campana .pip{ position:absolute; top:2px; right:2px; min-width:16px; height:16px; padding:0 3px;
+    border-radius:9px; background:var(--mrojo,#FF3B30); color:#fff; font-size:10px; font-weight:800;
+    line-height:16px; text-align:center; border:2px solid var(--mbg); }
+  /* Punto de "sin ver" en una fila de la bandeja. */
+  .mob-punto{ width:9px; height:9px; border-radius:50%; background:var(--mrojo,#FF3B30); flex-shrink:0; }
+  /* El "porqué" de una recomendación: texto de apoyo dentro de la tarjeta negra. */
+  .mob-hub-top .mob-porque{ font-size:13.5px; line-height:1.4; color:rgba(255,255,255,.82);
+    border-top:1px solid rgba(255,255,255,.18); padding-top:11px; }
+  /* Ranking de presupuestos. */
+  .mob-cots{ display:flex; flex-direction:column; gap:8px; }
+  .mob-cot{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; cursor:pointer;
+    background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 14px; font-family:inherit; }
+  .mob-cot.elegida{ border-color:var(--mib); box-shadow:0 0 0 1px var(--mib) inset; }
+  .mob-cot .pos{ width:24px; height:24px; border-radius:8px; background:var(--mfl2); color:var(--mtx);
+    font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mob-cot .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .mob-cot .tx .t{ font-size:15.5px; font-weight:650; color:var(--mtx); }
+  .mob-cot .tx .s{ font-size:12.5px; color:var(--mtm); }
+  .mob-cot .tx .bar{ height:5px; border-radius:3px; background:var(--mfl2); overflow:hidden; margin-top:3px; }
+  .mob-cot .tx .bar > i{ display:block; height:100%; background:var(--mib); border-radius:3px; }
+  .mob-cot .pt{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;
+    font-size:17px; font-weight:800; color:var(--mtx); font-variant-numeric:tabular-nums; }
+  .mob-cot .pt .dif{ font-size:11px; font-weight:600; color:var(--mtm); }
+  /* Pasos de un trámite. */
+  .mob-pasos{ display:flex; flex-direction:column; gap:8px; }
+  .mob-paso{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; cursor:pointer;
+    background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 14px; font-family:inherit; }
+  .mob-paso.quieto{ cursor:default; opacity:.72; }
+  .mob-paso.critico{ border-color:var(--mib); box-shadow:0 0 0 1px var(--mib) inset; }
+  .mob-paso .tick{ width:22px; height:22px; border-radius:50%; border:2px solid var(--mln2,rgba(60,60,67,.30));
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .mob-paso.hecho .tick{ background:var(--mib); border-color:var(--mib); }
+  .mob-paso .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .mob-paso .tx .t{ font-size:15.5px; font-weight:600; color:var(--mtx); }
+  .mob-paso.hecho .tx .t{ color:var(--mtm); text-decoration:line-through; }
+  .mob-paso .tx .s{ font-size:12.5px; color:var(--mtm); }
+  /* ===== Chat: destinatarios, voz, privado ===== */
+  .chat-eq-para{ padding:8px 14px 0; }
+  .chat-eq-parachip{ display:inline-flex; align-items:center; gap:6px; background:var(--mfl2);
+    border:none; border-radius:999px; padding:7px 12px; font-family:inherit; font-size:12.5px;
+    font-weight:600; color:var(--mtx); cursor:pointer; max-width:100%; }
+  .chat-eq-parachip .cv{ font-size:9px; color:var(--mtm); }
+  .chat-eq-gente{ display:flex; flex-wrap:wrap; gap:7px; padding:9px 0 2px; }
+  .chat-eq-gente .g{ background:var(--mfl2); border:1px solid var(--mln); border-radius:999px;
+    padding:8px 13px; font-family:inherit; font-size:13px; font-weight:600; color:var(--mtx); cursor:pointer; min-height:36px; }
+  .chat-eq-gente .g.on{ background:var(--mib); color:#fff; border-color:var(--mib); }
+  .chat-eq-mic{ width:40px; height:40px; border-radius:50%; border:none; background:var(--mib); color:#fff;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .chat-eq-grab{ display:flex; align-items:center; gap:10px; padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));
+    background:var(--msf); border-top:1px solid var(--mln); font-size:14px; font-weight:600; color:var(--mtx); }
+  .chat-eq-grab .punto{ width:11px; height:11px; border-radius:50%; background:var(--mrojo,#FF3B30); animation:latido 1s infinite; }
+  .chat-eq-grab .sp{ flex:1; }
+  .chat-eq-grab .cancelar{ background:transparent; border:none; color:var(--mtm); font-family:inherit; font-size:14px; cursor:pointer; padding:8px; }
+  .chat-eq-grab .enviar{ background:var(--mib); color:#fff; border:none; border-radius:999px; padding:9px 18px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; }
+  @keyframes latido{ 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .chat-eq-audio{ width:230px; max-width:100%; height:40px; }
+  .chat-eq-priv{ display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; color:var(--mtm); background:var(--mfl2); border-radius:5px; padding:1px 6px; margin-left:7px; }
+  .chat-eq-priv.solo{ margin:0 0 5px; background:rgba(255,255,255,.18); color:rgba(255,255,255,.9); }
+
+
   /* ============================================================
      ESCALA · un punto más chica
      ------------------------------------------------------------
@@ -1879,7 +1943,7 @@ const TRINIDAD_SEED = [
    toqué algo, me quedo con lo que hizo el otro; si lo toqué, mando yo. Así el
    avance de los dos se suma en vez de pisarse.
    ================================================================= */
-const LISTAS_CON_ID = ["props","socs","contacts","leads","cuentas","plantillas","qreplies"];
+const LISTAS_CON_ID = ["props","socs","contacts","leads","cuentas","plantillas","qreplies","cotiz","tramites"];
 const mismoValor = (a,b)=>{ try{ return JSON.stringify(a)===JSON.stringify(b); }catch(_e){ return a===b; } };
 
 /* Fusiona una ficha campo a campo: si los dos tocaron la misma propiedad pero
@@ -5364,6 +5428,8 @@ const MOB_MAS_GRUPOS = [
     { id:"finanzas", ico:"grafico",   label:"Balance por propiedad", sub:"Dividendos, gastos y utilidad" }
   ]},
   { label:"Herramientas", items:[
+    { esp:"cotiz",   ico:"balanza",      label:"Comparar presupuestos", sub:"Cotizaciones lado a lado, con una recomendación" },
+    { esp:"tramites",ico:"portapapeles", label:"Trámites", sub:"El orden más conveniente para avanzar" },
     { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tu cartera" },
     { esp:"infocheck", ico:"lupa",    label:"Consultar InfoCheck", sub:"Antecedentes de un arrendatario" },
     { esp:"levantamiento", ico:"portapapeles", label:"Ficha de levantamiento", sub:"Formulario para llenar en terreno" },
@@ -5476,6 +5542,188 @@ function MobTextoLargo({ valor, onCommit, placeholder, bloqueado }){
       timer.current = setTimeout(()=>onCommit(nv), 600); }}/>);
 }
 
+/* ============================================================================
+   DECIDIR CON DATOS · cotizaciones y trámites
+   ----------------------------------------------------------------------------
+   Dos cosas que en este rubro se hacen de memoria o en un cuaderno y que la
+   plataforma puede hacer bien:
+
+     · comparar presupuestos, que nunca son comparables tal como llegan (uno
+       trae IVA y otro no, uno demora el doble, otro da garantía);
+     · ordenar un trámite, donde lo que importa no es la lista de pasos sino
+       cuál de ellos está atrasando a todos los demás.
+   ========================================================================== */
+
+/* ---- Cotizaciones ---------------------------------------------------------
+   Tres maneras de decidir. No hay una "correcta": depende de si el problema es
+   la plata, el tiempo o el riesgo de que salga mal. */
+const COT_PRIOS = [
+  { k:"precio",   n:"Precio",   sub:"Que salga lo menos posible",  p:{m:.60, d:.25, g:.15} },
+  { k:"rapidez",  n:"Rapidez",  sub:"Que esté listo cuanto antes", p:{m:.25, d:.60, g:.15} },
+  { k:"respaldo", n:"Respaldo", sub:"Que responda si algo falla",  p:{m:.25, d:.15, g:.60} }
+];
+const COT_IVA = 1.19;
+/* Todo a la misma vara: con IVA. Sin esto, comparar es comparar cualquier cosa. */
+const cotTotal = (o)=> Math.round(num(o.monto) * (o.iva===false ? COT_IVA : 1));
+
+/* Puntaje de 0 a 100. Cada cosa se lleva a una escala común entre la mejor y la
+   peor oferta de esta comparación —no contra un valor inventado— y se pondera
+   según lo que importe. Si todas empatan en algo, ese punto se reparte igual y
+   deja de pesar en la decisión. */
+function compararOfertas(ofertas, prioridad){
+  const list = (ofertas||[]).filter(o=> num(o.monto)>0);
+  if(!list.length) return { orden:[], mejor:null, barata:null, rapida:null, larga:null };
+  const pesos = (COT_PRIOS.find(x=>x.k===prioridad) || COT_PRIOS[0]).p;
+  const tots = list.map(cotTotal), dias = list.map(o=>num(o.dias)), gars = list.map(o=>num(o.garantia));
+  const escala = (v, arr, mayorMejor)=>{
+    const mn = Math.min.apply(null,arr), mx = Math.max.apply(null,arr);
+    if(mx===mn) return 1;
+    return mayorMejor ? (v-mn)/(mx-mn) : (mx-v)/(mx-mn);
+  };
+  const orden = list.map(o=>{
+    const t = cotTotal(o);
+    const sm = escala(t, tots, false);
+    const sd = escala(num(o.dias), dias, false);
+    const sg = escala(num(o.garantia), gars, true);
+    return Object.assign({}, o, { total:t, puntos: Math.round(100*(pesos.m*sm + pesos.d*sd + pesos.g*sg)) });
+  }).sort((a,b)=> b.puntos-a.puntos || a.total-b.total);
+  const porMenor = (f)=> list.slice().sort((a,b)=> f(a)-f(b))[0];
+  return { orden, mejor:orden[0], barata:porMenor(cotTotal),
+    rapida:porMenor(o=>num(o.dias)||9e9), larga:list.slice().sort((a,b)=>num(b.garantia)-num(a.garantia))[0] };
+}
+
+/* Por qué gana la que gana, dicho como se lo diría alguien de confianza. */
+function cotVeredicto(c){
+  if(!c.mejor) return "";
+  const quien = (o)=> (o.prov||"").trim() || "la otra";
+  if(c.barata && c.mejor.id===c.barata.id) return "Es la más barata y además la que mejor calza con lo que te importa.";
+  const extra = c.mejor.total - cotTotal(c.barata);
+  const antes = num(c.barata.dias) - num(c.mejor.dias);
+  const masGar = num(c.mejor.garantia) - num(c.barata.garantia);
+  const razones = [];
+  if(antes>0)  razones.push("entra "+antes+(antes===1?" día":" días")+" antes");
+  if(masGar>0) razones.push("da "+masGar+(masGar===1?" mes":" meses")+" más de garantía");
+  const base = "Cuesta "+mobPlata(extra)+" más que "+quien(c.barata);
+  if(!razones.length) return base+", así que si solo miras la plata conviene "+quien(c.barata)+".";
+  return base+", pero "+razones.join(" y ")+".";
+}
+/* Lo que cuesta cada día que se adelanta: el número que de verdad zanja la
+   discusión entre "la barata" y "la rápida". */
+function cotPorDia(c){
+  if(!c.mejor || !c.barata || c.mejor.id===c.barata.id) return null;
+  const extra = c.mejor.total - cotTotal(c.barata);
+  const antes = num(c.barata.dias) - num(c.mejor.dias);
+  if(extra<=0 || antes<=0) return null;
+  return Math.round(extra/antes);
+}
+
+/* ---- Trámites -------------------------------------------------------------
+   Cada plantilla es lo que hay que hacer, cuánto demora cada cosa en la vida
+   real y qué necesita estar listo antes. Con eso la plataforma puede decir algo
+   que una lista de tareas no dice: qué se puede hacer hoy en paralelo y cuál de
+   esos pasos es el que está atrasando todo lo demás.
+   Los días son de calendario y aproximados: sirven para ordenar, no para
+   prometer una fecha. */
+const MOB_TRAMITES = [
+  { k:"arriendo", n:"Arrendar una propiedad", sub:"De publicar el aviso a entregar las llaves", pasos:[
+    { k:"fotos", n:"Fotos, precio y condiciones", d:2,  dep:[] },
+    { k:"pub",   n:"Publicar el aviso",           d:1,  dep:["fotos"] },
+    { k:"vis",   n:"Mostrar a los interesados",   d:10, dep:["pub"] },
+    { k:"sel",   n:"Elegir al arrendatario",      d:2,  dep:["vis"] },
+    { k:"info",  n:"Informe comercial y laboral", d:2,  dep:["sel"] },
+    { k:"cont",  n:"Redactar el contrato",        d:2,  dep:["info"] },
+    { k:"firma", n:"Firmar ante notario",         d:3,  dep:["cont"] },
+    { k:"gar",   n:"Cobrar garantía y primer mes",d:1,  dep:["firma"] },
+    { k:"serv",  n:"Traspasar luz, agua y gas",   d:5,  dep:["firma"] },
+    { k:"acta",  n:"Acta de entrega y llaves",    d:1,  dep:["gar","serv"] }
+  ]},
+  { k:"cambio", n:"Cambio de arrendatario", sub:"Cerrar bien con uno para poder partir con el otro", pasos:[
+    { k:"aviso", n:"Aviso de término y fecha",      d:1, dep:[] },
+    { k:"insp",  n:"Inspección de salida",          d:1, dep:["aviso"] },
+    { k:"rep",   n:"Reparaciones y limpieza",       d:7, dep:["insp"] },
+    { k:"liq",   n:"Liquidar la garantía",          d:3, dep:["insp"] },
+    { k:"ctas",  n:"Cuentas de servicios al día",   d:5, dep:["insp"] },
+    { k:"pub",   n:"Publicar de nuevo",             d:1, dep:["rep","ctas"] }
+  ]},
+  { k:"venta", n:"Vender una propiedad", sub:"De la tasación a la inscripción en el Conservador", pasos:[
+    { k:"tas",  n:"Tasación",                        d:5,  dep:[] },
+    { k:"tit",  n:"Estudio de títulos",              d:15, dep:[] },
+    { k:"pub",  n:"Publicar con fotos y precio",     d:2,  dep:["tas"] },
+    { k:"vis",  n:"Visitas y ofertas",               d:21, dep:["pub"] },
+    { k:"prom", n:"Promesa de compraventa",          d:5,  dep:["vis","tit"] },
+    { k:"cred", n:"Crédito del comprador",           d:30, dep:["prom"] },
+    { k:"esc",  n:"Escritura de compraventa",        d:10, dep:["cred"] },
+    { k:"fir",  n:"Firma en notaría",                d:3,  dep:["esc"] },
+    { k:"cbr",  n:"Inscripción en el Conservador",   d:25, dep:["fir"] },
+    { k:"ent",  n:"Entrega y cuentas al día",        d:2,  dep:["cbr"] }
+  ]},
+  { k:"compra", n:"Comprar una propiedad", sub:"Desde la preaprobación hasta recibir las llaves", pasos:[
+    { k:"pre",  n:"Preaprobación del crédito",       d:10, dep:[] },
+    { k:"bus",  n:"Buscar y visitar",                d:21, dep:[] },
+    { k:"ofe",  n:"Hacer la oferta",                 d:2,  dep:["bus","pre"] },
+    { k:"tit",  n:"Estudio de títulos",              d:15, dep:["ofe"] },
+    { k:"prom", n:"Promesa de compraventa",          d:5,  dep:["ofe"] },
+    { k:"tasb", n:"Tasación del banco",              d:7,  dep:["prom"] },
+    { k:"apr",  n:"Aprobación final del crédito",    d:15, dep:["tasb","tit"] },
+    { k:"esc",  n:"Escritura",                       d:10, dep:["apr"] },
+    { k:"fir",  n:"Firma en notaría",                d:3,  dep:["esc"] },
+    { k:"cbr",  n:"Inscripción en el Conservador",   d:25, dep:["fir"] },
+    { k:"ent",  n:"Recibir las llaves",              d:1,  dep:["cbr"] }
+  ]},
+  { k:"obra", n:"Regularizar o permiso de obra", sub:"Planos, Dirección de Obras y recepción final", pasos:[
+    { k:"plan", n:"Levantamiento y planos",              d:15, dep:[] },
+    { k:"esp",  n:"Cálculo, sanitario y eléctrico",      d:20, dep:["plan"] },
+    { k:"exp",  n:"Armar el expediente",                 d:5,  dep:["esp"] },
+    { k:"dom",  n:"Ingreso a Dirección de Obras",        d:30, dep:["exp"] },
+    { k:"obs",  n:"Responder observaciones",             d:15, dep:["dom"] },
+    { k:"rec",  n:"Recepción final",                     d:20, dep:["obs"] },
+    { k:"sii",  n:"Actualizar en el SII",                d:10, dep:["rec"] }
+  ]}
+];
+const tramitePlantilla = (k)=> MOB_TRAMITES.find(t=>t.k===k) || MOB_TRAMITES[0];
+
+/* El plan de un trámite según lo que ya está hecho.
+
+   `restante` es lo que falta desde que un paso empieza hasta que termina todo
+   lo que cuelga de él. Es la medida que importa: el paso con el número más alto
+   es el que está atrasando el trámite entero, y por ahí hay que partir aunque
+   parezca el más lata. Los demás pasos disponibles se pueden hacer al mismo
+   tiempo sin perder nada. */
+function planTramite(pl, hechos){
+  const pasos = pl.pasos, hecho = (k)=> !!(hechos||{})[k];
+  const porK = {}; pasos.forEach(p=>{ porK[p.k]=p; });
+  const hijos = {}; pasos.forEach(p=> (p.dep||[]).forEach(d=>{ (hijos[d]=hijos[d]||[]).push(p.k); }));
+  const memo = {};
+  const restante = (k)=>{
+    if(memo[k]!=null) return memo[k];
+    memo[k] = 0;                                   // corta cualquier vuelta sobre sí mismo
+    const sig = hijos[k]||[];
+    const cola = sig.length ? Math.max.apply(null, sig.map(restante)) : 0;
+    return (memo[k] = (hecho(k)?0:num(porK[k].d)) + cola);
+  };
+  const pend = pasos.filter(p=>!hecho(p.k));
+  const listos = pend.filter(p=>(p.dep||[]).every(hecho))
+    .map(p=> Object.assign({}, p, { restante:restante(p.k) }))
+    .sort((a,b)=> b.restante-a.restante || a.d-b.d);
+  const luego = pend.filter(p=>!(p.dep||[]).every(hecho))
+    .map(p=> Object.assign({}, p, {
+      espera:(p.dep||[]).filter(d=>!hecho(d)).map(d=> porK[d] ? porK[d].n : d) }));
+  const listas = pasos.filter(p=>hecho(p.k));
+  return {
+    listos, luego, listas,
+    hechos: listas.length, total: pasos.length,
+    pct: pasos.length ? Math.round(100*listas.length/pasos.length) : 0,
+    dias: listos.length ? Math.max.apply(null, listos.map(x=>x.restante)) : 0,
+    critico: listos.length ? listos[0].k : null,
+    paralelo: listos.length
+  };
+}
+/* Fecha aproximada de término, para que "45 días" sea algo que se pueda anotar. */
+const tramiteFecha = (dias)=>{
+  const d = new Date(); d.setDate(d.getDate()+Math.max(0,dias|0));
+  return d.toLocaleDateString("es-CL",{ day:"numeric", month:"short" });
+};
+
 /* Deslizar de lado sobre una tarjeta para pasar a la vista siguiente, como en
    iOS. La tarjeta sigue al dedo mientras se arrastra y la nueva entra por el
    lado contrario al soltar.
@@ -5546,6 +5794,7 @@ function MobileApp(props){
     utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
     alertas, irAlerta, usuarioActual, rolActual,
     guardado, ficha, patchProp, nav, accesos,
+    cotiz, setCotiz, tramites, setTramites,
     acciones = {},
   } = props;
   const AC = acciones;
@@ -5559,6 +5808,9 @@ function MobileApp(props){
   const [busca, setBusca] = React.useState("");
   const [buscaCob, setBuscaCob] = React.useState("");
   const [buscaCon, setBuscaCon] = React.useState("");
+  // Propiedad elegida al empezar un trámite (vive fuera de la pantalla para que
+  // no se pierda al volver a dibujar la lista de plantillas).
+  const [tramPid, setTramPid] = React.useState("");
   // Foto abierta a tamaño completo (null = ninguna).
   const [visor, setVisor] = React.useState(null);
   const [visorReal, setVisorReal] = React.useState(false);
@@ -5581,7 +5833,12 @@ function MobileApp(props){
   const top  = pila[pila.length-1] || null;
   const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); if(v && v.t==="prop") recordarProp(v.id); setPila(p=>[...p, v]); subirArriba(); };
   const pop  = ()=> setPila(p=>p.slice(0,-1));
-  const irA  = (t)=>{ if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
+  /* Saltar a otra pestaña deja una miga para volver. Cambiar de pestaña con la
+     barra de abajo la borra: ahí no hay "atrás", como en iOS. */
+  const [saltoDe, setSaltoDe] = React.useState(null);
+  const irA  = (t)=>{ setSaltoDe(null); if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
+  const saltarA = (t)=>{ setSaltoDe(prev=> t===tab ? prev : tab); if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
+  const volverSalto = ()=>{ const d=saltoDe; setSaltoDe(null); setPila([]); setTab(d||"inicio"); subirArriba(); };
   const subirArriba = ()=>{ try{ const s=document.querySelector(".mob-app .mob-scr"); if(s) s.scrollTop=0; }catch(_e){} };
   const irSeccion = (id, p)=>{ abrirSeccion(id, p); };
   const propPorId = (id)=> propiedades.find(x=>String(x.id)===String(id)) || null;
@@ -5677,6 +5934,18 @@ function MobileApp(props){
       <MobIco w={19}>{MI.lupa}</MobIco>
     </button>
   );
+  /* Campana de la bandeja: el punto rojo solo cuando de verdad hay algo nuevo.
+     Es la única mancha de color de la app y por eso se reserva para esto. */
+  const BotonBandeja = ()=>{
+    const n = bandejaCuenta();
+    return (
+      <button className="mob-back mob-campana" onClick={()=>push({t:"bandeja"})}
+        title="Bandeja de entrada" aria-label={n ? ("Bandeja: "+n+" sin ver") : "Bandeja de entrada"}>
+        <MobIco w={19} sw={1.9}>{MI.campana}</MobIco>
+        {n>0 && <span className="pip">{n>9?"9+":n}</span>}
+      </button>
+    );
+  };
   /* Cabecera de pestaña (nivel 1): título grande, búsqueda y cuenta. */
   const HeaderMob = ({ eyebrow, title, sub, right })=> (
     <div className="mob-header">
@@ -5685,7 +5954,13 @@ function MobileApp(props){
         <h1 className="mob-hero-h">{title}</h1>
         {sub && <div className="mob-hero-sub">{sub}</div>}
       </div>
-      <div style={{display:"flex", alignItems:"center", gap:10, flexShrink:0}}>
+      <div style={{display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
+        {saltoDe && !top && (
+          <button className="mob-back" onClick={volverSalto} title="Volver" aria-label="Volver">
+            <MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco>
+          </button>
+        )}
+        <BotonBandeja/>
         <BotonBuscar/>
         {right !== undefined
           ? right
@@ -5733,7 +6008,7 @@ function MobileApp(props){
       .slice(0,4);
     const abrirAlerta = (a)=>{
       const p = propPorId(a.pid);
-      if(a.ir==="cobros"){ irA("cobros"); return; }
+      if(a.ir==="cobros"){ saltarA("cobros"); return; }
       if(p) push({t:"prop", id:p.id}); else irSeccion(a.ir||"props");
     };
 
@@ -5782,7 +6057,7 @@ function MobileApp(props){
       </div>
 
       {/* RESUMEN PRINCIPAL · la única cifra que manda la pantalla, en negro. */}
-      <button className="mob-hub-top" style={{cursor:"pointer"}} onClick={()=>irA("cobros")}>
+      <button className="mob-hub-top" style={{cursor:"pointer"}} onClick={()=>saltarA("cobros")}>
         <div className="fila">
           <span className="lb">{porCobrarHoy>0 ? "Por cobrar este mes" : "Cobrado este mes"}</span>
           <span className="lb">{mesActual}</span>
@@ -5815,7 +6090,7 @@ function MobileApp(props){
       <div className="mob-bloque">
         <div className="mob-gtit-fila">
           <h2 className="mob-h2">Prioridad</h2>
-          <button className="mob-gtit-accion" onClick={()=>irA("cobros")}>Ver cobros</button>
+          <button className="mob-gtit-accion" onClick={()=>saltarA("cobros")}>Ver cobros</button>
         </div>
         {prioridades.length>0 ? prioridades.map(a=>(
           <button key={a.id} className="mob-prio" onClick={()=>abrirAlerta(a)}>
@@ -6077,7 +6352,7 @@ function MobileApp(props){
               onClick={()=>push({t:"prop", id:p.id})}/>
           ))}
           {orden.length>vista.length && (
-            <Fila icoNav="casas" titulo={"Ver todas ("+orden.length+")"} onClick={()=>irA("props")}/>
+            <Fila icoNav="casas" titulo={"Ver todas ("+orden.length+")"} onClick={()=>saltarA("props")}/>
           )}
         </Grupo>
       )}
@@ -6996,6 +7271,506 @@ function MobileApp(props){
     </Pantalla>
   );
 
+  /* ============ BANDEJA DE ENTRADA ============
+     Un solo lugar arriba a la derecha donde llega todo lo que pide algo de
+     quien administra: lo que escribieron en el chat, lo que el motor de alertas
+     marcó como urgente, las comparaciones que quedaron sin decidir y los
+     trámites con pasos listos para empujar.
+
+     Regla de la pantalla: nada es informativo y punto. Cada fila lleva al lugar
+     donde eso se resuelve —la conversación, la propiedad, la comparación, el
+     trámite— y no a una sección genérica donde haya que volver a buscarlo.
+
+     Lo leído se guarda en el aparato, no en la cartera: que yo haya leído un
+     mensaje no significa que el contador lo haya leído. */
+  const [chat, setChat] = React.useState({ msgs:[], yo:null, gente:[] });
+  const [vistas, setVistas] = React.useState(()=>{
+    const g = store.get("ap_bandeja_vistas", []);
+    return Array.isArray(g) ? g.map(String) : [];
+  });
+  const marcarVistos = (ids)=> setVistas(prev=>{
+    if(!ids.length) return prev;
+    const set = new Set(prev);
+    let cambio = false;
+    ids.forEach(i=>{ if(!set.has(i)){ set.add(i); cambio = true; } });
+    if(!cambio) return prev;
+    const arr = Array.from(set).slice(-300);   // no crece para siempre
+    store.set("ap_bandeja_vistas", arr);
+    return arr;
+  });
+
+  /* El chat se consulta cada 30 s aunque no esté abierto: si no, la campana no
+     se enteraría de nada hasta entrar a la conversación. Solo con la pestaña a
+     la vista, para no gastar batería en el bolsillo. */
+  React.useEffect(()=>{
+    let vivo = true;
+    const traer = async()=>{
+      try{
+        const r = await api("/api/chat");
+        if(!r.ok) return;
+        const j = await r.json();
+        if(vivo) setChat({ msgs:j.mensajes||[], yo:j.yo||null, gente:j.gente||[] });
+      }catch(_e){}
+    };
+    traer();
+    const iv = setInterval(()=>{ if(document.visibilityState==="visible") traer(); }, 30000);
+    const alVolver = ()=>{ if(document.visibilityState==="visible") traer(); };
+    document.addEventListener("visibilitychange", alVolver);
+    window.addEventListener("ap-chat-cambio", traer);
+    return ()=>{ vivo=false; clearInterval(iv);
+      document.removeEventListener("visibilitychange", alVolver);
+      window.removeEventListener("ap-chat-cambio", traer); };
+  },[]);
+
+  const abrirAlerta2 = (a)=>{
+    const p = propPorId(a.pid);
+    if(a.ir==="cobros"){ saltarA("cobros"); return; }
+    if(p) push({t:"prop", id:p.id}); else irSeccion(a.ir||"props");
+  };
+
+  /* Todo lo que hay en la bandeja, ya agrupado. Cada cosa con su id estable:
+     así "lo nuevo" es de verdad lo nuevo y no vuelve a encenderse sola. */
+  const bandeja = ()=>{
+    const yo = (chat.yo && chat.yo.nombre) || "";
+    const mensajes = (chat.msgs||[])
+      .filter(m=> m.autor !== yo)
+      .slice(-25).reverse()
+      .map(m=>({
+        id:"msg:"+m.id, ico:"burbuja",
+        t: m.autor + ((m.para||[]).length ? " · en privado" : ""),
+        s: (m.texto||"").trim() || ((m.adjuntos||[]).length + ((m.adjuntos||[]).length===1?" archivo":" archivos")),
+        val: chatHora(m.ts),
+        ir: ()=> push({t:"equipo", con:m.autor})
+      }));
+    const atencion = (alertas||[]).map(a=>({
+      id:"al:"+a.id, ico:a.ico||"alerta", t:a.titulo, s:a.detalle,
+      ir: ()=> abrirAlerta2(a)
+    }));
+    const decidir = (cotiz||[]).filter(c=>!c.elegida && (c.ofertas||[]).length>=2).map(c=>{
+      const cmp = compararOfertas(c.ofertas, c.prioridad);
+      return { id:"cot:"+c.id+":"+(c.ofertas||[]).length, ico:"balanza",
+        t:"Falta decidir: "+(c.titulo||"comparación"),
+        s:(c.ofertas||[]).length+" presupuestos · conviene "+((cmp.mejor&&cmp.mejor.prov)||"—")+" con "+CLP(cmp.mejor?cmp.mejor.total:0),
+        ir: ()=> push({t:"cotiz1", id:c.id}) };
+    });
+    const avanzar = (tramites||[]).map(t=>{
+      const pl = tramitePlantilla(t.k), pn = planTramite(pl, t.hechos);
+      if(!pn.listos.length) return null;
+      return { id:"tr:"+t.id+":"+pn.listos[0].k, ico:"portapapeles",
+        t:(t.titulo||pl.n)+": toca "+pn.listos[0].n.toLowerCase(),
+        s: (pn.paralelo>1 ? pn.paralelo+" pasos se pueden hacer ya" : "Siguiente paso")+" · quedan ~"+pn.dias+" días",
+        ir: ()=> push({t:"tram1", id:t.id}) };
+    }).filter(Boolean);
+    const grupos = [
+      { titulo:"Mensajes", items:mensajes },
+      { titulo:"Necesita atención", items:atencion },
+      { titulo:"Falta decidir", items:decidir },
+      { titulo:"Se puede avanzar", items:avanzar }
+    ].filter(g=>g.items.length);
+    const todos = grupos.reduce((a,g)=>a.concat(g.items), []);
+    const vistosSet = new Set(vistas);
+    const nuevos = todos.filter(x=>!vistosSet.has(x.id));
+    return { grupos, todos, nuevos, vistosSet };
+  };
+  const bandejaCuenta = ()=> bandeja().nuevos.length;
+
+  const pantallaBandeja = ()=>{
+    const b = bandeja();
+    return (<Pantalla titulo="Bandeja" contexto={b.todos.length ? (b.todos.length+(b.todos.length===1?" cosa por revisar":" cosas por revisar")) : "Todo al día"} gap="14">
+      {b.grupos.length ? b.grupos.map(g=>(
+        <Grupo key={g.titulo} titulo={g.titulo}>
+          {g.items.map(x=>(
+            <Fila key={x.id} icoNav={x.ico}
+              titulo={x.t} sub={x.s} valor={x.val}
+              extra={!b.vistosSet.has(x.id) ? <span className="mob-punto" aria-label="Sin ver"></span> : null}
+              onClick={()=>{ marcarVistos([x.id]); x.ir(); }}/>
+          ))}
+        </Grupo>
+      )) : (
+        <div className="mob-vacio">Nada pendiente. Cuando alguien escriba, venza un cobro o quede un presupuesto sin decidir, aparece acá.</div>
+      )}
+      {!!b.nuevos.length && (
+        <button className="mob-btn sec" onClick={()=>marcarVistos(b.nuevos.map(x=>x.id))}>
+          Marcar todo como visto
+        </button>
+      )}
+      <Grupo titulo="Ir directo">
+        <Fila icoNav="burbuja" titulo="Chat del equipo" sub="Escribirle a todos o a alguien en particular"
+          onClick={()=>push({t:"equipo"})}/>
+        <Fila icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado"
+          onClick={()=>push({t:"cotiz"})}/>
+        <Fila icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy"
+          onClick={()=>push({t:"tramites"})}/>
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ============ COMPARAR PRESUPUESTOS ============
+     Las cotizaciones llegan imposibles de comparar: una con IVA y otra sin,
+     una en dos semanas y otra en un mes, una con garantía y otra sin nada.
+     Aquí se ponen todas en la misma vara y la pantalla dice cuál conviene y
+     por qué, según lo que importe en este caso. */
+  const cotPorId = (id)=> (cotiz||[]).find(c=>String(c.id)===String(id)) || null;
+  const cotEditar = (id, fn)=> setCotiz(list=> (list||[]).map(c=> String(c.id)===String(id) ? fn(c) : c));
+  const cotNueva = ()=>{
+    const c = { id:"cz"+Date.now().toString(36), titulo:"", pid:"", prioridad:"precio",
+      elegida:"", creado:new Date().toISOString().slice(0,10), ofertas:[] };
+    setCotiz(l=>[c, ...(l||[])]);
+    push({t:"cotiz1", id:c.id});
+  };
+
+  const pantallaCotizaciones = ()=>{
+    const lista = (cotiz||[]).slice();
+    return (<Pantalla titulo="Comparar presupuestos" contexto="Cotizaciones lado a lado, con una recomendación" gap="14">
+      {lista.length ? (
+        <Grupo>
+          {lista.map(c=>{
+            const cmp = compararOfertas(c.ofertas, c.prioridad);
+            const el = c.elegida ? (c.ofertas||[]).find(o=>o.id===c.elegida) : null;
+            const p = c.pid ? propPorId(c.pid) : null;
+            return (<Fila key={c.id} icoNav="balanza" titulo={c.titulo||"Sin título"}
+              sub={[(c.ofertas||[]).length+(((c.ofertas||[]).length===1)?" cotización":" cotizaciones"),
+                    el ? "Elegida: "+(el.prov||"—") : (cmp.mejor ? "Conviene "+(cmp.mejor.prov||"—") : "Sin datos aún"),
+                    p ? p.name : ""].filter(Boolean).join(" · ")}
+              onClick={()=>push({t:"cotiz1", id:c.id})}/>);
+          })}
+        </Grupo>
+      ) : (
+        <div className="mob-vacio">Ninguna comparación todavía. Arma una cuando tengas dos o más presupuestos por el mismo trabajo.</div>
+      )}
+      {!soloLectura && <button className="mob-btn pri" onClick={cotNueva}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nueva comparación
+      </button>}
+    </Pantalla>);
+  };
+
+  const pantallaCotiz1 = (c)=>{
+    const cmp = compararOfertas(c.ofertas, c.prioridad);
+    const porDia = cotPorDia(cmp);
+    const elegida = c.elegida ? (c.ofertas||[]).find(o=>o.id===c.elegida) : null;
+    const p = c.pid ? propPorId(c.pid) : null;
+    const set = (k,v)=> cotEditar(c.id, x=>({...x, [k]:v}));
+    const nuevaOferta = ()=>{
+      const o = { id:"of"+Date.now().toString(36), prov:"", monto:"", iva:true, dias:"", garantia:"", nota:"" };
+      cotEditar(c.id, x=>({...x, ofertas:[...(x.ofertas||[]), o]}));
+      push({t:"cotOferta", id:c.id, of:o.id});
+    };
+    return (<Pantalla titulo={c.titulo||"Comparación"} contexto={p?p.name:""} gap="14">
+      {/* La cifra que manda: cuál conviene y cuánto sale. */}
+      {cmp.mejor ? (
+        <MobDeslizable className="mob-hub-top"
+          idx={Math.max(0, COT_PRIOS.findIndex(x=>x.k===c.prioridad))} total={COT_PRIOS.length}
+          onCambio={i=>set("prioridad", COT_PRIOS[i].k)}>
+          <div className="fila">
+            <span className="lb">Conviene</span>
+            <span className="mob-chip ink">{cmp.mejor.puntos} de 100</span>
+          </div>
+          <div className="cifra" style={{fontSize:"clamp(22px,6.2vw,28px)"}}>{cmp.mejor.prov||"Sin nombre"}</div>
+          <div className="fila">
+            <span className="lb">{CLP(cmp.mejor.total)} con IVA</span>
+            <span className="lb">{num(cmp.mejor.dias)||"—"} días · {num(cmp.mejor.garantia)||0} m. garantía</span>
+          </div>
+          <div className="mob-porque">{cotVeredicto(cmp)}</div>
+          {porDia!=null && <div className="mob-porque">Cada día que adelantas te cuesta {CLP(porDia)}.</div>}
+        </MobDeslizable>
+      ) : (
+        <div className="mob-vacio">Agrega dos o más presupuestos y aquí aparece cuál conviene y por qué.</div>
+      )}
+
+      {/* Qué pesa más en esta decisión. También se cambia deslizando la tarjeta. */}
+      <div className="mob-bloque">
+        <h2 className="mob-h2">Qué te importa más</h2>
+        <div className="mob-seg">
+          {COT_PRIOS.map(x=>(
+            <button key={x.k} className={c.prioridad===x.k?"on":""} onClick={()=>set("prioridad",x.k)}>{x.n}</button>
+          ))}
+        </div>
+        <div className="mob-nota">{(COT_PRIOS.find(x=>x.k===c.prioridad)||COT_PRIOS[0]).sub}. El orden de abajo cambia con esto.</div>
+      </div>
+
+      {/* El ranking, con la barra de puntaje y la diferencia contra la mejor. */}
+      {!!cmp.orden.length && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Los presupuestos</h2>
+          <div className="mob-cots">
+            {cmp.orden.map((o,i)=>{
+              const dif = o.total - cmp.mejor.total;
+              return (<button key={o.id} className={"mob-cot"+(c.elegida===o.id?" elegida":"")}
+                onClick={()=>push({t:"cotOferta", id:c.id, of:o.id})}>
+                <span className="pos">{i+1}</span>
+                <span className="tx">
+                  <span className="t">{o.prov||"Sin nombre"}
+                    {c.elegida===o.id && <span className="mob-chip ink" style={{marginLeft:8}}>Elegida</span>}</span>
+                  <span className="s">{CLP(o.total)}{o.iva===false?" (IVA sumado)":""}
+                    {num(o.dias)?" · "+num(o.dias)+" días":""}
+                    {num(o.garantia)?" · "+num(o.garantia)+" m. garantía":""}</span>
+                  <span className="bar"><i style={{width:Math.max(3,o.puntos)+"%"}}></i></span>
+                </span>
+                <span className="pt">{o.puntos}
+                  {i>0 && <span className="dif">+{CLP(dif)}</span>}</span>
+              </button>);
+            })}
+          </div>
+        </div>
+      )}
+
+      {!soloLectura && (
+        <button className="mob-btn pri" onClick={nuevaOferta}>
+          <MobIco w={18}>{MI.mas}</MobIco> Agregar presupuesto
+        </button>
+      )}
+
+      {/* Decidir: queda anotado y, si hay propiedad, entra a su bitácora. */}
+      {!soloLectura && cmp.mejor && (
+        <Grupo titulo="Decidir" nota="Al elegir queda registrado en la bitácora de la propiedad, con el monto y el motivo.">
+          {cmp.orden.map(o=>(
+            <Fila key={o.id} sinIco titulo={"Elegir "+(o.prov||"esta")}
+              valor={c.elegida===o.id ? "Elegida" : CLP(o.total)}
+              chevron={false}
+              onClick={()=>{
+                set("elegida", c.elegida===o.id ? "" : o.id);
+                if(c.elegida!==o.id && p && patchProp){
+                  patchProp(p.id, x=>({...x, bitacora:[{ id:"bt"+Date.now().toString(36),
+                    fecha:new Date().toISOString().slice(0,10), tipo:"Presupuesto",
+                    titulo:"Elegido: "+(o.prov||"presupuesto")+" · "+CLP(cotTotal(o)),
+                    detalle:(c.titulo||"Comparación")+" — "+cotVeredicto(cmp) }, ...(x.bitacora||[])]}));
+                  notify("Anotado en la bitácora de "+p.name);
+                }
+              }}/>
+          ))}
+        </Grupo>
+      )}
+
+      <Grupo titulo="Datos de la comparación">
+        <div className="mob-campo"><span className="mob-lab">Qué se está cotizando</span>
+          <input className="mob-inp" value={c.titulo||""} onChange={e=>set("titulo",e.target.value)}
+            placeholder="Ej: Pintura completa Depto. 7A" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Propiedad</span>
+          <select className="mob-inp" value={c.pid||""} onChange={e=>set("pid",e.target.value)} disabled={soloLectura}>
+            <option value="">Sin propiedad</option>
+            {propiedades.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+          </select></div>
+      </Grupo>
+      {!soloLectura && (
+        <button className="mob-btn sec" onClick={()=>{
+          if(!window.confirm("¿Borrar esta comparación?")) return;
+          setCotiz(l=>(l||[]).filter(x=>x.id!==c.id)); pop();
+        }}>Borrar comparación</button>
+      )}
+      <Guardado/>
+    </Pantalla>);
+  };
+
+  const pantallaCotOferta = (c, ofId)=>{
+    const o = (c.ofertas||[]).find(x=>x.id===ofId);
+    if(!o) return (<Pantalla titulo="Presupuesto"><div className="mob-vacio">Este presupuesto ya no está.</div></Pantalla>);
+    const set = (k,v)=> cotEditar(c.id, x=>({...x, ofertas:(x.ofertas||[]).map(y=> y.id===ofId ? {...y,[k]:v} : y)}));
+    return (<Pantalla titulo={o.prov||"Presupuesto"} contexto={c.titulo||""} gap="14">
+      <div className="mob-hub-top">
+        <div className="fila"><span className="lb">Total con IVA</span>
+          <span className="lb">{o.iva===false ? "monto + 19%" : "IVA incluido"}</span></div>
+        <div className="cifra">{CLP(cotTotal(o))}</div>
+      </div>
+      <Grupo>
+        <div className="mob-campo"><span className="mob-lab">Quién cotiza</span>
+          <input className="mob-inp" value={o.prov||""} onChange={e=>set("prov",e.target.value)}
+            placeholder="Nombre del proveedor o maestro" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Monto</span>
+          <input className="mob-inp" inputMode="numeric" value={o.monto||""} onChange={e=>set("monto",e.target.value)}
+            placeholder="Ej: 1200000" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">¿El monto ya incluye IVA?</span>
+          <div className="mob-seg">
+            <button className={o.iva!==false?"on":""} onClick={()=>set("iva",true)}>Sí, incluido</button>
+            <button className={o.iva===false?"on":""} onClick={()=>set("iva",false)}>No, hay que sumarlo</button>
+          </div></div>
+        <div className="mob-campo"><span className="mob-lab">En cuántos días lo entrega</span>
+          <input className="mob-inp" inputMode="numeric" value={o.dias||""} onChange={e=>set("dias",e.target.value)}
+            placeholder="Ej: 14" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Garantía en meses</span>
+          <input className="mob-inp" inputMode="numeric" value={o.garantia||""} onChange={e=>set("garantia",e.target.value)}
+            placeholder="Ej: 6 · 0 si no da" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Teléfono</span>
+          <input className="mob-inp" value={o.tel||""} onChange={e=>set("tel",e.target.value)}
+            placeholder="+56 9 …" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Qué incluye y qué no</span>
+          <textarea className="mob-inp" rows={3} value={o.nota||""} onChange={e=>set("nota",e.target.value)}
+            placeholder="Materiales, andamios, retiro de escombros…" disabled={soloLectura}/></div>
+      </Grupo>
+      {!!(o.tel||"").trim() && (
+        <Grupo titulo="Contactar">
+          <Fila icoNav="burbuja" titulo="Escribir por WhatsApp" chevron={false}
+            onClick={()=>window.open("https://wa.me/"+String(o.tel).replace(/\D/g,""),"_blank","noopener")}/>
+          <Fila icoNav="persona" titulo="Llamar" chevron={false}
+            onClick={()=>{ window.location.href="tel:"+String(o.tel).replace(/\s/g,""); }}/>
+        </Grupo>
+      )}
+      {!soloLectura && (
+        <button className="mob-btn sec" onClick={()=>{
+          cotEditar(c.id, x=>({...x, ofertas:(x.ofertas||[]).filter(y=>y.id!==ofId),
+            elegida: x.elegida===ofId ? "" : x.elegida }));
+          pop();
+        }}>Quitar este presupuesto</button>
+      )}
+      <Guardado/>
+    </Pantalla>);
+  };
+
+  /* ============ TRÁMITES ============
+     Un trámite no es una lista de tareas: es una red de pasos que dependen unos
+     de otros. Lo que hace falta saber no es "qué queda" sino "qué puedo hacer
+     hoy al mismo tiempo" y "cuál de todos está atrasando el resto". Eso es lo
+     que muestra esta pantalla. */
+  const tramPorId = (id)=> (tramites||[]).find(t=>String(t.id)===String(id)) || null;
+  const tramEditar = (id, fn)=> setTramites(l=> (l||[]).map(t=> String(t.id)===String(id) ? fn(t) : t));
+  const tramCrear = (k, pid)=>{
+    const pl = tramitePlantilla(k);
+    const t = { id:"tr"+Date.now().toString(36), k, pid:pid||"", titulo:pl.n,
+      creado:new Date().toISOString().slice(0,10), hechos:{}, notas:{} };
+    setTramites(l=>[t, ...(l||[])]);
+    push({t:"tram1", id:t.id});
+  };
+
+  const pantallaTramites = ()=>{
+    const lista = (tramites||[]).slice();
+    return (<Pantalla titulo="Trámites" contexto="Qué se puede hacer hoy y qué está atrasando el resto" gap="14">
+      {lista.length ? (
+        <Grupo>
+          {lista.map(t=>{
+            const pl = tramitePlantilla(t.k);
+            const pn = planTramite(pl, t.hechos);
+            const p = t.pid ? propPorId(t.pid) : null;
+            return (<Fila key={t.id} icoNav="portapapeles" titulo={t.titulo||pl.n}
+              sub={[p?p.name:"", pn.pct===100 ? "Terminado" : ("~"+pn.dias+" días · "+pn.paralelo+(pn.paralelo===1?" paso listo":" pasos listos"))].filter(Boolean).join(" · ")}
+              extra={<span className={"mob-chip"+(pn.pct===100?" ink":"")}>{pn.hechos}/{pn.total}</span>}
+              onClick={()=>push({t:"tram1", id:t.id})}/>);
+          })}
+        </Grupo>
+      ) : (
+        <div className="mob-vacio">Ningún trámite en curso. Empieza uno y la plataforma te dice el orden más conveniente.</div>
+      )}
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>push({t:"tramNuevo"})}>
+        <MobIco w={18}>{MI.mas}</MobIco> Empezar un trámite
+      </button>}
+    </Pantalla>);
+  };
+
+  const pantallaTramNuevo = ()=>{
+    const [pidSel, setPidSel] = [tramPid, setTramPid];
+    return (<Pantalla titulo="Empezar un trámite" contexto="Elige cuál y sobre qué propiedad" gap="14">
+      <Grupo titulo="Propiedad" nota="Opcional. Sirve para dejar cada avance anotado donde corresponde.">
+        <div className="mob-campo">
+          <select className="mob-inp" value={pidSel} onChange={e=>setPidSel(e.target.value)}>
+            <option value="">Sin propiedad</option>
+            {propiedades.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+          </select></div>
+      </Grupo>
+      <Grupo titulo="Qué trámite">
+        {MOB_TRAMITES.map(t=>{
+          const pn = planTramite(t, {});
+          return (<Fila key={t.k} icoNav="portapapeles" titulo={t.n}
+            sub={t.sub+" · "+t.pasos.length+" pasos · ~"+pn.dias+" días"}
+            onClick={()=>tramCrear(t.k, pidSel)}/>);
+        })}
+      </Grupo>
+    </Pantalla>);
+  };
+
+  const pantallaTram1 = (t)=>{
+    const pl = tramitePlantilla(t.k);
+    const pn = planTramite(pl, t.hechos);
+    const p = t.pid ? propPorId(t.pid) : null;
+    const marcar = (k, ok)=> tramEditar(t.id, x=>{
+      const h = {...(x.hechos||{})};
+      if(ok) h[k] = new Date().toISOString().slice(0,10); else delete h[k];
+      return {...x, hechos:h};
+    });
+    const listo = pn.pct===100;
+    return (<Pantalla titulo={t.titulo||pl.n} contexto={p?p.name:pl.sub} gap="14">
+      <div className="mob-hub-top">
+        <div className="fila"><span className="lb">{listo?"Terminado":"Listo en"}</span>
+          <span className="mob-chip ink">{pn.hechos} de {pn.total}</span></div>
+        <div className="cifra">{listo ? "Todo hecho" : ("~"+pn.dias+(pn.dias===1?" día":" días"))}</div>
+        <div className="mob-stat-bar"><i style={{width:pn.pct+"%"}}></i></div>
+        <div className="fila">
+          <span className="lb">{listo ? "Sin pasos pendientes" : ("Alrededor del "+tramiteFecha(pn.dias))}</span>
+          <span className="lb fuerte">{pn.pct}%</span>
+        </div>
+      </div>
+
+      {/* Lo que se puede hacer ahora mismo, y todo junto. */}
+      {!!pn.listos.length && (
+        <div className="mob-bloque">
+          <div className="mob-gtit-fila">
+            <h2 className="mob-h2">Haz esto ahora</h2>
+            {pn.paralelo>1 && <span className="mob-gtit-accion" style={{pointerEvents:"none"}}>{pn.paralelo} a la vez</span>}
+          </div>
+          <div className="mob-pasos">
+            {pn.listos.map((s,i)=>(
+              <button key={s.k} className={"mob-paso"+(i===0&&pn.listos.length>1?" critico":"")}
+                onClick={()=>marcar(s.k, true)}>
+                <span className="tick"></span>
+                <span className="tx">
+                  <span className="t">{s.n}</span>
+                  <span className="s">{s.d===1?"1 día":s.d+" días"}
+                    {i===0 && pn.listos.length>1 ? " · esto es lo que atrasa el resto" : ""}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          {pn.paralelo>1 && <div className="mob-nota">Estos pasos no dependen entre sí: se pueden empujar los {pn.paralelo} al mismo tiempo.</div>}
+        </div>
+      )}
+
+      {/* Lo que todavía está esperando algo. */}
+      {!!pn.luego.length && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Después</h2>
+          <div className="mob-pasos">
+            {pn.luego.map(s=>(
+              <div key={s.k} className="mob-paso quieto">
+                <span className="tick"></span>
+                <span className="tx">
+                  <span className="t">{s.n}</span>
+                  <span className="s">Espera: {s.espera.join(", ")}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lo hecho, con la fecha, por si hay que rendir cuentas. */}
+      {!!pn.listas.length && (
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Hecho</h2>
+          <div className="mob-pasos">
+            {pn.listas.map(s=>(
+              <button key={s.k} className="mob-paso hecho" onClick={()=>marcar(s.k, false)}>
+                <span className="tick"><MobIco w={13} sw={3}>{MI.check}</MobIco></span>
+                <span className="tx">
+                  <span className="t">{s.n}</span>
+                  <span className="s">{mobCuando((t.hechos||{})[s.k])||"Hecho"}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {p && <Grupo titulo="Ir a la propiedad">
+        <Fila icoNav="casa" titulo={p.name} sub={p.comuna||""} onClick={()=>push({t:"prop", id:p.id})}/>
+      </Grupo>}
+
+      {!soloLectura && (
+        <button className="mob-btn sec" onClick={()=>{
+          if(!window.confirm("¿Borrar este trámite?")) return;
+          setTramites(l=>(l||[]).filter(x=>x.id!==t.id)); pop();
+        }}>Borrar trámite</button>
+      )}
+      <Guardado/>
+    </Pantalla>);
+  };
+
   /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
     <React.Fragment>
@@ -7003,11 +7778,11 @@ function MobileApp(props){
         <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
         <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}><MobIco w={19}>{MI.burbuja}</MobIco></div>
         <div className="info">
-          <div className="nm">Chat del equipo</div>
-          <div className="ctx">Con quienes tienen acceso a la plataforma</div>
+          <div className="nm">{top.con ? top.con : "Chat del equipo"}</div>
+          <div className="ctx">{top.con ? "Mensaje directo" : "Con quienes tienen acceso a la plataforma"}</div>
         </div>
       </div>
-      <ChatEquipo/>
+      <ChatEquipo conInicial={top.con||""}/>
     </React.Fragment>
   );
 
@@ -7021,6 +7796,13 @@ function MobileApp(props){
   let vista = null;
   if(top){
     if(top.t==="equipo")            vista = pantallaChatEquipo();
+    else if(top.t==="bandeja")      vista = pantallaBandeja();
+    else if(top.t==="cotiz")        vista = pantallaCotizaciones();
+    else if(top.t==="cotiz1")       vista = pantallaCotiz1(cotPorId(top.id) || {ofertas:[]});
+    else if(top.t==="cotOferta")    vista = pantallaCotOferta(cotPorId(top.id) || {ofertas:[]}, top.of);
+    else if(top.t==="tramites")     vista = pantallaTramites();
+    else if(top.t==="tramNuevo")    vista = pantallaTramNuevo();
+    else if(top.t==="tram1")        vista = pantallaTram1(tramPorId(top.id) || {hechos:{}, k:"arriendo"});
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
@@ -7131,16 +7913,22 @@ const chatDia = (ts)=>{
 };
 const esImagen = (t)=> String(t||"").startsWith("image/");
 
-function ChatEquipo({ compacto }){
+function ChatEquipo({ compacto, conInicial }){
   const [msgs,setMsgs] = React.useState([]);
   const [yo,setYo] = React.useState(null);
+  const [gente,setGente] = React.useState([]);    // quiénes tienen acceso
+  const [para,setPara] = React.useState(conInicial ? [conInicial] : []);  // [] = todo el equipo
+  const [elegirPara,setElegirPara] = React.useState(false);
   const [texto,setTexto] = React.useState("");
   const [subiendo,setSubiendo] = React.useState(false);
   const [pend,setPend] = React.useState([]);      // adjuntos ya subidos, sin enviar
   const [cargando,setCargando] = React.useState(true);
   const [error,setError] = React.useState("");
+  const [grabando,setGrabando] = React.useState(false);
+  const [segsGrab,setSegsGrab] = React.useState(0);
   const finRef = React.useRef(null);
   const clipRef = React.useRef(null);
+  const grabRef = React.useRef(null);   // { rec, chunks, timer }
 
   const bajar = ()=>{ try{ finRef.current && finRef.current.scrollIntoView({block:"end"}); }catch(_){} };
 
@@ -7149,7 +7937,7 @@ function ChatEquipo({ compacto }){
       const r = await api("/api/chat");
       if(!r.ok) throw new Error("no");
       const j = await r.json();
-      setMsgs(j.mensajes||[]); setYo(j.yo||null); setError("");
+      setMsgs(j.mensajes||[]); setYo(j.yo||null); setGente(j.gente||[]); setError("");
       try{ localStorage.setItem("ap_chat_visto", String(Date.now())); }catch(_){}
     }catch(_){ if(!silencioso) setError("No pude cargar la conversación. Revisa tu conexión."); }
     setCargando(false);
@@ -7177,17 +7965,65 @@ function ChatEquipo({ compacto }){
     setSubiendo(false);
   };
 
+  const enviarCon = async(t, adjs)=>{
+    if(!t && !(adjs||[]).length) return;
+    try{
+      const r = await api("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ texto:t, para, adjuntos:adjs||[] }) });
+      const j = await r.json().catch(()=>({}));
+      if(r.ok && j.mensaje){ setMsgs(m=>[...m, j.mensaje]); try{ window.dispatchEvent(new Event("ap-chat-cambio")); }catch(_){} return true; }
+      setError(j.error||"No se pudo enviar"); return false;
+    }catch(_){ setError("Sin conexión: el mensaje no se envió."); return false; }
+  };
   const enviar = async()=>{
     const t = texto.trim();
     if(!t && !pend.length) return;
+    const guardT=t, guardP=pend;
     setTexto(""); setPend([]);
+    const ok = await enviarCon(guardT, guardP);
+    if(!ok){ setTexto(guardT); setPend(guardP); }
+  };
+
+  /* Mensaje de voz: se graba en el aparato, se sube como un adjunto de audio y
+     se manda con una nota, así queda igual de guardado y categorizado que un
+     archivo. Si el navegador no deja grabar (permiso denegado), se avisa. */
+  const grabar = async()=>{
+    if(grabando){ // detener y enviar
+      try{ grabRef.current && grabRef.current.rec.stop(); }catch(_){}
+      return;
+    }
+    if(!navigator.mediaDevices || !window.MediaRecorder){ setError("Este navegador no permite grabar audio."); return; }
     try{
-      const r = await api("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ texto:t, adjuntos:pend }) });
-      const j = await r.json().catch(()=>({}));
-      if(r.ok && j.mensaje) setMsgs(m=>[...m, j.mensaje]);
-      else { setError(j.error||"No se pudo enviar"); setTexto(t); setPend(pend); }
-    }catch(_){ setError("Sin conexión: el mensaje no se envió."); setTexto(t); setPend(pend); }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      const rec = new MediaRecorder(stream);
+      const chunks = [];
+      rec.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = async()=>{
+        try{ stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+        clearInterval(grabRef.current && grabRef.current.timer);
+        setGrabando(false); setSegsGrab(0);
+        const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+        if(blob.size < 800) return;   // toque accidental
+        if(blob.size > 4*1024*1024){ setError("La nota de voz es muy larga (máx ~4 MB)."); return; }
+        setSubiendo(true);
+        try{
+          const ext = (rec.mimeType||"").includes("mp4") ? "m4a" : "webm";
+          const file = new File([blob], "nota-de-voz."+ext, { type: blob.type });
+          const a = await uploadArchivo(file);
+          await enviarCon("", [a]);
+        }catch(e){ setError(e.message||"No se pudo enviar la nota de voz"); }
+        setSubiendo(false);
+      };
+      const timer = setInterval(()=>setSegsGrab(x=>x+1), 1000);
+      grabRef.current = { rec, chunks, timer };
+      rec.start();
+      setGrabando(true); setSegsGrab(0);
+    }catch(_e){ setError("No pude usar el micrófono. Revisa el permiso."); }
+  };
+  const cancelarGrab = ()=>{
+    const g = grabRef.current; if(!g) return;
+    try{ g.rec.onstop = null; g.rec.stop(); g.rec.stream && g.rec.stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+    clearInterval(g.timer); grabRef.current=null; setGrabando(false); setSegsGrab(0);
   };
 
   const borrar = async(m)=>{
@@ -7218,19 +8054,26 @@ function ChatEquipo({ compacto }){
           <div className={"chat-eq-fila"+(mio(m)?" mio":"")}>
             {!mio(m) && <div className="chat-eq-av">{mobIni(m.autor)}</div>}
             <div className={"chat-eq-bub"+(mio(m)?" mio":"")}>
-              {!mio(m) && <div className="chat-eq-autor">{m.autor}</div>}
+              {!mio(m) && <div className="chat-eq-autor">{m.autor}
+                {!!(m.para||[]).length && <span className="chat-eq-priv">privado</span>}</div>}
+              {mio(m) && !!(m.para||[]).length && <div className="chat-eq-priv solo">solo {m.para.join(", ")}</div>}
               {!!m.texto && <div className="chat-eq-txt">{m.texto}</div>}
               {!!(m.adjuntos||[]).length && (
                 <div className="chat-eq-adj">
-                  {m.adjuntos.map((a,k)=> esImagen(a.contentType)
+                  {m.adjuntos.map((a,k)=>{
+                    const ct=(a.contentType||"").toLowerCase();
+                    if(ct.startsWith("audio/")) return (
+                      <audio key={k} controls preload="none" src={a.url} className="chat-eq-audio"/>
+                    );
+                    return esImagen(a.contentType)
                     ? <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-img">
                         <img src={a.url} alt={a.name} loading="lazy"/>
                       </a>
                     : <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-file">
-                        <span className="ic"><Ic n="doc" w={16}/></span>
+                        <span className="ic"><Ic n={fileIcon(a.contentType)} w={16}/></span>
                         <span className="nm">{a.name}</span>
-                      </a>
-                  )}
+                      </a>;
+                  })}
                 </div>
               )}
               <div className="chat-eq-meta">
@@ -7258,19 +8101,53 @@ function ChatEquipo({ compacto }){
       </div>
     )}
 
-    <div className="chat-eq-comp">
-      <input ref={clipRef} type="file" multiple style={{display:"none"}}
-        onChange={e=>{ const f=e.target.files; e.target.value=""; adjuntar(f); }}/>
-      <button className="chat-eq-mas" onClick={()=>clipRef.current&&clipRef.current.click()}
-        disabled={subiendo} title="Adjuntar foto o documento" aria-label="Adjuntar foto o documento">
-        {subiendo ? "…" : "＋"}
-      </button>
-      <input value={texto} onChange={e=>setTexto(e.target.value)}
-        onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); enviar(); } }}
-        placeholder="Escribe un mensaje…"/>
-      <button className="chat-eq-env" onClick={enviar} disabled={!texto.trim() && !pend.length}
-        aria-label="Enviar">→</button>
-    </div>
+    {/* A quién va: todo el equipo o personas concretas. */}
+    {!!gente.length && (
+      <div className="chat-eq-para">
+        <button className="chat-eq-parachip" onClick={()=>setElegirPara(v=>!v)}>
+          <Ic n="personas" w={14}/>
+          {para.length ? ("Para: "+para.join(", ")) : "Para: todo el equipo"}
+          <span className="cv">{elegirPara?"▲":"▼"}</span>
+        </button>
+        {elegirPara && (
+          <div className="chat-eq-gente">
+            <button className={"g"+(para.length===0?" on":"")} onClick={()=>setPara([])}>Todo el equipo</button>
+            {gente.filter(g=> !yo || g.nombre!==yo.nombre).map(g=>(
+              <button key={g.nombre} className={"g"+(para.includes(g.nombre)?" on":"")}
+                onClick={()=>setPara(p=> p.includes(g.nombre) ? p.filter(x=>x!==g.nombre) : [...p, g.nombre])}>
+                {g.nombre}{g.rol==="lectura"?" · mira":g.rol==="arquitecto"?" · arq.":""}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
+    {grabando ? (
+      <div className="chat-eq-grab">
+        <span className="punto"></span>
+        Grabando… {String(Math.floor(segsGrab/60)).padStart(1,"0")}:{String(segsGrab%60).padStart(2,"0")}
+        <span className="sp"></span>
+        <button className="cancelar" onClick={cancelarGrab}>Cancelar</button>
+        <button className="enviar" onClick={grabar}>Enviar</button>
+      </div>
+    ) : (
+      <div className="chat-eq-comp">
+        <input ref={clipRef} type="file" multiple style={{display:"none"}}
+          onChange={e=>{ const f=e.target.files; e.target.value=""; adjuntar(f); }}/>
+        <button className="chat-eq-mas" onClick={()=>clipRef.current&&clipRef.current.click()}
+          disabled={subiendo} title="Adjuntar foto o documento" aria-label="Adjuntar foto o documento">
+          {subiendo ? "…" : "＋"}
+        </button>
+        <input value={texto} onChange={e=>setTexto(e.target.value)}
+          onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); enviar(); } }}
+          placeholder="Escribe un mensaje…"/>
+        {texto.trim() || pend.length
+          ? <button className="chat-eq-env" onClick={enviar} aria-label="Enviar">→</button>
+          : <button className="chat-eq-mic" onClick={grabar} disabled={subiendo}
+              title="Grabar nota de voz" aria-label="Grabar nota de voz"><Ic n="micro" w={19}/></button>}
+      </div>
+    )}
   </div>);
 }
 
@@ -7660,6 +8537,11 @@ function App(){
   const [plantillas,setPlantillas]=useState(()=>store.get("ap_plantillas", seedPlantillas()));
   const [leads,setLeads]=useState(()=>store.get("ap_leads", seedLeads));
   const [qreplies,setQreplies]=useState(()=>store.get("ap_qr", seedQReplies));
+  /* Comparaciones de presupuestos y trámites en curso. Viven en el mismo
+     documento que el resto: se guardan solos, se ven desde cualquier aparato y
+     se fusionan entidad por entidad si dos personas trabajan a la vez. */
+  const [cotiz,setCotiz]=useState(()=>store.get("ap_cotiz", []));
+  const [tramites,setTramites]=useState(()=>store.get("ap_tramites", []));
   const [yearUtil,setYearUtil]=useState(()=>new Date().getFullYear());
   const [expUtil,setExpUtil]=useState(null);
 
@@ -7671,6 +8553,8 @@ function App(){
   useEffect(()=>{ store.set("ap_plantillas", plantillas); },[plantillas]);
   useEffect(()=>{ store.set("ap_leads", leads); },[leads]);
   useEffect(()=>{ store.set("ap_qr", qreplies); },[qreplies]);
+  useEffect(()=>{ store.set("ap_cotiz", cotiz); },[cotiz]);
+  useEffect(()=>{ store.set("ap_tramites", tramites); },[tramites]);
   useEffect(()=>{ store.set("ap_uf", uf); window.__UF__=uf; },[uf]);
   // Reajusta el arriendo y el seguro (guardados en CLP como caché) cada vez que cambia la UF, para que el monto en CLP siempre refleje la UF del día.
   useEffect(()=>{
@@ -7700,7 +8584,7 @@ function App(){
   // Lo que se manda al servidor. Un solo lugar, para que guardar y fusionar
   // hablen siempre del mismo conjunto de datos.
   const estadoActual=()=>({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas,
-    leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo });
+    leads, qreplies, cotiz, tramites, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo });
   /* El sondeo vive fuera del ciclo de dibujado, así que no puede leer las
      variables de este render: se quedaría con las del primer dibujo y, al
      fusionar, escribiría datos viejos encima de lo recién editado. Aquí se deja
@@ -7723,6 +8607,8 @@ function App(){
     if(Array.isArray(e.plantillas) && e.plantillas.length) setPlantillas(e.plantillas);
     if(Array.isArray(e.leads)) setLeads(e.leads);
     if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
+    if(Array.isArray(e.cotiz)) setCotiz(e.cotiz);
+    if(Array.isArray(e.tramites)) setTramites(e.tramites);
     // Preferencias: el orden de las fichas y los contadores del asesor.
     if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
     if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
@@ -10234,6 +11120,7 @@ function App(){
     {movil && <MobileApp
       props={props} socs={socs} contacts={contacts} uf={uf} owner={owner} gw={gw}
       soloLectura={soloLectura}
+      cotiz={cotiz} setCotiz={setCotiz} tramites={tramites} setTramites={setTramites}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
       abrirIncidencia={abrirIncidencia}
       notify={notify} openRem={openRem}

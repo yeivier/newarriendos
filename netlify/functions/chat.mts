@@ -1,6 +1,6 @@
 import type { Context, Config } from '@netlify/functions'
 import { getStore } from '@netlify/blobs'
-import { quienLlama, sinAcceso, nuevoId } from '../lib/auth.mts'
+import { leerConfig, quienLlama, sinAcceso, nuevoId } from '../lib/auth.mts'
 
 // Chat interno del equipo: quienes tienen acceso a la plataforma (el
 // propietario, su contador, quien administre con él) conversan entre ellos y
@@ -15,14 +15,20 @@ import { quienLlama, sinAcceso, nuevoId } from '../lib/auth.mts'
 // guardar borraría el del primero. Así cada quien escribe en su propia llave y
 // no hay forma de perder nada.
 //
-// GET  /api/chat            -> { mensajes:[…], yo:{nombre,rol} }  últimos 200
-// POST /api/chat  {texto, adjuntos:[{url,name,contentType}]} -> { ok, mensaje }
+// Un mensaje puede ir a todo el equipo o a personas concretas. `para` vacío
+// significa "para todos"; con nombres dentro, solo lo ven quienes están en la
+// lista y quien lo escribió. El filtro se hace en el servidor: si se hiciera en
+// el navegador, el mensaje viajaría igual a quien no le corresponde.
+//
+// GET  /api/chat            -> { mensajes:[…], yo:{nombre,rol}, gente:[{nombre,rol}] }
+// POST /api/chat  {texto, para:[nombres], adjuntos:[{url,name,contentType}]} -> { ok, mensaje }
 // POST /api/chat  {accion:"borrar", id}                      -> { ok }
 
 const TIENDA = 'chat-equipo'
 const TOPE = 200            // mensajes que se devuelven
 const MAX_TEXTO = 4000
 const MAX_ADJUNTOS = 6
+const MAX_PARA = 20
 
 type Mensaje = {
   id: string
@@ -30,6 +36,7 @@ type Mensaje = {
   autor: string
   rol: string
   texto: string
+  para: string[]          // vacío = todo el equipo
   adjuntos: { url: string; name: string; contentType: string }[]
 }
 
@@ -70,13 +77,27 @@ async function leerMensajes(): Promise<Mensaje[]> {
   return (msgs.filter(Boolean) as Mensaje[]).sort((a, b) => a.ts - b.ts)
 }
 
+/** Quiénes tienen acceso, para poder elegir a quién escribirle. Solo nombre y
+ *  rol: nada de huellas ni sales. */
+async function gente() {
+  const c = await leerConfig()
+  const out = [{ nombre: 'Propietario', rol: 'dueño' as const }]
+  for (const i of c?.invitados || []) out.push({ nombre: i.nombre, rol: i.rol })
+  return out
+}
+
+/** ¿Este mensaje es para mí? Para todos, dirigido a mí, o escrito por mí. */
+const paraMi = (m: Mensaje, yo: string) =>
+  !m.para || !m.para.length || m.para.includes(yo) || m.autor === yo
+
 export default async (req: Request, _context: Context) => {
   const quien = await quienLlama(req)
   if (!quien) return sinAcceso()
 
   if (req.method === 'GET') {
-    const mensajes = await leerMensajes()
-    return Response.json({ mensajes, yo: { nombre: quien.nombre, rol: quien.rol } })
+    const todos = await leerMensajes()
+    const mensajes = todos.filter((m) => paraMi(m, quien.nombre))
+    return Response.json({ mensajes, yo: { nombre: quien.nombre, rol: quien.rol }, gente: await gente() })
   }
 
   if (req.method !== 'POST') return Response.json({ error: 'Método no permitido' }, { status: 405 })
@@ -94,7 +115,7 @@ export default async (req: Request, _context: Context) => {
     if (!id) return Response.json({ error: 'Falta el mensaje' }, { status: 400 })
     const store = tienda()
     const todos = await leerMensajes()
-    const m = todos.find((x) => x.id === id)
+    const m = todos.find((x) => x.id === id && paraMi(x, quien.nombre))
     if (!m) return Response.json({ error: 'Ese mensaje ya no está' }, { status: 404 })
     if (quien.rol !== 'dueño' && m.autor !== quien.nombre) {
       return Response.json({ error: 'Solo puedes borrar tus propios mensajes' }, { status: 403 })
@@ -102,6 +123,17 @@ export default async (req: Request, _context: Context) => {
     await store.delete(`m/${mesDe(m.ts)}/${m.ts}-${m.id}`).catch(() => {})
     return Response.json({ ok: true })
   }
+
+  // Los destinatarios se contrastan con quienes de verdad tienen acceso: así un
+  // nombre inventado no deja el mensaje colgando, sin dueño y sin lector.
+  const conAcceso = new Set((await gente()).map((g) => g.nombre))
+  const para = [
+    ...new Set(
+      (Array.isArray(body.para) ? body.para : [])
+        .map((x: any) => String(x || '').trim())
+        .filter((x: string) => x && x !== quien.nombre && conAcceso.has(x)),
+    ),
+  ].slice(0, MAX_PARA)
 
   const texto = String(body.texto || '').slice(0, MAX_TEXTO).trim()
   const adjuntos = (Array.isArray(body.adjuntos) ? body.adjuntos : [])
@@ -126,6 +158,7 @@ export default async (req: Request, _context: Context) => {
     autor: quien.nombre || 'Alguien del equipo',
     rol: quien.rol,
     texto,
+    para,
     adjuntos,
   }
   await tienda().setJSON(`m/${mesDe(ts)}/${ts}-${mensaje.id}`, mensaje)
