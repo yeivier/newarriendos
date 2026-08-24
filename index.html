@@ -40,7 +40,9 @@
     --radius:14px;
     --font:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --font-head:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --font-mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+    /* Los rótulos ya no van en monoespaciada: se veía de otra época y de otra
+       app. Todo en la letra del sistema, con menos espaciado entre letras. */
+    --font-mono:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg);overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -67,7 +69,7 @@
   .brand p{font-size:12.5px;color:var(--muted)}
   .drawer-x{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;margin-left:auto}
   .nav{padding:11px 9px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:3px}
-  .nav-group{font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--side-mut);padding:14px 11px 5px}
+  .nav-group{font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--side-mut);padding:14px 11px 5px}
   .nav-group:first-child{padding-top:3px}
   .nav-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:9px;cursor:pointer;font-size:14.5px;font-weight:600;color:var(--side-tx);transition:.12s}
   .nav-item .ico{width:24px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;opacity:.95}
@@ -90,21 +92,21 @@
   .pad{padding:18px}
   .grid{display:grid;gap:14px}
   .sec-title{font-family:var(--font-head);font-size:17.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:9px;margin-bottom:4px}
-  .sub-title{font-family:var(--font-mono);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--ink);padding:8px 13px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;margin:16px 0 11px}
+  .sub-title{font-family:var(--font-mono);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#fff;background:var(--ink);padding:8px 13px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;margin:16px 0 11px}
   .sub-title.green{background:var(--ink);color:#fff}
   .sub-title.dark{background:var(--ink);color:#fff}
   .help{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 15px;font-size:14px;color:var(--muted);line-height:1.6}
   .help.g{border:1px solid var(--ink)}
 
   .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:17px;border-top:1px solid var(--line);box-shadow:var(--shadow)}
-  .stat .lab{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:7px}
+  .stat .lab{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;gap:7px}
   .stat .val{font-family:var(--font-head);font-size:26px;font-weight:700;color:var(--ink);margin:6px 0 2px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
   .stat .sub{font-size:12.5px;font-weight:600;color:var(--muted)}
 
   /* Los estados no se distinguen por matiz: relleno negro sólido = requiere
      atención / decisión tomada que urge ver; contorno negro = confirmado /
      positivo; gris liso = neutro. La palabra dentro del chip hace el resto. */
-  .pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:30px;font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:30px;font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;background:var(--panel2);color:var(--text);border:1px solid var(--line)}
   .pill.green{background:#fff;color:var(--text);border:1px solid var(--text)}
   .pill.red{background:var(--text);color:#fff;border:1px solid var(--text)}
   .pill.amber{background:var(--text);color:#fff;border:1px solid var(--text)}
@@ -134,7 +136,7 @@
   .check input{width:20px;height:20px;accent-color:var(--text)}
 
   .databox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-  .databox .dl{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+  .databox .dl{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
   .databox .dv{font-size:15.5px;font-weight:700;color:var(--ink);word-break:break-word}
   .databox.big .dv{font-size:20px}
 
@@ -150,7 +152,7 @@
   .dot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
 
   table{width:100%;border-collapse:collapse}
-  th{text-align:left;padding:11px 11px;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--line);font-weight:700}
+  th{text-align:left;padding:11px 11px;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;border-bottom:2px solid var(--line);font-weight:700}
   td{padding:12px 11px;font-size:14.5px;border-bottom:1px solid var(--line2)}
   tr:last-child td{border-bottom:none}
 
@@ -194,7 +196,7 @@
   .cmdk-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
   .cmdk-top input{flex:1;border:none;outline:none;font-size:16px;background:transparent;color:var(--ink)}
   .cmdk-list{overflow:auto;padding:6px 6px 8px}
-  .cmdk-grp{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);padding:11px 12px 4px}
+  .cmdk-grp{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--faint);padding:11px 12px 4px}
   .cmdk-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;cursor:pointer}
   .cmdk-item .ic{width:24px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
   .cmdk-item.on .ic,.cmdk-item:hover .ic{color:var(--ink)}
@@ -217,7 +219,7 @@
   .crm-card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:10px;padding:9px 11px;margin-bottom:8px;cursor:pointer;box-shadow:0 1px 3px rgba(16,16,18,.04)}
   .crm-card .nm{font-weight:700;font-size:14px}
   .crm-card .mt{font-size:12px;color:var(--muted);margin-top:2px}
-  .crm-chip{display:inline-block;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:999px;padding:1px 7px;background:var(--panel2);color:var(--text);margin-top:4px}
+  .crm-chip{display:inline-block;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;border-radius:999px;padding:1px 7px;background:var(--panel2);color:var(--text);margin-top:4px}
   .crm-mini{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
   .crm-bar{height:9px;border-radius:6px;background:var(--line);overflow:hidden}
   .crm-bar>span{display:block;height:100%;background:var(--ink)}
@@ -430,14 +432,14 @@
   .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:4px}
   .media-thumb{position:relative;aspect-ratio:4/3;border-radius:12px;background:var(--line) center/cover no-repeat;border:1px solid var(--line);overflow:hidden}
   .media-thumb.cover{border:3px solid var(--ink);grid-column:span 2}
-  .cover-tag{position:absolute;top:7px;left:7px;background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:20px}
+  .cover-tag{position:absolute;top:7px;left:7px;background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;padding:3px 8px;border-radius:20px}
   .media-acts{position:absolute;bottom:6px;right:6px;display:flex;gap:5px;opacity:0;transition:.15s}
   .media-thumb:hover .media-acts{opacity:1}
   .media-acts button{border:none;background:rgba(16,16,18,.82);color:#fff;border-radius:8px;width:31px;height:31px;cursor:pointer;font-size:14px}
   .cover-thumb{width:62px;height:62px;border-radius:12px;background:var(--line) center/cover no-repeat;flex-shrink:0;border:1px solid var(--line)}
   .hero-cover{position:relative;border-radius:var(--radius);overflow:hidden;height:280px;background:var(--ink) center/cover no-repeat;margin-bottom:12px;display:flex;align-items:flex-end}
   .hero-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(16,16,18,.55),transparent 55%)}
-  .hero-cover .badge{position:absolute;top:12px;left:12px;background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:5px 11px;border-radius:20px;z-index:2}
+  .hero-cover .badge{position:absolute;top:12px;left:12px;background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;padding:5px 11px;border-radius:20px;z-index:2}
   .hero-cover .count{position:absolute;top:12px;right:12px;background:rgba(16,16,18,.7);color:#fff;font-size:12px;font-weight:700;padding:5px 11px;border-radius:20px;z-index:2}
   .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
   .gal .g{aspect-ratio:4/3;border-radius:10px;background:var(--line) center/cover no-repeat;cursor:pointer;border:none;transition:.15s}
@@ -493,7 +495,7 @@
   .clave-req span{display:flex;align-items:center;gap:8px;color:var(--faint)}
   .clave-req span.ok{color:var(--text)}
   .cod-input{letter-spacing:9px;text-align:center;font-size:22px;font-weight:800}
-  .rol-pill{display:inline-flex;font-family:var(--font-mono);padding:3px 10px;border-radius:30px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .rol-pill{display:inline-flex;font-family:var(--font-mono);padding:3px 10px;border-radius:30px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
   .rol-propietario{background:var(--ink);color:#fff}
   .rol-colaborador{background:#fff;border:1px solid var(--ink);color:var(--ink)}
   .rol-invitado{background:var(--panel2);color:var(--muted)}
@@ -620,7 +622,7 @@
   .pcard{flex:0 0 205px;scroll-snap-align:start;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:0 3px 12px rgba(16,16,18,.07);display:flex;flex-direction:column}
   .pcard-img{height:112px;background:var(--panel2) center/cover no-repeat;position:relative;display:flex;align-items:center;justify-content:center}
   .pcard-ph{opacity:.4;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-  .pcard-tag{position:absolute;left:8px;top:8px;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:20px;letter-spacing:.04em}
+  .pcard-tag{position:absolute;left:8px;top:8px;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:20px;letter-spacing:.02em}
   .pcard-tag.ok{background:var(--ink);color:#fff;border:1px solid var(--ink)}
   .pcard-tag.busy{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
   .pcard-body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:3px;flex:1}
@@ -666,14 +668,14 @@
   /* Acciones propuestas por la IA cuando el documento no encaja en el formulario */
   .sug-wrap{margin-top:13px;border-top:1px solid var(--line2);padding-top:12px}
   .sug-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
-  .sug-t{font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink)}
+  .sug-t{font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
   .sug-todas{border:none;background:transparent;color:var(--text);font:800 12px var(--font);cursor:pointer;padding:2px 0;white-space:nowrap}
   .sug{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:var(--card)}
   .sug + .sug{margin-top:8px}
   .sug-sel{cursor:pointer}
   .sug-sel.on{border-color:var(--ink);background:var(--brand-bg)}
   .sug-check{width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:var(--text)}
-  .sug-accion{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text);margin-top:2px}
+  .sug-accion{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--text);margin-top:2px}
   .sug-ico{font-size:20px;flex-shrink:0;line-height:1.2}
   .sug-body{flex:1;min-width:0}
   .sug-titulo{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.35}
@@ -688,7 +690,7 @@
   .ai-buscando{font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:9px;padding:7px 10px;align-self:flex-start}
   .ai-buscando i{color:var(--text);font-style:normal;font-weight:700}
   .ai-fuentes{margin-top:9px;padding-top:8px;border-top:1px solid var(--line2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .ai-fuentes span{font-family:var(--font-mono);font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .ai-fuentes span{font-family:var(--font-mono);font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.02em}
   .ai-fuentes a{font-size:11.5px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 9px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ai-fuentes a:hover{background:var(--ink);color:#fff}
 
@@ -826,6 +828,21 @@
     .app.en-movil.modo-completo .help{ font-size:13.5px; line-height:1.5; }
     /* Nada puede empujar la página de lado. */
     .app.en-movil.modo-completo > .main{ overflow-x:hidden; }
+
+    /* ---- Lo justo y lo necesario ----
+       En el computador caben los recuadros que explican cada sección; en el
+       teléfono se comen la pantalla y hay que pasarlos de largo para llegar a
+       lo que uno venía a hacer. Aquí se dejan fuera: la sección se entiende por
+       lo que muestra, y para cualquier duda está el Asistente. */
+    .app.en-movil.modo-completo .help,
+    .app.en-movil.modo-completo .guia-seccion,
+    .app.en-movil.modo-completo .indfuente{ display:none !important; }
+    /* La descripción de la sección se queda, pero en dos líneas como mucho. */
+    .app.en-movil.modo-completo .topbar .desc{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    /* Más aire entre tarjetas y menos relleno dentro: lo que se veía apretado. */
+    .app.en-movil.modo-completo > .main > .content{ gap:14px; }
+    .app.en-movil.modo-completo .collapse + .collapse{ margin-top:2px; }
   }
   /* ---- Chat del equipo ----
      Mismo lenguaje del diseño móvil: lo mío en negro a la derecha, lo de los
@@ -1146,6 +1163,13 @@
   .mob-kpis2 > div{ background:var(--msf); border-radius:16px; padding:16px;
     display:flex; flex-direction:column; gap:6px; min-width:0; }
   .mob-kpis2 .k{ font-size:14.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---- El atrás, siempre a la vista ----
+     Antes vivía dentro del contenido: al bajar en una pantalla larga se iba
+     hacia arriba y había que volver a subir para salir. */
+  .mob-nav{ position:sticky; top:0; z-index:6; background:var(--mbg);
+    margin:0 -20px; padding:6px 20px 6px; }
+  @media(max-width:359px){ .mob-nav{ margin:0 -16px; padding-left:16px; padding-right:16px; } }
 
   /* ---- Fotos ----
      Se dibujan con <img> y no con background-image: así el navegador elige la
@@ -1727,6 +1751,68 @@ const TRINIDAD_SEED = [
     notas:"Terreno en el sur (Chonchi, Chiloé)." }
 ];
 // Agrega las propiedades de Trinidad que falten (por id o nombre), una sola vez.
+/* ================= TRABAJAR ENTRE VARIOS, EN VIVO =================
+   Dos personas pueden estar dentro al mismo tiempo, en distintos lugares y con
+   distintos aparatos: el dueño llenando la ficha de una propiedad y su contador
+   corrigiendo las cuentas de otra. Antes cada guardado escribía el documento
+   completo a ciegas, así que el último borraba el trabajo del otro sin avisar.
+
+   La fusión es de tres vías: se comparan el estado que ambos tenían al empezar
+   (la base), lo que cambió cada uno, y se junta. La regla es simple: si yo no
+   toqué algo, me quedo con lo que hizo el otro; si lo toqué, mando yo. Así el
+   avance de los dos se suma en vez de pisarse.
+   ================================================================= */
+const LISTAS_CON_ID = ["props","socs","contacts","leads","cuentas","plantillas","qreplies"];
+const mismoValor = (a,b)=>{ try{ return JSON.stringify(a)===JSON.stringify(b); }catch(_e){ return a===b; } };
+
+/* Fusiona una ficha campo a campo: si los dos tocaron la misma propiedad pero
+   distintos datos —uno el nombre del arrendatario y el otro su teléfono—, se
+   conservan los dos. Solo choca cuando ambos escribieron el MISMO campo, y ahí
+   manda quien está guardando. */
+function fusionarFicha(base, mio, suyo){
+  if(!base || !mio || !suyo || typeof mio!=="object" || typeof suyo!=="object") return mio;
+  const out = { ...suyo };
+  Object.keys(mio).forEach(k=>{ if(!mismoValor(mio[k], base[k])) out[k]=mio[k]; });
+  Object.keys(base).forEach(k=>{ if(!(k in mio) && (k in out)) delete out[k]; });
+  return out;
+}
+
+// Fusiona una lista de fichas identificadas por id.
+function fusionarLista(base, mio, suyo){
+  const indice = (l)=>{ const m=new Map(); (l||[]).forEach(x=>{ if(x && x.id!=null) m.set(String(x.id), x); }); return m; };
+  const B=indice(base), M=indice(mio), S=indice(suyo);
+  const salida=[], puestos=new Set();
+  const poner=(id,v)=>{ if(v!==undefined && !puestos.has(id)){ puestos.add(id); salida.push(v); } };
+  // El orden lo pone la lista de quien está mirando la pantalla.
+  (mio||[]).forEach(x=>{
+    if(!x || x.id==null) { salida.push(x); return; }
+    const id=String(x.id), enBase=B.get(id), suya=S.get(id);
+    const loCambieYo = !mismoValor(x, enBase);
+    // El otro la borró y yo no la toqué: se va.
+    if(!S.has(id) && B.has(id) && !loCambieYo) return;
+    if(!loCambieYo){ poner(id, suya!==undefined ? suya : x); return; }
+    // Los dos tocamos la misma ficha: se juntan campo a campo.
+    poner(id, (enBase && suya!==undefined) ? fusionarFicha(enBase, x, suya) : x);
+  });
+  // Lo que agregó el otro y yo todavía no tengo.
+  (suyo||[]).forEach(x=>{ if(!x || x.id==null) return; const id=String(x.id);
+    if(!M.has(id) && !B.has(id)) poner(id, x); });
+  return salida;
+}
+
+function fusionarEstado(base, mio, suyo){
+  const out = { ...(suyo||{}) };
+  Object.keys(mio||{}).forEach(k=>{
+    const enBase = base ? base[k] : undefined;
+    if(LISTAS_CON_ID.indexOf(k)>=0 && Array.isArray(mio[k])){
+      out[k] = fusionarLista(enBase, mio[k], (suyo&&Array.isArray(suyo[k]))?suyo[k]:[]);
+    } else if(!mismoValor(mio[k], enBase)){
+      out[k] = mio[k];   // lo cambié yo: manda lo mío
+    }
+  });
+  return out;
+}
+
 function mergeTrinidadSeed(list){
   try{ if(store.get("ap_trinidad_seed_v1", false)) return list; }catch(e){}
   const arr = Array.isArray(list)? list.slice() : [];
@@ -2410,9 +2496,6 @@ function SocForm({d,set}){
     <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
       <Inp f={{k:"name",label:"Nombre / razón social",ph:"INVERSIONES … SPA"}} value={d.name} onChange={ch}/>
       <Inp f={{k:"rut",label:"RUT de la sociedad",ph:"77.123.456-7"}} value={d.rut} onChange={ch}/>
-    </div>
-    <div className="field" style={{marginTop:12}}><label className="label">Color identificador</label>
-      <input className="input" type="color" value={d.color||"#1763b6"} onChange={e=>ch("color",e.target.value)} style={{height:46,padding:4,cursor:"pointer"}}/>
     </div>
     <div className="sub-title">② Representante legal</div>
     <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -3538,11 +3621,11 @@ function MoverFicha({ titulo, items, idSel, onOrden, onCerrar, onReiniciar }){
   </div></div>);
 }
 
-function Collapsible({ title, icon, subtitle, children, defaultOpen, flush, accent }){
+function Collapsible({ title, icon, subtitle, children, defaultOpen, flush, accent, clase }){
   // Todas las secciones parten cerradas: el usuario las despliega una a una.
   const [open,setOpen]=React.useState(false);
   const style = accent ? {borderLeft:"5px solid "+accent} : undefined;
-  return (<div className={"collapse"+(open?" open":"")+(flush?" flush":"")} style={style}>
+  return (<div className={"collapse"+(open?" open":"")+(flush?" flush":"")+(clase?" "+clase:"")} style={style}>
     <button type="button" className="chead" onClick={()=>setOpen(o=>!o)} aria-expanded={open}>
       {icon&&<span className="cico"><Ic n={icon} w={20}/></span>}
       <span className="ctxt"><span className="ctitle">{title}</span>{subtitle&&<span className="csub">{subtitle}</span>}</span>
@@ -3602,7 +3685,7 @@ const GUIA={
 };
 function GuiaSeccion({ tab }){
   const g=GUIA[tab]; if(!g) return null;
-  return (<Collapsible icon="info" title="¿Qué es esta sección y para qué sirve?" subtitle={g.def} defaultOpen={false}>
+  return (<Collapsible icon="info" title="¿Qué es esta sección y para qué sirve?" subtitle={g.def} defaultOpen={false} clase="guia-seccion">
     <div style={{fontSize:14.5,lineHeight:1.7,color:"var(--text)"}}>
       <div style={{marginBottom:g.ejemplo?10:0}}><b>Qué puedes hacer aquí:</b> {g.hacer}</div>
       {g.ejemplo && <div className="help g" style={{margin:0}}>{g.ejemplo}</div>}
@@ -4671,6 +4754,20 @@ const useMovil = ()=>{
 // que tienen al lado. Reemplazan a todos los emoji que hacían de ícono en la
 // interfaz. Ojo: los emoji de los mensajes que se envían a los arrendatarios
 // (WhatsApp, correo) no se tocan; eso es contenido, no interfaz.
+/* La marca, en vector. Antes era un PNG que se veía blando en pantallas
+   densas; dibujada así es nítida a cualquier tamaño y pesa nada. */
+const Marca = ({ w=42, sobreNegro=true })=>(
+  <svg width={w} height={w} viewBox="0 0 512 512" aria-label="ArriendoPro" role="img">
+    {sobreNegro && <rect width="512" height="512" rx="114" fill="#000"/>}
+    <g fill="none" stroke={sobreNegro?"#fff":"currentColor"} strokeWidth="30"
+       strokeLinecap="round" strokeLinejoin="round">
+      <path d="M104 246 256 128l152 118"/>
+      <path d="M142 228v146a22 22 0 0 0 22 22h184a22 22 0 0 0 22-22V228"/>
+      <path d="M214 396v-74a42 42 0 0 1 84 0v74"/>
+    </g>
+  </svg>
+);
+
 const MobIco = ({ children, w=21, sw=2.2 })=>(
   React.createElement("svg", { width:w, height:w, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor",
     strokeWidth:sw, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true" }, children)
@@ -5157,7 +5254,7 @@ const MOB_MAS_GRUPOS = [
   ]},
   { label:"Cuenta", items:[
     { esp:"cuenta", ico:"persona",   label:"Mi perfil", sub:"Tus datos y los de cobro" },
-    { id:"equipo",  ico:"candado",   label:"Equipo y accesos", sub:"Invitaciones, roles y portal del arrendatario" },
+    { esp:"accesos", ico:"candado",  label:"Equipo y accesos", sub:"Quién puede entrar y qué puede hacer" },
     { id:"config",  ico:"engranaje", label:"Configuración", sub:"Datos bancarios, UF y pasarela de pago" },
     { id:"faq",     ico:"pregunta",  label:"Preguntas frecuentes", sub:"Qué hace cada sección" }
   ]}
@@ -5270,7 +5367,7 @@ function MobileApp(props){
     buscar, secciones, abrirSeccion, cerrarSeccion,
     utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
     alertas, irAlerta, usuarioActual, rolActual,
-    guardado, ficha, patchProp, nav,
+    guardado, ficha, patchProp, nav, accesos,
     acciones = {},
   } = props;
   const AC = acciones;
@@ -5305,6 +5402,8 @@ function MobileApp(props){
      no una sección de escritorio escondida detrás. Se reasigna en cada dibujo
      para que las funciones vean siempre el estado actual. */
   React.useEffect(()=>{ if(nav) nav.current = { irA, push, pop, inicio:()=>setPila([]) }; });
+  // La lista de accesos se pide al servidor al abrir su pantalla.
+  React.useEffect(()=>{ if(top && top.t==="accesos" && accesos && accesos.cargar) accesos.cargar(); },[top && top.t]);
 
   // Datos derivados.
   const rentals    = propiedades.filter(p=>p.use==="arriendo");
@@ -5777,7 +5876,11 @@ function MobileApp(props){
           onClick={()=>push({t:"cuenta"})}/>
         <Fila sinIco titulo="Cerrar sesión" chevron={false} onClick={()=>AC.salir&&AC.salir()}/>
       </Grupo>
-      <div className="mob-nota" style={{marginBottom:6}}>ArriendoPro · administración de propiedades</div>
+      <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:9,
+        color:"var(--mtm)", padding:"14px 0 6px"}}>
+        <span style={{display:"flex", color:"var(--mib)"}}><Marca w={22} sobreNegro={false}/></span>
+        <span style={{fontSize:13.5}}>ArriendoPro</span>
+      </div>
     </div>);
   };
   const abrirDestino = (it)=>{
@@ -6523,6 +6626,99 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============ NIVEL 2 · EQUIPO Y ACCESOS ============
+     Dar acceso a alguien es una tarea de dos datos: cómo se llama y qué puede
+     hacer. La clave la escribe uno o la inventa la plataforma. */
+  const AC_LETRAS = "abcdefghjkmnpqrstuvwxyz";   // sin l ni i ni o: se confunden al dictarla
+  const AC_NUMS = "23456789";                     // sin 0 ni 1, por lo mismo
+  const claveInventada = ()=>{
+    const trozo=(fuente,n)=>Array.from({length:n},()=>fuente[Math.floor(Math.random()*fuente.length)]).join("");
+    return trozo(AC_LETRAS,4)+"-"+trozo(AC_NUMS,4)+"-"+trozo(AC_LETRAS,4);
+  };
+  const [acNombre, setAcNombre] = React.useState("");
+  const [acClave, setAcClave] = React.useState("");
+  const [acRol, setAcRol] = React.useState("lectura");
+  const [acBusy, setAcBusy] = React.useState(false);
+  const [acNuevo, setAcNuevo] = React.useState(null);
+
+  const pantallaAccesos = ()=>{
+    const AX = accesos || {};
+    const lista = AX.lista || [];
+    const puedeCrear = acNombre.trim().length>1 && acClave.trim().length>=6 && !acBusy;
+    const crear = async()=>{
+      if(!puedeCrear) return;
+      setAcBusy(true);
+      try{
+        const hecho = await AX.crear(acNombre.trim(), acClave.trim(), acRol);
+        setAcNuevo(hecho);
+        setAcNombre(""); setAcClave("");
+        notify("Acceso creado");
+      }catch(e){ notify(e.message||"No se pudo crear el acceso", true); }
+      setAcBusy(false);
+    };
+    const quitar = async(x)=>{
+      if(!window.confirm("¿Quitar el acceso de "+(x.nombre||"esta persona")+"?")) return;
+      try{ await AX.borrar(x.id); notify("Acceso quitado"); }
+      catch(e){ notify(e.message||"No se pudo quitar", true); }
+    };
+    const texto = acNuevo ? (AX.texto ? AX.texto(acNuevo) : "") : "";
+    return (<Pantalla titulo="Equipo y accesos" contexto="Quién puede entrar y qué puede hacer" gap="14">
+      {/* Recién creado: la clave se ve una sola vez, para copiarla o mandarla. */}
+      {acNuevo && (
+        <div className="mob-hub-top">
+          <div className="fila"><span className="lb">Acceso creado</span>
+            <span className="mob-chip ink">{acNuevo.rol==="lectura"?"Solo mirar":"Puede modificar"}</span></div>
+          <div className="cifra" style={{fontSize:"clamp(22px,6.4vw,28px)"}}>{acNuevo.nombre}</div>
+          <div className="fila"><span className="lb">Clave</span><span className="lb fuerte">{acNuevo.clave}</span></div>
+          <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+            <button className="mob-btn gray-sm" onClick={()=>{
+              try{ navigator.clipboard.writeText(texto); notify("Copiado"); }catch(_e){ notify("Copia el texto a mano", true); } }}>Copiar</button>
+            <button className="mob-btn gray-sm" onClick={()=>window.open("https://wa.me/?text="+encodeURIComponent(texto),"_blank","noopener")}>WhatsApp</button>
+            <button className="mob-btn gray-sm" onClick={()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Tu acceso a la plataforma")+"&body="+encodeURIComponent(texto); }}>Correo</button>
+            <button className="mob-btn gray-sm" onClick={()=>setAcNuevo(null)}>Listo</button>
+          </div>
+        </div>
+      )}
+
+      <Grupo titulo="Agregar a alguien" nota="La clave no se puede volver a ver: cópiala o mándasela ahora.">
+        <div className="mob-campo"><span className="mob-lab">Nombre de la persona</span>
+          <input className="mob-inp" value={acNombre} onChange={e=>setAcNombre(e.target.value)}
+            placeholder="Ej: Claudia, mi contadora" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Qué puede hacer</span>
+          <div className="mob-seg">
+            <button className={acRol==="lectura"?"on":""} onClick={()=>setAcRol("lectura")}>Solo mirar</button>
+            <button className={acRol==="dueño"?"on":""} onClick={()=>setAcRol("dueño")}>Ver y modificar</button>
+          </div></div>
+        <div className="mob-campo"><span className="mob-lab">Clave</span>
+          <div style={{display:"flex", gap:8}}>
+            <input className="mob-inp" value={acClave} onChange={e=>setAcClave(e.target.value)}
+              placeholder="Mínimo 6 caracteres" disabled={soloLectura} style={{flex:1}}/>
+            <button className="mob-btn gray-sm" style={{flexShrink:0, paddingInline:14}}
+              onClick={()=>setAcClave(claveInventada())}>Inventar</button>
+          </div></div>
+      </Grupo>
+      {!soloLectura && (
+        <button className="mob-btn pri" disabled={!puedeCrear} style={{opacity:puedeCrear?1:.4}} onClick={crear}>
+          {acBusy ? "Creando…" : "Crear acceso"}
+        </button>
+      )}
+
+      <Grupo titulo={"Con acceso ("+lista.length+")"}>
+        {lista.length ? lista.map(x=>(
+          <Fila key={x.id} ico={MI.persona} titulo={x.nombre||"Sin nombre"}
+            sub={x.rol==="lectura"?"Solo mirar":"Ver y modificar"}
+            extra={soloLectura?null:<button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
+              onClick={()=>quitar(x)}>Quitar</button>}
+            chevron={false}/>
+        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía nadie más tiene acceso.</div>}
+      </Grupo>
+
+      <Grupo titulo="Tu cuenta">
+        {hay("equipo") && <Fila icoNav="candado" titulo="Portal del arrendatario y más ajustes" sub="Roles, invitaciones y sesión" onClick={()=>irSeccion("equipo")}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+
   /* ============ NIVEL 2 · MI CUENTA ============ */
   const pantallaCuenta = ()=>(
     <Pantalla titulo="Mi cuenta" contexto={(usuarioActual&&usuarioActual.email)||owner.email||""} gap="14">
@@ -6543,7 +6739,7 @@ function MobileApp(props){
       </Grupo>
       <Grupo titulo="Ajustes de la plataforma">
         {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pasarela de pago" onClick={()=>irSeccion("config")}/>}
-        {hay("equipo") && <Fila icoNav="candado" titulo="Equipo y accesos" sub="Invitaciones, roles y portal del arrendatario" onClick={()=>irSeccion("equipo")}/>}
+        <Fila icoNav="candado" titulo="Equipo y accesos" sub="Quién puede entrar y qué puede hacer" onClick={()=>push({t:"accesos"})}/>
         {hay("faq") && <Fila icoNav="pregunta" titulo="Preguntas frecuentes" onClick={()=>irSeccion("faq")}/>}
       </Grupo>
       <Grupo>
@@ -6608,6 +6804,7 @@ function MobileApp(props){
     if(top.t==="equipo")            vista = pantallaChatEquipo();
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
+    else if(top.t==="accesos")      vista = pantallaAccesos();
     else if(top.t==="asistente")    vista = pantallaAsistente();
     else if(top.t==="socs")         vista = pantallaSociedades();
     else if(top.t==="contactos")    vista = pantallaContactos();
@@ -7276,6 +7473,48 @@ function App(){
      se mantiene como copia rápida local. */
   const [hydrated,setHydrated]=useState(false);
   const saveTimer=useRef(null);
+  /* La versión del servidor sobre la que estamos trabajando, y una copia de ese
+     estado: es la "base" con la que se compara para fusionar sin pisar a nadie. */
+  const base=useRef({ estado:null, version:0 });
+  const guardando=useRef(false);
+
+  // Lo que se manda al servidor. Un solo lugar, para que guardar y fusionar
+  // hablen siempre del mismo conjunto de datos.
+  const estadoActual=()=>({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas,
+    leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo });
+  /* El sondeo vive fuera del ciclo de dibujado, así que no puede leer las
+     variables de este render: se quedaría con las del primer dibujo y, al
+     fusionar, escribiría datos viejos encima de lo recién editado. Aquí se deja
+     siempre la foto más reciente. */
+  const estadoVivo=useRef(null);
+  estadoVivo.current=estadoActual();
+
+  // Vuelca un estado del servidor sobre la pantalla.
+  const aplicarEstado=(e, primeraVez)=>{
+    if(!e) return;
+    if(Array.isArray(e.props)) setProps(primeraVez ? mergeTrinidadSeed(e.props) : e.props);
+    if(Array.isArray(e.socs)) setSocs(e.socs);
+    if(e.owner) { setOwner(e.owner); setOwnerEdit(e.owner); }
+    if(e.uf) setUf(e.uf);
+    if(Array.isArray(e.contacts)) setContacts(e.contacts);
+    if(e.utm) setUtm(e.utm);
+    if(e.dolar) setDolar(e.dolar);
+    if(typeof e.ipc!=="undefined" && e.ipc!==null) setIpc(e.ipc);
+    if(Array.isArray(e.cuentas) && e.cuentas.length) setCuentas(e.cuentas);
+    if(Array.isArray(e.plantillas) && e.plantillas.length) setPlantillas(e.plantillas);
+    if(Array.isArray(e.leads)) setLeads(e.leads);
+    if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
+    // Preferencias: el orden de las fichas y los contadores del asesor.
+    if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
+    if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
+    // Ajustes de las liquidaciones y del reajuste, para que sean los mismos en
+    // el teléfono y en el computador.
+    if(typeof e.comisionAdmin==="number") setComisionAdmin(e.comisionAdmin);
+    if(typeof e.ipcAcum==="number") setIpcAcum(e.ipcAcum);
+    if(typeof e.ufVarAnual==="number") setUfVarAnual(e.ufVarAnual);
+    if(typeof e.reajPeriodo==="number") setReajPeriodo(e.reajPeriodo);
+  };
+
   // Solo se carga el estado del servidor cuando ya se entró con la clave.
   useEffect(()=>{ let alive=true;
     if(puerta!=="ok") return ()=>{ alive=false; };
@@ -7283,28 +7522,8 @@ function App(){
       try{
         const r=await api("/api/estado"); if(!r.ok) throw new Error("sin acceso"); const j=await r.json();
         if(alive && j && j.estado){
-          const e=j.estado;
-          if(Array.isArray(e.props)) setProps(mergeTrinidadSeed(e.props));
-          if(Array.isArray(e.socs)) setSocs(e.socs);
-          if(e.owner) { setOwner(e.owner); setOwnerEdit(e.owner); }
-          if(e.uf) setUf(e.uf);
-          if(Array.isArray(e.contacts)) setContacts(e.contacts);
-          if(e.utm) setUtm(e.utm);
-          if(e.dolar) setDolar(e.dolar);
-          if(typeof e.ipc!=="undefined" && e.ipc!==null) setIpc(e.ipc);
-          if(Array.isArray(e.cuentas) && e.cuentas.length) setCuentas(e.cuentas);
-          if(Array.isArray(e.plantillas) && e.plantillas.length) setPlantillas(e.plantillas);
-          if(Array.isArray(e.leads)) setLeads(e.leads);
-          if(Array.isArray(e.qreplies) && e.qreplies.length) setQreplies(e.qreplies);
-          // Preferencias: el orden de las fichas y los contadores del asesor.
-          if(e.ordenes && typeof e.ordenes==="object") setOrdenes(e.ordenes);
-          if(e.asMet && typeof e.asMet==="object") setAsMet(e.asMet);
-          // Ajustes de las liquidaciones y del reajuste, para que sean los
-          // mismos en el teléfono y en el computador.
-          if(typeof e.comisionAdmin==="number") setComisionAdmin(e.comisionAdmin);
-          if(typeof e.ipcAcum==="number") setIpcAcum(e.ipcAcum);
-          if(typeof e.ufVarAnual==="number") setUfVarAnual(e.ufVarAnual);
-          if(typeof e.reajPeriodo==="number") setReajPeriodo(e.reajPeriodo);
+          aplicarEstado(j.estado, true);
+          base.current={ estado:j.estado, version:j.updatedAt||0 };
         }
         // Solo desde aquí en adelante se puede guardar: si la carga falla y
         // guardáramos igual, se subiría la copia local vacía encima de los
@@ -7316,23 +7535,82 @@ function App(){
     })();
     return ()=>{ alive=false; };
   },[puerta]);
+
   /* "guardando" mientras sube, "ok" cuando quedó guardado en el servidor y
      "error" si no se pudo. Se muestra arriba para no dejar dudas de que todo
      se guarda solo. */
   const [guardado,setGuardado]=useState("");
+  /* Aviso discreto cuando llega trabajo de otra persona. */
+  const [llegoDeOtro,setLlegoDeOtro]=useState(false);
+
   useEffect(()=>{
     if(!hydrated || puerta!=="ok") return;
     if(acceso && acceso.rol==="lectura") return; // acceso de solo lectura: no guarda
     if(saveTimer.current) clearTimeout(saveTimer.current);
+    const mio = estadoActual();
+    if(mismoValor(mio, base.current.estado)) return;   // nada que guardar
     setGuardado("guardando");
-    saveTimer.current=setTimeout(()=>{
-      api("/api/estado",{ method:"PUT", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas,
-          leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo }) })
-        .then(r=>setGuardado(r&&r.ok?"ok":"error")).catch(()=>setGuardado("error"));
+    saveTimer.current=setTimeout(async()=>{
+      saveTimer.current=null; guardando.current=true;
+      try{
+        const r=await api("/api/estado",{ method:"PUT",
+          headers:{ "Content-Type":"application/json", "X-Estado-Base":String(base.current.version||0) },
+          body:JSON.stringify(mio) });
+        if(r && r.ok){
+          const j=await r.json().catch(()=>({}));
+          base.current={ estado:mio, version:j.updatedAt||base.current.version };
+          setGuardado("ok");
+        } else if(r && r.status===409){
+          // Alguien guardó mientras editábamos: se junta su trabajo con el mío
+          // y se vuelve a intentar (el cambio de estado dispara el guardado).
+          const j=await r.json().catch(()=>({}));
+          const juntos=fusionarEstado(base.current.estado, mio, j.estado||{});
+          base.current={ estado:j.estado||{}, version:j.updatedAt||0 };
+          aplicarEstado(juntos);
+          setLlegoDeOtro(true);
+        } else {
+          setGuardado("error");
+        }
+      }catch(_e){ setGuardado("error"); }
+      finally{ guardando.current=false; }
     }, 800);
     return ()=>{ if(saveTimer.current) clearTimeout(saveTimer.current); };
   },[hydrated, puerta, acceso, props, socs, owner, uf, contacts, utm, dolar, ipc, cuentas, plantillas, leads, qreplies, ordenes, asMet, comisionAdmin, ipcAcum, ufVarAnual, reajPeriodo]);
+
+  /* Traer lo que hicieron los demás. Se pregunta solo por la versión —una
+     respuesta diminuta— y únicamente se descarga el documento cuando cambió.
+     No se toca nada mientras haya un guardado propio en camino. */
+  useEffect(()=>{
+    if(!hydrated || puerta!=="ok") return;
+    let vivo=true;
+    const traer=async()=>{
+      if(!vivo || guardando.current || saveTimer.current) return;
+      try{
+        const rv=await api("/api/estado?v=1"); if(!rv || !rv.ok) return;
+        const jv=await rv.json().catch(()=>({}));
+        const version=jv.updatedAt||0;
+        if(!vivo || !version || version<=(base.current.version||0)) return;
+        const r=await api("/api/estado"); if(!r || !r.ok) return;
+        const j=await r.json().catch(()=>({}));
+        if(!vivo || !j.estado) return;
+        if(guardando.current || saveTimer.current) return;
+        const juntos=fusionarEstado(base.current.estado, estadoVivo.current, j.estado);
+        base.current={ estado:j.estado, version:j.updatedAt||version };
+        aplicarEstado(juntos);
+        setLlegoDeOtro(true);
+      }catch(_e){}
+    };
+    const iv=setInterval(traer, 12000);
+    const alVolver=()=>{ if(document.visibilityState==="visible") traer(); };
+    document.addEventListener("visibilitychange", alVolver);
+    window.addEventListener("focus", traer);
+    return ()=>{ vivo=false; clearInterval(iv);
+      document.removeEventListener("visibilitychange", alVolver);
+      window.removeEventListener("focus", traer); };
+  },[hydrated, puerta]);
+  /* El aviso de que llegó trabajo de otra persona se apaga solo. */
+  useEffect(()=>{ if(!llegoDeOtro) return; const t=setTimeout(()=>setLlegoDeOtro(false),3000); return ()=>clearTimeout(t); },[llegoDeOtro]);
+
   /* El aviso de "guardado" se apaga solo; el de error se queda a la vista. */
   useEffect(()=>{ if(guardado!=="ok") return; const t=setTimeout(()=>setGuardado(""),2200); return ()=>clearTimeout(t); },[guardado]);
 
@@ -9769,6 +10047,26 @@ function App(){
       }}
       cerrarSeccion={()=>setMovilCompleto(null)}
       nav={mobNav}
+      /* Alta de personas desde el teléfono. Son las mismas funciones que usa el
+         escritorio: crear el acceso, listarlos y quitarlos. */
+      accesos={{
+        lista: accesos,
+        cargar: cargarAccesos,
+        crear: async (nombre, clave, rol)=>{
+          const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre,clave,rol});
+          const j=await r.json().catch(()=>({}));
+          if(!r.ok) throw new Error(j.error||"No se pudo crear el acceso");
+          setAccesos(j.accesos||[]);
+          return { nombre, clave, rol };
+        },
+        borrar: async (id)=>{
+          const r=await apiJSON("/api/acceso",{accion:"borrar_acceso",id});
+          const j=await r.json().catch(()=>({}));
+          if(!r.ok) throw new Error(j.error||"No se pudo quitar");
+          setAccesos(j.accesos||[]);
+        },
+        texto: (a)=>textoAcceso(a),
+      }}
       /* Todas las acciones del escritorio, para que ninguna quede sin alcance
          desde el teléfono. Son las mismas funciones, no copias. */
       acciones={{
@@ -9813,7 +10111,7 @@ function App(){
       <button className="volver-flot" onClick={cerrarPaneles} title="Volver" aria-label="Volver">← Volver</button>}
     {menuOpen && <div className="nav-overlay" onClick={()=>setMenuOpen(false)}></div>}
     <div className={"sidebar"+(menuOpen?" open":"")}>
-      <div className="brand"><div className="brand-logo"><img src="/logo.png" alt="ArriendoPro"/></div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú"><Ic n="cerrar" w={15}/></button></div>
+      <div className="brand"><div className="brand-logo"><Marca w={42}/></div><div style={{flex:1,minWidth:0}}><h1>ArriendoPro</h1><p>Administración fácil</p></div><button className="drawer-x" onClick={()=>setMenuOpen(false)} aria-label="Cerrar menú"><Ic n="cerrar" w={15}/></button></div>
       <div className="nav"><div className="nav-item" onClick={()=>{setMBusca(true);setMenuOpen(false);}} style={{marginBottom:4}}><span className="ico"><Ic n="lupa" w={19}/></span>Buscar<span className="kbd" style={{marginLeft:"auto"}}>/</span></div>{NAV_VIS.map(g=>(<React.Fragment key={g.label}>
         <div className="nav-group">{g.label}</div>
         {g.ids.map(id=>{ const n=navItem(id); return n?(<div key={id} className={"nav-item"+(tab===id?" on":"")} onClick={()=>{setTab(id);setSel(null);setMenuOpen(false);}}><span className="ico"><Ic n={n.ico} w={19}/></span>{n.label}</div>):null; })}
@@ -9973,7 +10271,7 @@ function App(){
             <div className="help" style={{marginBottom:10}}>Las empresas o personas dueñas de tus propiedades. Aquí ves un resumen; toca “Ver sociedades” para gestionarlas.</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {SOCIEDADES.map(s=>{ const list=bySoc(s.id); const arr=list.filter(p=>p.use==="arriendo"); const util=arr.reduce((a,p)=>a+utilidadMes(p,uf),0);
-                return (<div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,padding:"10px 12px",background:"var(--panel2)",borderRadius:10,borderLeft:"5px solid "+s.color}}>
+                return (<div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,padding:"10px 12px",background:"var(--panel2)",borderRadius:10,borderLeft:"3px solid var(--ink)"}}>
                   <div><div style={{fontWeight:800}}>{s.name}</div><div style={{fontSize:13,color:"var(--muted)"}}>{list.length} propiedad(es) · {arr.length} en arriendo</div></div>
                   <div style={{textAlign:"right"}}><div style={{fontWeight:800,color:util>=0?"var(--green-d)":"var(--red-d)"}}>{CLP(util)}</div><div style={{fontSize:12,color:"var(--faint)"}}>utilidad / mes</div></div>
                 </div>); })}
@@ -10030,7 +10328,7 @@ function App(){
           {socs.length===0 && <div className="card pad" style={{textAlign:"center",color:"var(--muted)"}}>Aún no tienes sociedades. Crea la primera con <b>＋ Nueva sociedad</b>.</div>}
           {SOCIEDADES.map(s=>{ const list=bySoc(s.id); const arr=list.filter(p=>p.use==="arriendo");
             const ing=arr.reduce((a,p)=>a+num(p.rent),0); const util=arr.reduce((a,p)=>a+utilidadMes(p,uf),0); const pat=list.reduce((a,p)=>a+num(p.tasacion),0);
-            return (<Collapsible key={s.id} accent={s.color} icon="edificio" title={s.name} subtitle={"RUT "+s.rut+" · Rep. "+s.rep+" · "+list.length+" propiedad"+(list.length!==1?"es":"")} defaultOpen={false}>
+            return (<Collapsible key={s.id} accent="var(--ink)" icon="edificio" title={s.name} subtitle={"RUT "+s.rut+" · Rep. "+s.rep+" · "+list.length+" propiedad"+(list.length!==1?"es":"")} defaultOpen={false}>
               <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginBottom:12,flexWrap:"wrap"}}>
                 <button className="btn btn-out btn-sm" onClick={()=>openEditSoc(s)}>Editar sociedad</button>
                 <button className="btn btn-out btn-sm" style={{color:"var(--red-d)",borderColor:"var(--red-soft)"}} onClick={()=>setMSocDel(s)}><Ic n="cerrar" w={15}/> Eliminar</button>
@@ -10105,7 +10403,7 @@ function App(){
                   <div style={{flex:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                       <span style={{fontSize:17,fontWeight:800}}>{p.name}</span>
-                      <span className="pill" style={{background:socById(p.sociedad).color+"1a",color:socById(p.sociedad).color}}>{socById(p.sociedad).name.replace(/ SPA$/,"")}</span>
+                      <span className="pill">{socById(p.sociedad).name.replace(/ SPA$/,"")}</span>
                       {p.use==="personal" ? <span className="pill blue">{p.subtype}</span> : <span className="pill grey">{tipoTxt(p)}</span>}
                       {p.hasMortgage && <span className="pill red">Dividendo {UFf(p.dividendoUF)}</span>}
                     </div>
