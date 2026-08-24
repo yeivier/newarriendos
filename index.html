@@ -1477,6 +1477,13 @@
   .mob-iamsg .et{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mtm); margin-bottom:4px; }
   .mob-iabar{ display:flex; gap:8px; align-items:flex-end; }
   .mob-iabar .mob-inp{ flex:1; }
+  /* Fila de chips-filtro (CRM): se desplaza de lado, no se apila. */
+  .mob-chips-fila{ display:flex; gap:8px; overflow-x:auto; margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
+  .mob-chips-fila::-webkit-scrollbar{ display:none; }
+  .mob-chip2{ flex:0 0 auto; background:var(--mfl2); border:1px solid var(--mln); border-radius:999px;
+    padding:8px 13px; font-family:inherit; font-size:13px; font-weight:600; color:var(--mtx); cursor:pointer;
+    white-space:nowrap; min-height:36px; }
+  .mob-chip2.on{ background:var(--mib); color:#fff; border-color:var(--mib); }
 
 
 
@@ -5821,6 +5828,7 @@ function MobileApp(props){
     alertas, irAlerta, usuarioActual, rolActual,
     guardado, ficha, patchProp, nav, accesos,
     cotiz, setCotiz, tramites, setTramites, esArquitecto, nombreAcceso,
+    deep = {},
     acciones = {},
   } = props;
   const AC = acciones;
@@ -5837,6 +5845,11 @@ function MobileApp(props){
   // Propiedad elegida al empezar un trámite (vive fuera de la pantalla para que
   // no se pierda al volver a dibujar la lista de plantillas).
   const [tramPid, setTramPid] = React.useState("");
+  // Secciones profundas: canal de la plantilla, y filtros/nota del CRM.
+  const [comCanal, setComCanal] = React.useState("cuerpoCorreo");
+  const [crmBusca, setCrmBusca] = React.useState("");
+  const [crmFiltro, setCrmFiltro] = React.useState("todos");
+  const [crmNota, setCrmNota] = React.useState("");
   // Foto abierta a tamaño completo (null = ninguna).
   const [visor, setVisor] = React.useState(null);
   const [visorReal, setVisorReal] = React.useState(false);
@@ -6405,35 +6418,19 @@ function MobileApp(props){
     const grupos = (esArquitecto ? MAS_ARQ : MOB_MAS_GRUPOS)
       .map(g=>({ ...g, items:g.items.filter(it=> it.esp ? true : hay(it.id)) }))
       .filter(g=>g.items.length);
-    /* Las propiedades, directas. Primero las últimas que se abrieron y después
-       el resto por nombre: lo que se usa a diario queda siempre arriba. Antes
-       había que ir a la pestaña, buscar en la lista y recién ahí entrar. */
-    const pos = new Map(recientes.map((id,i)=>[id,i]));
-    const orden = propiedades.slice().sort((a,b)=>{
-      const ra = pos.has(String(a.id)) ? pos.get(String(a.id)) : 9e9;
-      const rb = pos.has(String(b.id)) ? pos.get(String(b.id)) : 9e9;
-      if(ra!==rb) return ra-rb;
-      return (a.name||"").localeCompare(b.name||"", "es", {numeric:true});
-    });
-    /* Si caben todas, van todas: una fila "Ver todas (6)" sobre seis sobra. */
-    const vista = orden.slice(0, orden.length<=6 ? 6 : 5);
     return (<div className="mob-scr g14">
       <HeaderMob title="Más" sub="El resto de la plataforma, por lo que quieres hacer"/>
       <div className="mob-buscar" onClick={buscar} role="button">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
         <input readOnly placeholder="Buscar en toda la plataforma" style={{pointerEvents:"none"}}/>
       </div>
-      {!!vista.length && (
-        <Grupo titulo="Mis propiedades">
-          {vista.map(p=>(
-            <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
-              sub={[p.comuna||"", p.use==="arriendo" ? (p.tenant||"Sin arrendatario") : "Uso propio"]
-                .filter(Boolean).join(" · ")}
-              onClick={()=>push({t:"prop", id:p.id})}/>
-          ))}
-          {orden.length>vista.length && (
-            <Fila icoNav="casas" titulo={"Ver todas ("+orden.length+")"} onClick={()=>saltarA("props")}/>
-          )}
+      {/* Las propiedades no van desplegadas: un solo botón que abre la lista,
+          como cualquier otra fila. Se entra tocando, no leyendo. */}
+      {!!propiedades.length && (
+        <Grupo>
+          <Fila icoNav="casas" titulo="Mis propiedades"
+            sub={propiedades.length+(propiedades.length===1?" propiedad":" propiedades")}
+            onClick={()=>saltarA("props")}/>
         </Grupo>
       )}
       {grupos.map(g=>(
@@ -6457,8 +6454,11 @@ function MobileApp(props){
       </div>
     </div>);
   };
+  // Las secciones que ya tienen pantalla nativa se abren como tales, sin caer
+  // en el diseño de escritorio encogido.
+  const SEC_NATIVA = { config:"config", comunicaciones:"comunic", crm:"crm", informes:"informes", legal:"legal" };
   const abrirDestino = (it)=>{
-    if(it.id){ irSeccion(it.id); return; }
+    if(it.id){ if(SEC_NATIVA[it.id]) return push({t:SEC_NATIVA[it.id]}); irSeccion(it.id); return; }
     if(it.esp==="buscar") return buscar();
     if(it.esp==="infocheck") return AC.infoCheck && AC.infoCheck();
     if(it.esp==="levantamiento") return AC.levantamiento && AC.levantamiento();
@@ -7318,7 +7318,7 @@ function MobileApp(props){
         <Fila sinIco titulo="Teléfono" valor={owner.telefono||"—"}/>
       </Grupo>
       <Grupo titulo="Ajustes de la plataforma">
-        {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pasarela de pago" onClick={()=>irSeccion("config")}/>}
+        {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pasarela de pago" onClick={()=>push({t:"config"})}/>}
         <Fila icoNav="candado" titulo="Equipo y accesos" sub="Quién puede entrar y qué puede hacer" onClick={()=>push({t:"accesos"})}/>
         {hay("faq") && <Fila icoNav="pregunta" titulo="Preguntas frecuentes" onClick={()=>irSeccion("faq")}/>}
       </Grupo>
@@ -7346,7 +7346,7 @@ function MobileApp(props){
       <Grupo>
         {hay("ai") && <Fila icoNav="chispas" titulo="Preguntarle al asesor" sub="Sabe de tu cartera, contratos, UF y del rubro" onClick={()=>irSeccion("ai")}/>}
         <Fila ico={MI.burbuja} titulo="Chat del equipo" sub="Mensajes y archivos con quienes tienen acceso" onClick={()=>push({t:"equipo"})}/>
-        {hay("crm") && <Fila icoNav="embudo" titulo="CRM y leads" sub="Prospectos, visitas y respuestas rápidas" onClick={()=>irSeccion("crm")}/>}
+        {hay("crm") && <Fila icoNav="embudo" titulo="CRM y leads" sub="Prospectos, visitas y respuestas rápidas" onClick={()=>push({t:"crm"})}/>}
       </Grupo>
       <Grupo titulo="Crear">
         {!soloLectura && <Fila ico={MI.casita} titulo="Nueva propiedad" onClick={()=>AC.nuevaPropiedad && AC.nuevaPropiedad()}/>}
@@ -8181,6 +8181,340 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============================================================
+     SECCIONES PROFUNDAS · pantallas nativas
+     ------------------------------------------------------------
+     Antes, Comunicaciones, CRM, Informes, Legal y Configuración abrían la
+     pantalla del computador encogida dentro del teléfono: había que apretar de
+     más para llegar al fondo. Aquí cada una tiene su pantalla propia, con la
+     misma regla del resto: nada desplegado de una vez —una lista corta que se
+     toca y recién ahí se abre lo de adentro. Escriben en el mismo estado que el
+     computador, así que no se pierde ni se duplica nada.
+     ============================================================ */
+
+  /* ---------- Configuración ---------- */
+  const dsetOwner = (k,v)=> deep.setOwner && deep.setOwner(o=>({...o, [k]:v}));
+  const pantallaConfig = ()=>{
+    const o = deep.owner||{};
+    const cuentas = deep.cuentas||[];
+    const g = deep.gw || (deep.gateways&&deep.gateways[0]) || {};
+    return (<Pantalla titulo="Configuración" contexto="Cobro, indicadores y reajuste" gap="14">
+      <Grupo titulo="Cuentas para recibir el pago" nota="Las que se ofrecen al enviar un recordatorio.">
+        {cuentas.map(c=>(
+          <Fila key={c.id} icoNav="banco" titulo={c.banco||"Cuenta sin banco"}
+            sub={[c.tipoCuenta, c.numero].filter(Boolean).join(" · ")||"Sin número"}
+            onClick={()=>push({t:"cuentaCfg", cid:c.id})}/>
+        ))}
+        {!soloLectura && <Fila icoNav="mas" titulo="Agregar una cuenta" chevron={false}
+          onClick={()=>{ const id="c"+Date.now().toString(36); deep.setCuentas(cs=>[...cs, {...({banco:"",tipoCuenta:"Cuenta Corriente",numero:"",rut:"",nombre:"",alias:"",email:""}), id}]); push({t:"cuentaCfg", cid:id}); }}/>}
+      </Grupo>
+
+      <Grupo titulo="Pasarela de pago" nota="Por dónde paga el arrendatario en línea.">
+        {(deep.gateways||[]).map(x=>(
+          <Fila key={x.id} sinIco titulo={x.name} sub={x.methods}
+            valor={o.gateway===x.id ? "Activa" : (x.rec?"Sugerida":"")}
+            chevron={false}
+            onClick={()=> soloLectura ? null : dsetOwner("gateway", x.id)}/>
+        ))}
+      </Grupo>
+
+      <Grupo titulo="Indicadores" nota="Se actualizan solos, pero puedes corregirlos a mano.">
+        <div className="mob-campo"><span className="mob-lab">UF (CLP)</span>
+          <input className="mob-inp" inputMode="numeric" value={deep.uf||""} disabled={soloLectura}
+            onChange={e=>deep.setUf(parseInt(num(e.target.value))||deep.uf)}/></div>
+        <div className="mob-campo"><span className="mob-lab">UTM (CLP)</span>
+          <input className="mob-inp" inputMode="numeric" value={deep.utm||""} disabled={soloLectura}
+            onChange={e=>deep.setUtm(parseInt(num(e.target.value))||deep.utm)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Dólar (CLP)</span>
+          <input className="mob-inp" inputMode="numeric" value={deep.dolar||""} disabled={soloLectura}
+            onChange={e=>deep.setDolar(parseInt(num(e.target.value))||deep.dolar)}/></div>
+        <div className="mob-campo"><span className="mob-lab">IPC del mes (%)</span>
+          <input className="mob-inp" inputMode="decimal" value={deep.ipc} disabled={soloLectura}
+            onChange={e=>deep.setIpc(num(e.target.value))}/></div>
+      </Grupo>
+
+      <Grupo titulo="Reajuste y comisión" nota="Para calcular el reajuste del arriendo y tu comisión de administración.">
+        <div className="mob-campo"><span className="mob-lab">IPC acumulado del período (%)</span>
+          <input className="mob-inp" inputMode="decimal" value={deep.ipcAcum} disabled={soloLectura}
+            onChange={e=>deep.setIpcAcum(num(e.target.value))}/></div>
+        <div className="mob-campo"><span className="mob-lab">Variación anual de la UF (%)</span>
+          <input className="mob-inp" inputMode="decimal" value={deep.ufVarAnual} disabled={soloLectura}
+            onChange={e=>deep.setUfVarAnual(num(e.target.value))}/></div>
+        <div className="mob-campo"><span className="mob-lab">Período de reajuste (meses)</span>
+          <input className="mob-inp" inputMode="numeric" value={deep.reajPeriodo} disabled={soloLectura}
+            onChange={e=>deep.setReajPeriodo(parseInt(num(e.target.value))||0)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Comisión de administración (%)</span>
+          <input className="mob-inp" inputMode="decimal" value={deep.comisionAdmin} disabled={soloLectura}
+            onChange={e=>deep.setComisionAdmin(num(e.target.value))}/></div>
+      </Grupo>
+
+      <Grupo titulo="Titular">
+        <div className="mob-campo"><span className="mob-lab">Nombre</span>
+          <input className="mob-inp" value={o.name||""} disabled={soloLectura} onChange={e=>dsetOwner("name", e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">RUT</span>
+          <input className="mob-inp" value={o.rut||""} disabled={soloLectura} onChange={e=>dsetOwner("rut", e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Correo</span>
+          <input className="mob-inp" value={o.email||""} disabled={soloLectura} onChange={e=>dsetOwner("email", e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">WhatsApp que envía</span>
+          <input className="mob-inp" value={o.whatsappEnvio||""} disabled={soloLectura} onChange={e=>dsetOwner("whatsappEnvio", e.target.value)}/></div>
+      </Grupo>
+      <Guardado/>
+    </Pantalla>);
+  };
+  const pantallaCuentaCfg = (cid)=>{
+    const c = (deep.cuentas||[]).find(x=>x.id===cid);
+    if(!c) return (<Pantalla titulo="Cuenta"><div className="mob-vacio">Esta cuenta ya no está.</div></Pantalla>);
+    const set=(k,v)=> deep.setCuentas(cs=>cs.map(x=>x.id===cid?{...x,[k]:v}:x));
+    return (<Pantalla titulo={c.banco||"Cuenta bancaria"} contexto="Para recibir transferencias" gap="14">
+      <Grupo>
+        <div className="mob-campo"><span className="mob-lab">Banco</span>
+          <input className="mob-inp" value={c.banco||""} disabled={soloLectura} onChange={e=>set("banco",e.target.value)} placeholder="Ej: Banco de Chile"/></div>
+        <div className="mob-campo"><span className="mob-lab">Tipo de cuenta</span>
+          <select className="mob-inp" value={c.tipoCuenta||"Cuenta Corriente"} disabled={soloLectura} onChange={e=>set("tipoCuenta",e.target.value)}>
+            {["Cuenta Corriente","Cuenta Vista","Cuenta de Ahorro","CuentaRUT"].map(t=><option key={t}>{t}</option>)}
+          </select></div>
+        <div className="mob-campo"><span className="mob-lab">Número</span>
+          <input className="mob-inp" inputMode="numeric" value={c.numero||""} disabled={soloLectura} onChange={e=>set("numero",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">RUT del titular</span>
+          <input className="mob-inp" value={c.rut||""} disabled={soloLectura} onChange={e=>set("rut",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Nombre del titular</span>
+          <input className="mob-inp" value={c.nombre||""} disabled={soloLectura} onChange={e=>set("nombre",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Correo para avisos</span>
+          <input className="mob-inp" value={c.email||""} disabled={soloLectura} onChange={e=>set("email",e.target.value)}/></div>
+      </Grupo>
+      {!soloLectura && (deep.cuentas||[]).length>1 && (
+        <button className="mob-btn sec" onClick={()=>{ if(window.confirm("¿Quitar esta cuenta?")){ deep.setCuentas(cs=>cs.filter(x=>x.id!==cid)); pop(); } }}>Quitar cuenta</button>
+      )}
+      <Guardado/>
+    </Pantalla>);
+  };
+
+  /* ---------- Comunicaciones (plantillas) ---------- */
+  const pantallaComunic = ()=>{
+    const pls = deep.plantillas||[];
+    const propias = pls.filter(x=>!x.builtin);
+    const base = pls.filter(x=>x.builtin);
+    return (<Pantalla titulo="Comunicaciones" contexto="Plantillas de correo, WhatsApp y SMS" gap="14">
+      <div className="mob-nota">Los mensajes que la plataforma manda a los arrendatarios. Tócalos para ver el texto de cada canal y copiarlo o ajustarlo.</div>
+      {!!base.length && (
+        <Grupo titulo="De la plataforma">
+          {base.map(t=>(
+            <Fila key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
+              onClick={()=>push({t:"plantilla", pl:t.id})}/>
+          ))}
+        </Grupo>
+      )}
+      <Grupo titulo="Tuyas">
+        {propias.length ? propias.map(t=>(
+          <Fila key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
+            onClick={()=>push({t:"plantilla", pl:t.id})}/>
+        )) : <Fila sinIco titulo="Ninguna todavía" sub="Crea una plantilla propia" chevron={false}/>}
+        {!soloLectura && <Fila icoNav="mas" titulo="Nueva plantilla" chevron={false}
+          onClick={()=>{ const id="pl"+Date.now().toString(36); deep.setPlantillas(ps=>[...ps,{id,label:"Nueva plantilla",ico:"sobre",builtin:false,adjuntos:[],asunto:"",cuerpo:"",cuerpoWA:"",cuerpoCorreo:""}]); push({t:"plantilla", pl:id}); }}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+  const pantallaPlantilla = (plid)=>{
+    const t = (deep.plantillas||[]).find(x=>x.id===plid);
+    if(!t) return (<Pantalla titulo="Plantilla"><div className="mob-vacio">Esta plantilla ya no está.</div></Pantalla>);
+    const set=(k,v)=> deep.setPlantillas(ps=>ps.map(x=>x.id===plid?{...x,[k]:v}:x));
+    const editable = !soloLectura && !t.builtin;
+    const copiar=(txt)=>{ try{ navigator.clipboard.writeText(txt||""); notify("Copiado"); }catch(_e){ notify("Copia el texto a mano", true); } };
+    return (<Pantalla titulo={t.label||"Plantilla"} contexto={t.builtin?"De la plataforma":"Tuya"} gap="14">
+      {editable && (
+        <Grupo>
+          <div className="mob-campo"><span className="mob-lab">Nombre</span>
+            <input className="mob-inp" value={t.label||""} onChange={e=>set("label",e.target.value)}/></div>
+          <div className="mob-campo"><span className="mob-lab">Asunto del correo</span>
+            <input className="mob-inp" value={t.asunto||""} onChange={e=>set("asunto",e.target.value)}/></div>
+        </Grupo>
+      )}
+      <div className="mob-seg tres">
+        <button className={comCanal==="cuerpoCorreo"?"on":""} onClick={()=>setComCanal("cuerpoCorreo")}>Correo</button>
+        <button className={comCanal==="cuerpoWA"?"on":""} onClick={()=>setComCanal("cuerpoWA")}>WhatsApp</button>
+        <button className={comCanal==="cuerpo"?"on":""} onClick={()=>setComCanal("cuerpo")}>SMS</button>
+      </div>
+      <Grupo>
+        {comCanal==="cuerpoCorreo" && !t.builtin && !soloLectura && (
+          <div className="mob-campo"><span className="mob-lab">Asunto</span>
+            <input className="mob-inp" value={t.asunto||""} onChange={e=>set("asunto",e.target.value)}/></div>
+        )}
+        <div className="mob-campo"><span className="mob-lab">{comCanal==="cuerpo"?"Mensaje SMS":comCanal==="cuerpoWA"?"Mensaje WhatsApp":"Cuerpo del correo"}</span>
+          <textarea className="mob-inp" rows={comCanal==="cuerpo"?4:9} value={t[comCanal]||""}
+            disabled={!editable} onChange={e=>set(comCanal,e.target.value)}/></div>
+      </Grupo>
+      <div className="mob-nota">Los {"{"}campos{"}"} entre llaves se rellenan solos al enviar: {"{"}nombre{"}"}, {"{"}monto{"}"}, {"{"}vence{"}"}, {"{"}propiedad{"}"}, {"{"}banco{"}"}, {"{"}pasarela{"}"}.</div>
+      <button className="mob-btn sec" onClick={()=>copiar(t[comCanal])}>Copiar este texto</button>
+      {editable && (deep.plantillas||[]).filter(x=>!x.builtin).length>0 && (
+        <button className="mob-btn sec" onClick={()=>{ if(window.confirm("¿Borrar esta plantilla?")){ deep.setPlantillas(ps=>ps.filter(x=>x.id!==plid)); pop(); } }}>Borrar plantilla</button>
+      )}
+      {editable && <Guardado/>}
+    </Pantalla>);
+  };
+
+  /* ---------- CRM y leads ---------- */
+  const crmEstado = (id)=> CRM_ESTADOS.find(e=>e.id===id)||CRM_ESTADOS[0];
+  const pantallaCRM = ()=>{
+    const ls = deep.leads||[];
+    const q = crmBusca.trim().toLowerCase();
+    const lista = ls.filter(l=> (crmFiltro==="todos"||l.estado===crmFiltro) &&
+      (!q || (l.nombre||"").toLowerCase().includes(q) || (l.comuna||"").toLowerCase().includes(q) || (l.fuente||"").toLowerCase().includes(q)));
+    const abiertos = ls.filter(l=> l.estado!=="ganado" && l.estado!=="perdido").length;
+    const ganados = ls.filter(l=> l.estado==="ganado").length;
+    return (<Pantalla titulo="CRM y leads" contexto="Prospectos, visitas y conversión" gap="14">
+      <div className="mob-kpis2">
+        <div><span className="k">Abiertos</span><span className="v">{abiertos}</span></div>
+        <div><span className="k">Cerrados ganados</span><span className="v">{ganados}</span></div>
+      </div>
+      <div className="mob-buscar">
+        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
+        <input value={crmBusca} onChange={e=>setCrmBusca(e.target.value)} placeholder="Buscar por nombre, comuna o fuente"/>
+        {!!crmBusca && <button className="mob-btn link" style={{minHeight:32, fontSize:14.5}} onClick={()=>setCrmBusca("")}>Limpiar</button>}
+      </div>
+      <div className="mob-chips-fila">
+        <button className={"mob-chip2"+(crmFiltro==="todos"?" on":"")} onClick={()=>setCrmFiltro("todos")}>Todos ({ls.length})</button>
+        {CRM_ESTADOS.map(e=>{ const n=ls.filter(l=>l.estado===e.id).length; if(!n) return null;
+          return <button key={e.id} className={"mob-chip2"+(crmFiltro===e.id?" on":"")} onClick={()=>setCrmFiltro(e.id)}>{e.label} ({n})</button>; })}
+      </div>
+      {lista.length ? (
+        <Grupo>
+          {lista.map(l=>(
+            <Fila key={l.id} icoNav="persona" titulo={l.nombre||"Sin nombre"}
+              sub={[crmEstado(l.estado).label, l.comuna||"", l.fuente||""].filter(Boolean).join(" · ")}
+              extra={(l.tareas||[]).some(t=>!t.hecha) ? <span className="mob-punto" title="Tarea pendiente"></span> : null}
+              onClick={()=>push({t:"lead", lid:l.id})}/>
+          ))}
+        </Grupo>
+      ) : <div className="mob-vacio">No hay prospectos que coincidan.</div>}
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>{ const id="ld"+Date.now().toString(36);
+        deep.setLeads(x=>[{id,nombre:"Nuevo lead",telefono:"",email:"",fuente:"WhatsApp",estado:"nuevo",tipoBusqueda:"arriendo",propInteres:"",presupuesto:"",dorms:"",comuna:"",notas:"",valorUF:"",creado:Date.now(),actualizado:Date.now(),interacciones:[],visitas:[],tareas:[]},...x]);
+        push({t:"lead", lid:id}); }}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nuevo prospecto
+      </button>}
+    </Pantalla>);
+  };
+  const pantallaLead = (lid)=>{
+    const l = (deep.leads||[]).find(x=>x.id===lid);
+    if(!l) return (<Pantalla titulo="Prospecto"><div className="mob-vacio">Este prospecto ya no está.</div></Pantalla>);
+    const set=(k,v)=> deep.setLeads(ls=>ls.map(x=>x.id===lid?{...x,[k]:v,actualizado:Date.now()}:x));
+    const tel=String(l.telefono||"").replace(/[^\d+]/g,"");
+    const addInter=()=>{ const t=crmNota.trim(); if(!t) return;
+      set("interacciones",[{id:"i"+Date.now().toString(36),fecha:Date.now(),canal:"Nota",texto:t},...(l.interacciones||[])]);
+      setCrmNota(""); };
+    const toggleTarea=(tid)=> set("tareas",(l.tareas||[]).map(t=>t.id===tid?{...t,hecha:!t.hecha}:t));
+    return (<Pantalla titulo={l.nombre||"Prospecto"} contexto={crmEstado(l.estado).label} gap="14">
+      <Grupo titulo="Etapa">
+        <div className="mob-campo">
+          <select className="mob-inp" value={l.estado} disabled={soloLectura} onChange={e=>set("estado",e.target.value)}>
+            {CRM_ESTADOS.map(e=><option key={e.id} value={e.id}>{e.label}</option>)}
+          </select></div>
+      </Grupo>
+      {!!(tel||l.email) && (
+        <div className="mob-acc2">
+          {tel && <button onClick={()=>window.open("https://wa.me/"+tel.replace(/^\+/,""),"_blank","noopener")}><MobIco w={22} sw={2}>{MI.burbuja}</MobIco><span className="nb">WhatsApp</span></button>}
+          {tel && <button onClick={()=>{ window.location.href="tel:"+tel; }}><MobIco w={22} sw={2}>{MI.telefono}</MobIco><span className="nb">Llamar</span></button>}
+          {l.email && <button onClick={()=>{ window.location.href="mailto:"+l.email; }}><MobIco w={22} sw={2}>{MI.sobre}</MobIco><span className="nb">Correo</span></button>}
+        </div>
+      )}
+      <Grupo titulo="Datos">
+        <div className="mob-campo"><span className="mob-lab">Nombre</span>
+          <input className="mob-inp" value={l.nombre||""} disabled={soloLectura} onChange={e=>set("nombre",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Teléfono</span>
+          <input className="mob-inp" value={l.telefono||""} disabled={soloLectura} onChange={e=>set("telefono",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Correo</span>
+          <input className="mob-inp" value={l.email||""} disabled={soloLectura} onChange={e=>set("email",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Fuente</span>
+          <input className="mob-inp" value={l.fuente||""} disabled={soloLectura} onChange={e=>set("fuente",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Comuna de interés</span>
+          <input className="mob-inp" value={l.comuna||""} disabled={soloLectura} onChange={e=>set("comuna",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Presupuesto</span>
+          <input className="mob-inp" value={l.presupuesto||""} disabled={soloLectura} onChange={e=>set("presupuesto",e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Notas</span>
+          <textarea className="mob-inp" rows={3} value={l.notas||""} disabled={soloLectura} onChange={e=>set("notas",e.target.value)}/></div>
+      </Grupo>
+      {!!(l.tareas||[]).length && (
+        <Grupo titulo="Tareas">
+          {l.tareas.map(t=>(
+            <Fila key={t.id} sinIco titulo={t.titulo} sub={t.vence?("vence "+t.vence):""}
+              valor={t.hecha?"Hecha":"Pendiente"} chevron={false}
+              onClick={()=> soloLectura?null:toggleTarea(t.id)}/>
+          ))}
+        </Grupo>
+      )}
+      <Grupo titulo="Historial">
+        {!soloLectura && (
+          <div className="mob-campo"><span className="mob-lab">Anotar una interacción</span>
+            <div style={{display:"flex", gap:8}}>
+              <input className="mob-inp" value={crmNota} onChange={e=>setCrmNota(e.target.value)} placeholder="Qué pasó" style={{flex:1}}
+                onKeyDown={e=>{ if(e.key==="Enter") addInter(); }}/>
+              <button className="mob-btn gray-sm" style={{flexShrink:0, paddingInline:14}} onClick={addInter}>Anotar</button>
+            </div></div>
+        )}
+        {(l.interacciones||[]).map(i=>(
+          <Fila key={i.id} sinIco titulo={i.texto} sub={[i.canal, mobCuando(new Date(i.fecha).toISOString())].filter(Boolean).join(" · ")} chevron={false}/>
+        ))}
+        {!(l.interacciones||[]).length && <Fila sinIco titulo="Sin interacciones aún" chevron={false}/>}
+      </Grupo>
+      {!soloLectura && <button className="mob-btn sec" onClick={()=>{ if(window.confirm("¿Borrar este prospecto?")){ deep.setLeads(ls=>ls.filter(x=>x.id!==lid)); pop(); } }}>Borrar prospecto</button>}
+      <Guardado/>
+    </Pantalla>);
+  };
+
+  /* ---------- Informes ---------- */
+  const pantallaInformes = ()=>(
+    <Pantalla titulo="Informes" contexto="Cartolas para ti, tu contador o los dueños" gap="14">
+      <Grupo titulo="Toda la cartera">
+        <Fila icoNav="tendencia" titulo="Informe general" sub="Ingresos, gastos y utilidad de todas las propiedades"
+          onClick={()=>deep.informeGeneral&&deep.informeGeneral()}/>
+        <Fila icoNav="doc" titulo="Descargar como Word" chevron={false}
+          onClick={()=>deep.informeGeneralWord&&deep.informeGeneralWord()}/>
+      </Grupo>
+      <Grupo titulo="Por propiedad" nota="Cada una abre su informe: dividendo, gastos, pagos y balance.">
+        {propiedades.map(p=>(
+          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name} sub={p.comuna||""}
+            onClick={()=>push({t:"informeProp", id:p.id})}/>
+        ))}
+      </Grupo>
+    </Pantalla>
+  );
+  const pantallaInformeProp = (p)=>(
+    <Pantalla titulo={p.name} contexto="Informe de la propiedad" gap="14">
+      <div className="mob-hub-top claro">
+        <div className="fila"><span className="lb">{p.comuna||p.address||""}</span></div>
+        <div className="mob-porque" style={{color:"var(--mtx)", borderTopColor:"var(--mln)"}}>
+          El informe reúne el arriendo, el dividendo, las contribuciones, los seguros, los gastos y los pagos registrados.</div>
+      </div>
+      <Grupo>
+        <Fila icoNav="tendencia" titulo="Ver informe / Imprimir (PDF)" onClick={()=>deep.informeProp&&deep.informeProp(p)}/>
+        <Fila icoNav="doc" titulo="Descargar como Word" chevron={false} onClick={()=>deep.informePropWord&&deep.informePropWord(p)}/>
+      </Grupo>
+      <Grupo titulo="Ir a la propiedad">
+        <Fila ico={MI.edif} titulo="Abrir su balance" onClick={()=>push({t:"finProp", id:p.id})}/>
+        <Fila ico={MI.tarj} titulo="Ver sus pagos" onClick={()=>push({t:"pagos", id:p.id})}/>
+      </Grupo>
+    </Pantalla>
+  );
+
+  /* ---------- Documentos legales ---------- */
+  const pantallaLegal = ()=>{
+    const arrendadas = propiedades.filter(p=>p.use==="arriendo");
+    return (<Pantalla titulo="Documentos legales" contexto="Contratos, firma y antecedentes" gap="14">
+      <div className="mob-nota">Cada propiedad guarda su contrato, la firma y los antecedentes. Tócala para abrir lo suyo.</div>
+      <Grupo titulo="Contrato y firma por propiedad">
+        {(arrendadas.length?arrendadas:propiedades).map(p=>{
+          const tieneContrato = !!(p.contrato || (p.contratos&&p.contratos.length));
+          return (<Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
+            sub={[p.tenant||"Sin arrendatario", tieneContrato?"Con contrato":"Sin contrato"].filter(Boolean).join(" · ")}
+            onClick={()=>push({t:"contrato", id:p.id})}/>);
+        })}
+      </Grupo>
+      <Grupo titulo="Antecedentes de un arrendatario">
+        <Fila icoNav="lupa" titulo="Consultar InfoCheck" sub="Historial comercial y laboral" chevron={false}
+          onClick={()=>AC.infoCheck && AC.infoCheck()}/>
+      </Grupo>
+    </Pantalla>);
+  };
+
   /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
     <React.Fragment>
@@ -8218,6 +8552,14 @@ function MobileApp(props){
     else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
     else if(top.t==="planos")       vista = pantallaPlanos();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
+    else if(top.t==="config")       vista = pantallaConfig();
+    else if(top.t==="cuentaCfg")    vista = pantallaCuentaCfg(top.cid);
+    else if(top.t==="comunic")      vista = pantallaComunic();
+    else if(top.t==="plantilla")    vista = pantallaPlantilla(top.pl);
+    else if(top.t==="crm")          vista = pantallaCRM();
+    else if(top.t==="lead")         vista = pantallaLead(top.lid);
+    else if(top.t==="informes")     vista = pantallaInformes();
+    else if(top.t==="legal")        vista = pantallaLegal();
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
@@ -8244,6 +8586,7 @@ function MobileApp(props){
       else if(top.t==="ajustes")    vista = pantallaAjustes(ent);
       else if(top.t==="soc")        vista = pantallaSoc(ent);
       else if(top.t==="contacto")   vista = pantallaContacto(ent);
+      else if(top.t==="informeProp")vista = pantallaInformeProp(ent);
     }
   }
   if(!vista){
@@ -11543,6 +11886,19 @@ function App(){
       props={props} socs={socs} contacts={contacts} uf={uf} owner={owner} gw={gw}
       soloLectura={soloLectura} esArquitecto={esArquitecto} nombreAcceso={(acceso&&acceso.nombre)||""}
       cotiz={cotiz} setCotiz={setCotiz} tramites={tramites} setTramites={setTramites}
+      deep={{
+        owner, setOwner,
+        cuentas, setCuentas,
+        uf, setUf, utm, setUtm, dolar, setDolar, ipc, setIpc,
+        comisionAdmin, setComisionAdmin, ipcAcum, setIpcAcum, ufVarAnual, setUfVarAnual, reajPeriodo, setReajPeriodo,
+        gateways, gw,
+        leads, setLeads,
+        plantillas, setPlantillas,
+        informeGeneral: ()=>abrirImprimir(informeGeneralHTML()),
+        informeGeneralWord: ()=>descargarBlob("informe_general_"+todayISO()+".doc", informeGeneralHTML(), "application/msword"),
+        informeProp: (pp)=>abrirImprimir(informePropHTML(pp)),
+        informePropWord: (pp)=>descargarBlob("informe_"+(pp.name||"propiedad").replace(/[^a-z0-9]+/gi,"_")+"_"+todayISO()+".doc", informePropHTML(pp), "application/msword")
+      }}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
       abrirIncidencia={abrirIncidencia}
       notify={notify} openRem={openRem}
