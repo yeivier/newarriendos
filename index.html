@@ -807,6 +807,17 @@
   .mob-scr.g14{ gap:14px; }
   /* Con pie de página fijo hay que dejarle su alto libre abajo, o tapa la
      última tarjeta (antes el pie era sticky y flotaba sobre el contenido). */
+  /* Contenido que va DENTRO de una pantalla, no una pantalla en sí: sin
+     scroll ni padding propios. Anidar dos .mob-scr daba doble barra de
+     desplazamiento, doble margen lateral y cortaba las tarjetas. */
+  .mob-sub{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+  /* Tres KPIs en una fila: en 390 px cada columna queda en ~108 px, así que la
+     etiqueta necesita menos espaciado entre letras o se corta ("INMUEBLE"). */
+  .mob-kpis{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .mob-kpi{ padding:14px 10px; gap:5px; border-radius:14px; min-width:0; }
+  .mob-eyebrow.mini{ font-size:9.5px; letter-spacing:.045em; }
+  .mob-kpi .v{ font-size:clamp(20px,6.4vw,27px); font-weight:700; letter-spacing:-.02em;
+    color:var(--mib); line-height:1.1; font-variant-numeric:tabular-nums; }
   .mob-scr.con-pie{ padding-bottom:calc(190px + env(safe-area-inset-bottom,0px)); }
   .mob-mono, .mob-eyebrow{ font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;
     font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--mtm);
@@ -4519,10 +4530,8 @@ function MobileApp(props){
     const patrimonio = listaSel.reduce((s,p)=>s+num(p.tasacion), 0);
     // Barras apiladas por propiedad (mismos grises).
     const grises = ["var(--mib)", "#75757F", "#C4C4CB", "#EDEDF2"];
-    return (<div className="mob-scr g14">
-      <HeaderMob
-        eyebrow={(socSel==="todas" ? "TODAS LAS SOCIEDADES" : (socs.find(s=>s.id===socSel)||{}).name?.toUpperCase())}
-        title="Sociedades"/>
+    return (<div className="mob-sub">
+      <div className="mob-mono">{socSel==="todas" ? "TODAS LAS SOCIEDADES" : ((socs.find(s=>s.id===socSel)||{}).name||"").toUpperCase()}</div>
 
       <div className="mob-seg">
         {socsUso.map(s=>(
@@ -4533,11 +4542,11 @@ function MobileApp(props){
         <button className={socSel==="todas"?"on":""} onClick={()=>setSocSel("todas")}>Todas</button>
       </div>
 
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10}}>
+      <div className="mob-kpis">
         {[["INMUEBLES", inmuebles+""], ["ARRENDADOS", arrend+""], ["AL DÍA", alDiaPct+"%"]].map(([k,v])=>(
-          <div key={k} className="mob-card" style={{padding:"16px 14px", gap:6, borderRadius:14}}>
-            <div className="mob-eyebrow" style={{marginBottom:2}}>{k}</div>
-            <div style={{fontSize:28, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)"}}>{v}</div>
+          <div key={k} className="mob-card mob-kpi">
+            <div className="mob-eyebrow mini">{k}</div>
+            <div className="v">{v}</div>
           </div>
         ))}
       </div>
@@ -4605,8 +4614,8 @@ function MobileApp(props){
 
   /* ---------- Pantalla Propiedades (lista simple) ---------- */
   const pantallaPropsLista = ()=>(
-    <div className="mob-scr g14">
-      <HeaderMob eyebrow="MIS PROPIEDADES" title="Propiedades" sub={propiedades.length+" en total"}/>
+    <div className="mob-sub">
+      <div className="mob-hero-sub" style={{marginTop:-4}}>{propiedades.length} en total</div>
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
       </button>}
@@ -4631,6 +4640,10 @@ function MobileApp(props){
   /* ---------- Sub-tab de "Propiedades" ---------- */
   const pantallaPropiedades = ()=>(
     <div className="mob-scr g14">
+      {/* Un solo encabezado arriba: antes cada sub-pantalla traía el suyo y el
+          título quedaba a medias contra el segmentado. */}
+      <HeaderMob eyebrow="MIS PROPIEDADES"
+        title={subtab==="sociedades" ? "Sociedades" : "Propiedades"}/>
       <div className="mob-seg" style={{marginBottom:4}}>
         <button className={subtab==="props"?"on":""} onClick={()=>setSubtab("props")}>Propiedades</button>
         <button className={subtab==="sociedades"?"on":""} onClick={()=>setSubtab("sociedades")}>Sociedades</button>
