@@ -726,8 +726,11 @@
        con una barra para volver. Así no hay ninguna función fuera de alcance
        desde el teléfono. */
     .app.en-movil.modo-completo > .main{ display:block !important; padding-top:calc(58px + env(safe-area-inset-top,0px)); }
+    /* Sin botones flotantes sobre la barra de pestañas: el Asistente vive en
+       "Más" y subir se hace con el gesto de siempre. Tapaban contenido y no
+       aportaban nada que la arquitectura nueva no resuelva. */
     .app.en-movil.modo-completo > .ai-fab,
-    .app.en-movil.modo-completo > .subir-fab{ display:flex !important; }
+    .app.en-movil.modo-completo > .subir-fab{ display:none !important; }
     /* La barra superior de la sección se pega bajo la de volver, no debajo. */
     .app.en-movil.modo-completo > .main .topbar{ top:auto; }
     /* El menú lateral tiene que abrirse desde dentro de una sección: si no,
@@ -750,9 +753,6 @@
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
       -webkit-font-smoothing:antialiased;
     }
-    /* El asistente flotante, por encima de la barra de pestañas. */
-    .app.en-movil.modo-completo > .ai-fab{ bottom:calc(96px + env(safe-area-inset-bottom,0px)); }
-    .app.en-movil.modo-completo > .subir-fab{ bottom:calc(164px + env(safe-area-inset-bottom,0px)); }
     /* La barra de pestañas sigue abajo: nunca se queda uno encerrado. */
     .app.en-movil.modo-completo .mob-app{
       display:flex !important; inset:auto 0 0 0; background:transparent;
@@ -1059,6 +1059,175 @@
     display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:2; }
   .mob-footbar > div{ min-width:0; }
   .mob-footbar .mob-mono{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ============================================================
+     ARQUITECTURA MÓVIL — capa de sistema (iPhone primero)
+     ------------------------------------------------------------
+     Paleta y tipografía exactas de la especificación: fondo gris de
+     sistema, tarjetas blancas, una sola tinta negra. Nada de color de
+     marca, degradados ni acentos: lo que necesita atención se marca con
+     peso, contorno o relleno negro.
+     Todo lo de abajo va DESPUÉS del bloque .mob-* original, así que lo
+     que se repite, manda. ============================================ */
+  .mob-app{
+    --mib:#000000; --mib2:#1C1C1E; --mib2b:#2C2C2E;
+    --mon:#FFFFFF; --mon2:rgba(255,255,255,.62);
+    --mtx:#000000;
+    --mtm:rgba(60,60,67,.60); --mtm2:rgba(60,60,67,.60);
+    --mbg:#F2F2F7; --msf:#FFFFFF;
+    --mln:rgba(60,60,67,.18); --mli:rgba(60,60,67,.18);
+    --mfl:rgba(120,120,128,.12); --mfl2:rgba(120,120,128,.12);
+    --mbr:rgba(60,60,67,.18); --mbr2:rgba(60,60,67,.29);
+  }
+  /* 320 px es el piso: el contenido respira menos, pero nada se corta. */
+  .mob-scr{ padding-left:20px; padding-right:20px; }
+  .mob-inds{ margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; }
+  @media(max-width:359px){
+    .mob-scr{ padding-left:16px; padding-right:16px; }
+    .mob-inds{ margin-left:-16px; margin-right:-16px; padding-left:16px; padding-right:16px; }
+    .mob-hero-h{ font-size:29px; }
+  }
+
+  /* ---- Tipografía jerárquica ----
+     Título de pantalla 28-34/700 · sección 20-22/700 · texto 16-17 ·
+     secundario 12-14. La fuente es la del sistema (San Francisco en iPhone). */
+  .mob-hero-h{ font-size:33px; font-weight:760; letter-spacing:-.026em; }
+  .mob-h-scr{ font-size:28px; font-weight:740; letter-spacing:-.022em; }
+  .mob-hero-sub{ font-size:15px; color:var(--mtm); }
+  .mob-t2{ font-size:21px; font-weight:700; letter-spacing:-.018em; color:var(--mib); margin:0; }
+  .mob-p{ font-size:16px; line-height:1.42; color:var(--mtx); }
+  .mob-p2{ font-size:13.5px; line-height:1.4; color:var(--mtm); }
+
+  /* ---- Encabezado de pantalla empujada (nivel 2 en adelante) ----
+     Atrás arriba a la izquierda, título grande debajo, contexto pequeño.
+     Sin menús: una pantalla, una intención. */
+  .mob-nav{ display:flex; align-items:center; gap:10px; margin:0 0 2px; min-height:44px; }
+  .mob-nav .sp{ flex:1; }
+  .mob-nav-t{ font-size:16px; font-weight:600; color:var(--mib); min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-titulo{ display:flex; flex-direction:column; gap:4px; margin:2px 0 2px; min-width:0; }
+  .mob-titulo .ctx{ font-size:13.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-back{ width:44px; height:44px; border-radius:50%; background:var(--mfl); border:none; }
+  .mob-back:active{ background:rgba(120,120,128,.2); }
+
+  /* ---- Listas agrupadas estilo Ajustes de iOS ----
+     Tarjeta blanca, filas de 56 px, separador fino que arranca después del
+     icono, chevron a la derecha. Es el patrón de navegación por defecto. */
+  .mob-gtit{ font-size:13px; font-weight:600; color:var(--mtm); letter-spacing:-.01em;
+    margin:14px 4px 7px; text-transform:none; font-family:inherit; }
+  .mob-group{ background:var(--msf); border-radius:16px; overflow:hidden; }
+  .mob-cell{ display:flex; align-items:center; gap:13px; width:100%; min-height:56px;
+    padding:9px 15px; background:transparent; border:none; font-family:inherit;
+    text-align:left; color:var(--mtx); cursor:pointer; position:relative; min-width:0; }
+  .mob-cell:active{ background:rgba(120,120,128,.12); }
+  .mob-cell + .mob-cell::before{ content:""; position:absolute; left:56px; right:0; top:0;
+    height:1px; background:var(--mln); }
+  .mob-cell.sin-ico + .mob-cell::before, .mob-cell + .mob-cell.sin-ico::before{ left:15px; }
+  .mob-cell .ic{ width:28px; height:28px; border-radius:8px; display:flex; align-items:center;
+    justify-content:center; color:var(--mib); flex-shrink:0; }
+  .mob-cell .tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .mob-cell .tx .t{ font-size:16.5px; font-weight:500; color:var(--mtx); letter-spacing:-.012em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-cell .tx .s{ font-size:13px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-cell .val{ font-size:15.5px; color:var(--mtm); flex-shrink:0; font-variant-numeric:tabular-nums;
+    max-width:44%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-cell .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
+  .mob-cell.destruct .tx .t{ color:var(--mib); font-weight:600; }
+  /* Una pantalla es una columna flex: sin esto, las tarjetas altas (un bloque
+     de la ficha, la fila de indicadores) se comprimen y se ven cortadas. */
+  .mob-scr > *{ flex-shrink:0; }
+  /* El subtítulo puede ocupar dos líneas: describir el bloque importa más que
+     dejar la fila exactamente a 56 px. */
+  .mob-cell .tx .s{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical; overflow:hidden; line-height:1.32; }
+  /* Dentro del resumen de un hub las métricas no llevan línea inferior: la
+     tarjeta ya termina ahí. */
+  .mob-hub-top .mob-metrics{ border-bottom:none; padding-bottom:0; }
+  /* Rótulos en la tipografía del sistema, como en iOS: en versalitas y con
+     poco espaciado, no en monoespaciada. */
+  .mob-eyebrow, .mob-mono, .mob-metrics .m .k, .mob-field .lb, .mob-photo-ph .lb,
+  .mob-attach .ph .cap{ font-family:inherit; letter-spacing:.055em; font-size:12px; }
+  .mob-eyebrow, .mob-mono{ font-weight:600; }
+  .mob-lab{ font-weight:500; letter-spacing:0; }
+  .mob-cell.quieta{ cursor:default; }
+  .mob-cell.quieta:active{ background:transparent; }
+  .mob-cell a.tx{ color:inherit; }
+  .mob-cell input:disabled, .mob-campo input:disabled, .mob-campo textarea:disabled,
+  .mob-campo select:disabled{ opacity:.65; }
+  .mob-nota{ font-size:13px; line-height:1.4; color:var(--mtm); margin:7px 4px 0; }
+
+  /* Progreso de un bloque de formulario: "6/12" y una barra fina. */
+  .mob-prog-min{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .mob-prog-min .n{ font-size:14px; color:var(--mtm); font-variant-numeric:tabular-nums; }
+  .mob-prog-min .b{ width:34px; height:4px; border-radius:2px; background:rgba(60,60,67,.18); overflow:hidden; }
+  .mob-prog-min .b > i{ display:block; height:100%; background:var(--mib); border-radius:2px; }
+
+  /* ---- Campos ---- */
+  .mob-inp{ width:100%; min-height:46px; background:var(--mfl); border:none; border-radius:11px;
+    padding:12px 14px; font-size:16.5px; font-family:inherit; color:var(--mtx); outline:none;
+    -webkit-appearance:none; appearance:none; }
+  .mob-inp:focus{ box-shadow:inset 0 0 0 1.5px var(--mib); }
+  .mob-inp::placeholder{ color:rgba(60,60,67,.35); }
+  textarea.mob-inp{ min-height:104px; line-height:1.42; resize:vertical; }
+  .mob-lab{ font-size:13.5px; font-weight:500; color:var(--mtm); letter-spacing:0; }
+  .mob-campo{ display:flex; flex-direction:column; gap:7px; padding:14px 15px; position:relative; }
+  .mob-campo + .mob-campo::before{ content:""; position:absolute; left:15px; right:15px; top:0;
+    height:1px; background:var(--mln); }
+
+  /* ---- Aviso discreto de autoguardado ---- */
+  .mob-guardado{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--mtm);
+    min-height:20px; }
+  .mob-guardado.ok{ color:var(--mtm); }
+  .mob-guardado .pt{ width:6px; height:6px; border-radius:50%; background:var(--mtm); flex-shrink:0; }
+  .mob-guardado.grabando .pt{ animation:mobLatido 1s ease-in-out infinite; }
+  @keyframes mobLatido{ 0%,100%{opacity:.25} 50%{opacity:1} }
+
+  /* ---- Barra inferior ---- */
+  .mob-tabs{ background:rgba(255,255,255,.94); backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:1px solid var(--mln); padding:8px 6px calc(20px + env(safe-area-inset-bottom,0px)); }
+  .mob-tab{ gap:4px; color:rgba(60,60,67,.6); min-height:48px; }
+  .mob-tab .lb{ font-size:10.5px; font-weight:600; letter-spacing:-.01em; }
+  .mob-tab.on{ color:#000; }
+  .mob-tab.on .lb{ font-weight:700; }
+
+  /* ---- Tarjetas y filas heredadas, alineadas al sistema nuevo ---- */
+  .mob-card{ border:none; border-radius:16px; padding:18px; }
+  .mob-card.mark{ border:1.5px solid var(--mib); }
+  .mob-card.dom{ box-shadow:none; border:1.5px solid var(--mib); }
+  .mob-row{ border:none; border-radius:14px; min-height:56px; }
+  .mob-row.mark{ border:1.5px solid var(--mib); }
+  .mob-accion{ border:none; border-radius:14px; min-height:52px; font-size:14.5px; font-weight:600; }
+  .mob-quad-ic{ background:var(--mfl); }
+  .mob-quad-idx{ background:var(--mfl); }
+  .mob-btn.pri{ border-radius:14px; padding:16px; font-size:16.5px; }
+  .mob-btn.sec{ background:var(--mfl); border:none; border-radius:14px; font-size:16px; }
+  .mob-btn.out{ border:1px solid var(--mln); border-radius:11px; min-height:44px; }
+  .mob-btn.gray-sm{ background:var(--mfl); border:none; min-height:44px; }
+  .mob-btn.blk, .mob-btn.blk-sm, .mob-btn.pri-sm{ min-height:44px; }
+  .mob-btn.link{ min-height:44px; }
+  .mob-chip.out{ border:1px solid var(--mln); }
+  .mob-ind{ border:1px solid var(--mln); border-radius:10px; min-height:34px; display:inline-flex; align-items:center; }
+  .mob-seg{ background:var(--mfl); border-radius:11px; padding:3px; }
+  .mob-seg > button{ min-height:38px; padding:8px; font-size:14.5px; border-radius:9px; }
+  .mob-seg > button.on{ background:#fff; box-shadow:0 3px 8px -4px rgba(0,0,0,.28); }
+  .mob-eyebrow, .mob-mono{ font-family:inherit; font-weight:600; font-size:12px; letter-spacing:.055em; }
+
+  /* Buscador de pantalla (lista de propiedades, contactos…). */
+  .mob-buscar{ display:flex; align-items:center; gap:9px; background:var(--mfl); border-radius:11px;
+    padding:0 13px; min-height:46px; }
+  .mob-buscar input{ flex:1; min-width:0; border:none; background:transparent; outline:none;
+    font-size:16.5px; font-family:inherit; color:var(--mtx); height:46px; }
+  .mob-buscar .ic{ color:var(--mtm); display:flex; flex-shrink:0; }
+
+  /* Estado vacío: una frase, nunca una pantalla en blanco. */
+  .mob-vacio{ text-align:center; color:var(--mtm); font-size:15px; line-height:1.45; padding:26px 10px; }
+
+  /* Resumen superior de un hub: la cifra que manda, y debajo tres apoyos. */
+  .mob-hub-top{ background:var(--msf); border-radius:18px; padding:20px; display:flex;
+    flex-direction:column; gap:16px; }
+  .mob-hub-top .cifra{ font-size:34px; font-weight:740; letter-spacing:-.03em; line-height:1.05;
+    color:var(--mib); font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
@@ -4203,10 +4372,11 @@ function puerta_aparato(){
 }
 
 /* ============ INTERFAZ MÓVIL ============
-   Bajo 900 px la app se reemplaza por MobileApp: 5 pestañas fijas abajo, una
-   tarjeta dominante por pantalla, tokens propios (blanco, negro y grises). El
-   escritorio no se toca; se oculta por CSS mientras esté visible el móvil.
-   Ver design_handoff_arriendopro_mobile/README.md para los tokens exactos. */
+   Bajo 900 px la app se reemplaza por MobileApp: barra inferior de 5 destinos,
+   navegación por niveles (lista → entidad → hub → función → bloque de campos)
+   y una sola intención por pantalla. El escritorio no se toca; se oculta por
+   CSS mientras el móvil esté visible, y sigue siendo el que aporta los modales
+   y las secciones completas que el teléfono abre. */
 
 // Media query bajo 900 px, con re-render al girar el teléfono o cambiar el ancho.
 // Se calcula perezoso para el harness sin `window`.
@@ -4255,6 +4425,9 @@ const MI = {
   </React.Fragment>),
   chat: <path d="M4 5h16v12H8l-4 4z"/>,
   chevron: <polyline points="9 6 15 12 9 18"/>,
+  puntos: (<React.Fragment>
+    <circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>
+  </React.Fragment>),
   chevronL: <polyline points="15 6 9 12 15 18"/>,
   check: <polyline points="5 12 10 17 20 7"/>,
   alerta: (<React.Fragment>
@@ -4595,37 +4768,260 @@ const mobEtiq = (name, i=1)=>{
 };
 
 // Días desde una fecha ISO, positivo si ya pasó.
+// Dinero con signo delante: Intl deja "$-1.322.750", que se lee mal.
+const mobPlata = (n)=> (n<0 ? "−"+CLP(Math.abs(n)) : CLP(n));
+
+// Etiqueta de estado del arriendo, en palabras y sin color.
+const mobEstado = (p)=> p.status==="pagado" ? "Al día"
+  : p.status==="pendiente" ? "Vence hoy"
+  : p.status==="atrasado" ? "Atrasado" : "Disponible";
+
 const mobDiasDesde = (iso)=> {
   try{ return Math.max(0, Math.round((Date.now() - new Date(iso).getTime())/86400000)); }
   catch(_){ return 0; }
 };
 
+/* ============================================================================
+   INTERFAZ MÓVIL — arquitectura de app nativa de iPhone
+   ----------------------------------------------------------------------------
+   La plataforma tiene 18 secciones y cientos de campos. En el teléfono no se
+   muestran todas a la vez: se recorren por niveles, como en Ajustes, Salud o
+   Cartera de iOS.
+
+     Nivel 1  Pestaña            Inicio · Propiedades · Cobros · Finanzas · Más
+     Nivel 2  Lista o grupo      las propiedades, los contactos, un grupo de Más
+     Nivel 3  Hub de la entidad  resumen de la propiedad y sus accesos
+     Nivel 4  Función            Ficha, Pagos, Documentos, Incidencias…
+     Nivel 5  Bloque de campos   "Superficies", "Crédito hipotecario"…
+
+   Reglas que sostienen la arquitectura:
+   · La barra inferior nunca pasa de 5 elementos y el quinto es "Más".
+   · Ninguna pantalla abre un formulario gigante: primero el resumen, después
+     el bloque, y recién ahí los campos.
+   · Cada pantalla tiene una sola intención; si necesita explicar dos cosas,
+     se parte en dos.
+   · Todo lo que se edita se guarda solo (el aviso "Guardado" lo hace visible).
+   · Las funciones son las de verdad: cada botón llama a la misma función de la
+     plataforma que usa el escritorio, no a una copia ni a una maqueta.
+   ========================================================================== */
+
+/* Descripción corta de cada bloque de la ficha. El título largo se conserva
+   (lo usan los exportables); esto es lo que se lee en la lista del teléfono. */
+const MOB_FICHA_DESC = {
+  "Datos básicos de la operación":"Qué es, dónde está y para qué se usa",
+  "Identificación legal y catastral":"Rol, inscripción, propietario y gravámenes",
+  "Superficies":"Terreno, construido, útil, terraza y bodegas",
+  "Programa habitacional y distribución":"Dormitorios, baños, estacionamientos y pisos",
+  "Características y terminaciones":"Cocina, calefacción, pisos y equipamiento",
+  "Estado general y ocupación actual":"Conservación, disponibilidad y visitas",
+  "Situación de arriendo":"Renta, reajuste, día de pago y servicios",
+  "Arrendatario actual":"Datos, aval, garantía y contrato vigente",
+  "Antecedentes (InfoCheck y Equifax)":"Puntaje, renta, deuda y morosidades",
+  "Información urbanística y normativa":"Plan regulador, usos de suelo y afectaciones",
+  "Crédito hipotecario":"Banco, dividendo, plazos y seguros",
+  "Aspectos financieros (venta / arriendo)":"Precios, tasación y condiciones de pago",
+  "Gastos, cargas y seguros":"Contribuciones, gastos comunes y pólizas",
+  "Áreas comunes y amenidades (edificio / condominio)":"Amenidades y administración del edificio",
+  "Propiedad comercial / industrial":"Uso, patente, accesos e instalaciones",
+  "Servicios básicos":"Luz, agua, gas, internet y medidores",
+  "Documentación disponible":"Qué documentos están listos para entregar",
+  "Descripción para publicar y aspectos destacados":"Texto del aviso y permisos de publicación",
+  "Datos del propietario / mandante":"Contacto, apoderado y corredora",
+  "Otros contactos clave":"Representante legal, abogado y contador",
+  "Instrucciones internas y notas (uso interno)":"Piso de negociación y notas privadas"
+};
+/* Nombre corto para la fila: el título completo no cabe en 320 px. */
+const MOB_FICHA_CORTO = {
+  "Datos básicos de la operación":"Datos básicos",
+  "Identificación legal y catastral":"Identificación legal",
+  "Programa habitacional y distribución":"Distribución",
+  "Características y terminaciones":"Características",
+  "Estado general y ocupación actual":"Estado y ocupación",
+  "Antecedentes (InfoCheck y Equifax)":"Antecedentes",
+  "Información urbanística y normativa":"Urbanismo y normativa",
+  "Aspectos financieros (venta / arriendo)":"Aspectos financieros",
+  "Áreas comunes y amenidades (edificio / condominio)":"Áreas comunes",
+  "Propiedad comercial / industrial":"Comercial e industrial",
+  "Descripción para publicar y aspectos destacados":"Descripción para publicar",
+  "Datos del propietario / mandante":"Propietario o mandante",
+  "Instrucciones internas y notas (uso interno)":"Notas internas"
+};
+
+/* Los grupos de "Más", ordenados por intención de uso y no por el orden en que
+   fueron apareciendo las secciones. `id` apunta a la sección real; `esp` a una
+   pantalla nativa del teléfono. */
+const MOB_MAS_GRUPOS = [
+  { label:"Gestión diaria", items:[
+    { esp:"contactos", ico:"personas", label:"Arrendatarios y contactos", sub:"Quién arrienda cada propiedad" },
+    { id:"incidencias", ico:"llaveInglesa", label:"Incidencias", sub:"Reclamos y reparaciones" },
+    { id:"bitacora",    ico:"libreta",      label:"Bitácora", sub:"Notas y mantenciones" },
+    { id:"comunicaciones", ico:"sobre",     label:"Comunicaciones", sub:"Plantillas de correo, WhatsApp y SMS" },
+    { esp:"equipo",     ico:"burbuja",      label:"Chat del equipo", sub:"Mensajes y archivos con quien tiene acceso" }
+  ]},
+  { label:"Operación", items:[
+    { esp:"socs",   ico:"edificio",   label:"Sociedades", sub:"Empresas propietarias" },
+    { id:"legal",   ico:"balanza",    label:"Documentos legales", sub:"Contratos, firma y antecedentes" },
+    { id:"crm",     ico:"embudo",     label:"CRM y leads", sub:"Prospectos, visitas y conversión" },
+    { id:"historial", ico:"archivador", label:"Historial", sub:"Pagos, arrendatarios anteriores y garantías" }
+  ]},
+  { label:"Finanzas", items:[
+    { id:"informes", ico:"tendencia", label:"Informes", sub:"Cartolas para ti, tu contador o los dueños" },
+    { id:"cobros",   ico:"dinero",    label:"Cobros del mes", sub:"Registrar pagos y enviar recordatorios" },
+    { id:"finanzas", ico:"grafico",   label:"Balance por propiedad", sub:"Dividendos, gastos y utilidad" }
+  ]},
+  { label:"Herramientas", items:[
+    { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tu cartera" },
+    { esp:"infocheck", ico:"lupa",    label:"Consultar InfoCheck", sub:"Antecedentes de un arrendatario" },
+    { esp:"levantamiento", ico:"portapapeles", label:"Ficha de levantamiento", sub:"Formulario para llenar en terreno" },
+    { esp:"buscar",    ico:"lupa",    label:"Buscar en la plataforma", sub:"Secciones, propiedades, personas y campos" }
+  ]},
+  { label:"Cuenta", items:[
+    { esp:"cuenta", ico:"persona",   label:"Mi perfil", sub:"Tus datos y los de cobro" },
+    { id:"equipo",  ico:"candado",   label:"Equipo y accesos", sub:"Invitaciones, roles y portal del arrendatario" },
+    { id:"config",  ico:"engranaje", label:"Configuración", sub:"Datos bancarios, UF y pasarela de pago" },
+    { id:"faq",     ico:"pregunta",  label:"Preguntas frecuentes", sub:"Qué hace cada sección" }
+  ]}
+];
+
+/* Campos que necesitan varias líneas (descripciones, listados, notas). */
+const MOB_LARGOS = new Set(["documentosDisponibles","descripcionAviso","aspectosPositivos","advertencias",
+  "palabrasClave","amenidades","extrasEquip","terminacionesEspeciales","condicionesPago","otrosSeguros",
+  "mantenciones","detalleAfectaciones","detalleDeclaratoria","instalEspeciales","otrosServicios",
+  "condicionesLimitaciones","historialRelevante","motivoVenta","observaciones","gcIncluye","portales",
+  "usosSuelo","usosAnteriores","equipCocina","protecciones"]);
+
+/* ---- Editor de un bloque de la ficha ----
+   Vive fuera de MobileApp a propósito: así conserva lo que se está escribiendo
+   aunque la pantalla de arriba se vuelva a dibujar.
+
+   Escribe en un buffer local (para que el teclado no se sienta pegajoso) y
+   confirma al servidor 600 ms después de la última tecla, y también al salir
+   de la pantalla. El usuario nunca tiene que pulsar Guardar. */
+function MobCamposFicha({ campos, valores, onCommit, bloqueado }){
+  const [buf, setBuf] = React.useState({});
+  const pend = React.useRef({});
+  const timer = React.useRef(null);
+  const commitRef = React.useRef(()=>{});
+  commitRef.current = ()=>{
+    const cambios = pend.current;
+    pend.current = {};
+    if(cambios && Object.keys(cambios).length) onCommit(cambios);
+  };
+  React.useEffect(()=>()=>{ if(timer.current) clearTimeout(timer.current); commitRef.current(); },[]);
+  const set = (k,v)=>{
+    setBuf(b=>({...b,[k]:v}));
+    pend.current = {...pend.current, [k]:v};
+    if(timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(()=>commitRef.current(), 600);
+  };
+  const valor = (k)=> buf[k]!==undefined ? buf[k] : (valores[k]==null?"":valores[k]);
+  return (<div className="mob-group">
+    {campos.map(c=>{
+      const k=c[0], lab=c[1], tipo=c[2];
+      return (<div className="mob-campo" key={k}>
+        <label className="mob-lab" htmlFor={"f_"+k}>{lab}</label>
+        {MOB_LARGOS.has(k)
+          ? <textarea id={"f_"+k} className="mob-inp" value={valor(k)} onChange={e=>set(k,e.target.value)} rows="4" disabled={bloqueado}/>
+          : <input id={"f_"+k} className="mob-inp" type={tipo==="date"?"date":"text"}
+              value={valor(k)} onChange={e=>set(k,e.target.value)} disabled={bloqueado}/>}
+      </div>);
+    })}
+  </div>);
+}
+
+/* ---- Filas repetibles de la ficha (arrendatarios y propietarios anteriores) ----
+   Mismo criterio: buffer local, guardado solo. */
+function MobFilasFicha({ filas, columnas, onCommit, etiqueta, bloqueado }){
+  const [buf, setBuf] = React.useState(null);
+  const timer = React.useRef(null);
+  const commitRef = React.useRef(()=>{});
+  const lista = buf!==null ? buf : (filas||[]);
+  commitRef.current = ()=>{ if(buf!==null) onCommit(buf); };
+  React.useEffect(()=>()=>{ if(timer.current) clearTimeout(timer.current); commitRef.current(); },[]);
+  const guardar = (nueva)=>{
+    setBuf(nueva);
+    if(timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(()=>onCommit(nueva), 600);
+  };
+  const set = (i,k,v)=> guardar(lista.map((r,j)=> j===i ? {...r,[k]:v} : r));
+  const quitar = (i)=> guardar(lista.filter((_,j)=>j!==i));
+  const agregar = ()=> guardar([...lista, columnas.reduce((o,c)=>{ o[c[0]]=""; return o; },{})]);
+  return (<React.Fragment>
+    {lista.map((r,i)=>(
+      <div key={i} style={{display:"flex", flexDirection:"column", gap:8}}>
+        <div className="mob-gtit" style={{display:"flex", justifyContent:"space-between", alignItems:"center", margin:"14px 4px 7px"}}>
+          <span>{etiqueta} {i+1}</span>
+          {!bloqueado && <button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", minHeight:34}} onClick={()=>quitar(i)}>Quitar</button>}
+        </div>
+        <div className="mob-group">
+          {columnas.map(c=>(
+            <div className="mob-campo" key={c[0]}>
+              <label className="mob-lab">{c[1]}</label>
+              <input className="mob-inp" type={c[2]==="date"?"date":"text"} value={r[c[0]]||""} onChange={e=>set(i,c[0],e.target.value)} disabled={bloqueado}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+    {!lista.length && <div className="mob-vacio">Todavía no hay registros. Agrega el primero.</div>}
+    {!bloqueado && <button className="mob-btn sec" style={{width:"100%", marginTop:14}} onClick={agregar}>Agregar {etiqueta.toLowerCase()}</button>}
+  </React.Fragment>);
+}
+
+/* ---- Campo largo suelto (observaciones de la ficha) ---- */
+function MobTextoLargo({ valor, onCommit, placeholder, bloqueado }){
+  const [txt, setTxt] = React.useState(null);
+  const timer = React.useRef(null);
+  const commitRef = React.useRef(()=>{});
+  const v = txt!==null ? txt : (valor||"");
+  commitRef.current = ()=>{ if(txt!==null) onCommit(txt); };
+  React.useEffect(()=>()=>{ if(timer.current) clearTimeout(timer.current); commitRef.current(); },[]);
+  return (<textarea className="mob-inp" rows="8" value={v} placeholder={placeholder} disabled={bloqueado}
+    onChange={e=>{ const nv=e.target.value; setTxt(nv);
+      if(timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(()=>onCommit(nv), 600); }}/>);
+}
+
 function MobileApp(props){
   const {
-    props: propiedades, socs, uf, owner, soloLectura,
+    props: propiedades, socs, contacts, uf, owner, soloLectura,
     setMPay, setMContract, notify, openRem,
     setMFicha, abrirIncidencia,
-    buscar, secciones, abrirSeccion,
+    buscar, secciones, abrirSeccion, cerrarSeccion,
     utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
     alertas, irAlerta, usuarioActual, rolActual,
+    guardado, ficha, patchProp, nav,
     acciones = {},
   } = props;
   const AC = acciones;
+  const FI = ficha || {};
+  const SECS = FI.SECS || [];
 
   const [tab, setTab] = React.useState("inicio");
-  const [subtab, setSubtab] = React.useState("sociedades");
   const [pila, setPila] = React.useState([]);
   const [socSel, setSocSel] = React.useState("todas");
   const [finSeg, setFinSeg] = React.useState("utilidad");
   const [busca, setBusca] = React.useState("");
-  const [mostrarBusca, setMostrarBusca] = React.useState(false);
-  const [chatMsg, setChatMsg] = React.useState("");
-  const [contrPaso, setContrPaso] = React.useState(2);
+  const [buscaCob, setBuscaCob] = React.useState("");
+  const [buscaCon, setBuscaCon] = React.useState("");
 
-  const push = (v)=> setPila(p=>[...p, v]);
-  const pop  = ()=> setPila(p=>p.slice(0,-1));
-  const irA  = (t)=>{ setPila([]); setTab(t); };
+  /* La pila guarda identificadores, nunca copias del objeto: si se edita una
+     propiedad mientras está abierta, la pantalla muestra el dato nuevo. */
   const top  = pila[pila.length-1] || null;
+  const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); setPila(p=>[...p, v]); subirArriba(); };
+  const pop  = ()=> setPila(p=>p.slice(0,-1));
+  const irA  = (t)=>{ if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
+  const subirArriba = ()=>{ try{ const s=document.querySelector(".mob-app .mob-scr"); if(s) s.scrollTop=0; }catch(_e){} };
+  const irSeccion = (id, p)=>{ abrirSeccion(id, p); };
+  const propPorId = (id)=> propiedades.find(x=>String(x.id)===String(id)) || null;
+  const hay = (id)=> (secciones||[]).some(s=>s.id===id);
+
+  React.useEffect(()=>{ subirArriba(); },[pila.length, tab]);
+  /* Se publica la navegación para el buscador global: así un resultado abre la
+     pantalla del teléfono (la propiedad, la persona, el bloque de la ficha) y
+     no una sección de escritorio escondida detrás. Se reasigna en cada dibujo
+     para que las funciones vean siempre el estado actual. */
+  React.useEffect(()=>{ if(nav) nav.current = { irA, push, pop, inicio:()=>setPila([]) }; });
 
   // Datos derivados.
   const rentals    = propiedades.filter(p=>p.use==="arriendo");
@@ -4642,35 +5038,77 @@ function MobileApp(props){
     return Math.max(0, Math.round(num(p.rent) * (num(p.penalty)/100) * (d/30)));
   }
   const porCobrarHoy = atrasados.concat(pendientes).reduce((s,p)=>s+montoCob(p), 0);
-  const totalMulta   = atrasados.reduce((s,p)=>s+calcMultaSafe(p), 0);
   const totalEsper   = rentals.reduce((s,p)=>s+num(p.rent), 0);
   const totalCobrado = pagados.reduce((s,p)=>s+num(p.rent), 0);
   const pctCob       = totalEsper ? Math.round(100*totalCobrado/totalEsper) : 0;
   const atrasadoMasGrave = atrasados.slice().sort((a,b)=> mobDiasDesde(b.lastPaid) - mobDiasDesde(a.lastPaid))[0] || null;
 
-  // Contratos por firmar (mock del NAV real: firma en estado enviado/pendiente).
+  // Contratos por vencer y por firmar: alimentan las prioridades de Inicio.
   const contratosPorFirmar = propiedades.filter(p=>{
     const f = p.firma||{}; return f.estado==="enviado" || f.estado==="pendiente";
   });
+  const contratosPorVencer = rentals.filter(p=> p.contractEnd && daysBetweenSafe(p.contractEnd) < 90 && daysBetweenSafe(p.contractEnd) > -1);
+  const incidenciasAbiertas = propiedades.flatMap(p=>(p.incidencias||[])
+    .filter(x=> (x.estado||"abierta")!=="cerrada" && (x.estado||"")!=="resuelta")
+    .map(x=>({p, x})));
 
-  // Sociedades a mostrar en el segmentado.
-  const socOpciones = (socs||[]).slice(0,2).concat([{id:"todas", name:"Todas"}]);
-  const socActual = socs.find(s=>s.id===socSel) || null;
   const porSoc = (id)=> id==="todas" ? propiedades : propiedades.filter(p=>(p.sociedad||"beta")===id);
+  const socDe  = (p)=> socs.find(s=>s.id===p.sociedad) || socs[0] || {name:""};
 
-  // Header genérico (etiqueta mono + título + avatar).
-  /* La lupa va en todos los encabezados: es el atajo para llegar a cualquier
-     sección, propiedad o arrendatario sin recorrer las pestañas. Abre el mismo
-     buscador de la plataforma, que ya sabe navegar a cada destino. */
+  const abrirCobrar = (p)=>{ if(!p) return; (AC.registrarPago || setMPay)(p); };
+  const abrirRecord = (p)=> openRem && openRem(p);
+
+  /* ---------- Piezas de interfaz compartidas ---------- */
+
+  const Chev = ()=> <span className="chev"><MobIco w={17} sw={2.4}>{MI.chevron}</MobIco></span>;
+
+  /* Fila de lista agrupada (el patrón de Ajustes de iOS). */
+  const Fila = ({ ico, icoNav, titulo, sub, valor, extra, onClick, chevron, sinIco })=>{
+    const dentro = (<React.Fragment>
+      {!sinIco && <span className="ic">{icoNav ? <Ic n={icoNav} w={21} sw={1.9}/> : <MobIco w={21} sw={1.9}>{ico}</MobIco>}</span>}
+      <span className="tx"><span className="t">{titulo}</span>{sub?<span className="s">{sub}</span>:null}</span>
+      {extra||null}
+      {valor!=null && valor!=="" ? <span className="val">{valor}</span> : null}
+      {(chevron===undefined ? !!onClick : chevron) ? <Chev/> : null}
+    </React.Fragment>);
+    const cls = "mob-cell"+(sinIco?" sin-ico":"")+(onClick?"":" quieta");
+    return onClick
+      ? <button className={cls} onClick={onClick} type="button">{dentro}</button>
+      : <div className={cls}>{dentro}</div>;
+  };
+  const Grupo = ({ titulo, nota, children })=>(
+    <div>
+      {titulo ? <div className="mob-gtit">{titulo}</div> : null}
+      <div className="mob-group">{children}</div>
+      {nota ? <div className="mob-nota">{nota}</div> : null}
+    </div>
+  );
+  /* Barra "6/12" de un bloque de formulario. */
+  const Progreso = ({ hechos, total })=>(
+    <span className="mob-prog-min">
+      <span className="n">{hechos}/{total}</span>
+      <span className="b"><i style={{width: total? Math.round(100*hechos/total)+"%" : "0%"}}></i></span>
+    </span>
+  );
+  /* Aviso discreto de autoguardado: nunca obliga a pulsar Guardar. */
+  const Guardado = ()=>(
+    <span className={"mob-guardado"+(guardado==="guardando"?" grabando":"")}>
+      {guardado==="guardando" ? <><span className="pt"></span>Guardando…</>
+        : guardado==="error"  ? <><span className="pt"></span>Sin guardar · revisa la conexión</>
+        : <><MobIco w={14} sw={2.4}>{MI.check}</MobIco>Autoguardado</>}
+    </span>
+  );
+
   const BotonBuscar = ()=> (
     <button className="mob-back" onClick={buscar} title="Buscar en la plataforma" aria-label="Buscar en la plataforma">
       <MobIco w={19}>{MI.lupa}</MobIco>
     </button>
   );
+  /* Cabecera de pestaña (nivel 1): título grande, búsqueda y cuenta. */
   const HeaderMob = ({ eyebrow, title, sub, right })=> (
     <div className="mob-header">
       <div style={{minWidth:0, flex:1}}>
-        <div className="mob-mono" style={{marginBottom:6}}>{eyebrow}</div>
+        {eyebrow ? <div className="mob-mono" style={{marginBottom:6}}>{eyebrow}</div> : null}
         <h1 className="mob-hero-h">{title}</h1>
         {sub && <div className="mob-hero-sub">{sub}</div>}
       </div>
@@ -4678,37 +5116,71 @@ function MobileApp(props){
         <BotonBuscar/>
         {right !== undefined
           ? right
-          : <div className="mob-avatar">{mobIni(owner.name||"Javier")}</div>}
+          : <button className="mob-avatar" style={{border:"none", fontFamily:"inherit", cursor:"pointer"}}
+              onClick={()=>push({t:"cuenta"})} aria-label="Mi cuenta">{mobIni(owner.name||"Javier")}</button>}
       </div>
     </div>
   );
+  /* Pantalla empujada (nivel 2 en adelante): atrás, título, contexto y nada más.
+     Un solo asunto por pantalla, como pide la arquitectura. */
+  const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>(
+    <div className={"mob-scr"+(gap==="14"?" g14":"")+(pie?" con-pie":"")}>
+      <div className="mob-nav">
+        <button className="mob-back" onClick={atras||pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <span className="sp"></span>
+        {accion||null}
+        <BotonBuscar/>
+      </div>
+      <div className="mob-titulo">
+        <h1 className="mob-h-scr">{titulo}</h1>
+        {contexto ? <div className="ctx">{contexto}</div> : null}
+      </div>
+      {children}
+      {pie||null}
+    </div>
+  );
 
-  const abrirCobrar = (p)=>{
-    if(!p) return;
-    (AC.registrarPago || setMPay)(p);
-  };
-  const abrirRecord = (p)=> openRem && openRem(p);
-  const abrirChat   = (p)=> push({ tipo:"chat", p });
-  const abrirFicha  = (p)=> push({ tipo:"ficha", p });
-  const abrirContrato = (p)=> push({ tipo:"contrato", p });
-
-  /* ---------- Pantalla 1a · Inicio (enfoque) ---------- */
+  /* ======================= NIVEL 1 · INICIO =======================
+     Inicio responde cuatro preguntas y nada más: qué hay que hacer ahora, qué
+     necesita atención, qué puedo hacer en un toque y qué cambió. No es un
+     menú ni una cuadrícula de accesos: para eso está "Más". */
   const pantallaInicio = ()=>{
     const hoy = new Date();
     const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
     const eyebrow = dias[hoy.getDay()] + " " + hoy.getDate();
     const nombre = (owner.name||"").trim().split(/\s+/)[0] || "Javier";
-    const porCobrarLista = atrasados.concat(pendientes);
-    const lineas = porCobrarLista.slice(0,2);
-    const restoPagados = pagados.length;
-    return (<div className="mob-scr">
-      <HeaderMob
-        eyebrow={eyebrow}
-        title={"Hola, " + nombre}
+
+    /* PRIORIDADES · salen del motor de alertas de la plataforma (el mismo que
+       usa el escritorio), ordenadas por urgencia y recortadas a cuatro. */
+    const ordenUrg = { alta:0, media:1, baja:2 };
+    const prioridades = (alertas||[]).slice()
+      .sort((a,b)=>(ordenUrg[a.urgencia]==null?3:ordenUrg[a.urgencia])-(ordenUrg[b.urgencia]==null?3:ordenUrg[b.urgencia]))
+      .slice(0,4);
+    const abrirAlerta = (a)=>{
+      const p = propPorId(a.pid);
+      if(a.ir==="cobros"){ irA("cobros"); return; }
+      if(p) push({t:"prop", id:p.id}); else irSeccion(a.ir||"props");
+    };
+
+    /* ACTIVIDAD RECIENTE · sale de los datos guardados, no de un ejemplo. */
+    const act = [];
+    propiedades.forEach(p=>{
+      (p.histPagos||[]).slice(-3).forEach(h=> act.push({ f:h.fecha||"", ico:MI.tarj,
+        t:"Pago recibido · "+CLP(num(h.monto)), s:p.name, go:()=>push({t:"pagos", id:p.id}) }));
+      (p.incidencias||[]).slice(0,2).forEach(x=> act.push({ f:x.fecha||"", ico:MI.llaveInglesa,
+        t:x.titulo||"Incidencia", s:p.name, go:()=>push({t:"incid", id:p.id}) }));
+      (p.bitacora||[]).slice(0,2).forEach(b=> act.push({ f:b.fecha||"", ico:MI.libreta,
+        t:b.titulo||b.tipo||"Nota de bitácora", s:p.name, go:()=>push({t:"bitac", id:p.id}) }));
+    });
+    act.sort((a,b)=> String(b.f).localeCompare(String(a.f)));
+    const reciente = act.slice(0,4);
+
+    return (<div className="mob-scr g14">
+      <HeaderMob eyebrow={eyebrow} title={"Hola, " + nombre}
         sub={rentals.length + personales.length + " propiedades · " + socs.length + " sociedades"}/>
 
-      {/* Indicadores en vivo: estaban en el escritorio y faltaban en el móvil.
-          Se desplazan de lado para no comerse el alto de la pantalla. */}
+      {/* Indicadores oficiales en vivo: se desplazan de lado para no comerse
+          el alto útil de la pantalla. */}
       <div className="mob-inds">
         <span className="mob-ind"><b>UF</b> {CLP(uf)}</span>
         <span className="mob-ind"><b>UTM</b> {CLP(utm)}</span>
@@ -4716,138 +5188,131 @@ function MobileApp(props){
         <span className="mob-ind"><b>Dólar</b> {CLP(dolar)}</span>
         <span className="mob-ind"><b>IPC</b> {(ipc||0).toFixed(1)}%</span>
         <button className="mob-ind act" onClick={refrescarIndicadores} disabled={indLoading}>
-          {indLoading ? "Actualizando…" : (indRecien ? "✓ Actualizado" : "↻ Actualizar")}
+          {indLoading ? "Actualizando…" : (indRecien ? "Actualizado" : "Actualizar")}
         </button>
       </div>
 
-      {/* Alertas: contratos por vencer, cobros, contribuciones, seguros. */}
-      {!!(alertas && alertas.length) && (
+      {/* RESUMEN PRINCIPAL · una sola cifra manda la pantalla. */}
+      <button className="mob-hub-top" style={{border:"none", fontFamily:"inherit", textAlign:"left", cursor:"pointer", width:"100%"}}
+        onClick={()=>irA("cobros")}>
+        <div className="mob-eyebrow">{porCobrarHoy>0 ? <><span className="mob-pt"></span>POR COBRAR ESTE MES</> : "COBRADO ESTE MES"}</div>
+        <div className="cifra">{CLP(porCobrarHoy>0 ? porCobrarHoy : totalCobrado)}</div>
         <div>
-          <div className="mob-eyebrow">REQUIERE ATENCIÓN</div>
-          <div style={{display:"flex", flexDirection:"column", gap:8}}>
-            {alertas.slice(0,3).map((a,i)=>(
-              <button key={a.id||i} className={"mob-row"+(a.urgencia==="alta"?" mark":"")}
-                style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-                onClick={()=>irAlerta(a)}>
-                <div className="mob-quad-ic"><Ic n={a.ico||"alerta"} w={20} sw={2}/></div>
-                <div style={{flex:1, minWidth:0}}>
-                  <div style={{fontSize:14.5, fontWeight:700, color:"var(--mib)"}}>{a.titulo}</div>
-                  {a.detalle && <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.detalle}</div>}
-                </div>
-                <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-              </button>
-            ))}
-            {alertas.length>3 && (
-              <button className="mob-btn link" style={{textAlign:"left", color:"var(--mtm)", fontWeight:600}}
-                onClick={()=>abrirSeccion("inicio")}>y {alertas.length-3} alerta{alertas.length-3!==1?"s":""} más →</button>
-            )}
+          <div className="mob-stat-bar"><i style={{width:pctCob+"%"}}></i></div>
+          <div style={{display:"flex", justifyContent:"space-between", marginTop:9}}>
+            <span className="mob-p2">{CLP(totalCobrado)} cobrado de {CLP(totalEsper)}</span>
+            <span className="mob-p2" style={{fontWeight:600, color:"var(--mib)"}}>{pctCob}%</span>
           </div>
         </div>
+      </button>
+
+      {/* PRIORIDADES · de dos a cuatro, nunca una lista infinita. */}
+      {prioridades.length>0 ? (
+        <Grupo titulo="Necesita atención">
+          {prioridades.map(a=>(
+            <Fila key={a.id} icoNav={a.ico} titulo={a.titulo} sub={a.detalle} onClick={()=>abrirAlerta(a)}/>
+          ))}
+        </Grupo>
+      ) : (
+        <Grupo titulo="Necesita atención">
+          <div className="mob-vacio" style={{padding:"20px 16px"}}>Nada pendiente por ahora: los arriendos del mes están al día y no hay contratos por vencer.</div>
+        </Grupo>
       )}
 
-      {/* Tarjeta dominante: por cobrar hoy. */}
-      <div className="mob-card dom">
-        <div className="mob-eyebrow"><span className="mob-pt"></span>POR COBRAR HOY</div>
-        <div className="mob-num-big">{CLP(porCobrarHoy)}</div>
-        <div style={{fontSize:15, color:"var(--mtm2)", marginTop:-6}}>
-          {atrasados.length} atrasado{atrasados.length!==1?"s":""} y {pendientes.length} que vence{pendientes.length!==1?"n":""} hoy
-        </div>
-
-        <div className="mob-metrics">
-          <div className="m"><span className="v">{rentals.length}</span><span className="k">Arriendos</span></div>
-          <div className="m"><span className="v">{pctCob}%</span><span className="k">Cobrado</span></div>
-          <div className="m"><span className="v">{CLP(totalMulta)}</span><span className="k">Multas</span></div>
-        </div>
-
-        <div style={{display:"flex", flexDirection:"column", gap:12}}>
-          {lineas.map((p,i)=>(
-            <div key={p.id} style={{display:"flex", alignItems:"center", gap:12}}>
-              <div className="mob-quad-idx">{i+1}</div>
-              <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mtx)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.name}</div>
-              <div style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}>
-                {p.status==="atrasado" ? (mobDiasDesde(p.lastPaid) + " días") : "vence hoy"}
-              </div>
-            </div>
-          ))}
-          {lineas.length===0 && <div style={{fontSize:14, color:"var(--mtm2)"}}>Todo cobrado este mes.</div>}
-          {/* Se listan los 2 más urgentes; con la cartera real hay más, y
-              ocultarlos en silencio haría creer que solo faltan esos dos. */}
-          {porCobrarLista.length>2 && (
-            <button className="mob-btn link" style={{paddingLeft:38, textAlign:"left", fontWeight:600, color:"var(--mtm)"}} onClick={()=>irA("cobros")}>
-              y {porCobrarLista.length-2} más por cobrar →
-            </button>
-          )}
-          {restoPagados>0 && <div style={{fontSize:14, color:"var(--mtm)", paddingLeft:38}}>{restoPagados} arriendo{restoPagados!==1?"s":""} ya pagado{restoPagados!==1?"s":""}</div>}
-        </div>
-
-        <button className="mob-btn pri" onClick={()=>{ if(atrasadoMasGrave) abrirCobrar(atrasadoMasGrave); else irA("cobros"); }}>
-          Cobrar ahora <MobIco sw={2.4}>{MI.chevron}</MobIco>
-        </button>
-      </div>
-
-      {/* TAMBIÉN HOY */}
+      {/* ACCIONES RÁPIDAS · cuatro como tope. */}
       <div>
-        <div className="mob-eyebrow">TAMBIÉN HOY</div>
-        <div style={{display:"flex", flexDirection:"column", gap:10}}>
-          {contratosPorFirmar.slice(0,1).map(p=>(
-            <div key={"cf"+p.id} className="mob-row">
-              <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Contrato por firmar</div>
-                <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>{p.name} · falta el arrendatario</div>
-              </div>
-              <button className="mob-btn link" onClick={()=> abrirContrato(p)}>Enviar</button>
-            </div>
-          ))}
-          {atrasados.slice(0,1).map(p=>(
-            <div key={"cm"+p.id} className="mob-row" onClick={()=>abrirChat(p)} role="button">
-              <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Mensaje de {(p.tenant||"").split(" ")[0]||"arrendatario"}.</div>
-                <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>"Transferí ayer {CLP(num(p.rent))}"</div>
-              </div>
-              <div style={{width:9, height:9, borderRadius:"50%", background:"var(--mib)", flexShrink:0}}></div>
-            </div>
-          ))}
-          {contratosPorFirmar.length===0 && atrasados.length===0 &&
-            <div style={{fontSize:14, color:"var(--mtm2)"}}>No hay avisos para hoy.</div>}
+        <div className="mob-gtit">Acciones rápidas</div>
+        <div className="mob-acciones">
+          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); }}>
+            <MobIco w={19}>{MI.tarj}</MobIco><span>Registrar pago</span></button>
+          <button className="mob-accion" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]; p?abrirRecord(p):notify("No hay arriendos pendientes"); }}>
+            <MobIco w={19}>{MI.sobre}</MobIco><span>Recordatorio</span></button>
+          {!soloLectura && <button className="mob-accion" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
+            <MobIco w={19}>{MI.mas}</MobIco><span>Nueva propiedad</span></button>}
+          {!soloLectura && <button className="mob-accion" onClick={()=>{ const p=rentals[0]||propiedades[0]; p?(AC.incidencia&&AC.incidencia(p)):notify("Primero agrega una propiedad"); }}>
+            <MobIco w={19}>{MI.llaveInglesa}</MobIco><span>Nueva incidencia</span></button>}
         </div>
       </div>
+
+      {/* ACTIVIDAD RECIENTE · qué cambió. */}
+      {reciente.length>0 && (
+        <Grupo titulo="Actividad reciente">
+          {reciente.map((a,i)=>(
+            <Fila key={i} ico={a.ico} titulo={a.t} sub={(a.f? a.f+" · ":"")+a.s} onClick={a.go}/>
+          ))}
+        </Grupo>
+      )}
+
     </div>);
   };
 
-  /* ---------- Pantalla 2a · Cobros ---------- */
+  /* ================= NIVEL 2 · LISTA DE PROPIEDADES =================
+     Una lista y nada más. El detalle vive un nivel más adentro, en el hub. */
+  const [propFiltro, setPropFiltro] = React.useState("todas");
+  const pantallaPropiedades = ()=>{
+    const q = busca.trim().toLowerCase();
+    const base = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
+    const lista = base.filter(p=> !q
+      || (p.name||"").toLowerCase().includes(q)
+      || (p.comuna||"").toLowerCase().includes(q)
+      || (p.address||"").toLowerCase().includes(q)
+      || (p.tenant||"").toLowerCase().includes(q));
+    return (<div className="mob-scr g14">
+      <HeaderMob title="Propiedades" sub={propiedades.length+" en total · "+rentals.length+" en arriendo"}/>
+      <div className="mob-buscar">
+        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
+        <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Buscar propiedad, comuna o arrendatario"/>
+        {!!busca && <button className="mob-btn link" style={{minHeight:32, fontSize:14.5}} onClick={()=>setBusca("")}>Limpiar</button>}
+      </div>
+      <div className="mob-seg">
+        <button className={propFiltro==="todas"?"on":""} onClick={()=>setPropFiltro("todas")}>Todas</button>
+        <button className={propFiltro==="arriendo"?"on":""} onClick={()=>setPropFiltro("arriendo")}>En arriendo</button>
+        <button className={propFiltro==="personal"?"on":""} onClick={()=>setPropFiltro("personal")}>Uso personal</button>
+      </div>
+
+      {lista.length ? (
+        <Grupo>
+          {lista.map(p=>(
+            <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
+              titulo={p.name}
+              sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")||"Sin arrendatario"}
+              valor={p.use==="arriendo" ? mobEstado(p) : "Uso propio"}
+              onClick={()=>push({t:"prop", id:p.id})}/>
+          ))}
+        </Grupo>
+      ) : <div className="mob-vacio">No hay propiedades que coincidan con “{busca}”.</div>}
+
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
+      </button>}
+
+      <Grupo titulo="Ver por sociedad" nota="Las sociedades propietarias, con su patrimonio y sus inmuebles.">
+        <Fila ico={MI.edif} titulo="Sociedades" sub={socs.length+" registradas"} onClick={()=>push({t:"socs"})}/>
+      </Grupo>
+    </div>);
+  };
+
+  /* ==================== NIVEL 1 · COBROS ==================== */
   const pantallaCobros = ()=>{
     const mesNombre = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
     const now = new Date();
     const mesTxt = mesNombre[now.getMonth()] + " " + now.getFullYear();
     const dominante = atrasadoMasGrave;
     const domDias = dominante ? mobDiasDesde(dominante.lastPaid) : 0;
-    const domMulta = dominante ? calcMultaSafe(dominante) : 0;
-    const domTotal = dominante ? montoCob(dominante) : 0;
-    const restoOrden = pendientes.concat(pagados);
-    const rentBusca = busca.trim().toLowerCase();
-    const filtro = (p)=> !rentBusca || (p.name||"").toLowerCase().includes(rentBusca)
-      || (p.comuna||"").toLowerCase().includes(rentBusca)
-      || (p.tenant||"").toLowerCase().includes(rentBusca);
+    const q = buscaCob.trim().toLowerCase();
+    const filtro = (p)=> !q || (p.name||"").toLowerCase().includes(q)
+      || (p.comuna||"").toLowerCase().includes(q) || (p.tenant||"").toLowerCase().includes(q);
     const dominanteVista = dominante && filtro(dominante) ? dominante : null;
-    const resto = restoOrden.filter(filtro);
-    return (<div className="mob-scr g14 con-pie">
-      <div className="mob-header">
-        <div style={{minWidth:0, flex:1}}>
-          <div className="mob-mono" style={{marginBottom:6}}>{mesTxt}</div>
-          <h1 className="mob-hero-h">Cobros</h1>
-        </div>
-        <button className="mob-btn out" onClick={()=>setMostrarBusca(v=>!v)} style={{minHeight:44}}>
-          <MobIco w={16}>{MI.lupa}</MobIco> Buscar
-        </button>
-      </div>
-      {mostrarBusca && <input className="mob-composer-input" value={busca} onChange={e=>setBusca(e.target.value)}
-        placeholder="Buscar por propiedad, comuna o arrendatario…"
-        style={{background:"var(--mfl)", border:"none", borderRadius:12, padding:"12px 14px", fontSize:15, fontFamily:"inherit", outline:"none"}}/>}
+    const resto = pendientes.concat(atrasados.filter(p=>p!==dominante)).concat(pagados).filter(filtro);
 
-      {/* Barra de progreso segmentada */}
-      <div style={{marginTop:4}}>
+    return (<div className="mob-scr g14 con-pie">
+      <HeaderMob eyebrow={mesTxt} title="Cobros" sub={pagados.length+" al día · "+pendientes.length+" por vencer · "+atrasados.length+" atrasados"}/>
+      <div className="mob-buscar">
+        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
+        <input value={buscaCob} onChange={e=>setBuscaCob(e.target.value)} placeholder="Buscar propiedad o arrendatario"/>
+      </div>
+
+      <div>
         <div className="mob-prog-seg">
           <i className="on" style={{flex: Math.max(0.4, pagados.length)}}></i>
           <i className="mid" style={{flex: Math.max(0.4, pendientes.length)}}></i>
@@ -4861,587 +5326,927 @@ function MobileApp(props){
       </div>
 
       {dominanteVista ? (
-        <div className="mob-card dom" style={{marginTop:8, gap:16}}>
+        <div className="mob-card dom" style={{gap:16}}>
           <div className="mob-eyebrow"><span className="mob-pt"></span>ATRASADO · {domDias} DÍAS</div>
-          <h2 style={{fontSize:27, lineHeight:1.05, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:0}}>{dominanteVista.name}</h2>
-          <div style={{fontSize:14, color:"var(--mtm)"}}>{dominanteVista.tenant||"—"} · {dominanteVista.address||""}</div>
-
+          <h2 className="mob-t2" style={{fontSize:26, letterSpacing:"-.026em", lineHeight:1.08}}>{dominanteVista.name}</h2>
+          <div className="mob-p2">{dominanteVista.tenant||"Sin arrendatario"}{dominanteVista.address?" · "+dominanteVista.address:""}</div>
           <div style={{borderTop:"1px solid var(--mli)", paddingTop:14, display:"flex", flexDirection:"column", gap:10}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
-              <span style={{fontSize:14, color:"var(--mtx)"}}>Arriendo {mesNombre[now.getMonth()].toLowerCase()}</span>
-              <span style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{CLP(num(dominanteVista.rent))}</span>
+              <span className="mob-p">Arriendo</span>
+              <span style={{fontSize:17, fontWeight:700}}>{CLP(num(dominanteVista.rent))}</span>
             </div>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
-              <span style={{fontSize:14, color:"var(--mtx)"}}>Multa {num(dominanteVista.penalty)}% · {domDias} días</span>
-              <span style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{CLP(domMulta)}</span>
+              <span className="mob-p">Multa {num(dominanteVista.penalty)}% · {domDias} días</span>
+              <span style={{fontSize:17, fontWeight:700}}>{CLP(calcMultaSafe(dominanteVista))}</span>
             </div>
           </div>
-
           <div style={{borderTop:"1px solid var(--mli)", paddingTop:14, display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
             <span className="mob-mono">TOTAL A COBRAR</span>
-            <span className="mob-num-med">{CLP(domTotal)}</span>
+            <span className="mob-num-med">{CLP(montoCob(dominanteVista))}</span>
           </div>
-
-          <div style={{display:"flex", gap:12}}>
+          <div style={{display:"flex", gap:10}}>
             <button className="mob-btn sec" style={{flex:1}} onClick={()=>abrirRecord(dominanteVista)}>Recordatorio</button>
-            <button className="mob-btn pri" style={{flex:1, padding:16}} onClick={()=>abrirCobrar(dominanteVista)}>Registrar<br/>pago</button>
+            <button className="mob-btn pri" style={{flex:1}} onClick={()=>abrirCobrar(dominanteVista)}>Registrar pago</button>
           </div>
         </div>
       ) : (
-        <div className="mob-card" style={{marginTop:8}}>
-          <div className="mob-eyebrow">TODO AL DÍA</div>
+        <div className="mob-card">
+          <div className="mob-eyebrow">COBRADO ESTE MES</div>
           <div className="mob-num-big">{CLP(totalCobrado)}</div>
-          <div style={{fontSize:14, color:"var(--mtm2)"}}>No hay cobros pendientes este mes.</div>
+          <div className="mob-p2">{atrasados.length? "Ajusta la búsqueda para ver el atraso." : "No hay arriendos atrasados."}</div>
         </div>
       )}
 
-      {resto.length>0 && (<>
-        <div className="mob-eyebrow" style={{marginTop:6}}>RESTO DEL MES</div>
-        <div style={{display:"flex", flexDirection:"column", gap:10}}>
-          {resto.map((p,i)=>{
-            const est = p.status;
-            const dia = (p.diaPago||num(p.diaPago)||5);
-            const rowCls = "mob-row" + (est==="pendiente" ? " mark" : "");
-            const izq = est==="pagado"
-              ? <div className="mob-quad-idx paid mob-g"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></div>
-              : <div className="mob-quad-idx mob-g">{String(dia).padStart(2,"0")}</div>;
-            const sub = est==="pagado"
-              ? ((p.tenant||"") + " · pagado el " + dia)
-              : ((p.tenant||"") + " · vence hoy");
-            return (<div key={p.id} className={rowCls} onClick={()=>abrirCobrar(p)} role="button">
-              {izq}
-              <div style={{flex:1, minWidth:0}}>
-                <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
-                <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{sub}</div>
-              </div>
-              <div style={{fontSize:16, fontWeight:700, color: est==="pagado" ? "var(--mtm2)" : "var(--mib)"}}>{CLP(num(p.rent))}</div>
-            </div>);
-          })}
-        </div>
-      </>)}
+      {resto.length>0 && (
+        <Grupo titulo="Resto del mes" nota="Toca una propiedad para abrir su resumen; el botón registra el pago al tiro.">
+          {resto.map(p=>(
+            <Fila key={p.id}
+              ico={p.status==="pagado"?MI.check:MI.reloj}
+              titulo={p.name}
+              sub={(p.tenant||"Sin arrendatario")+" · "+(p.status==="pagado"?"pagado":"vence el "+(p.dueDay||5))}
+              valor={CLP(num(p.rent))}
+              onClick={()=>push({t:"prop", id:p.id})}/>
+          ))}
+        </Grupo>
+      )}
 
       <div className="mob-footbar">
         <div>
           <div className="mob-mono">COBRADO / ESPERADO</div>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(totalCobrado)} de {CLP(totalEsper)}</div>
+          <div style={{fontSize:15.5, fontWeight:700, color:"var(--mib)"}}>{CLP(totalCobrado)} de {CLP(totalEsper)}</div>
         </div>
-        <button className="mob-btn out" onClick={()=>abrirSeccion("informes")}>Cartola</button>
+        {hay("informes") && <button className="mob-btn out" onClick={()=>irSeccion("informes")}>Cartola</button>}
       </div>
     </div>);
   };
 
-  /* ---------- Pantalla 2b · Ficha de propiedad ---------- */
-  const pantallaFicha = (p)=>{
-    const div = divCLP(p, uf);
-    const contribMes = Math.round(num(p.contribucionesAnuales)/12);
-    const seguroMes = p.seguroUF ? Math.round(num(p.seguroUF)*uf/12) : Math.round(num(p.seguroIncendioSismo)/12);
-    const util = utilidadMes(p, uf);
-    const sociedad = socs.find(s=>s.id===p.sociedad) || socs[0] || {name:""};
-    // Metros y dormitorios en un solo chip; queda vacío si la ficha no los trae.
-    const sup = num(p.mBuilt) || num(p.metros) || num(p.surfaceBuilt);
-    const medidas = [ sup ? sup+" m²" : "", num(p.dorms)||num(p.bedrooms) ? (num(p.dorms)||num(p.bedrooms))+"D" : "",
-      num(p.banios)||num(p.bathrooms) ? (num(p.banios)||num(p.bathrooms))+"B" : "" ].filter(Boolean).join(" · ");
-    // Últimos 6 meses de pagos, agrupados desde histPagos.
-    const hoy = new Date();
-    const barras = [];
-    for(let k=5; k>=0; k--){
-      const d = new Date(hoy.getFullYear(), hoy.getMonth()-k, 1);
-      const clave = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-      const total = ((p.histPagos||[])
-        .filter(x=> (x.fecha||"").startsWith(clave))
-        .reduce((s,x)=>s+num(x.monto), 0)) || (k===0 && p.status==="pagado" ? num(p.rent) : 0);
-      barras.push({ mes:d.getMonth(), total });
-    }
-    const maxB = Math.max(1, ...barras.map(b=>b.total));
-    return (<div className="mob-scr g14 con-pie">
-      <div className="mob-topbar">
-        <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
-        <span className="mob-mono">MIS PROPIEDADES</span>
-      </div>
-
-      <div className="mob-photo-ph">
-        <MobIco w={28}>{MI.casita}</MobIco>
-        <div className="lb">foto de la propiedad</div>
-      </div>
-
-      <div>
-        <h1 style={{fontSize:26, lineHeight:1.1, fontWeight:700, letterSpacing:"-.02em", color:"var(--mib)", margin:"6px 0 12px"}}>{p.name}</h1>
-        <div className="mob-chip-row">
-          {/* El estado va primero: es lo que se busca de un vistazo. Los chips
-              sin dato no se dibujan (antes salía uno con solo un guion), y el
-              nombre de la sociedad se corta si es muy largo en vez de comerse
-              la fila entera. */}
-          <span className="mob-chip ink">{p.status==="pagado"?"Al día":p.status==="pendiente"?"Vence hoy":p.status==="atrasado"?"Atrasado":"Disponible"}</span>
-          {!!sociedad.name && <span className="mob-chip out" title={sociedad.name} style={{maxWidth:"58%"}}>{sociedad.name.replace(/\s*SPA$/i," SPA")}</span>}
-          {!!p.tipo && <span className="mob-chip out">{p.tipo}</span>}
-          {!!medidas && <span className="mob-chip out">{medidas}</span>}
-        </div>
-        <div style={{marginTop:12, fontSize:14, color:"var(--mtm)"}}>{p.address}{p.tenant?" · "+p.tenant:""}{p.contratoInicio?" desde "+p.contratoInicio:""}</div>
-      </div>
-
-      <div className="mob-card">
-        <div className="mob-eyebrow">UTILIDAD DEL MES</div>
-        <div><span className="mob-num-big">{CLP(util)}</span> <span style={{fontSize:15, color:"var(--mtm2)", marginLeft:6}}>neto</span></div>
-        <div style={{display:"flex", flexDirection:"column", gap:0}}>
-          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--mli)"}}>
-            <span style={{fontSize:15, color:"var(--mtx)"}}>Arriendo</span>
-            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</span>
-          </div>
-          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0", borderBottom:"1px solid var(--mli)"}}>
-            <span style={{fontSize:15, color:"var(--mtx)"}}>Dividendo{p.dividendoUF?(" · "+p.dividendoUF+" UF"):""}</span>
-            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>−{CLP(div)}</span>
-          </div>
-          <div style={{display:"flex", justifyContent:"space-between", padding:"12px 0"}}>
-            <span style={{fontSize:15, color:"var(--mtx)"}}>Contribuciones y seguros</span>
-            <span style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>−{CLP(contribMes + seguroMes)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mob-card">
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"baseline"}}>
-          <div className="mob-eyebrow">PAGOS RECIBIDOS</div>
-          <div style={{fontSize:13, color:"var(--mtm2)"}}>últimos 6 meses</div>
-        </div>
-        <div className="mob-hist">
-          {barras.map((b,i)=>{
-            const h = 20 + Math.round(60 * (b.total/maxB));
-            const cls = i===barras.length-1 ? "now" : (i%2===0 ? "dim" : "");
-            return <i key={i} className={cls} style={{height:h+"px"}}></i>;
-          })}
-        </div>
-        <div style={{display:"flex", justifyContent:"space-between", paddingTop:8, borderTop:"1px solid var(--mli)"}}>
-          <span style={{fontSize:14, color:"var(--mtx)"}}>Garantía en custodia</span>
-          <span style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.garantia&&p.garantia.monto))}</span>
-        </div>
-      </div>
-
-      {/* Todo lo que se puede hacer con una propiedad en el escritorio. Cada
-          botón llama a la misma función de la plataforma, no a una copia. */}
-      <div className="mob-eyebrow" style={{marginTop:2}}>ACCIONES DE ESTA PROPIEDAD</div>
-      <div className="mob-acciones">
-        {[
-          ["Editar",        MI.doc,   ()=>AC.editarPropiedad && AC.editarPropiedad(p)],
-          ["Ficha completa",MI.doc,   ()=>AC.fichaCompleta   && AC.fichaCompleta(p)],
-          ["Incidencia",    MI.alerta,()=>AC.incidencia      && AC.incidencia(p)],
-          ["Bitácora",      MI.doc,   ()=>AC.bitacora        && AC.bitacora(p)],
-          ["Compartir",     MI.flecha,()=>AC.compartir       && AC.compartir(p)],
-          ["Firma",         MI.check, ()=>AC.firma           && AC.firma(p)],
-          ["Recordatorio",  MI.chat,  ()=>AC.recordatorio    && AC.recordatorio(p)],
-          ["Mover de lugar",MI.edif,  ()=>AC.moverPropiedad  && AC.moverPropiedad(p)],
-          ["Marcar vacante",MI.casita,()=>AC.vacancia        && AC.vacancia(p)],
-          ["Recepción municipal",MI.doc,()=>abrirSeccion("props", p)],
-        ].map(([lb,ic,fn])=>(
-          <button key={lb} className="mob-accion" onClick={fn}>
-            <MobIco w={19}>{ic}</MobIco><span>{lb}</span>
-          </button>
-        ))}
-      </div>
-      {/* Aparte de la rejilla y en último lugar: borra la propiedad. */}
-      {!soloLectura && (
-        <button className="mob-btn link" style={{alignSelf:"flex-start", color:"var(--mtm2)", fontWeight:600, fontSize:13.5, minHeight:44}}
-          onClick={()=>AC.eliminarPropiedad && AC.eliminarPropiedad(p)}>Eliminar esta propiedad</button>
-      )}
-
-      {/* La ficha móvil resume; el detalle entero —documentos, garantía,
-          gastos, fotos, mapa, comunicaciones— vive en la sección Propiedades. */}
-      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-        onClick={()=>abrirSeccion("props", p)}>
-        <div className="mob-quad-ic"><MobIco>{MI.edif}</MobIco></div>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Abrir en la plataforma</div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>Documentos, garantía, gastos, fotos y mapa</div>
-        </div>
-        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-      </button>
-
-      <div className="mob-footbar" style={{gap:10}}>
-        <button className="mob-btn sec" style={{flex:1, padding:14}} onClick={()=>abrirContrato(p)}>Contrato</button>
-        <button className="mob-btn pri" style={{flex:2, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
-      </div>
-    </div>);
-  };
-
-  /* ---------- Pantalla 2c · Finanzas ---------- */
+  /* ==================== NIVEL 1 · FINANZAS ==================== */
   const pantallaFinanzas = ()=>{
-    const utilTot = rentals.reduce((s,p)=> s + utilidadMes(p,uf), 0);
-    const divTot = propiedades.reduce((s,p)=> s + divCLP(p,uf), 0);
-    const gastosTot = rentals.reduce((s,p)=> s + Math.round(num(p.contribucionesAnuales)/12) + (p.seguroUF?Math.round(num(p.seguroUF)*uf/12):Math.round(num(p.seguroIncendioSismo)/12)), 0);
+    const utilTot   = rentals.reduce((s,p)=> s + utilidadMes(p,uf), 0);
+    const divTot    = propiedades.reduce((s,p)=> s + divCLP(p,uf), 0);
+    const gastosTot = propiedades.reduce((s,p)=> s + contribMes(p) + seguroMes(p,uf) + gastosExtraMes(p,uf), 0);
     const cifra = finSeg==="utilidad" ? utilTot : (finSeg==="dividendos" ? divTot : gastosTot);
-    // Serie de 6 puntos alrededor de la cifra actual — patrón fijo (README: valores calculados).
-    const pesos = [0.86, 0.90, 0.89, 0.95, 0.97, 1.00];
-    const pts = pesos.map(w=> Math.round(cifra*w));
-    const maxY = Math.max(...pts, 1), minY = Math.min(...pts, 0);
-    const W=300, H=110, PAD=6;
-    const xy = (v,i)=> [PAD + (W-2*PAD)*i/(pts.length-1), H-PAD - (H-2*PAD)*((v-minY)/(maxY-minY||1))];
-    const poly = pts.map((v,i)=>xy(v,i).join(",")).join(" ");
-    const [lx,ly] = xy(pts[pts.length-1], pts.length-1);
-    const meses = (()=>{
-      const nombres = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-      const now = new Date(); const arr=[];
-      for(let k=5;k>=0;k--){ arr.push(nombres[(now.getMonth()-k+12)%12]); }
-      return arr;
-    })();
-    const porProp = rentals.map(p=>({ p, util: utilidadMes(p,uf) }))
-      .sort((a,b)=> b.util - a.util);
-    const totalDeuda = propiedades.reduce((s,p)=> s + (p.hasMortgage ? divPorPagar(p) * num(p.dividendoUF) : 0), 0);
-    const cuotas = propiedades.reduce((s,p)=> s + divPorPagar(p), 0);
-
+    const rotulo = finSeg==="utilidad" ? "UTILIDAD DEL MES" : finSeg==="dividendos" ? "DIVIDENDOS DEL MES" : "GASTOS DEL MES";
+    const valorDe = (p)=> finSeg==="utilidad" ? utilidadMes(p,uf)
+      : finSeg==="dividendos" ? divCLP(p,uf)
+      : (contribMes(p) + seguroMes(p,uf) + gastosExtraMes(p,uf));
+    const orden = propiedades.slice().sort((a,b)=> Math.abs(valorDe(b)) - Math.abs(valorDe(a)));
     return (<div className="mob-scr g14">
-      <div className="mob-header">
-        <h1 className="mob-h-scr" style={{fontSize:34, letterSpacing:"-.02em"}}>Finanzas</h1>
-        <div style={{display:"flex", alignItems:"center", gap:10, flexShrink:0}}>
-          <div className="mob-mono" style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>UF {Math.round(uf).toLocaleString("es-CL")}</div>
-          <BotonBuscar/>
-        </div>
-      </div>
-
+      <HeaderMob title="Finanzas" sub="Balance real de la cartera, mes a mes"/>
       <div className="mob-seg">
         <button className={finSeg==="utilidad"?"on":""} onClick={()=>setFinSeg("utilidad")}>Utilidad</button>
         <button className={finSeg==="dividendos"?"on":""} onClick={()=>setFinSeg("dividendos")}>Dividendos</button>
         <button className={finSeg==="gastos"?"on":""} onClick={()=>setFinSeg("gastos")}>Gastos</button>
       </div>
-
-      <div className="mob-card">
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
-          <div>
-            <div className="mob-eyebrow">{finSeg==="utilidad"?"UTILIDAD NETA / MES":(finSeg==="dividendos"?"DIVIDENDOS / MES":"GASTOS / MES")}</div>
-            <div className="mob-num-big" style={{fontSize:30, marginTop:2}}>{CLP(cifra)}</div>
-          </div>
-          <div className="mob-chip" style={{background:"var(--mli)"}}>+8,3%</div>
-        </div>
-        <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%", height:110, display:"block"}}>
-          <line x1={PAD} y1={H*0.25} x2={W-PAD} y2={H*0.25} stroke="var(--mli)" strokeWidth="1"/>
-          <line x1={PAD} y1={H*0.5}  x2={W-PAD} y2={H*0.5}  stroke="var(--mli)" strokeWidth="1"/>
-          <line x1={PAD} y1={H*0.75} x2={W-PAD} y2={H*0.75} stroke="var(--mli)" strokeWidth="1"/>
-          <polyline points={poly} fill="none" stroke="var(--mib)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx={lx} cy={ly} r="5" fill="var(--mib)"/>
-        </svg>
-        <div style={{display:"flex", justifyContent:"space-between", fontSize:11.5, color:"var(--mtm2)"}}>
-          {meses.map((m,i)=><span key={i}>{m}</span>)}
+      <div className="mob-hub-top">
+        <div className="mob-eyebrow">{rotulo}</div>
+        <div className="cifra">{mobPlata(cifra)}</div>
+        <div className="mob-p2">
+          Arriendos {CLP(rentals.reduce((s,p)=>s+ingresoMes(p,uf),0))} · dividendos {CLP(divTot)} · gastos {CLP(gastosTot)}
         </div>
       </div>
-
-      <div className="mob-eyebrow" style={{marginTop:2}}>POR PROPIEDAD</div>
-      <div style={{display:"flex", flexDirection:"column", gap:10}}>
-        {porProp.map(({p,util},i)=>{
-          const marca = util<0;
-          return (<div key={p.id} className={"mob-row"+(marca?" mark":"")} onClick={()=>abrirFicha(p)} role="button">
-            <div className="mob-quad-idx mob-g">{mobEtiq(p.name, i+1)}</div>
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:15.5, fontWeight:700, color:"var(--mib)"}}>{p.name}</div>
-              <div style={{fontSize:13.5, color:"var(--mtm)"}}>
-                {p.hasMortgage ? ("Dividendo "+num(p.dividendoUF).toLocaleString("es-CL",{minimumFractionDigits:1, maximumFractionDigits:1})+" UF") : "Sin crédito hipotecario"}
-                {p.banco ? " · "+p.banco : ""}
-              </div>
-            </div>
-            <div style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>{util>=0?"+":"−"}{CLP(Math.abs(util))}</div>
-          </div>);
-        })}
-      </div>
-
-      <div className="mob-card">
-        <div className="mob-eyebrow">DEUDA HIPOTECARIA</div>
-        <div className="mob-num-med">{cuotas.toLocaleString("es-CL")} cuotas por pagar</div>
-        <div style={{fontSize:14, color:"var(--mtm)"}}>{totalDeuda.toLocaleString("es-CL",{maximumFractionDigits:0})} UF · {CLP(Math.round(totalDeuda*uf))}</div>
-        <div style={{alignSelf:"flex-end"}}><button className="mob-btn out" onClick={()=>abrirSeccion("finanzas")}>Detalle</button></div>
-      </div>
+      <Grupo titulo="Por propiedad" nota="Cada propiedad abre su propio balance: ingresos, dividendo, contribuciones, seguros y gastos.">
+        {orden.map(p=>(
+          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
+            sub={socDe(p).name||p.comuna||""} valor={mobPlata(valorDe(p))}
+            onClick={()=>push({t:"finProp", id:p.id})}/>
+        ))}
+      </Grupo>
+      {hay("informes") && (
+        <Grupo titulo="Ir más lejos">
+          <Fila icoNav="tendencia" titulo="Informes y cartolas" sub="Para ti, tu contador o los dueños" onClick={()=>irSeccion("informes")}/>
+        </Grupo>
+      )}
     </div>);
   };
 
-  /* ---------- Pantalla 2e · Panel por sociedad (dentro de Propiedades) ---------- */
-  const pantallaSociedades = ()=>{
-    const socsUso = (socs||[]).slice(0,2);
-    const listaSel = socSel==="todas" ? propiedades : porSoc(socSel);
-    const socNombre = socSel==="todas" ? "Todas" : (socs.find(s=>s.id===socSel)||{}).name || "—";
-    const inmuebles = listaSel.length;
-    const arrend = listaSel.filter(p=>p.use==="arriendo").length;
-    const alDia = listaSel.filter(p=>p.status==="pagado").length;
-    const alDiaPct = arrend ? Math.round(100*alDia/arrend) : 100;
-    const alertas = listaSel.filter(p=>p.contratoTermino && daysBetweenSafe(p.contratoTermino) < 90).slice(0,3);
-    const patrimonio = listaSel.reduce((s,p)=>s+num(p.tasacion), 0);
-    // Barras apiladas por propiedad (mismos grises).
-    const grises = ["var(--mib)", "#75757F", "#C4C4CB", "#EDEDF2"];
-    return (<div className="mob-sub">
-      <div className="mob-mono">{socSel==="todas" ? "TODAS LAS SOCIEDADES" : ((socs.find(s=>s.id===socSel)||{}).name||"").toUpperCase()}</div>
+  /* ==================== NIVEL 1 · MÁS ====================
+     Todo lo que no cabe (ni debe caber) en la barra inferior, agrupado por
+     intención y no por orden histórico. Estilo Ajustes de iOS. */
+  const pantallaMas = ()=>{
+    const grupos = MOB_MAS_GRUPOS
+      .map(g=>({ ...g, items:g.items.filter(it=> it.esp ? true : hay(it.id)) }))
+      .filter(g=>g.items.length);
+    return (<div className="mob-scr g14">
+      <HeaderMob title="Más" sub="El resto de la plataforma, por lo que quieres hacer"/>
+      <div className="mob-buscar" onClick={buscar} role="button">
+        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
+        <input readOnly placeholder="Buscar en toda la plataforma" style={{pointerEvents:"none"}}/>
+      </div>
+      {grupos.map(g=>(
+        <Grupo key={g.label} titulo={g.label}>
+          {g.items.map(it=>(
+            <Fila key={it.esp||it.id} icoNav={it.ico} titulo={it.label} sub={it.sub}
+              onClick={()=>abrirDestino(it)}/>
+          ))}
+        </Grupo>
+      ))}
+      <Grupo>
+        <Fila sinIco titulo={((usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta")}
+          sub={soloLectura ? "Solo lectura" : ((rolActual||"Propietario"))}
+          onClick={()=>push({t:"cuenta"})}/>
+        <Fila sinIco titulo="Cerrar sesión" chevron={false} onClick={()=>AC.salir&&AC.salir()}/>
+      </Grupo>
+      <div className="mob-nota" style={{marginBottom:6}}>ArriendoPro · administración de propiedades</div>
+    </div>);
+  };
+  const abrirDestino = (it)=>{
+    if(it.id){ irSeccion(it.id); return; }
+    if(it.esp==="buscar") return buscar();
+    if(it.esp==="infocheck") return AC.infoCheck && AC.infoCheck();
+    if(it.esp==="levantamiento") return AC.levantamiento && AC.levantamiento();
+    push({t:it.esp});
+  };
 
-      <div className="mob-seg">
-        {socsUso.map(s=>(
-          <button key={s.id} className={socSel===s.id?"on":""} onClick={()=>setSocSel(s.id)}>
-            {s.name.replace(/\s*SPA$/i,"").split(" ")[0]}
-          </button>
-        ))}
-        <button className={socSel==="todas"?"on":""} onClick={()=>setSocSel("todas")}>Todas</button>
+  /* ============ NIVEL 3 · HUB DE LA PROPIEDAD ============
+     Abrir una propiedad NO abre un formulario: abre su resumen. Arriba, el
+     estado y la cifra que importa; debajo, cada área con su propia pantalla. */
+  const fichaDe = (p)=> (FI.get ? FI.get(p) : (p.fichaCompleta||{}));
+  const fichaLleno = (f, campos)=> campos.filter(c=> String(f[c[0]]==null?"":f[c[0]]).trim()!=="").length;
+  const fichaTotales = (p)=>{
+    const f = fichaDe(p);
+    let hechos=0, total=0;
+    SECS.forEach(s=>{ hechos += fichaLleno(f, s.f); total += s.f.length; });
+    return { hechos, total, pct: total? Math.round(100*hechos/total) : 0, f };
+  };
+
+  const pantallaPropHub = (p)=>{
+    const soc = socDe(p);
+    const fic = fichaTotales(p);
+    const incAbiertas = (p.incidencias||[]).filter(x=>(x.estado||"abierta")!=="cerrada" && (x.estado||"")!=="resuelta").length;
+    const docs = (fichaDe(p).archivos||[]).length + (p.escrituras||[]).length;
+    const util = utilidadMes(p, uf);
+    const arrendado = p.use==="arriendo";
+    return (<Pantalla
+      titulo={p.name}
+      contexto={[p.comuna||p.address||"", soc.name||""].filter(Boolean).join(" · ")}
+      gap="14"
+      pie={arrendado ? (
+        <div className="mob-footbar" style={{gap:10}}>
+          <button className="mob-btn sec" style={{flex:1, padding:14}} onClick={()=>abrirRecord(p)}>Recordatorio</button>
+          <button className="mob-btn pri" style={{flex:1, padding:14}} onClick={()=>abrirCobrar(p)}>Registrar pago</button>
+        </div>) : null}>
+
+      {/* Resumen: estado, cifra, próximo pago y avance de la ficha. */}
+      <div className="mob-hub-top">
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:10}}>
+          <span className={"mob-chip"+(arrendado && p.status!=="pagado"?" ink":"")}>{arrendado?mobEstado(p):"Uso personal"}</span>
+          <span className="mob-p2">{tipoTxt(p)||""}</span>
+        </div>
+        <div>
+          <div className="mob-eyebrow" style={{marginBottom:6}}>{arrendado?"ARRIENDO MENSUAL":"VALOR ESTIMADO"}</div>
+          <div className="cifra">{CLP(arrendado ? num(p.rent) : num(p.tasacion))}</div>
+          {arrendado && !!p.rentUF && <div className="mob-p2" style={{marginTop:4}}>{UFf(num(p.rentUF))} · reajuste {p.adjustment||"UF"}</div>}
+        </div>
+        <div className="mob-metrics">
+          <div className="m"><span className="v">{arrendado ? (p.dueDay||5) : "—"}</span><span className="k">DÍA DE PAGO</span></div>
+          <div className="m"><span className="v">{mobPlata(util)}</span><span className="k">UTILIDAD/MES</span></div>
+          <div className="m"><span className="v">{fic.pct}%</span><span className="k">FICHA</span></div>
+        </div>
       </div>
 
-      <div className="mob-kpis">
-        {[["INMUEBLES", inmuebles+""], ["ARRENDADOS", arrend+""], ["AL DÍA", alDiaPct+"%"]].map(([k,v])=>(
-          <div key={k} className="mob-card mob-kpi">
-            <div className="mob-eyebrow mini">{k}</div>
-            <div className="v">{v}</div>
+      <Grupo titulo="La propiedad">
+        <Fila ico={MI.portapapeles} titulo="Ficha completa" sub="Antecedentes en bloques cortos"
+          extra={<Progreso hechos={fic.hechos} total={fic.total}/>} onClick={()=>push({t:"ficha", id:p.id})}/>
+        <Fila ico={MI.carpeta} titulo="Documentos y fotos" sub="Escrituras, planos, imágenes y adjuntos"
+          valor={docs?String(docs):""} onClick={()=>push({t:"docs", id:p.id})}/>
+        <Fila ico={MI.pin} titulo="Ubicación" sub={[p.address||"", p.comuna||""].filter(Boolean).join(", ")||"Sin dirección"}
+          onClick={()=>push({t:"ubicacion", id:p.id})}/>
+      </Grupo>
+
+      {arrendado && (
+        <Grupo titulo="Arriendo">
+          <Fila ico={MI.persona} titulo="Arrendatario" sub={p.tenant||"Sin arrendatario asignado"}
+            onClick={()=>push({t:"arrendatario", id:p.id})}/>
+          <Fila ico={MI.dinero} titulo="Arriendo y cobro" sub="Monto, reajuste, día de pago y multa"
+            onClick={()=>push({t:"arriendo", id:p.id})}/>
+          <Fila ico={MI.tarj} titulo="Pagos" sub={((p.histPagos||[]).length||"Sin")+" pagos registrados"}
+            onClick={()=>push({t:"pagos", id:p.id})}/>
+          <Fila ico={MI.balanza} titulo="Contrato y firma" sub={(p.firma&&p.firma.estado)? ("Firma "+p.firma.estado) : "Redactar, enviar y firmar online"}
+            onClick={()=>push({t:"contrato", id:p.id})}/>
+        </Grupo>
+      )}
+
+      <Grupo titulo="Seguimiento">
+        <Fila ico={MI.llaveInglesa} titulo="Incidencias" sub={incAbiertas? (incAbiertas+" abierta"+(incAbiertas!==1?"s":"")) : "Reclamos y reparaciones"}
+          valor={String((p.incidencias||[]).length||"")} onClick={()=>push({t:"incid", id:p.id})}/>
+        <Fila ico={MI.libreta} titulo="Bitácora" sub="Notas, servicios y mantenciones"
+          valor={String((p.bitacora||[]).length||"")} onClick={()=>push({t:"bitac", id:p.id})}/>
+        <Fila ico={MI.archivador} titulo="Historial" sub="Arrendatarios anteriores, vacancias y garantía"
+          onClick={()=>push({t:"histProp", id:p.id})}/>
+      </Grupo>
+
+      <Grupo titulo="Dinero">
+        <Fila ico={MI.grafico} titulo="Balance de la propiedad" sub="Ingresos, dividendo, contribuciones y gastos"
+          valor={mobPlata(util)} onClick={()=>push({t:"finProp", id:p.id})}/>
+      </Grupo>
+
+      <Grupo titulo="Compartir y administrar">
+        <Fila ico={MI.compartir} titulo="Compartir la propiedad" sub="Ficha pública de marketing"
+          onClick={()=>AC.compartir && AC.compartir(p)}/>
+        <Fila ico={MI.engranaje} titulo="Ajustes de la propiedad" sub="Editar, mover de sociedad, vacancia"
+          onClick={()=>push({t:"ajustes", id:p.id})}/>
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Ubicación ---------- */
+  const pantallaUbicacion = (p)=>{
+    const q = encodeURIComponent([p.address||"", p.comuna||"", p.region||""].filter(Boolean).join(", "));
+    const tieneCoord = p.lat && p.lng;
+    return (<Pantalla titulo="Ubicación" contexto={p.name} gap="14">
+      <Grupo>
+        <Fila sinIco titulo="Dirección" valor={p.address||"—"}/>
+        <Fila sinIco titulo="Comuna" valor={p.comuna||"—"}/>
+        <Fila sinIco titulo="Región" valor={p.region||"—"}/>
+        {tieneCoord ? <Fila sinIco titulo="Coordenadas" valor={p.lat+", "+p.lng}/> : null}
+      </Grupo>
+      <button className="mob-btn pri" onClick={()=>window.open("https://www.google.com/maps/search/?api=1&query="+(tieneCoord?(p.lat+","+p.lng):q), "_blank", "noopener")}>
+        <MobIco w={18}>{MI.pin}</MobIco> Abrir en Mapas
+      </button>
+      <div className="mob-nota">La dirección se edita en Ajustes de la propiedad, y también en el bloque “Datos básicos” de la ficha.</div>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Arrendatario de la propiedad ----------
+     Datos reales de la propiedad, editables aquí mismo y guardados solos. */
+  const pantallaArrendatario = (p)=>{
+    const set = (k,v)=> patchProp(p.id, x=>({...x, [k]:v}));
+    const tel = (p.tenantWhatsapp||p.tenantPhone||"").replace(/[^\d+]/g,"");
+    const ic = p.tenantInfocheck||{};
+    return (<Pantalla titulo="Arrendatario" contexto={p.name} gap="14" accion={<Guardado/>}>
+      {!!p.tenant && (
+        <div className="mob-acciones">
+          {!!tel && <button className="mob-accion" onClick={()=>window.open("https://wa.me/"+tel.replace(/^\+/,""),"_blank","noopener")}>
+            <MobIco w={19}>{MI.burbuja}</MobIco><span>WhatsApp</span></button>}
+          {!!(p.tenantPhone) && <button className="mob-accion" onClick={()=>{ window.location.href="tel:"+p.tenantPhone; }}>
+            <MobIco w={19}>{MI.telefono}</MobIco><span>Llamar</span></button>}
+          {!!(p.tenantEmail) && <button className="mob-accion" onClick={()=>{ window.location.href="mailto:"+p.tenantEmail; }}>
+            <MobIco w={19}>{MI.sobre}</MobIco><span>Correo</span></button>}
+          <button className="mob-accion" onClick={()=>abrirRecord(p)}>
+            <MobIco w={19}>{MI.campana}</MobIco><span>Recordatorio</span></button>
+        </div>
+      )}
+
+      <Grupo titulo="Datos de contacto">
+        <div className="mob-campo"><span className="mob-lab">Nombre completo</span>
+          <input className="mob-inp" disabled={soloLectura} value={p.tenant||""} onChange={e=>set("tenant", e.target.value)} placeholder="Nombre y apellidos"/></div>
+        <div className="mob-campo"><span className="mob-lab">RUT</span>
+          <input className="mob-inp" disabled={soloLectura} value={p.tenantRut||""} onChange={e=>set("tenantRut", e.target.value)} placeholder="12.345.678-9"/></div>
+        <div className="mob-campo"><span className="mob-lab">Teléfono</span>
+          <input className="mob-inp" disabled={soloLectura} type="tel" value={p.tenantPhone||""} onChange={e=>set("tenantPhone", e.target.value)} placeholder="+56 9 ..."/></div>
+        <div className="mob-campo"><span className="mob-lab">WhatsApp</span>
+          <input className="mob-inp" disabled={soloLectura} type="tel" value={p.tenantWhatsapp||""} onChange={e=>set("tenantWhatsapp", e.target.value)} placeholder="+56 9 ..."/></div>
+        <div className="mob-campo"><span className="mob-lab">Correo</span>
+          <input className="mob-inp" disabled={soloLectura} type="email" value={p.tenantEmail||""} onChange={e=>set("tenantEmail", e.target.value)} placeholder="correo@ejemplo.cl"/></div>
+      </Grupo>
+
+      <Grupo titulo="Antecedentes" nota="Consulta InfoCheck para traer puntaje, renta y deudas del arrendatario.">
+        <Fila ico={MI.grafico} titulo="Puntaje InfoCheck" valor={ic.puntaje||"—"}/>
+        <Fila ico={MI.billete} titulo="Renta líquida" valor={ic.rentaLiquida? CLP(num(ic.rentaLiquida)) : "—"}/>
+        <Fila ico={MI.lupa} titulo="Consultar InfoCheck" sub="Antecedentes comerciales" onClick={()=>AC.infoCheck && AC.infoCheck()}/>
+      </Grupo>
+
+      <Grupo titulo="Más sobre esta persona">
+        <Fila ico={MI.doc} titulo="Bloque completo de la ficha" sub="Aval, garantía, contrato y ocupantes"
+          onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Arrendatario actual"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
+        <Fila ico={MI.archivador} titulo="Arrendatarios anteriores" sub="Quién vivió antes y por qué se fue"
+          onClick={()=>push({t:"histProp", id:p.id})}/>
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Arriendo y cobro ---------- */
+  const pantallaArriendo = (p)=>{
+    const set = (k,v)=> patchProp(p.id, x=>({...x, [k]:v}));
+    const setG = (k,v)=> patchProp(p.id, x=>({...x, garantia:{...(x.garantia||{}), [k]:v}}));
+    const g = p.garantia||{};
+    return (<Pantalla titulo="Arriendo y cobro" contexto={p.name} gap="14" accion={<Guardado/>}>
+      <Grupo titulo="Monto">
+        <div className="mob-campo"><span className="mob-lab">Arriendo mensual (CLP)</span>
+          <input className="mob-inp" disabled={soloLectura} type="number" inputMode="numeric" value={p.rent||""} onChange={e=>set("rent", e.target.value)} placeholder="0"/></div>
+        <div className="mob-campo"><span className="mob-lab">Arriendo en UF</span>
+          <input className="mob-inp" disabled={soloLectura} type="number" inputMode="decimal" step="any" value={p.rentUF||""} onChange={e=>set("rentUF", e.target.value)} placeholder="0"/>
+          <span className="mob-p2">{p.rentUF? ("Equivale a "+CLP(num(p.rentUF)*uf)+" con la UF de hoy.") : "Si lo dejas en blanco, se cobra el monto en pesos."}</span></div>
+        <div className="mob-campo"><span className="mob-lab">Reajuste</span>
+          <select className="mob-inp" disabled={soloLectura} value={p.adjustment||"UF"} onChange={e=>set("adjustment", e.target.value)}>
+            <option value="UF">UF</option><option value="IPC">IPC</option><option value="Fijo">Fijo</option>
+          </select></div>
+      </Grupo>
+
+      <Grupo titulo="Cobro">
+        <div className="mob-campo"><span className="mob-lab">Día de pago</span>
+          <input className="mob-inp" disabled={soloLectura} type="number" inputMode="numeric" min="1" max="31" value={p.dueDay||""} onChange={e=>set("dueDay", e.target.value)} placeholder="5"/></div>
+        <div className="mob-campo"><span className="mob-lab">Multa por atraso (%)</span>
+          <input className="mob-inp" disabled={soloLectura} type="number" inputMode="decimal" step="any" value={p.penalty===0?0:(p.penalty||"")} onChange={e=>set("penalty", e.target.value)} placeholder="3"/></div>
+        <div className="mob-campo"><span className="mob-lab">Estado del mes</span>
+          <select className="mob-inp" disabled={soloLectura} value={p.status||"pendiente"} onChange={e=>set("status", e.target.value)}>
+            <option value="pagado">Al día</option><option value="pendiente">Pendiente</option>
+            <option value="atrasado">Atrasado</option><option value="disponible">Disponible (sin arrendar)</option>
+          </select></div>
+      </Grupo>
+
+      <Grupo titulo="Contrato">
+        <div className="mob-campo"><span className="mob-lab">Inicio del contrato</span>
+          <input className="mob-inp" disabled={soloLectura} type="date" value={p.contractStart||""} onChange={e=>set("contractStart", e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Término del contrato</span>
+          <input className="mob-inp" disabled={soloLectura} type="date" value={p.contractEnd||""} onChange={e=>set("contractEnd", e.target.value)}/>
+          {!!p.contractEnd && <span className="mob-p2">{daysBetweenSafe(p.contractEnd)>=0 ? ("Quedan "+daysBetweenSafe(p.contractEnd)+" días.") : "Vencido: renuévalo o formaliza el término."}</span>}</div>
+      </Grupo>
+
+      <Grupo titulo="Garantía">
+        <div className="mob-campo"><span className="mob-lab">Monto (CLP)</span>
+          <input className="mob-inp" disabled={soloLectura} type="number" inputMode="numeric" value={g.monto||""} onChange={e=>setG("monto", e.target.value)} placeholder="0"/></div>
+        <div className="mob-campo"><span className="mob-lab">Fecha en que se recibió</span>
+          <input className="mob-inp" disabled={soloLectura} type="date" value={g.fechaRecibida||""} onChange={e=>setG("fechaRecibida", e.target.value)}/></div>
+        <div className="mob-campo"><span className="mob-lab">Estado</span>
+          <select className="mob-inp" disabled={soloLectura} value={g.estado||"retenida"} onChange={e=>setG("estado", e.target.value)}>
+            <option value="retenida">Retenida</option><option value="devuelta">Devuelta</option><option value="aplicada">Aplicada a deuda</option>
+          </select></div>
+      </Grupo>
+
+      <Grupo>
+        <Fila ico={MI.balanza} titulo="Contrato y firma online" sub="Redactar, enviar y firmar" onClick={()=>push({t:"contrato", id:p.id})}/>
+        <Fila ico={MI.tarj} titulo="Registrar un pago" sub="Queda en el historial de la propiedad" onClick={()=>abrirCobrar(p)}/>
+      </Grupo>
+      <div className="mob-nota">Todo lo que escribas se guarda solo. El bloque “Situación de arriendo” de la ficha guarda el detalle fino (forma de pago, servicios, gasto común).</div>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Pagos de la propiedad ---------- */
+  const pantallaPagos = (p)=>{
+    const lista = (p.histPagos||[]).slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+    const anio = String(new Date().getFullYear());
+    const delAnio = lista.filter(h=>String(h.fecha||"").slice(0,4)===anio).reduce((s,h)=>s+num(h.monto),0);
+    return (<Pantalla titulo="Pagos" contexto={p.name} gap="14"
+      pie={<div className="mob-footbar"><div><div className="mob-mono">COBRADO EN {anio}</div>
+        <div style={{fontSize:15.5, fontWeight:700}}>{CLP(delAnio)}</div></div>
+        <button className="mob-btn pri-sm" onClick={()=>abrirCobrar(p)}>Registrar pago</button></div>}>
+      {lista.length ? (
+        <Grupo titulo="Historial" nota="Cada pago queda guardado con su fecha, monto y forma de pago.">
+          {lista.map((h,i)=>(
+            <Fila key={i} ico={MI.tarj} titulo={h.concepto||"Arriendo"}
+              sub={(h.fecha||"")+(h.metodo?" · "+h.metodo:"")}
+              valor={CLP(num(h.monto))}/>
+          ))}
+        </Grupo>
+      ) : <div className="mob-vacio">Todavía no hay pagos registrados en esta propiedad.</div>}
+      <Grupo>
+        <Fila ico={MI.campana} titulo="Enviar recordatorio" sub="Correo, WhatsApp o SMS con el link de pago" onClick={()=>abrirRecord(p)}/>
+        {hay("historial") && <Fila icoNav="archivador" titulo="Historial completo de la cartera" sub="Pagos, garantías y lagunas de arriendo" onClick={()=>irSeccion("historial", p)}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Balance de la propiedad ---------- */
+  const pantallaFinProp = (p)=>{
+    const ing  = ingresoMes(p, uf);
+    const div  = divCLP(p, uf);
+    const cont = contribMes(p);
+    const seg  = seguroMes(p, uf);
+    const extra= gastosExtraMes(p, uf);
+    const util = ing - (div+cont+seg+extra);
+    return (<Pantalla titulo="Balance" contexto={p.name} gap="14">
+      <div className="mob-hub-top">
+        <div className="mob-eyebrow">UTILIDAD DEL MES</div>
+        <div className="cifra">{mobPlata(util)}</div>
+        <div className="mob-p2">{util>=0 ? "Lo que queda después de pagar dividendo, contribuciones, seguros y gastos." : "Este mes la propiedad cuesta más de lo que renta."}</div>
+      </div>
+      <Grupo titulo="Entra">
+        <Fila sinIco titulo="Arriendo" valor={CLP(p.use==="arriendo"?num(p.rent):0)}/>
+        <Fila sinIco titulo="Otros ingresos" valor={CLP(ingresosExtraMes(p,uf))}/>
+      </Grupo>
+      <Grupo titulo="Sale">
+        <Fila sinIco titulo={"Dividendo"+(p.dividendoUF?" · "+p.dividendoUF+" UF":"")} valor={"−"+CLP(div)}/>
+        <Fila sinIco titulo="Contribuciones" valor={"−"+CLP(cont)}/>
+        <Fila sinIco titulo="Seguros" valor={"−"+CLP(seg)}/>
+        <Fila sinIco titulo="Gastos editables" valor={"−"+CLP(extra)}/>
+      </Grupo>
+      <Grupo titulo="Editar el detalle" nota="Los gastos e ingresos con periodicidad, subítems y adjuntos se administran en la sección Finanzas.">
+        <Fila ico={MI.banco} titulo="Crédito hipotecario" sub="Banco, dividendo y plazos"
+          onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Crédito hipotecario"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
+        <Fila ico={MI.recibo} titulo="Gastos, cargas y seguros" sub="Contribuciones, gasto común y pólizas"
+          onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Gastos, cargas y seguros"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
+        {hay("finanzas") && <Fila icoNav="grafico" titulo="Abrir Finanzas y Balance" sub="Gastos editables, subítems y adjuntos" onClick={()=>irSeccion("finanzas", p)}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ---------- Nivel 4 · Documentos y fotos ---------- */
+  const pantallaDocs = (p)=>{
+    const f = fichaDe(p);
+    const archivos = f.archivos||[];
+    const fotos = p.fotos||[];
+    return (<Pantalla titulo="Documentos y fotos" contexto={p.name} gap="14" accion={<Guardado/>}>
+      <Grupo titulo="Archivos de la ficha" nota="Se guardan en la plataforma, no en el teléfono. Máximo 4 MB por archivo.">
+        {archivos.length ? archivos.map((a,i)=>(
+          /* Fila propia: abrir y quitar son dos acciones distintas, así que son
+             dos botones hermanos y no uno dentro de otro. */
+          <div className="mob-cell" key={i}>
+            <span className="ic"><Ic n={fileIcon(a.contentType)} w={21} sw={1.9}/></span>
+            <a className="tx" href={a.url} target="_blank" rel="noopener" style={{textDecoration:"none"}}>
+              <span className="t">{a.name||"Archivo"}</span>
+              <span className="s">{a.contentType||"Archivo adjunto"}</span>
+            </a>
+            {!soloLectura && <button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
+              onClick={()=>{ FI.set && FI.set(p, "archivos", archivos.filter((_,j)=>j!==i)); }}>Quitar</button>}
           </div>
-        ))}
-      </div>
+        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía no hay archivos adjuntos.</div>}
+      </Grupo>
+      <label className="mob-btn pri" style={{display:"flex", cursor:"pointer"}}>
+        <MobIco w={18}>{MI.clip}</MobIco> Adjuntar archivos
+        <input type="file" multiple style={{display:"none"}} onChange={async(e)=>{
+          const files = Array.from(e.target.files||[]); e.target.value="";
+          if(!files.length) return;
+          const nuevos=[];
+          for(const file of files){
+            try{ const r=await uploadArchivo(file); nuevos.push({url:r.url, name:r.name||file.name, contentType:r.contentType||file.type, size:file.size}); }
+            catch(err){ notify(err.message||("No se pudo subir "+file.name), true); }
+          }
+          if(nuevos.length && FI.set){ FI.set(p, "archivos", [...archivos, ...nuevos]); notify(nuevos.length+" archivo(s) adjuntado(s)"); }
+        }}/>
+      </label>
 
-      {alertas.length>0 && (
-        <div className="mob-card mark" onClick={()=>setSubtab("legal")} role="button">
-          <div style={{display:"flex", alignItems:"center", gap:12}}>
-            <div className="mob-quad-ic"><MobIco>{MI.alerta}</MobIco></div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{alertas.length} contrato{alertas.length!==1?"s":""} vence{alertas.length===1?"":"n"} en 90 días</div>
-              <div style={{fontSize:13, color:"var(--mtm)", marginTop:2}}>{alertas.map(p=>p.name+(p.contratoTermino?" ("+p.contratoTermino.slice(5,10).replace("-","/")+")":"")).join(" · ")}</div>
-            </div>
-            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
+      {fotos.length>0 && (
+        <div>
+          <div className="mob-gtit">Fotos de la propiedad</div>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8}}>
+            {fotos.slice(0,8).map((ft,i)=>(
+              <a key={i} href={ft.url} target="_blank" rel="noopener"
+                style={{display:"block", height:110, borderRadius:14, backgroundSize:"cover", backgroundPosition:"center",
+                  backgroundImage:"url('"+ft.url+"')"}} aria-label={"Foto "+(i+1)}></a>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="mob-card">
-        <div className="mob-eyebrow">PATRIMONIO DE {(socNombre||"").toUpperCase()}</div>
-        <div className="mob-num-med" style={{fontSize:26}}>{CLP(patrimonio)}</div>
-        <div className="mob-stack">
-          {listaSel.slice(0,4).map((p,i)=>(
-            <i key={p.id} style={{flex: num(p.tasacion)||1, background: grises[i%grises.length]}}></i>
-          ))}
-        </div>
-        <div style={{fontSize:13.5, color:"var(--mtx)", display:"flex", gap:14, flexWrap:"wrap"}}>
-          {listaSel.slice(0,3).map(p=>(
-            <span key={p.id}><b style={{color:"var(--mib)"}}>{mobEtiq(p.name)}</b> <span style={{color:"var(--mtm)"}}>{p.comuna||""}</span></span>
-          ))}
-        </div>
-      </div>
-
-      <div className="mob-eyebrow" style={{marginTop:2}}>MOVIMIENTOS DE HOY</div>
-      <div style={{display:"flex", flexDirection:"column", gap:10}}>
-        {pagados.slice(0,1).map(p=>(
-          <div key={"mv"+p.id} className="mob-row">
-            <div className="mob-quad-ic">{mobIni(p.tenant||"—")}</div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>{p.tenant||"Arrendatario"} pagó</div>
-              <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · transferencia</div>
-            </div>
-            <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{CLP(num(p.rent))}</div>
-          </div>
-        ))}
-        {contratosPorFirmar.slice(0,1).map(p=>(
-          <div key={"mv2"+p.id} className="mob-row">
-            <div className="mob-quad-ic"><MobIco>{MI.doc}</MobIco></div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Contrato firmado online</div>
-              <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · notaría digital</div>
-            </div>
-            <div style={{width:9, height:9, borderRadius:"50%", background:"var(--mib)"}}></div>
-          </div>
-        ))}
-        <div className="mob-row">
-          <div className="mob-quad-ic" style={{fontFamily:"ui-monospace, monospace", fontSize:12, fontWeight:700}}>UF</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Reajuste UF aplicado</div>
-            <div style={{fontSize:13, color:"var(--mtm)"}}>{rentals.filter(p=>p.reajuste==="UF").length} arriendos · +0,6%</div>
-          </div>
-        </div>
-      </div>
-    </div>);
+      <Grupo titulo="Papeles de la propiedad">
+        <Fila ico={MI.doc} titulo="Documentación disponible" sub="Qué está listo para entregar"
+          onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Documentación disponible"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
+        {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Contratos, firma notarial y antecedentes" onClick={()=>irSeccion("legal", p)}/>}
+        {hay("props") && <Fila icoNav="casas" titulo="Fotos, planos y recepción municipal" sub="Se administran en la sección Propiedades" onClick={()=>irSeccion("props", p)}/>}
+      </Grupo>
+    </Pantalla>);
   };
 
-  /* ---------- Pantalla Propiedades (lista simple) ---------- */
-  const pantallaPropsLista = ()=>(
-    <div className="mob-sub">
-      <div className="mob-hero-sub" style={{marginTop:-4}}>{propiedades.length} en total</div>
-      {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
-        <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
-      </button>}
-      <div style={{display:"flex", flexDirection:"column", gap:10}}>
-        {propiedades.map((p,i)=>{
-          const est = p.use==="personal" ? "personal" : p.status;
-          const cls = "mob-row" + (est==="pendiente"?" mark":"") + (est==="personal"?" perso":"");
-          return (<div key={p.id} className={cls} onClick={()=>abrirFicha(p)} role="button">
-            <div className="mob-quad-idx mob-g">{mobEtiq(p.name, i+1)}</div>
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:15, fontWeight:700, color:"var(--mib)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.name}</div>
-              <div style={{fontSize:13, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p.comuna||"—"}{p.tenant?" · "+p.tenant:""}</div>
-            </div>
-            {p.use==="arriendo" && <span className={"mob-chip" + (p.status==="pagado"?" ink":"")}>{p.status==="pagado"?"Al día":p.status==="pendiente"?"Vence hoy":p.status==="atrasado"?"Atrasado":"Disponible"}</span>}
-            {p.use==="personal" && <span className="mob-chip">Uso</span>}
-          </div>);
-        })}
-      </div>
-    </div>
-  );
-
-  /* ---------- Sub-tab de "Propiedades" ---------- */
-  const pantallaPropiedades = ()=>(
-    <div className="mob-scr g14">
-      {/* Un solo encabezado arriba: antes cada sub-pantalla traía el suyo y el
-          título quedaba a medias contra el segmentado. */}
-      <HeaderMob eyebrow="MIS PROPIEDADES"
-        title={subtab==="sociedades" ? "Sociedades" : "Propiedades"}/>
-      <div className="mob-seg" style={{marginBottom:4}}>
-        <button className={subtab==="props"?"on":""} onClick={()=>setSubtab("props")}>Propiedades</button>
-        <button className={subtab==="sociedades"?"on":""} onClick={()=>setSubtab("sociedades")}>Sociedades</button>
-      </div>
-      {subtab==="sociedades" && pantallaSociedades()}
-      {subtab==="props" && pantallaPropsLista()}
-
-      {/* Las demás secciones que Propiedades absorbe se abren completas, tal
-          como están en la plataforma: antes había aquí un "Historial" resumido
-          a mano que no era la sección de verdad. */}
-      <div className="mob-eyebrow" style={{marginTop:6}}>TAMBIÉN EN PROPIEDADES</div>
-      <div style={{display:"flex", flexDirection:"column", gap:8}}>
-        {[["historial","archivador","Historial"],["bitacora","libreta","Bitácora"],["incidencias","llaveInglesa","Incidencias"],
-          ["legal","balanza","Documentos Legales"],["informes","tendencia","Informes"]]
-          .filter(([id])=>(secciones||[]).some(s=>s.id===id))
-          .map(([id,ico,label])=>(
-          <button key={id} className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-            onClick={()=>abrirSeccion(id)}>
-            <div className="mob-quad-ic"><Ic n={ico} w={20} sw={2}/></div>
-            <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mib)"}}>{label}</div>
-            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  /* ---------- Pantalla 2d · Chat con el arrendatario ---------- */
-  const pantallaChat = (p)=>{
-    const hora = new Date().toLocaleTimeString("es-CL",{hour:"2-digit", minute:"2-digit"});
-    const total = montoCob(p);
-    return (<React.Fragment>
-      <div className="mob-chat-head">
-        <button className="mob-back" onClick={pop}><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
-        <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}>{mobIni(p.tenant||"—")}</div>
-        <div className="info">
-          <div className="nm">{p.tenant||"Arrendatario"}</div>
-          <div className="ctx">{(p.name||"").split("—")[0].trim()} — {p.comuna||"—"} · {p.status==="atrasado"?"arriendo atrasado":"arriendo"}</div>
-        </div>
-      </div>
-      <div className="mob-chat-body">
-        <div className="mob-chat-day">Hoy</div>
-        <div className="mob-bub-ink">
-          Estimad{p.tenant&&/a\b/.test(p.tenant)?"a":"o"} {(p.tenant||"").split(" ")[0]||""}: le recordamos que el arriendo de {new Date().toLocaleDateString("es-CL",{month:"long"})} por {CLP(total)}{calcMultaSafe(p)>0?" (incluye multa)":""} está pendiente.
-          <div className="mob-bub-in-block"><MobIco w={17}>{MI.tarj}</MobIco> Link de pago Webpay</div>
-          <div className="mob-bub-meta">09:02 · enviado por WhatsApp</div>
-        </div>
-        <div className="mob-bub-w">
-          Hola, transferí ayer {CLP(num(p.rent))}. La multa la pago el viernes.
-          <div className="meta">09:41</div>
-        </div>
-        <div className="mob-attach">
-          <div className="ph"><MobIco w={28}>{MI.doc}</MobIco><span className="cap">comprobante</span></div>
-          <div className="foot">09:42 · transferencia_junio.pdf</div>
-        </div>
-        <div className="mob-suggest">
-          <div className="mob-eyebrow">SUGERIDO POR EL ASISTENTE</div>
-          <div style={{fontSize:15, color:"var(--mtx)", lineHeight:1.4}}>
-            Registrar pago parcial de {CLP(num(p.rent))} y dejar la multa de {CLP(calcMultaSafe(p))} pendiente al viernes.
-          </div>
-          <div className="row">
-            <button className="mob-btn blk-sm" onClick={()=>{ setMPay(p); pop(); }}>Registrar</button>
-            <button className="mob-btn gray-sm" onClick={()=>openRem(p)}>Editar</button>
-          </div>
-        </div>
-      </div>
-      <div className="mob-composer">
-        <button className="plus" aria-label="Adjuntar"><MobIco w={20}>{MI.mas}</MobIco></button>
-        <input value={chatMsg} onChange={e=>setChatMsg(e.target.value)} placeholder="Escribe un mensaje…"/>
-        <button className="send" onClick={()=>{ if(chatMsg.trim()){ notify("✓ Mensaje enviado"); setChatMsg(""); } }} aria-label="Enviar"><MobIco w={20} sw={2.4}>{MI.flecha}</MobIco></button>
-      </div>
-    </React.Fragment>);
+  /* ---------- Nivel 4 · Incidencias de la propiedad ---------- */
+  const pantallaIncid = (p)=>{
+    const lista = (p.incidencias||[]);
+    return (<Pantalla titulo="Incidencias" contexto={p.name} gap="14"
+      pie={!soloLectura ? <div className="mob-footbar"><div><div className="mob-mono">ABIERTAS</div>
+        <div style={{fontSize:15.5, fontWeight:700}}>{lista.filter(x=>(x.estado||"abierta")!=="cerrada"&&(x.estado||"")!=="resuelta").length} de {lista.length}</div></div>
+        <button className="mob-btn pri-sm" onClick={()=>AC.incidencia && AC.incidencia(p)}>Nueva incidencia</button></div> : null}>
+      {lista.length ? (
+        <Grupo titulo="Registradas">
+          {lista.map((x,i)=>(
+            <Fila key={x.id||i} ico={MI.llaveInglesa} titulo={x.titulo||"Incidencia"}
+              sub={[x.fecha||"", x.categoria||"", x.prioridad?("prioridad "+x.prioridad.toLowerCase()):""].filter(Boolean).join(" · ")}
+              valor={(x.estado||"abierta")==="cerrada"?"Cerrada":""}
+              onClick={()=>irSeccion("incidencias", p)}/>
+          ))}
+        </Grupo>
+      ) : <div className="mob-vacio">Sin incidencias registradas en esta propiedad.</div>}
+      {hay("incidencias") && <Grupo>
+        <Fila icoNav="llaveInglesa" titulo="Abrir la sección Incidencias" sub="Presupuestos, adjuntos y seguimiento completo" onClick={()=>irSeccion("incidencias", p)}/>
+      </Grupo>}
+    </Pantalla>);
   };
 
-  /* ---------- Pantalla 2f · Editor de contrato ---------- */
-  const pantallaContrato = (p)=>{
-    const pasos = [
-      { titulo:"Datos generales",   resumen:(p.tenant||"") + " · " + (p.name||"") },
-      { titulo:"Renta y reajuste",  resumen:CLP(num(p.rent)) + " · " + (p.reajuste||"UF") },
-      { titulo:"Plazo y término",   resumen:(p.contratoInicio||"—") + " → " + (p.contratoTermino||"—") + " · renovación automática" },
-      { titulo:"Firma notarial",    resumen:"pendiente" },
-    ];
-    const nombreCorto = (p.name||"").split("—").pop().trim();
-    return (<div className="mob-scr g14 con-pie">
-      <div style={{display:"flex", alignItems:"center", gap:14, paddingBottom:14, borderBottom:"1px solid var(--mln)", margin:"0 -22px 6px", padding:"0 22px 14px"}}>
-        <button className="mob-back" onClick={pop}><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:17, fontWeight:700, color:"var(--mib)"}}>Contrato de arriendo</div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>{p.name} · borrador</div>
-        </div>
-        <button className="mob-btn blk-sm" onClick={()=>AC.contrato&&AC.contrato(p)}>Editar</button>
-      </div>
+  /* ---------- Nivel 4 · Bitácora de la propiedad ---------- */
+  const pantallaBitac = (p)=>{
+    const lista = (p.bitacora||[]);
+    return (<Pantalla titulo="Bitácora" contexto={p.name} gap="14"
+      pie={!soloLectura ? <div className="mob-footbar"><div><div className="mob-mono">ENTRADAS</div>
+        <div style={{fontSize:15.5, fontWeight:700}}>{lista.length}</div></div>
+        <button className="mob-btn pri-sm" onClick={()=>AC.bitacora && AC.bitacora(p)}>Nueva entrada</button></div> : null}>
+      {lista.length ? (
+        <Grupo titulo="Registro cronológico">
+          {lista.map((b,i)=>(
+            <Fila key={b.id||i} ico={MI.libreta} titulo={b.titulo||b.tipo||"Nota"}
+              sub={[b.fecha||"", b.tipo||""].filter(Boolean).join(" · ")}
+              onClick={()=>irSeccion("bitacora", p)}/>
+          ))}
+        </Grupo>
+      ) : <div className="mob-vacio">Sin entradas de bitácora en esta propiedad.</div>}
+      {hay("bitacora") && <Grupo>
+        <Fila icoNav="libreta" titulo="Abrir la sección Bitácora" sub="Notas, contratos, servicios y mantenciones" onClick={()=>irSeccion("bitacora", p)}/>
+      </Grupo>}
+    </Pantalla>);
+  };
 
-      <div className="mob-step-bars">
-        {[0,1,2,3].map(i=><i key={i} className={i<contrPaso?"on":""}></i>)}
-      </div>
-      <div className="mob-mono">PASO {contrPaso} DE 4 · CONDICIONES ECONÓMICAS</div>
+  /* ---------- Nivel 4 · Historial de la propiedad ---------- */
+  const pantallaHistProp = (p)=>{
+    const ant = (p.histArrendatarios||[]).filter(h=>h.hasta!=="vigente");
+    const vac = (p.vacancias||[]);
+    const g = p.garantia||{};
+    return (<Pantalla titulo="Historial" contexto={p.name} gap="14">
+      <Grupo titulo="Arrendatarios anteriores">
+        {ant.length ? ant.map((h,i)=>(
+          <Fila key={i} ico={MI.persona} titulo={h.nombre||"Arrendatario"}
+            sub={(h.desde||"")+" — "+(h.hasta||"")} valor={h.arriendoFinal?CLP(num(h.arriendoFinal)):""}/>
+        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Sin arrendatarios anteriores registrados.</div>}
+      </Grupo>
+      <Grupo titulo="Lagunas de arriendo">
+        {vac.length ? vac.map((v,i)=>(
+          <Fila key={i} ico={MI.reloj} titulo={(v.desde||"")+" — "+(v.hasta||"en curso")}
+            sub={v.notas||""} valor={v.dias?(v.dias+" días"):""}/>
+        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>La propiedad no ha estado desocupada.</div>}
+      </Grupo>
+      <Grupo titulo="Garantía">
+        <Fila sinIco titulo="Monto" valor={g.monto?CLP(num(g.monto)):"—"}/>
+        <Fila sinIco titulo="Recibida el" valor={g.fechaRecibida||"—"}/>
+        <Fila sinIco titulo="Estado" valor={g.estado||"—"}/>
+      </Grupo>
+      <Grupo>
+        <Fila ico={MI.tarj} titulo="Pagos de esta propiedad" sub={(p.histPagos||[]).length+" registrados"} onClick={()=>push({t:"pagos", id:p.id})}/>
+        {hay("historial") && <Fila icoNav="archivador" titulo="Historial de toda la cartera" onClick={()=>irSeccion("historial", p)}/>}
+      </Grupo>
+    </Pantalla>);
+  };
 
-      {pasos.map((s,i)=>{
-        const abierto = i+1 === contrPaso;
-        if(!abierto){
-          return (<div key={i} className="mob-row" onClick={()=>setContrPaso(i+1)} role="button">
-            <div className="mob-quad-idx">{String(i+1).padStart(2,"0")}</div>
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{s.titulo}</div>
-              <div style={{fontSize:13.5, color:"var(--mtm)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.resumen}</div>
-            </div>
-            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-          </div>);
-        }
-        return (<div key={i} className="mob-card">
-          <div style={{display:"flex", alignItems:"center", gap:10}}>
-            <div className="mob-quad-idx">{String(i+1).padStart(2,"0")}</div>
-            <div style={{fontSize:16, fontWeight:700, color:"var(--mib)"}}>{s.titulo}</div>
-          </div>
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-            <div className="mob-field"><span className="lb">RENTA MENSUAL</span><div className="val">{CLP(num(p.rent))}</div></div>
-            <div className="mob-field"><span className="lb">GARANTÍA</span><div className="val">{CLP(num((p.garantia||{}).monto)||num(p.rent))}</div></div>
-            <div className="mob-field"><span className="lb">DÍA DE PAGO</span><div className="val">{String(p.diaPago||1).padStart(2,"0")}</div></div>
-            <div className="mob-field"><span className="lb">MULTA POR ATRASO</span><div className="val">{num(p.penalty)||5} % mensual</div></div>
-          </div>
-          <div className="mob-seg">
-            <button className={(p.reajuste||"UF")==="UF"?"on":""}>Reajuste UF</button>
-            <button className={p.reajuste==="IPC"?"on":""}>IPC</button>
-            <button className={p.reajuste==="fijo"?"on":""}>Fijo</button>
-          </div>
-        </div>);
-      })}
+  /* ---------- Nivel 4 · Ajustes de la propiedad ---------- */
+  const pantallaAjustes = (p)=>(
+    <Pantalla titulo="Ajustes" contexto={p.name} gap="14">
+      <Grupo titulo="Datos" nota="El formulario completo se abre en pantalla completa, con los mismos campos del escritorio.">
+        <Fila ico={MI.lapiz} titulo="Editar la propiedad" sub="Nombre, dirección, tipo, superficies y crédito"
+          onClick={()=>AC.editarPropiedad && AC.editarPropiedad(p)}/>
+        <Fila ico={MI.portapapeles} titulo="Ficha completa por bloques" sub="La forma cómoda de completarla desde el teléfono"
+          onClick={()=>push({t:"ficha", id:p.id})}/>
+      </Grupo>
+      <Grupo titulo="Organización">
+        <Fila ico={MI.edif} titulo="Mover de sociedad o de orden" onClick={()=>AC.moverPropiedad && AC.moverPropiedad(p)}/>
+        <Fila ico={MI.casita} titulo="Marcar como vacante" sub="Registra la laguna de arriendo" onClick={()=>AC.vacancia && AC.vacancia(p)}/>
+        <Fila ico={MI.compartir} titulo="Compartir ficha pública" onClick={()=>AC.compartir && AC.compartir(p)}/>
+      </Grupo>
+      {!soloLectura && (
+        <Grupo nota="Eliminar borra la propiedad y todo su historial. No se puede deshacer.">
+          <Fila sinIco titulo="Eliminar esta propiedad" chevron={false} onClick={()=>AC.eliminarPropiedad && AC.eliminarPropiedad(p)}/>
+        </Grupo>
+      )}
+    </Pantalla>
+  );
 
-      <div className="mob-card mark">
-        <div style={{display:"flex", alignItems:"center", gap:10}}>
-          <span className="mob-chip ink" style={{fontFamily:"ui-monospace, monospace"}}>FN</span>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Firma notarial online · pendiente</div>
-        </div>
-        <div style={{display:"flex", flexDirection:"column", gap:10}}>
-          <div style={{display:"flex", alignItems:"center", gap:12}}>
-            <span className="mob-quad-idx">01</span>
-            <span style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mib)"}}>Arrendador · {(socs[0]||{}).name||"—"}</span>
-            <span className="mob-check on"><MobIco w={16} sw={2.4}>{MI.check}</MobIco></span>
-          </div>
-          <div style={{display:"flex", alignItems:"center", gap:12}}>
-            <span className="mob-quad-idx">02</span>
-            <span style={{flex:1, fontSize:15, fontWeight:600, color:"var(--mib)"}}>Arrendatario · {p.tenant||"—"}</span>
-            <span className="mob-check off"></span>
-          </div>
-        </div>
-      </div>
+  /* ============ NIVEL 4-5 · LA FICHA, POR BLOQUES ============
+     La ficha tiene más de 250 campos. En el teléfono no se muestra entera
+     jamás: primero la lista de bloques con su avance, y al tocar uno se abre
+     una pantalla con SOLO esos campos. */
+  const MOB_FICHA_AREAS = [
+    { label:"Identificación del inmueble", t:["Datos básicos de la operación","Identificación legal y catastral","Superficies","Programa habitacional y distribución","Características y terminaciones","Estado general y ocupación actual"] },
+    { label:"Arriendo y personas", t:["Situación de arriendo","Arrendatario actual","Antecedentes (InfoCheck y Equifax)"] },
+    { label:"Normativa, crédito y gastos", t:["Información urbanística y normativa","Crédito hipotecario","Aspectos financieros (venta / arriendo)","Gastos, cargas y seguros","Áreas comunes y amenidades (edificio / condominio)","Propiedad comercial / industrial","Servicios básicos"] },
+    { label:"Publicación y contactos", t:["Documentación disponible","Descripción para publicar y aspectos destacados","Datos del propietario / mandante","Otros contactos clave","Instrucciones internas y notas (uso interno)"] }
+  ];
+  const COLS_ARR = [["nombre","Nombre"],["rut","RUT"],["desde","Desde","date"],["hasta","Hasta","date"],["arriendo","Arriendo"],["motivo","Motivo de término"]];
+  const COLS_DUE = [["propietario","Propietario"],["rut","RUT"],["desde","Desde","date"],["hasta","Hasta","date"],["forma","Forma de adquisición"],["fojas","Fojas / N° / Año"]];
 
-      <div className="mob-dash"><MobIco w={17}>{MI.mas}</MobIco> Añadir cláusula especial</div>
+  const pantallaFicha = (p)=>{
+    const { hechos, total, pct, f } = fichaTotales(p);
+    const usados = new Set();
+    const areas = MOB_FICHA_AREAS.map(a=>({
+      label:a.label,
+      bloques:a.t.map(t=>{ const i=SECS.findIndex(s=>s.t===t); if(i>=0) usados.add(i); return i; }).filter(i=>i>=0)
+    })).filter(a=>a.bloques.length);
+    const sueltos = SECS.map((_,i)=>i).filter(i=>!usados.has(i));
+    if(sueltos.length) areas.push({ label:"Otros bloques", bloques:sueltos });
+    const nArr = (f.arrendatariosAnteriores||[]).length;
+    const nDue = (f.duenosAnteriores||[]).length;
+    const nArch = (f.archivos||[]).length;
 
-      <div className="mob-footbar">
+    const filaBloque = (i)=>{
+      const s = SECS[i];
+      const hech = fichaLleno(f, s.f);
+      return (<Fila key={s.t} icoNav={s.ico}
+        titulo={MOB_FICHA_CORTO[s.t] || s.t}
+        sub={MOB_FICHA_DESC[s.t] || ""}
+        extra={<Progreso hechos={hech} total={s.f.length}/>}
+        onClick={()=>push({t:"fichaBloque", id:p.id, i})}/>);
+    };
+
+    return (<Pantalla titulo="Ficha completa" contexto={p.name} gap="14" accion={<Guardado/>}>
+      <div className="mob-hub-top">
+        <div className="mob-eyebrow">AVANCE DE LA FICHA</div>
+        <div className="cifra">{pct}%</div>
         <div>
-          <div className="mob-mono">REVISIÓN</div>
-          <div style={{fontSize:14, fontWeight:700, color:"var(--mib)"}}>Sin campos obligatorios pendientes</div>
+          <div className="mob-stat-bar"><i style={{width:pct+"%"}}></i></div>
+          <div className="mob-p2" style={{marginTop:9}}>{hechos} de {total} campos completos, en {SECS.length} bloques. Se guarda solo a medida que escribes.</div>
         </div>
-        <button className="mob-btn out" onClick={()=>AC.contrato&&AC.contrato(p)}>Abrir generador</button>
       </div>
-    </div>);
+
+      {areas.map(a=>(
+        <Grupo key={a.label} titulo={a.label}>
+          {a.bloques.map(filaBloque)}
+        </Grupo>
+      ))}
+
+      <Grupo titulo="Anexos">
+        <Fila ico={MI.personas} titulo="Arrendatarios anteriores" sub="Sin límite de filas" valor={nArr?String(nArr):""}
+          onClick={()=>push({t:"fichaFilas", id:p.id, cual:"arr"})}/>
+        <Fila ico={MI.archivador} titulo="Propietarios anteriores" sub="Cadena de dominio" valor={nDue?String(nDue):""}
+          onClick={()=>push({t:"fichaFilas", id:p.id, cual:"due"})}/>
+        <Fila ico={MI.libreta} titulo="Observaciones" sub="Comentarios y pendientes"
+          onClick={()=>push({t:"fichaNotas", id:p.id})}/>
+        <Fila ico={MI.clip} titulo="Documentos adjuntos" valor={nArch?String(nArch):""}
+          onClick={()=>push({t:"docs", id:p.id})}/>
+      </Grupo>
+
+      <Grupo titulo="Compartir y exportar">
+        <Fila ico={MI.imagen} titulo="Vista previa" sub="Así se verá al compartirla" onClick={()=>FI.vista && FI.vista(p)}/>
+        <Fila ico={MI.descarga} titulo="Exportar y enviar" sub="PDF, Word, Excel, HTML, WhatsApp, correo o SMS"
+          onClick={()=>push({t:"fichaExport", id:p.id})}/>
+        <Fila ico={MI.compartir} titulo="Enlace para que la llenen" sub="Un corredor o el dueño la completa desde su navegador"
+          onClick={()=>FI.enlace && FI.enlace(p)}/>
+      </Grupo>
+    </Pantalla>);
   };
 
-  /* ---------- Chat del equipo (pantalla completa) ---------- */
+  const pantallaFichaBloque = (p, i)=>{
+    const s = SECS[i]; if(!s) return pantallaFicha(p);
+    const f = fichaDe(p);
+    const hech = fichaLleno(f, s.f);
+    return (<Pantalla titulo={MOB_FICHA_CORTO[s.t] || s.t} contexto={p.name + " · " + hech + " de " + s.f.length + " completos"}
+      gap="14" accion={<Guardado/>}>
+      {MOB_FICHA_DESC[s.t] ? <div className="mob-nota" style={{margin:"0 4px 4px"}}>{MOB_FICHA_DESC[s.t]}.</div> : null}
+      <MobCamposFicha key={s.t} campos={s.f} valores={f} bloqueado={soloLectura}
+        onCommit={(cambios)=> FI.setMuchos && FI.setMuchos(p, cambios)}/>
+      <div className="mob-nota">No hay botón Guardar: lo que escribes queda guardado solo, aquí y en el computador.</div>
+      {i+1 < SECS.length && (
+        <button className="mob-btn sec" style={{width:"100%"}} onClick={()=>setPila(x=>[...x.slice(0,-1), {t:"fichaBloque", id:p.id, i:i+1}])}>
+          Siguiente bloque: {MOB_FICHA_CORTO[SECS[i+1].t] || SECS[i+1].t}
+        </button>
+      )}
+    </Pantalla>);
+  };
+
+  const pantallaFichaFilas = (p, cual)=>{
+    const f = fichaDe(p);
+    const esArr = cual==="arr";
+    const clave = esArr ? "arrendatariosAnteriores" : "duenosAnteriores";
+    return (<Pantalla titulo={esArr?"Arrendatarios anteriores":"Propietarios anteriores"} contexto={p.name} gap="14" accion={<Guardado/>}>
+      <MobFilasFicha key={clave} filas={f[clave]||[]} columnas={esArr?COLS_ARR:COLS_DUE}
+        etiqueta={esArr?"Arrendatario":"Propietario"} bloqueado={soloLectura}
+        onCommit={(lista)=> FI.set && FI.set(p, clave, lista)}/>
+    </Pantalla>);
+  };
+
+  const pantallaFichaNotas = (p)=>{
+    const f = fichaDe(p);
+    return (<Pantalla titulo="Observaciones" contexto={p.name} gap="14" accion={<Guardado/>}>
+      <MobTextoLargo key={"obs"+p.id} valor={f.observaciones||""} bloqueado={soloLectura}
+        placeholder="Comentarios, pendientes, particularidades de la propiedad…"
+        onCommit={(v)=> FI.set && FI.set(p, "observaciones", v)}/>
+      <div className="mob-nota">Se guarda solo mientras escribes.</div>
+    </Pantalla>);
+  };
+
+  const pantallaFichaExport = (p)=>(
+    <Pantalla titulo="Exportar y enviar" contexto={p.name} gap="14">
+      <Grupo titulo="Descargar">
+        <Fila ico={MI.descarga} titulo="PDF" sub="Para imprimir o adjuntar" onClick={()=>FI.pdf && FI.pdf(p)}/>
+        <Fila ico={MI.descarga} titulo="Word" onClick={()=>FI.word && FI.word(p)}/>
+        <Fila ico={MI.descarga} titulo="Excel" onClick={()=>FI.excel && FI.excel(p)}/>
+        <Fila ico={MI.descarga} titulo="HTML" onClick={()=>FI.html && FI.html(p)}/>
+      </Grupo>
+      <Grupo titulo="Enviar">
+        <Fila ico={MI.burbuja} titulo="WhatsApp" onClick={()=>FI.wa && FI.wa(p)}/>
+        <Fila ico={MI.sobre} titulo="Correo" onClick={()=>FI.mail && FI.mail(p)}/>
+        <Fila ico={MI.movil} titulo="SMS" onClick={()=>FI.sms && FI.sms(p)}/>
+      </Grupo>
+      <Grupo titulo="Otras fichas">
+        <Fila ico={MI.imagen} titulo="Vista previa de la ficha" onClick={()=>FI.vista && FI.vista(p)}/>
+        <Fila ico={MI.portapapeles} titulo="Ficha de levantamiento" sub="Formulario para llenar en terreno"
+          onClick={()=>AC.levantamiento && AC.levantamiento()}/>
+      </Grupo>
+    </Pantalla>
+  );
+
+  /* ---------- Nivel 4 · Contrato y firma ----------
+     Datos reales del contrato y las dos acciones reales de la plataforma:
+     el generador de contratos y la firma notarial online. */
+  const pantallaContrato = (p)=>{
+    const f = p.firma||{};
+    const estado = f.estado==="firmado" ? "Firmado" : f.estado==="enviado" ? "Enviado, esperando firma"
+      : f.estado==="pendiente" ? "Pendiente de envío" : "Sin iniciar";
+    const g = p.garantia||{};
+    return (<Pantalla titulo="Contrato y firma" contexto={p.name} gap="14">
+      <div className="mob-hub-top">
+        <div className="mob-eyebrow">{f.estado==="firmado" ? "CONTRATO" : <><span className="mob-pt"></span>CONTRATO</>}</div>
+        <div style={{fontSize:22, fontWeight:700, letterSpacing:"-.02em"}}>{estado}</div>
+        <div className="mob-p2">
+          {p.contractStart||"—"} → {p.contractEnd||"—"}
+          {p.contractEnd ? (daysBetweenSafe(p.contractEnd)>=0 ? " · quedan "+daysBetweenSafe(p.contractEnd)+" días" : " · vencido") : ""}
+        </div>
+      </div>
+      <Grupo titulo="Condiciones pactadas" nota="Se editan en “Arriendo y cobro”; lo que cambies allí se guarda solo.">
+        <Fila sinIco titulo="Renta mensual" valor={CLP(num(p.rent))}/>
+        <Fila sinIco titulo="Reajuste" valor={p.adjustment||"UF"}/>
+        <Fila sinIco titulo="Día de pago" valor={String(p.dueDay||5)}/>
+        <Fila sinIco titulo="Multa por atraso" valor={(num(p.penalty)||0)+"%"}/>
+        <Fila sinIco titulo="Garantía" valor={g.monto?CLP(num(g.monto)):"—"}/>
+      </Grupo>
+      <Grupo titulo="Partes">
+        <Fila ico={MI.edif} titulo="Arrendador" sub={socDe(p).name||"—"}/>
+        <Fila ico={MI.persona} titulo="Arrendatario" sub={p.tenant||"Sin asignar"} onClick={()=>push({t:"arrendatario", id:p.id})}/>
+      </Grupo>
+      <Grupo titulo="Acciones">
+        <Fila ico={MI.doc} titulo="Generar o editar el contrato" sub="Cláusulas, montos y partes" onClick={()=>AC.contrato && AC.contrato(p)}/>
+        <Fila ico={MI.lapiz} titulo="Firma notarial online" sub="Enviar a firmar y seguir el estado" onClick={()=>AC.firma && AC.firma(p)}/>
+        <Fila ico={MI.dinero} titulo="Arriendo y cobro" sub="Montos, plazos y garantía" onClick={()=>push({t:"arriendo", id:p.id})}/>
+        {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Antecedentes y contratos de la cartera" onClick={()=>irSeccion("legal", p)}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ============ NIVEL 2-3 · SOCIEDADES ============ */
+  const pantallaSociedades = ()=>(
+    <Pantalla titulo="Sociedades" contexto="Empresas propietarias de tus inmuebles" gap="14">
+      <Grupo>
+        {(socs||[]).map(s=>{
+          const lista = porSoc(s.id);
+          return (<Fila key={s.id} ico={MI.edif} titulo={s.name}
+            sub={lista.length+" propiedad"+(lista.length!==1?"es":"")+(s.rut?" · "+s.rut:"")}
+            onClick={()=>push({t:"soc", id:s.id})}/>);
+        })}
+      </Grupo>
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaSociedad && AC.nuevaSociedad()}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nueva sociedad
+      </button>}
+      {hay("sociedades") && <Grupo>
+        <Fila icoNav="edificio" titulo="Abrir la sección Sociedades" sub="Editar datos, representante y cuentas" onClick={()=>irSeccion("sociedades")}/>
+      </Grupo>}
+    </Pantalla>
+  );
+
+  const pantallaSoc = (s)=>{
+    const lista = porSoc(s.id);
+    const arrend = lista.filter(p=>p.use==="arriendo");
+    const alDia = arrend.filter(p=>p.status==="pagado").length;
+    const patrimonio = lista.reduce((t,p)=>t+num(p.tasacion), 0);
+    const utilidad = lista.reduce((t,p)=>t+utilidadMes(p,uf), 0);
+    return (<Pantalla titulo={s.name} contexto={s.rut? ("RUT "+s.rut) : "Sociedad propietaria"} gap="14">
+      <div className="mob-hub-top">
+        <div className="mob-eyebrow">PATRIMONIO</div>
+        <div className="cifra">{CLP(patrimonio)}</div>
+        <div className="mob-metrics">
+          <div className="m"><span className="v">{lista.length}</span><span className="k">INMUEBLES</span></div>
+          <div className="m"><span className="v">{arrend.length}</span><span className="k">ARRENDADOS</span></div>
+          <div className="m"><span className="v">{arrend.length?Math.round(100*alDia/arrend.length):100}%</span><span className="k">AL DÍA</span></div>
+        </div>
+      </div>
+      <Grupo titulo="Propiedades">
+        {lista.length ? lista.map(p=>(
+          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
+            sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")}
+            valor={p.use==="arriendo"?mobEstado(p):"Uso propio"}
+            onClick={()=>push({t:"prop", id:p.id})}/>
+        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Esta sociedad todavía no tiene propiedades.</div>}
+      </Grupo>
+      <Grupo titulo="Resultado del mes">
+        <Fila sinIco titulo="Utilidad" valor={mobPlata(utilidad)}/>
+        <Fila sinIco titulo="Dividendos" valor={CLP(lista.reduce((t,p)=>t+divCLP(p,uf),0))}/>
+      </Grupo>
+      <Grupo titulo="Datos">
+        <Fila sinIco titulo="Representante" valor={s.rep||"—"}/>
+        <Fila sinIco titulo="Teléfono" valor={s.telefono||"—"}/>
+        <Fila sinIco titulo="Correo" valor={s.email||"—"}/>
+        {hay("sociedades") && <Fila ico={MI.lapiz} titulo="Editar la sociedad" onClick={()=>irSeccion("sociedades")}/>}
+      </Grupo>
+    </Pantalla>);
+  };
+
+  /* ============ NIVEL 2-3 · ARRENDATARIOS Y CONTACTOS ============ */
+  const pantallaContactos = ()=>{
+    const q = buscaCon.trim().toLowerCase();
+    const vigentes = rentals.filter(p=>p.tenant).map(p=>({ tipo:"arrendatario", p, nombre:p.tenant,
+      sub:p.name+(p.tenantPhone?" · "+p.tenantPhone:"") }));
+    const otros = (contacts||[]).map(c=>({ tipo:"contacto", c, nombre:contactNombre(c)||"Contacto",
+      sub:[c.tipo||"", c.telefono||c.email||""].filter(Boolean).join(" · ") }));
+    const filtra = (x)=> !q || (x.nombre||"").toLowerCase().includes(q) || (x.sub||"").toLowerCase().includes(q);
+    const va = vigentes.filter(filtra), oa = otros.filter(filtra);
+    return (<Pantalla titulo="Arrendatarios y contactos" contexto="Quién arrienda cada propiedad, y con quién hablas" gap="14">
+      <div className="mob-buscar">
+        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
+        <input value={buscaCon} onChange={e=>setBuscaCon(e.target.value)} placeholder="Buscar persona, propiedad o teléfono"/>
+      </div>
+      {va.length>0 && (
+        <Grupo titulo="Arrendatarios vigentes">
+          {va.map((x,i)=>(
+            <Fila key={"v"+i} ico={MI.persona} titulo={x.nombre} sub={x.sub}
+              valor={mobEstado(x.p)} onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
+          ))}
+        </Grupo>
+      )}
+      {oa.length>0 && (
+        <Grupo titulo="Otros contactos">
+          {oa.map((x,i)=>(
+            <Fila key={"c"+i} ico={MI.maletin} titulo={x.nombre} sub={x.sub}
+              onClick={()=>push({t:"contacto", id:x.c.id})}/>
+          ))}
+        </Grupo>
+      )}
+      {!va.length && !oa.length && <div className="mob-vacio">No hay personas que coincidan con “{buscaCon}”.</div>}
+      {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.contacto && AC.contacto()}>
+        <MobIco w={18}>{MI.mas}</MobIco> Nuevo contacto
+      </button>}
+      {hay("arrendatarios") && <Grupo>
+        <Fila icoNav="personas" titulo="Abrir la sección completa" sub="Editar, ver contratos y arrendatarios anteriores" onClick={()=>irSeccion("arrendatarios")}/>
+      </Grupo>}
+    </Pantalla>);
+  };
+
+  const pantallaContacto = (c)=>{
+    const nombre = contactNombre(c)||"Contacto";
+    const prop = (propiedades||[]).find(p=>String(p.id)===String(c.propId));
+    const tel = (c.whatsapp||c.telefono||"").replace(/[^\d+]/g,"");
+    return (<Pantalla titulo={nombre} contexto={c.tipo||"Contacto"} gap="14">
+      <div className="mob-acciones">
+        {!!tel && <button className="mob-accion" onClick={()=>window.open("https://wa.me/"+tel.replace(/^\+/,""),"_blank","noopener")}>
+          <MobIco w={19}>{MI.burbuja}</MobIco><span>WhatsApp</span></button>}
+        {!!c.telefono && <button className="mob-accion" onClick={()=>{ window.location.href="tel:"+c.telefono; }}>
+          <MobIco w={19}>{MI.telefono}</MobIco><span>Llamar</span></button>}
+        {!!c.email && <button className="mob-accion" onClick={()=>{ window.location.href="mailto:"+c.email; }}>
+          <MobIco w={19}>{MI.sobre}</MobIco><span>Correo</span></button>}
+        <button className="mob-accion" onClick={()=>irSeccion("arrendatarios")}>
+          <MobIco w={19}>{MI.lapiz}</MobIco><span>Editar</span></button>
+      </div>
+      <Grupo titulo="Datos">
+        <Fila sinIco titulo="RUT" valor={c.rut||"—"}/>
+        <Fila sinIco titulo="Teléfono" valor={c.telefono||"—"}/>
+        <Fila sinIco titulo="Correo" valor={c.email||"—"}/>
+        {!!c.direccion && <Fila sinIco titulo="Dirección" valor={c.direccion}/>}
+      </Grupo>
+      {prop && (
+        <Grupo titulo="Propiedad asociada">
+          <Fila ico={MI.edif} titulo={prop.name} sub={prop.comuna||""} onClick={()=>push({t:"prop", id:prop.id})}/>
+        </Grupo>
+      )}
+      {!!c.notas && <div className="mob-nota">{c.notas}</div>}
+    </Pantalla>);
+  };
+
+  /* ============ NIVEL 2 · MI CUENTA ============ */
+  const pantallaCuenta = ()=>(
+    <Pantalla titulo="Mi cuenta" contexto={(usuarioActual&&usuarioActual.email)||owner.email||""} gap="14">
+      <div className="mob-hub-top" style={{alignItems:"center", textAlign:"center"}}>
+        <div className="mob-avatar" style={{width:64, height:64, borderRadius:22, fontSize:22, margin:"0 auto"}}>
+          {mobIni((usuarioActual&&usuarioActual.nombre)||owner.name||"U")}
+        </div>
+        <div>
+          <div style={{fontSize:21, fontWeight:700, letterSpacing:"-.02em"}}>{(usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta"}</div>
+          <div className="mob-p2" style={{marginTop:4}}>{soloLectura ? "Invitado · solo lectura" : (rolActual||"Propietario")}</div>
+        </div>
+      </div>
+      <Grupo titulo="Datos">
+        <Fila sinIco titulo="Nombre" valor={owner.name||"—"}/>
+        <Fila sinIco titulo="RUT" valor={owner.rut||"—"}/>
+        <Fila sinIco titulo="Correo" valor={owner.email||"—"}/>
+        <Fila sinIco titulo="Teléfono" valor={owner.telefono||"—"}/>
+      </Grupo>
+      <Grupo titulo="Ajustes de la plataforma">
+        {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pasarela de pago" onClick={()=>irSeccion("config")}/>}
+        {hay("equipo") && <Fila icoNav="candado" titulo="Equipo y accesos" sub="Invitaciones, roles y portal del arrendatario" onClick={()=>irSeccion("equipo")}/>}
+        {hay("faq") && <Fila icoNav="pregunta" titulo="Preguntas frecuentes" onClick={()=>irSeccion("faq")}/>}
+      </Grupo>
+      <Grupo>
+        <Fila sinIco titulo="Cerrar sesión" chevron={false} onClick={()=>AC.salir && AC.salir()}/>
+      </Grupo>
+    </Pantalla>
+  );
+
+  /* ============ NIVEL 2 · ASISTENTE ============ */
+  const pantallaAsistente = ()=>(
+    <Pantalla titulo="Asistente" contexto="Ayuda con tu cartera" gap="14">
+      <div className="mob-card mark">
+        <div className="mob-eyebrow"><span className="mob-pt"></span>SUGERIDO PARA HOY</div>
+        <div style={{fontSize:18, fontWeight:700, lineHeight:1.35}}>
+          {(pendientes.length+atrasados.length)>0
+            ? "Envía el recordatorio a los "+(pendientes.length+atrasados.length)+" arrendatarios que no han pagado."
+            : "Todos los arriendos del mes están al día."}
+        </div>
+        <div className="mob-p2">El mensaje ya viene armado con el link de pago y la cuenta bancaria de la sociedad.</div>
+        <button className="mob-btn pri" onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]; p?openRem(p):notify("No hay arrendatarios pendientes"); }}>
+          Preparar recordatorio
+        </button>
+      </div>
+      <Grupo>
+        {hay("ai") && <Fila icoNav="chispas" titulo="Preguntarle al asesor" sub="Sabe de tu cartera, contratos, UF y del rubro" onClick={()=>irSeccion("ai")}/>}
+        <Fila ico={MI.burbuja} titulo="Chat del equipo" sub="Mensajes y archivos con quienes tienen acceso" onClick={()=>push({t:"equipo"})}/>
+        {hay("crm") && <Fila icoNav="embudo" titulo="CRM y leads" sub="Prospectos, visitas y respuestas rápidas" onClick={()=>irSeccion("crm")}/>}
+      </Grupo>
+      <Grupo titulo="Crear">
+        {!soloLectura && <Fila ico={MI.casita} titulo="Nueva propiedad" onClick={()=>AC.nuevaPropiedad && AC.nuevaPropiedad()}/>}
+        {!soloLectura && <Fila ico={MI.edif} titulo="Nueva sociedad" onClick={()=>AC.nuevaSociedad && AC.nuevaSociedad()}/>}
+        {!soloLectura && <Fila ico={MI.persona} titulo="Nuevo contacto" onClick={()=>AC.contacto && AC.contacto()}/>}
+        <Fila ico={MI.lupa} titulo="Consultar InfoCheck" onClick={()=>AC.infoCheck && AC.infoCheck()}/>
+      </Grupo>
+    </Pantalla>
+  );
+
+  /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
     <React.Fragment>
       <div className="mob-chat-head">
         <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
-        <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}><MobIco w={19}>{MI.chat}</MobIco></div>
+        <div className="mob-avatar" style={{width:40, height:40, borderRadius:13}}><MobIco w={19}>{MI.burbuja}</MobIco></div>
         <div className="info">
           <div className="nm">Chat del equipo</div>
           <div className="ctx">Con quienes tienen acceso a la plataforma</div>
@@ -5451,113 +6256,76 @@ function MobileApp(props){
     </React.Fragment>
   );
 
-  /* ---------- Pantalla Asistente ---------- */
-  const pantallaAsistente = ()=>(
-    <div className="mob-scr g14">
-      <HeaderMob eyebrow="AYUDA CON LA CARTERA" title="Asistente"/>
-      <div className="mob-card dom">
-        <div className="mob-eyebrow"><span className="mob-pt"></span>SUGERIDO PARA HOY</div>
-        <div style={{fontSize:18, fontWeight:700, color:"var(--mib)", lineHeight:1.35}}>
-          Envía el recordatorio a los {pendientes.length + atrasados.length} arrendatarios que no han pagado.
-        </div>
-        <div style={{fontSize:14, color:"var(--mtm)"}}>
-          El mensaje ya viene armado con el link de pago y la cuenta bancaria de la sociedad.
-        </div>
-        <button className="mob-btn pri" onClick={()=>{ if(atrasadoMasGrave) openRem(atrasadoMasGrave); else notify("No hay arrendatarios pendientes"); }}>
-          Preparar recordatorios <MobIco sw={2.4}>{MI.chevron}</MobIco>
-        </button>
-      </div>
-      {/* Atajo al asesor con IA de verdad, el mismo del escritorio. */}
-      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-        onClick={()=>abrirSeccion("ai")}>
-        <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Preguntarle al asesor</div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>Sabe de tu cartera, contratos, UF y del rubro</div>
-        </div>
-        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-      </button>
-
-      {/* Conversación con el resto del equipo, guardada en la plataforma. */}
-      <button className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-        onClick={()=>push({tipo:"equipo"})}>
-        <div className="mob-quad-ic"><MobIco>{MI.chat}</MobIco></div>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:15, fontWeight:700, color:"var(--mib)"}}>Chat del equipo</div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>Mensajes y archivos con quienes tienen acceso</div>
-        </div>
-        <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-      </button>
-
-      {/* Las 5 pestañas cubren el día a día; el resto de la plataforma se
-          alcanza desde aquí, completo y sin recortes. */}
-      {/* Las acciones que en el escritorio viven en la barra superior. */}
-      <div className="mob-eyebrow" style={{marginTop:2}}>CREAR</div>
-      <div className="mob-acciones">
-        <button className="mob-accion" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}><MobIco w={19}>{MI.casita}</MobIco><span>Nueva propiedad</span></button>
-        <button className="mob-accion" onClick={()=>AC.nuevaSociedad&&AC.nuevaSociedad()}><MobIco w={19}>{MI.edif}</MobIco><span>Nueva sociedad</span></button>
-        <button className="mob-accion" onClick={()=>AC.contacto&&AC.contacto()}><MobIco w={19}>{MI.chat}</MobIco><span>Nuevo contacto</span></button>
-        <button className="mob-accion" onClick={()=>AC.infoCheck&&AC.infoCheck()}><MobIco w={19}>{MI.lupa}</MobIco><span>Consultar InfoCheck</span></button>
-      </div>
-
-      <div className="mob-eyebrow" style={{marginTop:2}}>TODAS LAS SECCIONES</div>
-      <div style={{display:"flex", flexDirection:"column", gap:8}}>
-        {(secciones||[]).map(s=>(
-          <button key={s.id} className="mob-row" style={{width:"100%", textAlign:"left", cursor:"pointer", font:"inherit"}}
-            onClick={()=>abrirSeccion(s.id)}>
-            <div className="mob-quad-ic"><Ic n={s.ico} w={20} sw={2}/></div>
-            <div style={{flex:1, minWidth:0, fontSize:15, fontWeight:600, color:"var(--mib)",
-              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.label}</div>
-            <MobIco w={19} sw={2.4}>{MI.chevron}</MobIco>
-          </button>
-        ))}
-      </div>
-
-      {/* Quién está dentro y cómo salir: estaba al pie del menú lateral. */}
-      <div className="mob-row" style={{marginTop:4}}>
-        <div className="mob-avatar" style={{width:38, height:38, borderRadius:12, fontSize:13}}>{mobIni((usuarioActual&&usuarioActual.nombre)||owner.name||"U")}</div>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:14.5, fontWeight:700, color:"var(--mib)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
-            {((usuarioActual&&usuarioActual.nombre)||owner.name||"").split(" ")[0] || "Mi cuenta"}
-          </div>
-          <div style={{fontSize:13, color:"var(--mtm)"}}>{soloLectura ? "Solo lectura" : (rolActual||"Propietario")}</div>
-        </div>
-        <button className="mob-btn gray-sm" onClick={()=>AC.salir&&AC.salir()}>Salir</button>
-      </div>
-    </div>
-  );
-
-  /* ---------- Enrutado ---------- */
-  let vista;
+  /* ======================= ENRUTADO =======================
+     Una pila de pantallas: la de más arriba es la que se ve, y "Atrás" vuelve
+     al nivel anterior. Si la entidad abierta se borró, se cae con gracia a la
+     pestaña. */
+  const ent = top && top.id!=null ? (top.t==="soc" ? (socs||[]).find(s=>String(s.id)===String(top.id))
+                                   : top.t==="contacto" ? (contacts||[]).find(c=>String(c.id)===String(top.id))
+                                   : propPorId(top.id)) : null;
+  let vista = null;
   if(top){
-    if(top.tipo==="ficha")    vista = pantallaFicha(top.p);
-    else if(top.tipo==="chat") vista = pantallaChat(top.p);
-    else if(top.tipo==="equipo") vista = pantallaChatEquipo();
-    else if(top.tipo==="contrato") vista = pantallaContrato(top.p);
-  } else if(tab==="inicio")      vista = pantallaInicio();
-  else if(tab==="propiedades")   vista = pantallaPropiedades();
-  else if(tab==="cobros")        vista = pantallaCobros();
-  else if(tab==="finanzas")      vista = pantallaFinanzas();
-  else if(tab==="asistente")     vista = pantallaAsistente();
-  else vista = pantallaInicio();
+    if(top.t==="equipo")            vista = pantallaChatEquipo();
+    else if(top.t==="mas")          vista = pantallaMas();
+    else if(top.t==="cuenta")       vista = pantallaCuenta();
+    else if(top.t==="asistente")    vista = pantallaAsistente();
+    else if(top.t==="socs")         vista = pantallaSociedades();
+    else if(top.t==="contactos")    vista = pantallaContactos();
+    else if(ent){
+      if(top.t==="prop")            vista = pantallaPropHub(ent);
+      else if(top.t==="ficha")      vista = pantallaFicha(ent);
+      else if(top.t==="fichaBloque")vista = pantallaFichaBloque(ent, top.i);
+      else if(top.t==="fichaFilas") vista = pantallaFichaFilas(ent, top.cual);
+      else if(top.t==="fichaNotas") vista = pantallaFichaNotas(ent);
+      else if(top.t==="fichaExport")vista = pantallaFichaExport(ent);
+      else if(top.t==="arrendatario") vista = pantallaArrendatario(ent);
+      else if(top.t==="arriendo")   vista = pantallaArriendo(ent);
+      else if(top.t==="pagos")      vista = pantallaPagos(ent);
+      else if(top.t==="finProp")    vista = pantallaFinProp(ent);
+      else if(top.t==="docs")       vista = pantallaDocs(ent);
+      else if(top.t==="ubicacion")  vista = pantallaUbicacion(ent);
+      else if(top.t==="incid")      vista = pantallaIncid(ent);
+      else if(top.t==="bitac")      vista = pantallaBitac(ent);
+      else if(top.t==="histProp")   vista = pantallaHistProp(ent);
+      else if(top.t==="contrato")   vista = pantallaContrato(ent);
+      else if(top.t==="ajustes")    vista = pantallaAjustes(ent);
+      else if(top.t==="soc")        vista = pantallaSoc(ent);
+      else if(top.t==="contacto")   vista = pantallaContacto(ent);
+    }
+  }
+  if(!vista){
+    if(tab==="props")         vista = pantallaPropiedades();
+    else if(tab==="cobros")   vista = pantallaCobros();
+    else if(tab==="finanzas") vista = pantallaFinanzas();
+    else if(tab==="mas")      vista = pantallaMas();
+    else                      vista = pantallaInicio();
+  }
 
-  const tabs = [
-    ["inicio","Inicio",MI.casa],
-    ["propiedades","Propiedades",MI.edif],
-    ["cobros","Cobros",MI.tarj],
-    ["finanzas","Finanzas",MI.tend],
-    ["asistente","Asistente",MI.chat],
+  /* ---- Barra inferior: cinco destinos como máximo, y el quinto es "Más" ----
+     Se ocultan los que el rol no puede ver (el invitado no ve cobros ni
+     finanzas), nunca se agregan más. */
+  const tabsTodas = [
+    ["inicio","Inicio",MI.casa,null],
+    ["props","Propiedades",MI.edif,"props"],
+    ["cobros","Cobros",MI.tarj,"cobros"],
+    ["finanzas","Finanzas",MI.tend,"finanzas"],
+    ["mas","Más",MI.puntos,null],
   ];
+  const tabs = tabsTodas.filter(t=> !t[3] || hay(t[3]));
+  const pantallaCompleta = top && top.t==="equipo";
+
   return (<div className="mob-app" data-mob="1">
     {vista}
-    {top && (top.tipo==="chat" || top.tipo==="equipo") ? null : (
-      <div className="mob-tabs">
-        {tabs.map(([id,lb,ic])=>(
-          <button key={id} className={"mob-tab"+(tab===id && !top ? " on":"")} onClick={()=>irA(id)}>
-            <MobIco w={22}>{ic}</MobIco>
+    {pantallaCompleta ? null : (
+      <div className="mob-tabs" style={{gridTemplateColumns:"repeat("+tabs.length+",1fr)"}}>
+        {tabs.map(([id,lb,ic])=>{
+          const activo = tab===id && !top;
+          return (<button key={id} className={"mob-tab"+(activo?" on":"")} onClick={()=>irA(id)}
+            aria-current={activo?"page":undefined}>
+            <MobIco w={23} sw={activo?2.4:1.9}>{ic}</MobIco>
             <span className="lb">{lb}</span>
-          </button>
-        ))}
+          </button>);
+        })}
       </div>
     )}
   </div>);
@@ -5763,6 +6531,9 @@ function App(){
   // se ven las 5 pestañas). Es el puente para que nada quede fuera de alcance:
   // bitácora, incidencias, comunicaciones, CRM, informes, la ficha entera…
   const [movilCompleto,setMovilCompleto]=useState(null);
+  /* La app móvil publica aquí su navegación para que el buscador global pueda
+     abrir una propiedad, una persona o un bloque de la ficha sin salir de ella. */
+  const mobNav = useRef(null);
   const versionNueva = useVersionNueva();
   useEffect(()=>{
     window.__sinAcceso=()=>{ setAcceso(null); setPuerta("entrar"); };
@@ -8506,13 +9277,39 @@ function App(){
     window.addEventListener("keydown",h); return ()=>window.removeEventListener("keydown",h); },[mBusca]);
   const cerrarBusca=()=>{ setMBusca(false); setBusca(""); setBusSel(0); };
   const goB=(fn)=>()=>{ cerrarBusca(); fn(); };
+  /* El buscador es global y sus resultados tienen que ABRIR la cosa buscada.
+     En el escritorio eso es cambiar de sección; en el teléfono, empujar la
+     pantalla nativa que corresponde. Antes, en el móvil, tocar un resultado
+     cambiaba `tab` por dentro y no se veía nada: la sección quedaba oculta
+     detrás de la app móvil. */
+  const irTab=(id, prop)=>{
+    if(prop){ setSel(prop); setFilter("todas"); setSocFilter("todas"); } else setSel(null);
+    setTab(id);
+    if(movil) setMovilCompleto(id);
+    try{ window.scrollTo(0,0); }catch(_e){}
+  };
+  /* Devuelve true si el destino se resolvió dentro de la app móvil. */
+  const irMovil=(fn)=>{ if(movil && mobNav.current){ fn(mobNav.current); return true; } return false; };
   const normTxt=(x)=> String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
   const _tpls=(plantillas&&plantillas.length?plantillas:seedPlantillas());
-  const _abrirFichaB=()=>{ if(props.length===1) abrirFicha(props[0]); else { setTab("props"); notify("Abre una propiedad y toca Ficha completa"); } };
-  const _verFichaSec=(secT)=>{ if(props.length===1) abrirFicha(props[0]); else { setTab("props"); notify("Abre una propiedad › Ficha completa › "+secT); } };
+  const _abrirFichaB=()=>{
+    if(props.length===1){ if(movil && mobNav.current){ mobNav.current.irA("props"); mobNav.current.push({t:"ficha", id:props[0].id}); } else abrirFicha(props[0]); return; }
+    if(movil && mobNav.current){ mobNav.current.irA("props"); notify("Abre una propiedad y toca Ficha completa"); return; }
+    setTab("props"); notify("Abre una propiedad y toca Ficha completa");
+  };
+  const _verFichaSec=(secT)=>{
+    const i = FICHA_SECS.findIndex(x=>x.t===secT);
+    if(props.length===1){
+      if(movil && mobNav.current){ mobNav.current.irA("props"); mobNav.current.push({t:"ficha", id:props[0].id}); if(i>=0) mobNav.current.push({t:"fichaBloque", id:props[0].id, i}); }
+      else abrirFicha(props[0]);
+      return;
+    }
+    if(movil && mobNav.current){ mobNav.current.irA("props"); notify("Abre una propiedad › Ficha completa › "+secT); return; }
+    setTab("props"); notify("Abre una propiedad › Ficha completa › "+secT);
+  };
   const BUSCABLE=(()=>{
     const out=[];
-    NAV.forEach(n=> out.push({cat:"Secciones",ico:n.ico,title:n.label,sub:(HEAD[n.id]&&HEAD[n.id][1])||"",kw:n.id,run:goB(()=>{setTab(n.id);setSel(null);})}));
+    NAV.forEach(n=> out.push({cat:"Secciones",ico:n.ico,title:n.label,sub:(HEAD[n.id]&&HEAD[n.id][1])||"",kw:n.id,run:goB(()=>irTab(n.id))}));
     const F=[
       {t:"Ficha completa de la propiedad",kw:"ficha levantamiento campos llenar pdf word excel",tab:"props",sub:"Abrir Ficha completa de una propiedad",run:_abrirFichaB},
       {t:"Enlace interactivo para llenar la ficha desde fuera",kw:"enlace publico llenar formulario compartir link",tab:"props",sub:"En la Ficha completa › Enlace interactivo",run:_abrirFichaB},
@@ -8540,13 +9337,17 @@ function App(){
       {t:"Asistente con IA",kw:"asistente ia chat preguntar",tab:"ai"},
       {t:"Configuración de la cuenta",kw:"configuracion ajustes datos propietario pasarela",tab:"config"},
     ];
-    F.forEach(f=> out.push({cat:"En la plataforma",ico:f.ico||"flecha",title:f.t,sub:f.sub||("Ir a "+((HEAD[f.tab]&&HEAD[f.tab][0])||f.tab)),kw:(f.kw||"")+" "+f.t,run:goB(f.run||(()=>{setTab(f.tab);setSel(null);}))}));
-    props.forEach(p=> out.push({cat:"Propiedades",ico:"casas",title:p.name,sub:[p.address,p.comuna].filter(Boolean).join(", ")||"Propiedad",kw:[p.name,p.address,p.comuna,p.tenant].filter(Boolean).join(" "),run:goB(()=>{setSel(p);setTab("props");setFilter("todas");})}));
-    props.filter(p=>p.tenant).forEach(p=> out.push({cat:"Arrendatarios",ico:"persona",title:p.tenant,sub:"Arrendatario · "+p.name,kw:[p.tenant,p.tenantEmail,p.tenantPhone,p.tenantWhatsapp].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
-    (contacts||[]).forEach(c=> out.push({cat:"Arrendatarios",ico:"persona",title:(c.nombre||c.name||"Contacto"),sub:"Contacto guardado",kw:[c.nombre,c.name,c.email,c.telefono,c.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("arrendatarios");})}));
-    (leads||[]).forEach(l=>{ var e=CRM_ESTADOS.find(x=>x.id===l.estado); out.push({cat:"Leads (CRM)",ico:"diana",title:l.nombre,sub:"Lead · "+((e&&e.label)||l.estado)+(l.comuna?(" · "+l.comuna):""),kw:[l.nombre,l.telefono,l.email,l.comuna,l.fuente,l.notas].filter(Boolean).join(" "),run:goB(()=>{setTab("crm");})}); });
-    socs.forEach(so=> out.push({cat:"Sociedades",ico:"edificio",title:so.name,sub:"Sociedad"+(so.rut?(" · "+so.rut):""),kw:[so.name,so.rut].filter(Boolean).join(" "),run:goB(()=>{setTab("sociedades");})}));
-    _tpls.forEach(t=> out.push({cat:"Plantillas",ico:t.ico||"",title:t.label,sub:"Plantilla de comunicación",kw:[t.label,t.asunto].filter(Boolean).join(" "),run:goB(()=>{setComProp(props[0]||null);setTab("comunicaciones");})}));
+    F.forEach(f=> out.push({cat:"En la plataforma",ico:f.ico||"flecha",title:f.t,sub:f.sub||("Ir a "+((HEAD[f.tab]&&HEAD[f.tab][0])||f.tab)),kw:(f.kw||"")+" "+f.t,run:goB(f.run||(()=>irTab(f.tab)))}));
+    props.forEach(p=> out.push({cat:"Propiedades",ico:"casas",title:p.name,sub:[p.address,p.comuna].filter(Boolean).join(", ")||"Propiedad",kw:[p.name,p.address,p.comuna,p.tenant].filter(Boolean).join(" "),
+      run:goB(()=>{ if(irMovil(n=>{ n.irA("props"); n.push({t:"prop", id:p.id}); })) return; setSel(p);setTab("props");setFilter("todas"); })}));
+    props.filter(p=>p.tenant).forEach(p=> out.push({cat:"Arrendatarios",ico:"persona",title:p.tenant,sub:"Arrendatario · "+p.name,kw:[p.tenant,p.tenantEmail,p.tenantPhone,p.tenantWhatsapp].filter(Boolean).join(" "),
+      run:goB(()=>{ if(irMovil(n=>{ n.irA("mas"); n.push({t:"arrendatario", id:p.id}); })) return; irTab("arrendatarios"); })}));
+    (contacts||[]).forEach(c=> out.push({cat:"Arrendatarios",ico:"persona",title:(c.nombre||c.name||"Contacto"),sub:"Contacto guardado",kw:[c.nombre,c.name,c.email,c.telefono,c.rut].filter(Boolean).join(" "),
+      run:goB(()=>{ if(irMovil(n=>{ n.irA("mas"); n.push({t:"contactos"}); n.push({t:"contacto", id:c.id}); })) return; irTab("arrendatarios"); })}));
+    (leads||[]).forEach(l=>{ var e=CRM_ESTADOS.find(x=>x.id===l.estado); out.push({cat:"Leads (CRM)",ico:"diana",title:l.nombre,sub:"Lead · "+((e&&e.label)||l.estado)+(l.comuna?(" · "+l.comuna):""),kw:[l.nombre,l.telefono,l.email,l.comuna,l.fuente,l.notas].filter(Boolean).join(" "),run:goB(()=>irTab("crm"))}); });
+    socs.forEach(so=> out.push({cat:"Sociedades",ico:"edificio",title:so.name,sub:"Sociedad"+(so.rut?(" · "+so.rut):""),kw:[so.name,so.rut].filter(Boolean).join(" "),
+      run:goB(()=>{ if(irMovil(n=>{ n.irA("props"); n.push({t:"socs"}); n.push({t:"soc", id:so.id}); })) return; irTab("sociedades"); })}));
+    _tpls.forEach(t=> out.push({cat:"Plantillas",ico:t.ico||"",title:t.label,sub:"Plantilla de comunicación",kw:[t.label,t.asunto].filter(Boolean).join(" "),run:goB(()=>{setComProp(props[0]||null);irTab("comunicaciones");})}));
     FICHA_SECS.forEach(sec=>{ out.push({cat:"Ficha: secciones",ico:sec.ico,title:sec.t,sub:"Sección de la Ficha completa",kw:"ficha "+sec.t,run:goB(()=>_verFichaSec(sec.t))});
       sec.f.forEach(f=> out.push({cat:"Ficha: campos",ico:sec.ico,title:f[1],sub:"Ficha completa › "+sec.t,kw:"ficha "+f[1]+" "+sec.t,run:goB(()=>_verFichaSec(sec.t))})); });
     return out;
@@ -8581,6 +9382,30 @@ function App(){
       indLoading={indLoading} indRecien={indRecien} refrescarIndicadores={refrescarIndicadores}
       alertas={alertas} irAlerta={(a)=>{ irAlerta(a); setMovilCompleto(a.ir==="cobros"?"cobros":"props"); }}
       usuarioActual={usuarioActual} rolActual={rolActual}
+      /* Estado real de guardado: el móvil lo muestra como "Autoguardado" en
+         cada pantalla de edición, para que nadie busque un botón Guardar. */
+      guardado={guardado}
+      patchProp={patchProp}
+      /* La ficha completa, para editarla por bloques desde el teléfono. Son
+         los mismos datos y las mismas funciones de exportación del escritorio:
+         lo que se escribe aquí queda en p.fichaCompleta y se sube solo. */
+      ficha={{
+        SECS: FICHA_SECS,
+        get: (p)=>getFicha(p),
+        set: (p,k,v)=> patchProp(p.id, x=>({...x, fichaCompleta:{...getFicha(x), [k]:v}})),
+        setMuchos: (p,obj)=> patchProp(p.id, x=>({...x, fichaCompleta:{...getFicha(x), ...obj}})),
+        vista: (p)=> setFichaPreview(buildFichaCompletaHTML(p, getFicha(p))),
+        pdf:   (p)=> descargarFichaCompletaPDF(p, getFicha(p)),
+        word:  (p)=> descargarFichaCompletaWord(p, getFicha(p)),
+        excel: (p)=> descargarFichaCompletaExcel(p, getFicha(p)),
+        html:  (p)=> descargarFichaCompletaHTML2(p, getFicha(p)),
+        wa:    (p)=> compartirFichaCompletaWA(p, getFicha(p)),
+        mail:  (p)=> compartirFichaCompletaMail(p, getFicha(p)),
+        sms:   (p)=> compartirFichaCompletaSMS(p, getFicha(p)),
+        enlace:(p)=> abrirFicha(p),
+      }}
+      cerrarSeccion={()=>setMovilCompleto(null)}
+      nav={mobNav}
       /* Todas las acciones del escritorio, para que ninguna quede sin alcance
          desde el teléfono. Son las mismas funciones, no copias. */
       acciones={{
@@ -8600,6 +9425,7 @@ function App(){
         infoCheck:()=>setMInfo(true),
         contacto:()=>setMContact(true),
         moverPropiedad:moverPropiedad,
+        levantamiento:abrirLevantamiento,
         salir:()=> sesion ? cerrarSesion() : salirDeLaCuenta(),
       }}
       secciones={NAV.filter(n=>NAV_VIS.some(g=>g.ids.includes(n.id)))}
