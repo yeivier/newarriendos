@@ -1484,6 +1484,27 @@
     padding:8px 13px; font-family:inherit; font-size:13px; font-weight:600; color:var(--mtx); cursor:pointer;
     white-space:nowrap; min-height:36px; }
   .mob-chip2.on{ background:var(--mib); color:#fff; border-color:var(--mib); }
+  /* Finanzas por propiedad, en barras. Más scannable que una lista de cifras:
+     la barra dice cuánto pesa cada una y (en Utilidad) hacia dónde. */
+  .mob-finrank{ display:flex; flex-direction:column; gap:2px; background:var(--msf); border:1px solid var(--mln);
+    border-radius:16px; padding:6px 4px; }
+  .mob-finrow{ display:flex; flex-direction:column; gap:7px; width:100%; text-align:left; cursor:pointer;
+    background:transparent; border:none; font-family:inherit; padding:12px 12px 13px; border-radius:12px; position:relative; }
+  .mob-finrow:active{ background:var(--mfl2); }
+  .mob-finrow + .mob-finrow::before{ content:""; position:absolute; top:0; left:12px; right:12px; height:1px; background:var(--mln); }
+  .mob-finrow .top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .mob-finrow .nm{ font-size:15.5px; font-weight:600; color:var(--mtx); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; min-width:0; letter-spacing:-.01em; }
+  .mob-finrow .am{ font-size:15.5px; font-weight:750; color:var(--mtx); flex-shrink:0; font-variant-numeric:tabular-nums; }
+  .mob-finrow .am.neg{ color:var(--mtm); }
+  /* La barra. En modo diverging (hay pérdidas) el centro es el eje. */
+  .mob-finbar{ position:relative; height:8px; border-radius:4px; background:var(--mfl2); overflow:hidden; }
+  .mob-finbar > i{ position:absolute; top:0; height:100%; border-radius:4px; }
+  .mob-finbar > i.pos{ left:0; background:var(--mib); }
+  .mob-finbar.div::after{ content:""; position:absolute; left:50%; top:-1px; bottom:-1px; width:1px; background:var(--mln2,rgba(60,60,67,.28)); }
+  .mob-finbar.div > i.pos{ left:50%; }
+  .mob-finbar.div > i.neg{ right:50%; left:auto; background:repeating-linear-gradient(-45deg,var(--mtm2) 0 3px,transparent 3px 6px); }
+  .mob-finrow .soc{ font-size:12px; color:var(--mtm); }
   /* Tarjetas de "Más": rejilla de 3, icono arriba y nombre corto abajo, como
      una pantalla de inicio. Más aire y menos apretado que una lista. */
   .mob-mas-sec{ display:flex; flex-direction:column; gap:9px; }
@@ -6414,6 +6435,14 @@ function MobileApp(props){
   };
 
   /* ==================== NIVEL 1 · FINANZAS ==================== */
+  /* Nombre de sociedad, corto y legible para las barras: quita el ruido
+     ("RENTAS E INVERSIONES BETA SPA" -> "Beta"). */
+  const finSocCorto = (n)=>{
+    const limpio = String(n||"").replace(/\b(RENTAS|INVERSIONES|INVERSION|SPA|EIRL|LTDA|LIMITADA|SOCIEDAD|INMOBILIARIA|E|Y|DE|DEL|LA|EL|LOS|LAS)\b/gi," ").replace(/\s+/g," ").trim();
+    const base = limpio || String(n||"").trim();
+    return base.split(" ").map(w=> w? w[0].toUpperCase()+w.slice(1).toLowerCase() : w).join(" ");
+  };
+
   const pantallaFinanzas = ()=>{
     const utilTot   = rentals.reduce((s,p)=> s + utilidadMes(p,uf), 0);
     const divTot    = propiedades.reduce((s,p)=> s + divCLP(p,uf), 0);
@@ -6443,13 +6472,44 @@ function MobileApp(props){
           <span className="lb">{propiedades.length} propiedades</span>
         </div>
       </MobDeslizable>
-      <Grupo titulo="Por propiedad" nota="Cada propiedad abre su propio balance: ingresos, dividendo, contribuciones, seguros y gastos.">
-        {orden.map(p=>(
-          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
-            sub={socDe(p).name||p.comuna||""} valor={mobPlata(valorDe(p))} valorFuerte
-            onClick={()=>push({t:"finProp", id:p.id})}/>
-        ))}
-      </Grupo>
+      {/* Por propiedad, como barras y no como lista: la barra deja ver de un
+          vistazo cuál pesa más y —en Utilidad— cuáles ganan y cuáles pierden.
+          Se ordena de mayor a menor y cada barra abre el balance de esa
+          propiedad. */}
+      {(()=>{
+        const maxAbs = Math.max(1, ...orden.map(x=>Math.abs(valorDe(x))));
+        const hayNeg = orden.some(x=>valorDe(x)<0);
+        const nota = finSeg==="utilidad"
+          ? "La barra va a la derecha si gana y a la izquierda si pierde. Toca una para ver su balance."
+          : "El largo de la barra es cuánto pesa cada propiedad. Toca una para ver su balance.";
+        return (
+          <div className="mob-bloque">
+            <h2 className="mob-h2">Por propiedad</h2>
+            <div className="mob-finrank">
+              {orden.map(p=>{
+                const v = valorDe(p);
+                const w = Math.round(Math.abs(v)/maxAbs*100);
+                const neg = v<0;
+                return (
+                  <button key={p.id} className="mob-finrow" onClick={()=>push({t:"finProp", id:p.id})}>
+                    <span className="top">
+                      <span className="nm">{p.name}</span>
+                      <span className={"am"+(neg?" neg":"")}>{mobPlata(v)}</span>
+                    </span>
+                    <span className={"mob-finbar"+(hayNeg?" div":"")}>
+                      {hayNeg
+                        ? <i className={neg?"neg":"pos"} style={{width:(w/2)+"%"}}></i>
+                        : <i className="pos" style={{width:Math.max(2,w)+"%"}}></i>}
+                    </span>
+                    <span className="soc">{finSocCorto(socDe(p).name)||p.comuna||""}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mob-nota">{nota}</div>
+          </div>
+        );
+      })()}
       {hay("informes") && (
         <Grupo titulo="Ir más lejos">
           <Fila icoNav="tendencia" titulo="Informes y cartolas" sub="Para ti, tu contador o los dueños" onClick={()=>irSeccion("informes")}/>
