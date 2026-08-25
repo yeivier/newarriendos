@@ -1475,8 +1475,11 @@
   .mob-iamsg.yo{ align-self:flex-end; background:var(--mib); color:#fff; border-bottom-right-radius:5px; }
   .mob-iamsg.ia{ align-self:flex-start; background:var(--msf); border:1px solid var(--mln); color:var(--mtx); border-bottom-left-radius:5px; }
   .mob-iamsg .et{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mtm); margin-bottom:4px; }
-  .mob-iabar{ display:flex; gap:8px; align-items:flex-end; }
-  .mob-iabar .mob-inp{ flex:1; }
+  .mob-iabar{ display:flex; gap:8px; align-items:stretch; }
+  .mob-iabar .mob-inp{ flex:1 1 auto; min-width:0; }
+  /* El botón primario es de ancho completo por defecto; aquí NO: si lo fuera,
+     se comería el campo y no se podría escribir. */
+  .mob-iabar > .mob-btn.pri{ width:auto; flex:0 0 auto; min-width:52px; padding:0 16px; min-height:44px; }
   /* Fila de chips-filtro (CRM): se desplaza de lado, no se apila. */
   .mob-chips-fila{ display:flex; gap:8px; overflow-x:auto; margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
   .mob-chips-fila::-webkit-scrollbar{ display:none; }
@@ -5701,10 +5704,12 @@ function cotVeredicto(c){
    discusión entre "la barata" y "la rápida". */
 function cotPorDia(c){
   if(!c.mejor || !c.barata || c.mejor.id===c.barata.id) return null;
-  const extra = c.mejor.total - cotTotal(c.barata);
-  const antes = num(c.barata.dias) - num(c.mejor.dias);
+  const extra = c.mejor.total - cotTotal(c.barata);      // cuánto más cuesta la elegida
+  const antes = num(c.barata.dias) - num(c.mejor.dias);  // cuántos días antes entra
   if(extra<=0 || antes<=0) return null;
-  return Math.round(extra/antes);
+  return { clp: Math.round(extra/antes), extra, antes,
+    quien: (c.mejor.prov||"").trim() || "la elegida",
+    otro:  (c.barata.prov||"").trim() || "la más barata" };
 }
 
 /* ---- Trámites -------------------------------------------------------------
@@ -8035,7 +8040,7 @@ function MobileApp(props){
             <span className="lb">{num(cmp.mejor.dias)||"—"} días · {num(cmp.mejor.garantia)||0} m. garantía</span>
           </div>
           <div className="mob-porque">{cotVeredicto(cmp)}</div>
-          {porDia!=null && <div className="mob-porque">Cada día que adelantas te cuesta {CLP(porDia)}.</div>}
+          {porDia && <div className="mob-porque">Adelantar cuesta {CLP(porDia.clp)} por día: son los {mobPlata(porDia.extra)} de más de {porDia.quien}, repartidos en los {porDia.antes} {porDia.antes===1?"día":"días"} que entra antes que {porDia.otro} ({mobPlata(porDia.extra)} ÷ {porDia.antes}).</div>}
         </MobDeslizable>
       ) : (
         <div className="mob-vacio">Agrega dos o más presupuestos y aquí aparece cuál conviene y por qué.</div>
