@@ -1484,6 +1484,22 @@
     padding:8px 13px; font-family:inherit; font-size:13px; font-weight:600; color:var(--mtx); cursor:pointer;
     white-space:nowrap; min-height:36px; }
   .mob-chip2.on{ background:var(--mib); color:#fff; border-color:var(--mib); }
+  /* Tarjetas de "Más": rejilla de 3, icono arriba y nombre corto abajo, como
+     una pantalla de inicio. Más aire y menos apretado que una lista. */
+  .mob-mas-sec{ display:flex; flex-direction:column; gap:9px; }
+  .mob-mas-sec > .mob-gtit{ margin:2px 2px 0; }
+  .mob-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .mob-cardg{ position:relative; display:flex; flex-direction:column; align-items:flex-start;
+    justify-content:space-between; gap:16px; background:var(--msf); border:1px solid var(--mln);
+    border-radius:16px; padding:14px 13px; min-height:100px; font-family:inherit; text-align:left;
+    cursor:pointer; color:var(--mtx); }
+  .mob-cardg:active{ background:var(--mfl2); }
+  .mob-cardg .ic{ color:var(--mtx); display:flex; }
+  .mob-cardg .lb{ font-size:14.5px; font-weight:650; line-height:1.18; letter-spacing:-.01em; }
+  .mob-cardg .bdg{ position:absolute; top:10px; right:10px; min-width:22px; height:22px; padding:0 6px;
+    border-radius:11px; background:var(--mib); color:#fff; font-size:12px; font-weight:800; line-height:22px;
+    text-align:center; }
+  @media(max-width:359px){ .mob-cards{ grid-template-columns:repeat(2,1fr); } }
 
 
 
@@ -5439,6 +5455,26 @@ const MOB_FICHA_CORTO = {
 /* Los grupos de "Más", ordenados por intención de uso y no por el orden en que
    fueron apareciendo las secciones. `id` apunta a la sección real; `esp` a una
    pantalla nativa del teléfono. */
+/* En las tarjetas de "Más" el nombre va corto —cabe en la tarjeta y se lee de
+   un vistazo—; el nombre completo vive en la pantalla que abre. */
+const MOB_CARD_CORTO = {
+  "Arrendatarios y contactos":"Contactos",
+  "Chat del equipo":"Mensajes",
+  "Comparar presupuestos":"Presupuestos",
+  "Planos y lectura con IA":"Planos IA",
+  "Material del equipo":"Material",
+  "Documentos legales":"Legal",
+  "Preguntas frecuentes":"Preguntas",
+  "Balance por propiedad":"Balance",
+  "Cobros del mes":"Cobros",
+  "Consultar InfoCheck":"InfoCheck",
+  "Ficha de levantamiento":"Levantamiento",
+  "Buscar en la plataforma":"Buscar",
+  "CRM y leads":"CRM",
+  "Equipo y accesos":"Accesos",
+  "Mi perfil":"Perfil"
+};
+
 const MOB_MAS_GRUPOS = [
   { label:"Gestión diaria", items:[
     { esp:"contactos", ico:"personas", label:"Arrendatarios y contactos", sub:"Quién arrienda cada propiedad" },
@@ -5818,6 +5854,123 @@ function MobDeslizable({ idx, total, onCambio, className, style, children }){
 /* Las tres vistas de Finanzas, en el orden en que se ven. */
 const MOB_FIN_SEGS = ["utilidad","dividendos","gastos"];
 
+/* ---------- Piezas de interfaz compartidas (nivel de módulo) ----------
+   Viven fuera de MobileApp a propósito. Si se definieran dentro, cada tecla
+   que cambia el estado volvería a crearlas y React desmontaría y montaría la
+   pantalla entera: el campo perdía el foco tras la primera letra. Como piezas
+   estables, lo que cambia (navegación, guardado, bandeja) llega por contexto y
+   solo provoca un re-render, nunca un remontaje. */
+const MobCtx = React.createContext({});
+
+const Chev = ()=> <span className="chev"><MobIco w={17} sw={2.4}>{MI.chevron}</MobIco></span>;
+
+const Fila = ({ ico, icoNav, titulo, sub, valor, valorFuerte, extra, onClick, chevron, sinIco })=>{
+  const dentro = (<React.Fragment>
+    {!sinIco && <span className="ic">{icoNav ? <Ic n={icoNav} w={21} sw={1.9}/> : <MobIco w={21} sw={1.9}>{ico}</MobIco>}</span>}
+    <span className="tx"><span className="t">{titulo}</span>{sub?<span className="s">{sub}</span>:null}</span>
+    {extra||null}
+    {valor!=null && valor!=="" ? <span className={"val"+(valorFuerte?" dato":"")}>{valor}</span> : null}
+    {(chevron===undefined ? !!onClick : chevron) ? <Chev/> : null}
+  </React.Fragment>);
+  const cls = "mob-cell"+(sinIco?" sin-ico":"")+(onClick?"":" quieta");
+  return onClick
+    ? <button className={cls} onClick={onClick} type="button">{dentro}</button>
+    : <div className={cls}>{dentro}</div>;
+};
+const Grupo = ({ titulo, nota, children })=>(
+  <div>
+    {titulo ? <div className="mob-gtit">{titulo}</div> : null}
+    <div className="mob-group">{children}</div>
+    {nota ? <div className="mob-nota">{nota}</div> : null}
+  </div>
+);
+/* Barra "6/12" de un bloque de formulario. */
+const Progreso = ({ hechos, total })=>(
+  <span className="mob-prog-min">
+    <span className="n">{hechos}/{total}</span>
+    <span className="b"><i style={{width: total? Math.round(100*hechos/total)+"%" : "0%"}}></i></span>
+  </span>
+);
+/* Aviso discreto de autoguardado: nunca obliga a pulsar Guardar. */
+const Guardado = ()=>{
+  const { guardado } = React.useContext(MobCtx);
+  return (
+    <span className={"mob-guardado"+(guardado==="guardando"?" grabando":"")}>
+      {guardado==="guardando" ? <><span className="pt"></span>Guardando…</>
+        : guardado==="error"  ? <><span className="pt"></span>Sin guardar · revisa la conexión</>
+        : <><MobIco w={14} sw={2.4}>{MI.check}</MobIco>Autoguardado</>}
+    </span>
+  );
+};
+
+const BotonBuscar = ()=>{
+  const { buscar } = React.useContext(MobCtx);
+  return (
+    <button className="mob-back" onClick={buscar} title="Buscar en la plataforma" aria-label="Buscar en la plataforma">
+      <MobIco w={19}>{MI.lupa}</MobIco>
+    </button>
+  );
+};
+/* Campana de la bandeja: el punto rojo solo cuando de verdad hay algo nuevo.
+   Es la única mancha de color de la app y por eso se reserva para esto. */
+const BotonBandeja = ()=>{
+  const { push, bandejaCuenta } = React.useContext(MobCtx);
+  const n = bandejaCuenta ? bandejaCuenta() : 0;
+  return (
+    <button className="mob-back mob-campana" onClick={()=>push({t:"bandeja"})}
+      title="Bandeja de entrada" aria-label={n ? ("Bandeja: "+n+" sin ver") : "Bandeja de entrada"}>
+      <MobIco w={19} sw={1.9}>{MI.campana}</MobIco>
+      {n>0 && <span className="pip">{n>9?"9+":n}</span>}
+    </button>
+  );
+};
+/* Cabecera de pestaña (nivel 1): título grande, búsqueda y cuenta. */
+const HeaderMob = ({ eyebrow, title, sub, right })=>{
+  const { saltoDe, top, volverSalto, push, owner } = React.useContext(MobCtx);
+  return (
+    <div className="mob-header">
+      <div style={{minWidth:0, flex:1}}>
+        {eyebrow ? <div className="mob-mono" style={{marginBottom:6}}>{eyebrow}</div> : null}
+        <h1 className="mob-hero-h">{title}</h1>
+        {sub && <div className="mob-hero-sub">{sub}</div>}
+      </div>
+      <div style={{display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
+        {saltoDe && !top && (
+          <button className="mob-back" onClick={volverSalto} title="Volver" aria-label="Volver">
+            <MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco>
+          </button>
+        )}
+        <BotonBandeja/>
+        <BotonBuscar/>
+        {right !== undefined
+          ? right
+          : <button className="mob-avatar" style={{border:"none", fontFamily:"inherit", cursor:"pointer"}}
+              onClick={()=>push({t:"cuenta"})} aria-label="Mi cuenta">{mobIni((owner&&owner.name)||"Javier")}</button>}
+      </div>
+    </div>
+  );
+};
+/* Pantalla empujada (nivel 2 en adelante): atrás, título, contexto y nada más. */
+const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>{
+  const { pop } = React.useContext(MobCtx);
+  return (
+    <div className={"mob-scr"+(gap==="14"?" g14":"")+(pie?" con-pie":"")}>
+      <div className="mob-nav">
+        <button className="mob-back" onClick={atras||pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <span className="sp"></span>
+        {accion||null}
+        <BotonBuscar/>
+      </div>
+      <div className="mob-titulo">
+        <h1 className="mob-h-scr">{titulo}</h1>
+        {contexto ? <div className="ctx">{contexto}</div> : null}
+      </div>
+      {children}
+      {pie||null}
+    </div>
+  );
+};
+
 function MobileApp(props){
   const {
     props: propiedades, socs, contacts, uf, owner, soloLectura,
@@ -5847,6 +6000,10 @@ function MobileApp(props){
   const [tramPid, setTramPid] = React.useState("");
   // Secciones profundas: canal de la plantilla, y filtros/nota del CRM.
   const [comCanal, setComCanal] = React.useState("cuerpoCorreo");
+  // Asesor IA que compara presupuestos preguntando lo que le falte.
+  const [cotChat, setCotChat] = React.useState({});   // { [compId]: [{role,content}] }
+  const [cotBusy, setCotBusy] = React.useState(false);
+  const [cotPreg, setCotPreg] = React.useState("");
   const [crmBusca, setCrmBusca] = React.useState("");
   const [crmFiltro, setCrmFiltro] = React.useState("todos");
   const [crmNota, setCrmNota] = React.useState("");
@@ -5926,106 +6083,6 @@ function MobileApp(props){
 
   const abrirCobrar = (p)=>{ if(!p) return; (AC.registrarPago || setMPay)(p); };
   const abrirRecord = (p)=> openRem && openRem(p);
-
-  /* ---------- Piezas de interfaz compartidas ---------- */
-
-  const Chev = ()=> <span className="chev"><MobIco w={17} sw={2.4}>{MI.chevron}</MobIco></span>;
-
-  /* Fila de lista agrupada (el patrón de Ajustes de iOS). */
-  const Fila = ({ ico, icoNav, titulo, sub, valor, valorFuerte, extra, onClick, chevron, sinIco })=>{
-    const dentro = (<React.Fragment>
-      {!sinIco && <span className="ic">{icoNav ? <Ic n={icoNav} w={21} sw={1.9}/> : <MobIco w={21} sw={1.9}>{ico}</MobIco>}</span>}
-      <span className="tx"><span className="t">{titulo}</span>{sub?<span className="s">{sub}</span>:null}</span>
-      {extra||null}
-      {valor!=null && valor!=="" ? <span className={"val"+(valorFuerte?" dato":"")}>{valor}</span> : null}
-      {(chevron===undefined ? !!onClick : chevron) ? <Chev/> : null}
-    </React.Fragment>);
-    const cls = "mob-cell"+(sinIco?" sin-ico":"")+(onClick?"":" quieta");
-    return onClick
-      ? <button className={cls} onClick={onClick} type="button">{dentro}</button>
-      : <div className={cls}>{dentro}</div>;
-  };
-  const Grupo = ({ titulo, nota, children })=>(
-    <div>
-      {titulo ? <div className="mob-gtit">{titulo}</div> : null}
-      <div className="mob-group">{children}</div>
-      {nota ? <div className="mob-nota">{nota}</div> : null}
-    </div>
-  );
-  /* Barra "6/12" de un bloque de formulario. */
-  const Progreso = ({ hechos, total })=>(
-    <span className="mob-prog-min">
-      <span className="n">{hechos}/{total}</span>
-      <span className="b"><i style={{width: total? Math.round(100*hechos/total)+"%" : "0%"}}></i></span>
-    </span>
-  );
-  /* Aviso discreto de autoguardado: nunca obliga a pulsar Guardar. */
-  const Guardado = ()=>(
-    <span className={"mob-guardado"+(guardado==="guardando"?" grabando":"")}>
-      {guardado==="guardando" ? <><span className="pt"></span>Guardando…</>
-        : guardado==="error"  ? <><span className="pt"></span>Sin guardar · revisa la conexión</>
-        : <><MobIco w={14} sw={2.4}>{MI.check}</MobIco>Autoguardado</>}
-    </span>
-  );
-
-  const BotonBuscar = ()=> (
-    <button className="mob-back" onClick={buscar} title="Buscar en la plataforma" aria-label="Buscar en la plataforma">
-      <MobIco w={19}>{MI.lupa}</MobIco>
-    </button>
-  );
-  /* Campana de la bandeja: el punto rojo solo cuando de verdad hay algo nuevo.
-     Es la única mancha de color de la app y por eso se reserva para esto. */
-  const BotonBandeja = ()=>{
-    const n = bandejaCuenta();
-    return (
-      <button className="mob-back mob-campana" onClick={()=>push({t:"bandeja"})}
-        title="Bandeja de entrada" aria-label={n ? ("Bandeja: "+n+" sin ver") : "Bandeja de entrada"}>
-        <MobIco w={19} sw={1.9}>{MI.campana}</MobIco>
-        {n>0 && <span className="pip">{n>9?"9+":n}</span>}
-      </button>
-    );
-  };
-  /* Cabecera de pestaña (nivel 1): título grande, búsqueda y cuenta. */
-  const HeaderMob = ({ eyebrow, title, sub, right })=> (
-    <div className="mob-header">
-      <div style={{minWidth:0, flex:1}}>
-        {eyebrow ? <div className="mob-mono" style={{marginBottom:6}}>{eyebrow}</div> : null}
-        <h1 className="mob-hero-h">{title}</h1>
-        {sub && <div className="mob-hero-sub">{sub}</div>}
-      </div>
-      <div style={{display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
-        {saltoDe && !top && (
-          <button className="mob-back" onClick={volverSalto} title="Volver" aria-label="Volver">
-            <MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco>
-          </button>
-        )}
-        <BotonBandeja/>
-        <BotonBuscar/>
-        {right !== undefined
-          ? right
-          : <button className="mob-avatar" style={{border:"none", fontFamily:"inherit", cursor:"pointer"}}
-              onClick={()=>push({t:"cuenta"})} aria-label="Mi cuenta">{mobIni(owner.name||"Javier")}</button>}
-      </div>
-    </div>
-  );
-  /* Pantalla empujada (nivel 2 en adelante): atrás, título, contexto y nada más.
-     Un solo asunto por pantalla, como pide la arquitectura. */
-  const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>(
-    <div className={"mob-scr"+(gap==="14"?" g14":"")+(pie?" con-pie":"")}>
-      <div className="mob-nav">
-        <button className="mob-back" onClick={atras||pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
-        <span className="sp"></span>
-        {accion||null}
-        <BotonBuscar/>
-      </div>
-      <div className="mob-titulo">
-        <h1 className="mob-h-scr">{titulo}</h1>
-        {contexto ? <div className="ctx">{contexto}</div> : null}
-      </div>
-      {children}
-      {pie||null}
-    </div>
-  );
 
   /* ======================= NIVEL 1 · INICIO =======================
      Inicio responde cuatro preguntas y nada más: qué hay que hacer ahora, qué
@@ -6418,39 +6475,56 @@ function MobileApp(props){
     const grupos = (esArquitecto ? MAS_ARQ : MOB_MAS_GRUPOS)
       .map(g=>({ ...g, items:g.items.filter(it=> it.esp ? true : hay(it.id)) }))
       .filter(g=>g.items.length);
+    // Cuántos mensajes sin ver, para la insignia del chat.
+    let msgsSinVer = 0;
+    try{ const visto=+(localStorage.getItem("ap_chat_visto")||0);
+      const yo=(chat.yo&&chat.yo.nombre)||"";
+      msgsSinVer=(chat.msgs||[]).filter(m=> m.autor!==yo && m.ts>visto).length; }catch(_e){}
+    const insignia = (it)=> it.esp==="equipo" ? msgsSinVer : 0;
     return (<div className="mob-scr g14">
-      <HeaderMob title="Más" sub="El resto de la plataforma, por lo que quieres hacer"/>
+      <HeaderMob title="Más" sub="Todo lo demás, a un toque"/>
       <div className="mob-buscar" onClick={buscar} role="button">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
         <input readOnly placeholder="Buscar en toda la plataforma" style={{pointerEvents:"none"}}/>
       </div>
-      {/* Las propiedades no van desplegadas: un solo botón que abre la lista,
-          como cualquier otra fila. Se entra tocando, no leyendo. */}
+      {/* Las propiedades no van desplegadas: una sola tarjeta que abre la lista. */}
       {!!propiedades.length && (
-        <Grupo>
-          <Fila icoNav="casas" titulo="Mis propiedades"
-            sub={propiedades.length+(propiedades.length===1?" propiedad":" propiedades")}
-            onClick={()=>saltarA("props")}/>
-        </Grupo>
+        <div className="mob-mas-sec">
+          <h2 className="mob-gtit">Tu cartera</h2>
+          <div className="mob-cards">
+            <button className="mob-cardg" onClick={()=>saltarA("props")}>
+              <span className="ic"><Ic n="casas" w={24} sw={1.9}/></span>
+              <span className="lb">Mis propiedades</span>
+            </button>
+          </div>
+        </div>
       )}
+      {/* Cada grupo, en tarjetas: se toca y se abre, como pediste. */}
       {grupos.map(g=>(
-        <Grupo key={g.label} titulo={g.label}>
-          {g.items.map(it=>(
-            <Fila key={it.esp||it.id} icoNav={it.ico} titulo={it.label} sub={it.sub}
-              onClick={()=>abrirDestino(it)}/>
-          ))}
-        </Grupo>
+        <div className="mob-mas-sec" key={g.label}>
+          <h2 className="mob-gtit">{g.label}</h2>
+          <div className="mob-cards">
+            {g.items.map(it=>{
+              const bdg = insignia(it);
+              return (<button key={it.esp||it.id} className="mob-cardg" onClick={()=>abrirDestino(it)}>
+                <span className="ic"><Ic n={it.ico} w={24} sw={1.9}/></span>
+                <span className="lb">{MOB_CARD_CORTO[it.label]||it.label}</span>
+                {bdg>0 && <span className="bdg">{bdg>9?"9+":bdg}</span>}
+              </button>);
+            })}
+          </div>
+        </div>
       ))}
       <Grupo>
-        <Fila sinIco titulo={((usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta")}
-          sub={soloLectura ? "Solo lectura" : ((rolActual||"Propietario"))}
+        <Fila sinIco titulo={(nombreAcceso||(usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta")}
+          sub={soloLectura ? (esArquitecto?"Arquitecto/a":"Solo lectura") : ((rolActual||"Propietario"))}
           onClick={()=>push({t:"cuenta"})}/>
         <Fila sinIco titulo="Cerrar sesión" chevron={false} onClick={()=>AC.salir&&AC.salir()}/>
       </Grupo>
       <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:9,
-        color:"var(--mtm)", padding:"14px 0 6px"}}>
-        <span style={{display:"flex", color:"var(--mib)"}}><Marca w={22} sobreNegro={false}/></span>
-        <span style={{fontSize:13.5}}>ArriendoPro</span>
+        color:"var(--mtm)", padding:"10px 0 6px"}}>
+        <span style={{display:"flex", color:"var(--mib)"}}><Marca w={20} sobreNegro={false}/></span>
+        <span style={{fontSize:13}}>ArriendoPro</span>
       </div>
     </div>);
   };
@@ -7854,6 +7928,26 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  const preguntarCotiz = async(c, textoPreg, primera)=>{
+    const cmp = compararOfertas(c.ofertas, c.prioridad);
+    const ofertas = cmp.orden.map(o=>({ prov:o.prov, total:o.total, dias:num(o.dias), garantia:num(o.garantia), nota:o.nota }));
+    const previos = cotChat[c.id] || [];
+    const nuevo = primera ? [] : [...previos, { role:"user", content:textoPreg }];
+    if(!primera) setCotChat(x=>({...x, [c.id]: nuevo}));
+    setCotBusy(true); setCotPreg("");
+    try{
+      const p = c.pid ? propPorId(c.pid) : null;
+      const r = await api("/api/cotiz-ia",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ ofertas, titulo:c.titulo||"", contexto:p?p.name:"", messages:nuevo.slice(-10) }) });
+      const j = await r.json().catch(()=>({}));
+      const txt = j.text || j.error || "No pude comparar los presupuestos.";
+      setCotChat(x=>({...x, [c.id]: [...nuevo, { role:"assistant", content:txt }]}));
+    }catch(_e){
+      setCotChat(x=>({...x, [c.id]: [...nuevo, { role:"assistant", content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez." }]}));
+    }
+    setCotBusy(false);
+  };
+
   const pantallaCotiz1 = (c)=>{
     const cmp = compararOfertas(c.ofertas, c.prioridad);
     const porDia = cotPorDia(cmp);
@@ -7929,6 +8023,45 @@ function MobileApp(props){
           <MobIco w={18}>{MI.mas}</MobIco> Agregar presupuesto
         </button>
       )}
+
+      {/* Que decida la IA: mira los presupuestos, pregunta lo que le falte y
+          recomienda el mejor con el motivo. */}
+      {cmp.orden.length>=2 && (()=>{
+        const conv = cotChat[c.id] || [];
+        return (
+          <div className="mob-bloque">
+            <h2 className="mob-h2">Que elija la IA</h2>
+            {!conv.length ? (
+              <div className="mob-card">
+                <div className="mob-eyebrow"><span className="mob-pt"></span>ASESOR</div>
+                <div style={{fontSize:15.5, lineHeight:1.4, color:"var(--mtx)"}}>Mira los presupuestos, te hace una o dos preguntas si le falta algo, y te dice cuál conviene y por qué.</div>
+                <button className="mob-btn pri" disabled={cotBusy} onClick={()=>preguntarCotiz(c, "", true)}>
+                  {cotBusy ? "Pensando…" : "Que la IA compare y elija"}
+                </button>
+              </div>
+            ) : (
+              <React.Fragment>
+                <div className="mob-iachat">
+                  {conv.map((m,i)=>(
+                    <div key={i} className={"mob-iamsg "+(m.role==="user"?"yo":"ia")}>
+                      {m.role==="assistant" && <span className="et">Asesor de presupuestos</span>}
+                      <div className="tx">{m.content}</div>
+                    </div>
+                  ))}
+                  {cotBusy && <div className="mob-iamsg ia"><span className="et">Asesor de presupuestos</span><div className="tx">Pensando…</div></div>}
+                </div>
+                <div className="mob-iabar">
+                  <input className="mob-inp" value={cotPreg} onChange={e=>setCotPreg(e.target.value)}
+                    onKeyDown={e=>{ if(e.key==="Enter"&&cotPreg.trim()&&!cotBusy) preguntarCotiz(c, cotPreg.trim(), false); }}
+                    placeholder="Respóndele o pregúntale…" disabled={cotBusy}/>
+                  <button className="mob-btn pri" style={{minWidth:56}} disabled={!cotPreg.trim()||cotBusy}
+                    onClick={()=>preguntarCotiz(c, cotPreg.trim(), false)}>→</button>
+                </div>
+              </React.Fragment>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Decidir: queda anotado y, si hay propiedad, entra a su bitácora. */}
       {!soloLectura && cmp.mejor && (
@@ -8614,7 +8747,8 @@ function MobileApp(props){
   }
   const pantallaCompleta = top && top.t==="equipo";
 
-  return (<div className="mob-app" data-mob="1">
+  const mobCtxVal = { push, pop, buscar, saltoDe, top, volverSalto, guardado, bandejaCuenta, owner };
+  return (<MobCtx.Provider value={mobCtxVal}><div className="mob-app" data-mob="1">
     {vista}
     {/* Visor de foto a resolución nativa. Toca la imagen para alternar entre
         "cabe en pantalla" y el tamaño real, y desplázala para recorrerla. */}
@@ -8651,7 +8785,7 @@ function MobileApp(props){
         })}
       </div>
     )}
-  </div>);
+  </div></MobCtx.Provider>);
 }
 
 /* ============ CHAT DEL EQUIPO ============
