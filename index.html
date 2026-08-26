@@ -1726,6 +1726,16 @@
   .mob-pc-mt{ font-size:12.5px; color:var(--mtm); line-height:1.25; margin-top:3px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
+  /* FICHA DE LEVANTAMIENTO EMBEBIDA · el formulario completo dentro de la app,
+     a pantalla completa, con la cabecera de la plataforma. No es un enlace. */
+  .mob-lev{ position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; background:var(--mbg); }
+  .mob-lev-head{ display:flex; align-items:center; gap:12px; flex-shrink:0;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 15px 10px; background:var(--msf); border-bottom:1px solid var(--mln); }
+  .mob-lev-head .tl{ min-width:0; }
+  .mob-lev-head .tl .nm{ font-size:16px; font-weight:700; letter-spacing:-.02em; color:var(--mib); line-height:1.15; }
+  .mob-lev-head .tl .ctx{ font-size:12.5px; color:var(--mtm); margin-top:1px; }
+  .mob-lev-frame{ flex:1 1 auto; width:100%; border:0; background:var(--mbg); }
+
 </style>
 </head>
 <body>
@@ -6726,7 +6736,7 @@ function MobileApp(props){
     if(it.id){ if(SEC_NATIVA[it.id]) return push({t:SEC_NATIVA[it.id]}); irSeccion(it.id); return; }
     if(it.esp==="buscar") return buscar();
     if(it.esp==="infocheck") return AC.infoCheck && AC.infoCheck();
-    if(it.esp==="levantamiento") return AC.levantamiento && AC.levantamiento();
+    if(it.esp==="levantamiento") return push({t:"levantamiento"});
     push({t:it.esp});
   };
 
@@ -7306,7 +7316,7 @@ function MobileApp(props){
       <Grupo titulo="Otras fichas">
         <Fila ico={MI.imagen} titulo="Vista previa de la ficha" onClick={()=>FI.vista && FI.vista(p)}/>
         <Fila ico={MI.portapapeles} titulo="Ficha de levantamiento" sub="Formulario para llenar en terreno"
-          onClick={()=>AC.levantamiento && AC.levantamiento()}/>
+          onClick={()=>push({t:"levantamiento"})}/>
       </Grupo>
     </Pantalla>
   );
@@ -8905,6 +8915,27 @@ function MobileApp(props){
   const pantallaHistSec = ()=> pantallaPickProp("Historial","Pagos, arrendatarios anteriores y garantías","histProp",
     (p)=>{ const n=(p.histPagos||[]).length; return n?(n+" pago"+(n===1?"":"s")):"Sin pagos"; });
 
+  /* ---------- Ficha de levantamiento (dentro de la app, no un enlace) ----------
+     El formulario completo vive en /levantamiento/ y es enorme; en vez de
+     abrirlo en otra pestaña —que se sentía como salir de la plataforma— se
+     embebe aquí a pantalla completa, con la misma cabecera y el mismo diseño
+     monocromo de la app. Al ser del mismo origen, guardar, cargar y descargar
+     funcionan igual. `?embed=1` le dice a la ficha que oculte su propia barra. */
+  const levEmbedURL = ()=> (portalURL()||"") + "/levantamiento/?embed=1";
+  const pantallaLevantamiento = ()=>(
+    <div className="mob-lev">
+      <div className="mob-lev-head">
+        <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <div className="tl">
+          <div className="nm">Ficha de levantamiento</div>
+          <div className="ctx">Formulario para llenar en terreno</div>
+        </div>
+      </div>
+      <iframe src={levEmbedURL()} className="mob-lev-frame" title="Ficha de levantamiento"
+        allow="clipboard-write; microphone"></iframe>
+    </div>
+  );
+
   /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
     <React.Fragment>
@@ -8953,6 +8984,7 @@ function MobileApp(props){
     else if(top.t==="incidSec")     vista = pantallaIncidSec();
     else if(top.t==="bitacSec")     vista = pantallaBitacSec();
     else if(top.t==="histSec")      vista = pantallaHistSec();
+    else if(top.t==="levantamiento")vista = pantallaLevantamiento();
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
@@ -9005,7 +9037,7 @@ function MobileApp(props){
     // El arquitecto no ve dinero: su barra es Inicio, Propiedades y Más.
     tabs = tabs.filter(t=> t[0]==="inicio" || t[0]==="props" || t[0]==="mas");
   }
-  const pantallaCompleta = top && top.t==="equipo";
+  const pantallaCompleta = top && (top.t==="equipo" || top.t==="levantamiento");
 
   const mobCtxVal = { push, pop, buscar, saltoDe, top, volverSalto, guardado, bandejaCuenta, owner };
   return (<MobCtx.Provider value={mobCtxVal}><div className="mob-app" data-mob="1">

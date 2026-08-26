@@ -252,9 +252,78 @@
     #asFab{right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0px));width:54px;height:54px;}
   }
 
+  /* ============================================================
+     UNIFICACIÓN CON LA PLATAFORMA · misma paleta monocroma (Apple)
+     de la app. Reemplaza el azul marino por negro/gris; los
+     encabezados de sección pasan de barra azul a tarjeta clara con
+     línea, como en el resto de la plataforma. Va al final para ganar
+     la cascada; no se toca el marcado, solo el color y el radio. */
+  :root{
+    --navy:#101012; --navy-dark:#000000; --navy-light:#2B2B30;
+    --bg:#F2F2F7; --card:#FFFFFF; --border:#E5E5EA; --border-light:#EDEDF2;
+    --text:#101012; --text-muted:#5A5A63; --text-faint:#9AA1AB;
+    --accent-fill:#EFEFF4; --ok:#101012; --ok-bg:#EFEFF4;
+    --danger:#101012; --danger-bg:#EDEDF2; --radius:16px;
+    --brand-bg:#EFEFF4; --red:#101012; --red-bg:#EDEDF2; --line2:#EDEDF2;
+  }
+  body{ color:var(--text); -webkit-font-smoothing:antialiased; }
+  #topbar{ background:#fff; color:var(--text); box-shadow:none; border-bottom:1px solid var(--border); }
+  #topbar h1{ color:var(--text); }
+  #progressWrap{ color:var(--text-muted); }
+  #progressBarOuter{ background:var(--accent-fill); }
+  #progressBarInner{ background:var(--navy); }
+  #searchBtn{ border-color:var(--border); color:var(--text); }
+  #searchBtn:hover{ background:var(--accent-fill); }
+  #backBtn{ background:var(--accent-fill); border-color:var(--border); color:var(--text); }
+  #ufBar{ background:var(--accent-fill); }
+  .uf-lbl,.uf-btn,.uf-mini{ color:var(--text); }
+  .card{ border:1px solid var(--border); border-radius:16px; box-shadow:0 1px 2px rgba(16,16,18,.03); }
+  .card-header{ background:#fff; color:var(--text); border-bottom:1px solid var(--border); font-weight:800; letter-spacing:-.01em; font-size:14.5px; }
+  .card-header .num{ color:var(--text-muted); }
+  .card-header-toggle:hover{ background:var(--accent-fill); }
+  .card-header .chev{ color:var(--text-muted); }
+  .ai-card .card-header{ background:#fff; }
+  .field label.flabel{ color:var(--text); }
+  input[type=text],input[type=date],textarea,.ai-inp,.addfield-row input,.addfield-row select{ border-radius:11px; }
+  input[type=text]:focus,input[type=date]:focus,textarea:focus{ border-color:var(--navy); box-shadow:0 0 0 3px rgba(16,16,18,.10); }
+  .chip.on{ background:var(--navy); border-color:var(--navy); }
+  .grid-check input{ accent-color:var(--navy); }
+  table.htable th{ background:var(--accent-fill); color:var(--text); }
+  table.htable input:focus{ outline-color:var(--navy); }
+  .btn{ color:var(--text); border-radius:11px; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-light); }
+  .cur-tog button.on{ background:var(--navy); }
+  .fx-btn .cnt{ background:var(--navy); }
+  .fx-btn.on{ border-color:var(--navy); color:var(--text); }
+  .fx-panel{ background:var(--accent-fill); }
+  .attach-row{ border-color:var(--border); background:#FAFAFC; }
+  .attach-row.has-files{ border-color:var(--navy); background:var(--accent-fill); }
+  .attach-label{ color:var(--text); }
+  .file-chip .fx{ color:var(--text); }
+  .file-chip .rm{ color:var(--text-muted); }
+  #toast{ background:var(--navy); }
+  #backTop{ background:var(--navy); border-color:var(--navy); }
+  #backTop:hover{ background:var(--navy-light); }
+  .ai-badge{ color:var(--navy); }
+  .ai-lbl,.ai-res-t,.ai-res-val{ color:var(--text); }
+  .ai-btn{ background:var(--navy); } .ai-btn:hover{ background:var(--navy-light); }
+  .ai-res,.ai-res-it:hover{ background:var(--accent-fill); }
+  .as-row.user .as-bub{ background:var(--navy); }
+  #asForm button.send{ background:var(--navy); border-color:var(--navy); }
+  .field.flash{ background:#F3F3F7; box-shadow:0 0 0 2px var(--navy) inset; }
+  .sr-fuzzy{ color:var(--text-muted); }
+  .sr-val{ color:var(--text-faint); }
+  /* Embebido dentro de la app: la app pone su propia cabecera, así que se
+     oculta la barra superior propia de la ficha y se recupera ese alto. */
+  html.embed #topbar{ display:none; }
+  html.embed #mobileNavWrap{ top:0; }
+  html.embed #sidebar{ top:8px; max-height:calc(100vh - 20px); }
+
 </style>
 </head>
 <body>
+<script>if(/[?&]embed=1/.test(location.search)){document.documentElement.classList.add('embed');}</script>
 
 <div id="topbar">
   <a id="backBtn" href="#" title="Volver a la plataforma">← Volver</a>
