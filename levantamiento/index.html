@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ficha de Levantamiento de Propiedad — Formulario</title>
+<title>Ficha Técnica de Propiedad</title>
 <style>
   :root{
     --navy:#1F3A5C; --navy-dark:#152A44; --navy-light:#2E4F78;
@@ -319,6 +319,20 @@
   html.embed #topbar{ display:none; }
   html.embed #mobileNavWrap{ top:0; }
   html.embed #sidebar{ top:8px; max-height:calc(100vh - 20px); }
+  /* Dentro de la app no hace falta la portada ni las instrucciones largas: se
+     entra directo a las secciones (ordenadas y plegadas), no a un folleto. */
+  html.embed .hero, html.embed .instructions{ display:none; }
+  /* El ícono del asesor va en el negro de la plataforma, no en dorado. */
+  #asFab{ background:var(--navy); color:#fff; }
+  #asFab .dot{ background:#fff; border-color:var(--navy); }
+  #asHead .av{ background:var(--navy); color:#fff; }
+  /* Lanzador para volver a mostrar el asesor cuando se ocultó. */
+  #asShow{ display:none; position:fixed; left:12px; bottom:calc(78px + env(safe-area-inset-bottom,0px)); z-index:190;
+    align-items:center; gap:7px; background:var(--navy); color:#fff; border:none; border-radius:999px;
+    padding:9px 14px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
+    box-shadow:0 10px 26px rgba(16,16,18,.28); }
+  #asOcultar{ margin-left:auto; background:transparent; border:none; color:#fff; opacity:.7; cursor:pointer; padding:2px 6px; display:flex; align-items:center; }
+  #asOcultar:hover{ opacity:1; }
 
 </style>
 </head>
@@ -328,7 +342,7 @@
 <div id="topbar">
   <a id="backBtn" href="#" title="Volver a la plataforma">← Volver</a>
   <button id="searchBtn" type="button" title="Buscar" onclick="openSearch()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
-  <h1>Ficha de Levantamiento de Propiedad</h1>
+  <h1>Ficha Técnica de Propiedad</h1>
   <div id="progressWrap">
     <span id="progressLabel">0%</span>
     <div id="progressBarOuter"><div id="progressBarInner"></div></div>
@@ -362,6 +376,7 @@
   <div id="asHead">
     <div class="av"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.4 3.6 13.1 9l5.4 1.7-5.4 1.7-1.7 5.4-1.7-5.4L4.3 10.7 9.7 9z"/><path d="M18.6 3v3.2M20.2 4.6H17"/><path d="M6.4 17.4v2.8M7.8 18.8H5"/></svg></div>
     <div><div class="t">Asesor inmobiliario</div><div class="s">Te ayuda a llenar la ficha y responde tus dudas</div></div>
+    <button class="x" type="button" id="asOcultar" title="Ocultar el botón del asesor" aria-label="Ocultar el botón del asesor"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7c1.6 0 3 .4 4.2 1M22 12s-3.5 7-10 7c-1.6 0-3-.4-4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg></button>
     <button class="x" type="button" id="asCerrar" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/></svg></button>
   </div>
   <div id="asMsgs"></div>
@@ -376,6 +391,8 @@
     <button type="button" id="asSend" class="send" title="Enviar" aria-label="Enviar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3.4 10.6 13.8"/><path d="M21 3.4 14.4 21l-3.8-7.2L3.4 10z"/></svg></button>
   </div>
 </div>
+
+<button id="asShow" type="button" title="Mostrar el asesor" aria-label="Mostrar el asesor"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.4 3.6 13.1 9l5.4 1.7-5.4 1.7-1.7 5.4-1.7-5.4L4.3 10.7 9.7 9z"/></svg>Asesor</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -403,7 +420,7 @@
 
 /* SCHEMA — misma fuente unica que el documento Word */
 const SCHEMA = {
- "title": "FICHA DE LEVANTAMIENTO DE PROPIEDAD",
+ "title": "FICHA TÉCNICA DE PROPIEDAD",
  "subtitle": "Formulario completo de recopilación de datos — para propietarios y corredoras",
  "legend": "Complete con la mayor cantidad de información disponible. Los campos sin dato pueden dejarse en blanco. Los campos marcados con * son los mínimos recomendados para publicar la propiedad.",
  "sections": [
@@ -3220,7 +3237,7 @@ function buildAIPanel(){
   head.appendChild(chev); card.appendChild(head);
   const inner=el('div',{class:'card-inner'});
   if(!state.openSecs) state.openSecs={};
-  const open = state.openSecs.ai!==false;
+  const open = document.documentElement.classList.contains('embed') ? state.openSecs.ai===true : state.openSecs.ai!==false;
   inner.style.display=open?'block':'none'; chev.classList.toggle('open',open);
   head.addEventListener('click',()=>{ const o=inner.style.display==='none'; inner.style.display=o?'block':'none'; chev.classList.toggle('open',o); state.openSecs.ai=o; });
   card.appendChild(inner);
@@ -4326,8 +4343,11 @@ function fieldIsFilled(f){
 }
 
 /* ----- Persistencia local (autoguardado) ----- */
-function saveLocal(){ try{ localStorage.setItem('ficha_state', JSON.stringify(serializeState())); }catch(e){} }
-function loadLocal(){ try{ const r=localStorage.getItem('ficha_state'); if(r){ restoreState(JSON.parse(r)); return true; } }catch(e){} return false; }
+/* Cada propiedad tiene su propia ficha: si llega ?pid=… se guarda bajo su
+   propia llave, así no se pisan entre propiedades. Sin pid, la llave general. */
+function fichaKey(){ try{ var pid=new URLSearchParams(location.search).get('pid')||''; return 'ficha_state'+(pid?('_'+pid):''); }catch(e){ return 'ficha_state'; } }
+function saveLocal(){ try{ localStorage.setItem(fichaKey(), JSON.stringify(serializeState())); }catch(e){} }
+function loadLocal(){ try{ const r=localStorage.getItem(fichaKey()); if(r){ restoreState(JSON.parse(r)); return true; } }catch(e){} return false; }
 
 /* ----- Buscador con tolerancia a errores ----- */
 function norms(s){ return (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
@@ -4660,6 +4680,14 @@ document.addEventListener('DOMContentLoaded', init);
     var fab=$('asFab'); if(!fab) return;
     fab.onclick=abrir;
     hacerArrastrable(fab,'ficha_fab_pos');
+    // Mostrar/ocultar el botón del asesor. La preferencia es compartida con la
+    // plataforma (mismo origen), así el interruptor de Configuración lo controla.
+    function fabVisible(){ try{ return localStorage.getItem('ap_ia_fab')!=='off'; }catch(e){ return true; } }
+    function aplicarFab(){ var on=fabVisible(); fab.style.display=on?'flex':'none'; var s=$('asShow'); if(s) s.style.display=on?'none':'inline-flex'; if(!on) $('asPanel').classList.remove('open'); }
+    function setFab(on){ try{ localStorage.setItem('ap_ia_fab', on?'on':'off'); }catch(e){} aplicarFab(); }
+    var oc=$('asOcultar'); if(oc) oc.onclick=function(){ setFab(false); };
+    var sh=$('asShow'); if(sh) sh.onclick=function(){ setFab(true); };
+    aplicarFab();
     $('asCerrar').onclick=function(){ $('asPanel').classList.remove('open'); };
     $('asSend').onclick=function(){ enviar($('asIn').value); };
     $('asMic').onclick=escuchar;
