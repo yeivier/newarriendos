@@ -1674,6 +1674,37 @@
   .mob-cell.dos-lineas .tx .s{ white-space:normal; display:-webkit-box;
     -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 
+  /* ============================================================
+     ESTANTES · Prioridad y Actividad ya no se apilan como lista
+     ------------------------------------------------------------
+     Se recorren de lado, como los indicadores: se ve la primera de frente y
+     asoma la siguiente, sin alargar la pantalla hacia abajo. Cada tarjeta se
+     toca y lleva a lo suyo. ==================================== */
+  .mob-shelf{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x proximity;
+    margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
+  .mob-shelf::-webkit-scrollbar{ display:none; }
+  .mob-prio-c{ flex:0 0 82%; scroll-snap-align:start; display:flex; flex-direction:column;
+    align-items:flex-start; gap:9px; background:var(--msf); border:1px solid var(--mln);
+    border-radius:16px; padding:15px; min-height:116px; font-family:inherit; text-align:left; cursor:pointer; }
+  .mob-prio-c.quieta{ flex:1 1 auto; cursor:default; }
+  .mob-prio-c:active{ background:var(--mfl2); }
+  .mob-prio-c .tile{ width:40px; height:40px; border-radius:12px; background:var(--mfl);
+    display:flex; align-items:center; justify-content:center; color:var(--mtx); flex-shrink:0; }
+  .mob-prio-c .t{ font-size:16.5px; font-weight:700; letter-spacing:-.015em; color:var(--mib);
+    line-height:1.18; }
+  .mob-prio-c .s{ font-size:13.5px; color:var(--mtm); line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mob-act-c{ flex:0 0 64%; scroll-snap-align:start; display:flex; flex-direction:column; gap:5px;
+    background:var(--msf); border:1px solid var(--mln); border-radius:14px; padding:13px 14px;
+    min-height:76px; font-family:inherit; text-align:left; cursor:pointer; }
+  .mob-act-c:active{ background:var(--mfl2); }
+  .mob-act-c .t{ font-size:15px; font-weight:650; color:var(--mtx); letter-spacing:-.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .mob-act-c .s{ font-size:12.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; max-width:100%; }
+  .mob-act-c .v{ font-size:15px; font-weight:750; color:var(--mtx); margin-top:1px;
+    font-variant-numeric:tabular-nums; }
+
 </style>
 </head>
 <body>
@@ -6288,17 +6319,21 @@ function MobileApp(props){
           <h2 className="mob-h2">Prioridad</h2>
           <button className="mob-gtit-accion" onClick={()=>saltarA("cobros")}>Ver cobros</button>
         </div>
-        {prioridades.length>0 ? prioridades.map(a=>(
-          <button key={a.id} className="mob-prio" onClick={()=>abrirAlerta(a)}>
-            <span className="tile"><Ic n={a.ico} w={23} sw={1.9}/></span>
-            <span className="tx"><span className="t">{a.titulo}</span><span className="s">{a.detalle}</span></span>
-            <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>
-          </button>
-        )) : (
-          <div className="mob-prio quieta">
-            <span className="tile"><MobIco w={23} sw={2}>{MI.check}</MobIco></span>
-            <span className="tx"><span className="t">Todo al día</span>
-              <span className="s">No hay arriendos atrasados ni contratos por vencer.</span></span>
+        {prioridades.length>0 ? (
+          <div className="mob-shelf">
+            {prioridades.map(a=>(
+              <button key={a.id} className="mob-prio-c" onClick={()=>abrirAlerta(a)}>
+                <span className="tile"><Ic n={a.ico} w={22} sw={1.9}/></span>
+                <span className="t">{a.titulo}</span>
+                <span className="s">{a.detalle}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="mob-prio-c quieta">
+            <span className="tile"><MobIco w={22} sw={2}>{MI.check}</MobIco></span>
+            <span className="t">Todo al día</span>
+            <span className="s">No hay arriendos atrasados ni contratos por vencer.</span>
           </div>
         )}
       </div>
@@ -6307,13 +6342,12 @@ function MobileApp(props){
       {reciente.length>0 && (
         <div className="mob-bloque">
           <h2 className="mob-h2">Actividad reciente</h2>
-          <div className="mob-act">
+          <div className="mob-shelf">
             {reciente.map((a,i)=>(
-              <button key={i} onClick={a.go}>
-                <span className="tx"><span className="t">{a.t}</span><span className="s">{a.s}</span></span>
-                {a.val
-                  ? <span className="val">{a.val}</span>
-                  : <span className="chev"><MobIco w={18} sw={2.4}>{MI.chevron}</MobIco></span>}
+              <button key={i} className="mob-act-c" onClick={a.go}>
+                <span className="t">{a.t}</span>
+                <span className="s">{a.s}</span>
+                {a.val ? <span className="v">{a.val}</span> : null}
               </button>
             ))}
           </div>
