@@ -4089,7 +4089,7 @@ const ASESOR_CHAT_KEY="ap_asesor_chat", ASESOR_MET_KEY="ap_asesor_metricas";
    muestra la plataforma y sea la misma todas las veces. */
 const GLOSARIO=[
   {k:"cip certificado informaciones previas", t:"CIP — Certificado de Informaciones Previas",
-   d:"Documento que emite la Dirección de Obras de la municipalidad y que dice qué se puede hacer en un terreno: la zona del plan regulador, los usos de suelo permitidos, la altura máxima, la constructibilidad y si hay afectaciones de utilidad pública. Se pide en la municipalidad de la comuna (varias lo tienen en línea) y suele costar entre 0 y algunas UTM según el municipio. Es el primer papel que pide cualquier arquitecto o comprador antes de proyectar algo. En la plataforma se guarda en la Ficha de Levantamiento, sección Información urbanística."},
+   d:"Documento que emite la Dirección de Obras de la municipalidad y que dice qué se puede hacer en un terreno: la zona del plan regulador, los usos de suelo permitidos, la altura máxima, la constructibilidad y si hay afectaciones de utilidad pública. Se pide en la municipalidad de la comuna (varias lo tienen en línea) y suele costar entre 0 y algunas UTM según el municipio. Es el primer papel que pide cualquier arquitecto o comprador antes de proyectar algo. En la plataforma se guarda en la Ficha técnica, sección Información urbanística."},
   {k:"avaluo fiscal certificado de avaluo", t:"Avalúo fiscal y su certificado",
    d:"El avalúo fiscal es el valor que el SII le asigna a la propiedad para calcular las contribuciones. Casi siempre es bastante más bajo que el valor comercial. El certificado de avalúo fiscal es el documento gratuito del SII que acredita ese valor y el rol; se saca en sii.cl con el rol de la propiedad y sirve para trámites en notaría, créditos, tasaciones y postulaciones. En la plataforma se guarda en Editar propiedad → Certificado de avalúo fiscal."},
   {k:"rol sii rol de avaluo", t:"Rol de avalúo (SII)",
@@ -4116,7 +4116,7 @@ const GLOSARIO=[
    d:"El resumen mensual de lo recaudado por los arriendos, menos la comisión de administración y los gastos pagados, con el saldo líquido que se transfiere al dueño. En la plataforma se genera en Finanzas y se puede enviar por WhatsApp o correo."},
   {k:"bitacora", t:"Bitácora",
    d:"El registro cronológico de todo lo que pasa con una propiedad: contratos, mantenciones, visitas, comunicaciones y antecedentes, cada uno con su fecha y sus archivos. Sirve de respaldo si después hay una discusión sobre qué se hizo y cuándo."},
-  {k:"ficha de levantamiento", t:"Ficha de Levantamiento",
+  {k:"ficha de levantamiento", t:"Ficha técnica",
    d:"El formulario completo con el que se levanta toda la información de una propiedad: antecedentes legales, físicos, urbanísticos, financieros y de contacto. Se puede llenar dentro de la plataforma o compartir el enlace para que la complete otra persona."},
   {k:"dfl2 dfl 2", t:"DFL 2",
    d:"Régimen que da beneficios tributarios a las viviendas de hasta 140 m² construidos: rebajas en contribuciones y exención sobre las rentas de arriendo, con tope de dos viviendas por persona natural. Conviene saber si la propiedad es DFL 2 antes de declarar los arriendos."},
@@ -5584,7 +5584,6 @@ const MOB_CARD_CORTO = {
   "Balance por propiedad":"Balance",
   "Cobros del mes":"Cobros",
   "Consultar InfoCheck":"InfoCheck",
-  "Ficha de levantamiento":"Levantamiento",
   "Buscar en la plataforma":"Buscar",
   "CRM y leads":"CRM",
   "Equipo y accesos":"Accesos",
@@ -5617,7 +5616,7 @@ const MOB_MAS_GRUPOS = [
     { esp:"tramites",ico:"portapapeles", label:"Trámites", sub:"El orden más conveniente para avanzar" },
     { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tu cartera" },
     { esp:"infocheck", ico:"lupa",    label:"Consultar InfoCheck", sub:"Antecedentes de un arrendatario" },
-    { esp:"levantamiento", ico:"portapapeles", label:"Ficha de levantamiento", sub:"Formulario para llenar en terreno" },
+    { esp:"levantamiento", ico:"portapapeles", label:"Ficha técnica", sub:"La ficha de cada propiedad" },
     { esp:"buscar",    ico:"lupa",    label:"Buscar en la plataforma", sub:"Secciones, propiedades, personas y campos" }
   ]},
   { label:"Cuenta", items:[
@@ -6174,6 +6173,10 @@ function MobileApp(props){
   const [busca, setBusca] = React.useState("");
   const [buscaCob, setBuscaCob] = React.useState("");
   const [buscaCon, setBuscaCon] = React.useState("");
+  // Botón flotante del asesor IA: mostrar u ocultar. La preferencia se guarda
+  // local y se comparte con la ficha técnica (mismo origen), un solo interruptor.
+  const [iaFabOn, setIaFabOn] = React.useState(()=>{ try{ return localStorage.getItem("ap_ia_fab")!=="off"; }catch(_e){ return true; } });
+  const toggleIaFab = (on)=>{ try{ localStorage.setItem("ap_ia_fab", on?"on":"off"); }catch(_e){} setIaFabOn(on); };
   // Propiedad elegida al empezar un trámite (vive fuera de la pantalla para que
   // no se pierda al volver a dibujar la lista de plantillas).
   const [tramPid, setTramPid] = React.useState("");
@@ -6736,7 +6739,7 @@ function MobileApp(props){
     if(it.id){ if(SEC_NATIVA[it.id]) return push({t:SEC_NATIVA[it.id]}); irSeccion(it.id); return; }
     if(it.esp==="buscar") return buscar();
     if(it.esp==="infocheck") return AC.infoCheck && AC.infoCheck();
-    if(it.esp==="levantamiento") return push({t:"levantamiento"});
+    if(it.esp==="levantamiento") return push({t:"ftecSec"});
     push({t:it.esp});
   };
 
@@ -7315,8 +7318,8 @@ function MobileApp(props){
       </Grupo>
       <Grupo titulo="Otras fichas">
         <Fila ico={MI.imagen} titulo="Vista previa de la ficha" onClick={()=>FI.vista && FI.vista(p)}/>
-        <Fila ico={MI.portapapeles} titulo="Ficha de levantamiento" sub="Formulario para llenar en terreno"
-          onClick={()=>push({t:"levantamiento"})}/>
+        <Fila ico={MI.portapapeles} titulo="Ficha técnica" sub="La ficha de esta propiedad"
+          onClick={()=>push({t:"levantamiento", id:p.id})}/>
       </Grupo>
     </Pantalla>
   );
@@ -8611,6 +8614,14 @@ function MobileApp(props){
         <div className="mob-campo"><span className="mob-lab">WhatsApp que envía</span>
           <input className="mob-inp" value={o.whatsappEnvio||""} disabled={soloLectura} onChange={e=>dsetOwner("whatsappEnvio", e.target.value)}/></div>
       </Grupo>
+
+      <Grupo titulo="Asesor con IA" nota="El botón flotante del asesor. Se aplica igual en la plataforma y en la ficha técnica.">
+        <div className="mob-campo"><span className="mob-lab">Botón flotante del asesor</span>
+          <div className="mob-seg">
+            <button className={iaFabOn?"on":""} onClick={()=>toggleIaFab(true)}>Mostrar</button>
+            <button className={!iaFabOn?"on":""} onClick={()=>toggleIaFab(false)}>Ocultar</button>
+          </div></div>
+      </Grupo>
       <Guardado/>
     </Pantalla>);
   };
@@ -8915,26 +8926,35 @@ function MobileApp(props){
   const pantallaHistSec = ()=> pantallaPickProp("Historial","Pagos, arrendatarios anteriores y garantías","histProp",
     (p)=>{ const n=(p.histPagos||[]).length; return n?(n+" pago"+(n===1?"":"s")):"Sin pagos"; });
 
-  /* ---------- Ficha de levantamiento (dentro de la app, no un enlace) ----------
+  /* ---------- Ficha técnica (dentro de la app, una por propiedad) ----------
      El formulario completo vive en /levantamiento/ y es enorme; en vez de
      abrirlo en otra pestaña —que se sentía como salir de la plataforma— se
-     embebe aquí a pantalla completa, con la misma cabecera y el mismo diseño
-     monocromo de la app. Al ser del mismo origen, guardar, cargar y descargar
-     funcionan igual. `?embed=1` le dice a la ficha que oculte su propia barra. */
-  const levEmbedURL = ()=> (portalURL()||"") + "/levantamiento/?embed=1";
-  const pantallaLevantamiento = ()=>(
+     embebe aquí a pantalla completa, con la cabecera y el diseño de la app.
+     Cada propiedad tiene la suya: se le pasa su id, así el formulario guarda
+     por separado y se precarga con el nombre, la dirección y la comuna.
+     `?embed=1` le dice a la ficha que oculte su propia barra. */
+  const levEmbedURL = (p)=>{
+    const base = (portalURL()||"") + "/levantamiento/?embed=1";
+    if(!p) return base;
+    const q = new URLSearchParams({ pid:String(p.id), nombre:p.name||"", direccion:p.address||"", comuna:p.comuna||"" });
+    return base + "&" + q.toString();
+  };
+  const pantallaLevantamiento = (p)=>(
     <div className="mob-lev">
       <div className="mob-lev-head">
         <button className="mob-back" onClick={pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
         <div className="tl">
-          <div className="nm">Ficha de levantamiento</div>
-          <div className="ctx">Formulario para llenar en terreno</div>
+          <div className="nm">Ficha técnica</div>
+          <div className="ctx">{p ? p.name : "La ficha de cada propiedad"}</div>
         </div>
       </div>
-      <iframe src={levEmbedURL()} className="mob-lev-frame" title="Ficha de levantamiento"
+      <iframe src={levEmbedURL(p)} className="mob-lev-frame" title="Ficha técnica"
         allow="clipboard-write; microphone"></iframe>
     </div>
   );
+  /* Desde "Más": primero se elige la propiedad (cada una tiene su ficha). */
+  const pantallaFtecSec = ()=> pantallaPickProp("Ficha técnica","La ficha técnica de cada propiedad","levantamiento",
+    (p)=> p.comuna||p.address||"Abrir su ficha");
 
   /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
@@ -8984,7 +9004,7 @@ function MobileApp(props){
     else if(top.t==="incidSec")     vista = pantallaIncidSec();
     else if(top.t==="bitacSec")     vista = pantallaBitacSec();
     else if(top.t==="histSec")      vista = pantallaHistSec();
-    else if(top.t==="levantamiento")vista = pantallaLevantamiento();
+    else if(top.t==="ftecSec")      vista = pantallaFtecSec();
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
@@ -9012,6 +9032,7 @@ function MobileApp(props){
       else if(top.t==="soc")        vista = pantallaSoc(ent);
       else if(top.t==="contacto")   vista = pantallaContacto(ent);
       else if(top.t==="informeProp")vista = pantallaInformeProp(ent);
+      else if(top.t==="levantamiento") vista = pantallaLevantamiento(ent);
     }
   }
   if(!vista){
@@ -11671,24 +11692,24 @@ function App(){
   const compartirFichaCompletaMail=(p,f)=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de propiedad: "+(f.alias||p.name))+"&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
   const compartirFichaCompletaSMS=(p,f)=>{ window.location.href="sms:?&body="+encodeURIComponent(fichaCompletaTexto(p,f)); };
 
-  /* ---------- Ficha de Levantamiento (formulario completo alojado en /levantamiento/) ----------
+  /* ---------- Ficha técnica (formulario completo alojado en /levantamiento/) ----------
      Antes apuntaba a un sitio aparte, que había que actualizar a mano subiendo
      un archivo cada vez que la ficha cambiaba. Ahora se sirve desde esta misma
      dirección: así siempre es la versión al día, funcione la plataforma en el
      dominio que funcione, y no hay nada que volver a subir. */
   const levLink=()=> portalURL()+"/levantamiento/";
   const abrirLevantamiento=()=> window.open(levLink(),"_blank","noopener");
-  const compartirLevWA=()=>waEnviar("","Completa la Ficha de Levantamiento de la propiedad aquí: "+levLink());
-  const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha de Levantamiento de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
-  const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha de Levantamiento aquí: "+levLink()); };
-  const copiarLevantamiento=()=>{ const u=levLink(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(()=>notify("Enlace de la Ficha de Levantamiento copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify(u,true); };
+  const compartirLevWA=()=>waEnviar("","Completa la Ficha técnica de la propiedad aquí: "+levLink());
+  const compartirLevMail=()=>{ window.location.href="mailto:?subject="+encodeURIComponent("Ficha técnica de Propiedad")+"&body="+encodeURIComponent("Completa la Ficha técnica aquí: "+levLink()); };
+  const compartirLevSMS=()=>{ window.location.href="sms:?&body="+encodeURIComponent("Completa la Ficha técnica aquí: "+levLink()); };
+  const copiarLevantamiento=()=>{ const u=levLink(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(()=>notify("Enlace de la Ficha técnica copiado")).catch(()=>notify("No se pudo copiar",true)); } else notify(u,true); };
   /* También se invocan como funciones (ver la nota de lectorIA): así los campos
      que traen dentro no pierden el foco mientras se escribe. */
   const levantamientoBox=()=>(<div style={{marginTop:14}}>
-    <div className="sub-title green">Ficha de Levantamiento (formulario completo)</div>
+    <div className="sub-title green">Ficha técnica (formulario completo)</div>
     <div className="help" style={{marginBottom:8}}>Formulario integral de <b>levantamiento de propiedad</b> (30+ secciones: antecedentes legales, físicos, financieros, arrendatario, aval, documentación y exportación a Word, PDF y ZIP). Ábrelo para llenarlo tú, o comparte el enlace para que lo complete un corredor, el dueño o tu equipo.</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-      <button className="btn btn-red btn-sm" onClick={abrirLevantamiento}>Abrir Ficha de Levantamiento</button>
+      <button className="btn btn-red btn-sm" onClick={abrirLevantamiento}>Abrir Ficha técnica</button>
       <button className="btn btn-out btn-sm" onClick={copiarLevantamiento}>Copiar enlace</button>
       <button className="btn btn-out btn-sm" onClick={compartirLevWA}>WhatsApp</button>
       <button className="btn btn-out btn-sm" onClick={compartirLevMail}>Correo</button>
@@ -12250,7 +12271,7 @@ function App(){
     const F=[
       {t:"Ficha completa de la propiedad",kw:"ficha levantamiento campos llenar pdf word excel",tab:"props",sub:"Abrir Ficha completa de una propiedad",run:_abrirFichaB},
       {t:"Enlace interactivo para llenar la ficha desde fuera",kw:"enlace publico llenar formulario compartir link",tab:"props",sub:"En la Ficha completa › Enlace interactivo",run:_abrirFichaB},
-      {t:"Ficha de Levantamiento (formulario completo)",kw:"levantamiento formulario completo levantar propiedad word pdf zip documentacion aval arrendatario",tab:"props",sub:"Abrir el formulario de levantamiento de propiedad",run:abrirLevantamiento},
+      {t:"Ficha técnica (formulario completo)",kw:"levantamiento formulario completo levantar propiedad word pdf zip documentacion aval arrendatario",tab:"props",sub:"Abrir el formulario de levantamiento de propiedad",run:abrirLevantamiento},
       {t:"Plantillas de WhatsApp, correo y SMS",kw:"plantillas mensajes whatsapp correo sms recordatorio",tab:"comunicaciones"},
       {t:"CRM y leads (embudo, prospectos, conversión)",kw:"crm lead prospecto pipeline embudo conversion venta cliente captacion",tab:"crm"},
       {t:"Agendar visitas a propiedades",kw:"visita agenda agendar mostrar propiedad cliente cita",tab:"crm",sub:"En CRM › Visitas"},
@@ -12541,7 +12562,7 @@ function App(){
             <div className="qa-grid">
               <button className="qa" onClick={()=>setTab("props")}><span className="qico"><Ic n="casas" w={20} sw={1.9}/></span><span><span className="qt">Mis propiedades</span><span className="qd">Ver la ficha de cada una</span></span></button>
               <button className="qa" onClick={()=>{ if(props.length===1){abrirFicha(props[0]);} else {setTab("props"); notify("Abre una propiedad y toca Ficha completa");} }}><span className="qico"><Ic n="doc" w={20} sw={1.9}/></span><span><span className="qt">Ficha completa</span><span className="qd">Rellenar, previsualizar, exportar y compartir</span></span></button>
-              <button className="qa" onClick={abrirLevantamiento}><span className="qico"><Ic n="lapiz" w={20} sw={1.9}/></span><span><span className="qt">Ficha de Levantamiento</span><span className="qd">Formulario completo para levantar una propiedad</span></span></button>
+              <button className="qa" onClick={abrirLevantamiento}><span className="qico"><Ic n="lapiz" w={20} sw={1.9}/></span><span><span className="qt">Ficha técnica</span><span className="qd">Formulario completo para levantar una propiedad</span></span></button>
               <button className="qa" onClick={()=>setTab("crm")}><span className="qico"><Ic n="embudo" w={20} sw={1.9}/></span><span><span className="qt">CRM y leads</span><span className="qd">Prospectos, visitas, seguimiento y conversión</span></span></button>
               <button className="qa" onClick={()=>setTab("cobros")}><span className="qico"><Ic n="dinero" w={20} sw={1.9}/></span><span><span className="qt">Cobrar arriendos</span><span className="qd">Registrar pagos y recordatorios</span></span></button>
               <button className="qa" onClick={()=>setTab("arrendatarios")}><span className="qico"><Ic n="personas" w={20} sw={1.9}/></span><span><span className="qt">Arrendatarios y contactos</span><span className="qd">Datos, contactos y contratos</span></span></button>
@@ -13337,13 +13358,13 @@ function App(){
           <div className="integ">
             <div className="lg" style={{background:"var(--blue)"}}></div>
             <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{fontSize:20,fontWeight:800}}>Ficha de Levantamiento de Propiedad</div><span className="pill grey">Formulario completo</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{fontSize:20,fontWeight:800}}>Ficha técnica de Propiedad</div><span className="pill grey">Formulario completo</span></div>
               <div style={{color:"var(--muted)",margin:"6px 0 10px"}}>Levanta toda la información de una propiedad en un solo formulario: antecedentes legales, físicos, financieros, arrendatario, aval y documentación, con exportación a Word, PDF y ZIP.</div>
               <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:6}}>
                 {["30+ secciones de levantamiento","Documentación de arrendatario y aval","Notas y adjuntos por campo","Exporta a Word, PDF y ZIP"].map((f,i)=><div key={i} className="feat"><span className="ck"><Ic n="check" w={15}/> </span>{f}</div>)}
               </div>
               <div style={{display:"flex",gap:10,marginTop:12,flexWrap:"wrap"}}>
-                <button className="btn btn-red" onClick={abrirLevantamiento}>Abrir Ficha de Levantamiento</button>
+                <button className="btn btn-red" onClick={abrirLevantamiento}>Abrir Ficha técnica</button>
                 <button className="btn btn-out" onClick={compartirLevWA}>Compartir por WhatsApp</button>
                 <button className="btn btn-out" onClick={copiarLevantamiento}>Copiar enlace</button>
               </div>
@@ -13979,7 +14000,7 @@ function App(){
         <button className="btn btn-out btn-sm" onClick={()=>compartirFichaCompletaWA(mFicha,fForm)}>WhatsApp</button>
         <button className="btn btn-out btn-sm" onClick={()=>compartirFichaCompletaMail(mFicha,fForm)}>Correo</button>
         <button className="btn btn-out btn-sm" onClick={()=>compartirFichaCompletaSMS(mFicha,fForm)}>SMS</button>
-        <button className="btn btn-out btn-sm" onClick={abrirLevantamiento}>Ficha de Levantamiento</button>
+        <button className="btn btn-out btn-sm" onClick={abrirLevantamiento}>Ficha técnica</button>
         <button className="btn btn-ghost btn-sm" style={{marginLeft:"auto"}} onClick={()=>setMFicha(null)}>Cerrar</button>
       </div>
     </div></div>}
@@ -14504,7 +14525,7 @@ function App(){
         <div className="ai-disclaimer">Asesor con IA · puede equivocarse. Confirma valores y condiciones antes de decidir.</div>
       </div>
     </div>}
-    <button className="ai-fab" ref={fabRef} onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario · arrástralo con el dedo para moverlo"><Ic n="chispas" w={22} sw={1.9}/><span className="ai-dot"></span></button>
+    <button className="ai-fab" ref={fabRef} style={(()=>{ try{ return localStorage.getItem("ap_ia_fab")==="off" ? {display:"none"} : undefined; }catch(_e){ return undefined; } })()} onClick={()=>setAsOpen(o=>!o)} aria-label="Abrir asesor inmobiliario" title="Asesor inmobiliario · arrástralo con el dedo para moverlo"><Ic n="chispas" w={22} sw={1.9}/><span className="ai-dot"></span></button>
     {arriba && <button className="subir-fab" onClick={subirAlInicio} aria-label="Volver al inicio de la página" title="Volver arriba">↑</button>}
 
     {mover && (()=>{
