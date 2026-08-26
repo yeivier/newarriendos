@@ -1705,6 +1705,26 @@
   .mob-act-c .v{ font-size:15px; font-weight:750; color:var(--mtx); margin-top:1px;
     font-variant-numeric:tabular-nums; }
 
+  /* REJILLA · Propiedades y cobros como tarjetas, no como lista. Dos columnas
+     compactas: cada inmueble ocupa la mitad del ancho, así entra el doble por
+     pantalla y la vista completa se ve sin tener que bajar. */
+  .mob-grid2{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .mob-pc{ display:flex; flex-direction:column; text-align:left; min-width:0;
+    background:var(--msf); border:1px solid var(--mln); border-radius:16px;
+    padding:12px 13px 13px; font-family:inherit; cursor:pointer; }
+  .mob-pc:active{ background:var(--mfl); }
+  .mob-pc-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+  .mob-pc-ic{ width:33px; height:33px; border-radius:11px; background:var(--mfl); color:var(--mib);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mob-pc-chip{ font-size:11px; font-weight:700; letter-spacing:.005em; padding:4px 9px; border-radius:8px;
+    background:var(--mfl); color:var(--mtx); white-space:nowrap; max-width:64%;
+    overflow:hidden; text-overflow:ellipsis; }
+  .mob-pc-chip.ok{ background:var(--mib); color:#fff; }
+  .mob-pc-nm{ font-size:15px; font-weight:700; letter-spacing:-.012em; line-height:1.2; color:var(--mib);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-pc-mt{ font-size:12.5px; color:var(--mtm); line-height:1.25; margin-top:3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 </style>
 </head>
 <body>
@@ -6058,6 +6078,50 @@ const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>{
   );
 };
 
+/* Tarjeta compacta de propiedad para la rejilla de dos columnas. Vive fuera de
+   MobileApp (pieza estable, sin campos) y recibe el toque por props. Así la
+   pantalla se lee como tarjetas —no como lista— y entra completa sin bajar. */
+/* La comuna suele venir pegada al nombre ("Depto. 3B — Las Condes") y además se
+   repite en la línea de abajo. En una tarjeta angosta eso obliga a cortar el
+   nombre; mejor quitar ese sufijo redundante y dejar el nombre limpio. */
+const nombreTarjeta = (nm, comuna)=>{
+  const s = String(nm||"").trim(); const c = String(comuna||"").trim();
+  if(!c) return s;
+  const re = new RegExp("\\s*[—–\\-·]\\s*"+c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*$","i");
+  const t = s.replace(re,"").trim();
+  return t || s;
+};
+const PropCard = ({ p, onClick })=>{
+  const arr = p.use==="arriendo";
+  const est = arr ? mobEstado(p) : "Uso propio";
+  const meta = arr ? [p.comuna||"", p.tenant||"Sin arrendatario"].filter(Boolean).join(" · ")
+    : (p.comuna||"Uso personal");
+  return (
+    <button className="mob-pc" onClick={onClick} type="button">
+      <div className="mob-pc-top">
+        <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{arr?MI.edif:MI.casita}</MobIco></span>
+        <span className={"mob-pc-chip"+(arr&&p.status==="pagado"?" ok":"")}>{est}</span>
+      </div>
+      <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
+      <div className="mob-pc-mt">{meta||"—"}</div>
+    </button>
+  );
+};
+/* Tarjeta compacta de cobro (resto del mes): estado y monto; abre el resumen. */
+const CobCard = ({ p, onClick })=>{
+  const pagado = p.status==="pagado";
+  return (
+    <button className="mob-pc" onClick={onClick} type="button">
+      <div className="mob-pc-top">
+        <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{pagado?MI.check:MI.reloj}</MobIco></span>
+        <span className={"mob-pc-chip"+(pagado?" ok":"")}>{mobEstado(p)}</span>
+      </div>
+      <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
+      <div className="mob-pc-mt">{CLP(num(p.rent))} · {pagado?"pagado":"vence "+(p.dueDay||5)}</div>
+    </button>
+  );
+};
+
 function MobileApp(props){
   const {
     props: propiedades, socs, contacts, uf, owner, soloLectura,
@@ -6361,20 +6425,9 @@ function MobileApp(props){
      Una lista y nada más. El detalle vive un nivel más adentro, en el hub. */
   const [propFiltro, setPropFiltro] = React.useState("todas");
   const pantallaPropiedades = ()=>{
-    const q = busca.trim().toLowerCase();
-    const base = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
-    const lista = base.filter(p=> !q
-      || (p.name||"").toLowerCase().includes(q)
-      || (p.comuna||"").toLowerCase().includes(q)
-      || (p.address||"").toLowerCase().includes(q)
-      || (p.tenant||"").toLowerCase().includes(q));
+    const lista = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
     return (<div className="mob-scr g14">
       <HeaderMob title="Propiedades" sub={propiedades.length+" en total · "+rentals.length+" en arriendo"}/>
-      <div className="mob-buscar">
-        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
-        <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Buscar propiedad, comuna o arrendatario"/>
-        {!!busca && <button className="mob-btn link" style={{minHeight:32, fontSize:14.5}} onClick={()=>setBusca("")}>Limpiar</button>}
-      </div>
       <div className="mob-seg">
         <button className={propFiltro==="todas"?"on":""} onClick={()=>setPropFiltro("todas")}>Todas</button>
         <button className={propFiltro==="arriendo"?"on":""} onClick={()=>setPropFiltro("arriendo")}>En arriendo</button>
@@ -6382,17 +6435,10 @@ function MobileApp(props){
       </div>
 
       {lista.length ? (
-        <Grupo>
-          {lista.map(p=>(
-            <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
-              titulo={p.name}
-              sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")||"Sin arrendatario"}
-              extra={<span className={"mob-chip"+(p.use==="arriendo"&&p.status==="pagado"?" ink":"")}>
-                {p.use==="arriendo" ? mobEstado(p) : "Uso propio"}</span>}
-              onClick={()=>push({t:"prop", id:p.id})}/>
-          ))}
-        </Grupo>
-      ) : <div className="mob-vacio">No hay propiedades que coincidan con “{busca}”.</div>}
+        <div className="mob-grid2">
+          {lista.map(p=> <PropCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+        </div>
+      ) : <div className="mob-vacio">Aún no hay propiedades en esta vista.</div>}
 
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
@@ -6475,16 +6521,13 @@ function MobileApp(props){
       )}
 
       {resto.length>0 && (
-        <Grupo titulo="Resto del mes" nota="Toca una propiedad para abrir su resumen; el botón registra el pago al tiro.">
-          {resto.map(p=>(
-            <Fila key={p.id}
-              ico={p.status==="pagado"?MI.check:MI.reloj}
-              titulo={p.name}
-              sub={(p.tenant||"Sin arrendatario")+" · "+CLP(num(p.rent))+" · "+(p.status==="pagado"?"pagado":"vence el "+(p.dueDay||5))}
-              extra={<span className={"mob-chip"+(p.status==="pagado"?" ink":"")}>{mobEstado(p)}</span>}
-              onClick={()=>push({t:"prop", id:p.id})}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Resto del mes</div>
+          <div className="mob-grid2">
+            {resto.map(p=> <CobCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+          </div>
+          <div className="mob-nota">Toca una propiedad para abrir su resumen.</div>
+        </div>
       )}
 
       {hay("informes") && (
