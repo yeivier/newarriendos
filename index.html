@@ -1705,6 +1705,27 @@
   .mob-act-c .v{ font-size:15px; font-weight:750; color:var(--mtx); margin-top:1px;
     font-variant-numeric:tabular-nums; }
 
+  /* REJILLA · Propiedades y cobros como tarjetas, no como lista. Dos columnas
+     compactas: cada inmueble ocupa la mitad del ancho, así entra el doble por
+     pantalla y la vista completa se ve sin tener que bajar. */
+  .mob-grid2{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .mob-pc{ display:flex; flex-direction:column; text-align:left; min-width:0;
+    background:var(--msf); border:1px solid var(--mln); border-radius:16px;
+    padding:12px 13px 13px; font-family:inherit; cursor:pointer; }
+  .mob-pc:active{ background:var(--mfl); }
+  .mob-pc-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+  .mob-pc-ic{ width:33px; height:33px; border-radius:11px; background:var(--mfl); color:var(--mib);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mob-pc-chip{ font-size:11px; font-weight:700; letter-spacing:.005em; padding:4px 9px; border-radius:8px;
+    background:var(--mfl); color:var(--mtx); white-space:nowrap; max-width:64%;
+    overflow:hidden; text-overflow:ellipsis; }
+  .mob-pc-chip.ok{ background:var(--mib); color:#fff; }
+  .mob-pc-pt{ width:9px; height:9px; border-radius:50%; background:var(--mib); flex-shrink:0; }
+  .mob-pc-nm{ font-size:15px; font-weight:700; letter-spacing:-.012em; line-height:1.2; color:var(--mib);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mob-pc-mt{ font-size:12.5px; color:var(--mtm); line-height:1.25; margin-top:3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 </style>
 </head>
 <body>
@@ -6058,6 +6079,67 @@ const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>{
   );
 };
 
+/* Tarjeta compacta de propiedad para la rejilla de dos columnas. Vive fuera de
+   MobileApp (pieza estable, sin campos) y recibe el toque por props. Así la
+   pantalla se lee como tarjetas —no como lista— y entra completa sin bajar. */
+/* La comuna suele venir pegada al nombre ("Depto. 3B — Las Condes") y además se
+   repite en la línea de abajo. En una tarjeta angosta eso obliga a cortar el
+   nombre; mejor quitar ese sufijo redundante y dejar el nombre limpio. */
+const nombreTarjeta = (nm, comuna)=>{
+  const s = String(nm||"").trim(); const c = String(comuna||"").trim();
+  if(!c) return s;
+  const re = new RegExp("\\s*[—–\\-·]\\s*"+c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*$","i");
+  const t = s.replace(re,"").trim();
+  return t || s;
+};
+const PropCard = ({ p, onClick })=>{
+  const arr = p.use==="arriendo";
+  const est = arr ? mobEstado(p) : "Uso propio";
+  const meta = arr ? [p.comuna||"", p.tenant||"Sin arrendatario"].filter(Boolean).join(" · ")
+    : (p.comuna||"Uso personal");
+  return (
+    <button className="mob-pc" onClick={onClick} type="button">
+      <div className="mob-pc-top">
+        <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{arr?MI.edif:MI.casita}</MobIco></span>
+        <span className={"mob-pc-chip"+(arr&&p.status==="pagado"?" ok":"")}>{est}</span>
+      </div>
+      <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
+      <div className="mob-pc-mt">{meta||"—"}</div>
+    </button>
+  );
+};
+/* Tarjeta compacta de cobro (resto del mes): estado y monto; abre el resumen. */
+const CobCard = ({ p, onClick })=>{
+  const pagado = p.status==="pagado";
+  return (
+    <button className="mob-pc" onClick={onClick} type="button">
+      <div className="mob-pc-top">
+        <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{pagado?MI.check:MI.reloj}</MobIco></span>
+        <span className={"mob-pc-chip"+(pagado?" ok":"")}>{mobEstado(p)}</span>
+      </div>
+      <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
+      <div className="mob-pc-mt">{CLP(num(p.rent))} · {pagado?"pagado":"vence "+(p.dueDay||5)}</div>
+    </button>
+  );
+};
+/* Tarjeta de rejilla genérica: el mismo lenguaje de tarjetas del "Más" para
+   cualquier lista (sociedades, contactos, prospectos, plantillas, informes,
+   incidencias…), de modo que ninguna sección se vea como lista apilada.
+   Suelta dentro de .mob-grid2 va a media pantalla; suelta fuera, ancho completo. */
+const GridCard = ({ ico, icoNav, titulo, sub, chip, chipOk, punto, onClick })=>{
+  const dentro = (<React.Fragment>
+    <div className="mob-pc-top">
+      {(ico||icoNav) ? <span className="mob-pc-ic">{icoNav ? <Ic n={icoNav} w={18} sw={1.9}/> : <MobIco w={18} sw={1.9}>{ico}</MobIco>}</span> : <span></span>}
+      {chip ? <span className={"mob-pc-chip"+(chipOk?" ok":"")}>{chip}</span> : (punto ? <span className="mob-pc-pt"></span> : null)}
+    </div>
+    <div className="mob-pc-nm">{titulo}</div>
+    {sub ? <div className="mob-pc-mt">{sub}</div> : null}
+  </React.Fragment>);
+  return onClick
+    ? <button className="mob-pc" onClick={onClick} type="button">{dentro}</button>
+    : <div className="mob-pc quieta">{dentro}</div>;
+};
+
 function MobileApp(props){
   const {
     props: propiedades, socs, contacts, uf, owner, soloLectura,
@@ -6361,20 +6443,9 @@ function MobileApp(props){
      Una lista y nada más. El detalle vive un nivel más adentro, en el hub. */
   const [propFiltro, setPropFiltro] = React.useState("todas");
   const pantallaPropiedades = ()=>{
-    const q = busca.trim().toLowerCase();
-    const base = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
-    const lista = base.filter(p=> !q
-      || (p.name||"").toLowerCase().includes(q)
-      || (p.comuna||"").toLowerCase().includes(q)
-      || (p.address||"").toLowerCase().includes(q)
-      || (p.tenant||"").toLowerCase().includes(q));
+    const lista = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
     return (<div className="mob-scr g14">
       <HeaderMob title="Propiedades" sub={propiedades.length+" en total · "+rentals.length+" en arriendo"}/>
-      <div className="mob-buscar">
-        <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
-        <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Buscar propiedad, comuna o arrendatario"/>
-        {!!busca && <button className="mob-btn link" style={{minHeight:32, fontSize:14.5}} onClick={()=>setBusca("")}>Limpiar</button>}
-      </div>
       <div className="mob-seg">
         <button className={propFiltro==="todas"?"on":""} onClick={()=>setPropFiltro("todas")}>Todas</button>
         <button className={propFiltro==="arriendo"?"on":""} onClick={()=>setPropFiltro("arriendo")}>En arriendo</button>
@@ -6382,17 +6453,10 @@ function MobileApp(props){
       </div>
 
       {lista.length ? (
-        <Grupo>
-          {lista.map(p=>(
-            <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
-              titulo={p.name}
-              sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")||"Sin arrendatario"}
-              extra={<span className={"mob-chip"+(p.use==="arriendo"&&p.status==="pagado"?" ink":"")}>
-                {p.use==="arriendo" ? mobEstado(p) : "Uso propio"}</span>}
-              onClick={()=>push({t:"prop", id:p.id})}/>
-          ))}
-        </Grupo>
-      ) : <div className="mob-vacio">No hay propiedades que coincidan con “{busca}”.</div>}
+        <div className="mob-grid2">
+          {lista.map(p=> <PropCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+        </div>
+      ) : <div className="mob-vacio">Aún no hay propiedades en esta vista.</div>}
 
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
@@ -6475,16 +6539,13 @@ function MobileApp(props){
       )}
 
       {resto.length>0 && (
-        <Grupo titulo="Resto del mes" nota="Toca una propiedad para abrir su resumen; el botón registra el pago al tiro.">
-          {resto.map(p=>(
-            <Fila key={p.id}
-              ico={p.status==="pagado"?MI.check:MI.reloj}
-              titulo={p.name}
-              sub={(p.tenant||"Sin arrendatario")+" · "+CLP(num(p.rent))+" · "+(p.status==="pagado"?"pagado":"vence el "+(p.dueDay||5))}
-              extra={<span className={"mob-chip"+(p.status==="pagado"?" ink":"")}>{mobEstado(p)}</span>}
-              onClick={()=>push({t:"prop", id:p.id})}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Resto del mes</div>
+          <div className="mob-grid2">
+            {resto.map(p=> <CobCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+          </div>
+          <div className="mob-nota">Toca una propiedad para abrir su resumen.</div>
+        </div>
       )}
 
       {hay("informes") && (
@@ -6659,7 +6720,8 @@ function MobileApp(props){
   };
   // Las secciones que ya tienen pantalla nativa se abren como tales, sin caer
   // en el diseño de escritorio encogido.
-  const SEC_NATIVA = { config:"config", comunicaciones:"comunic", crm:"crm", informes:"informes", legal:"legal" };
+  const SEC_NATIVA = { config:"config", comunicaciones:"comunic", crm:"crm", informes:"informes", legal:"legal",
+    incidencias:"incidSec", bitacora:"bitacSec", historial:"histSec" };
   const abrirDestino = (it)=>{
     if(it.id){ if(SEC_NATIVA[it.id]) return push({t:SEC_NATIVA[it.id]}); irSeccion(it.id); return; }
     if(it.esp==="buscar") return buscar();
@@ -7016,18 +7078,20 @@ function MobileApp(props){
         <div style={{fontSize:15.5, fontWeight:700}}>{lista.filter(x=>(x.estado||"abierta")!=="cerrada"&&(x.estado||"")!=="resuelta").length} de {lista.length}</div></div>
         <button className="mob-btn pri-sm" onClick={()=>AC.incidencia && AC.incidencia(p)}>Nueva incidencia</button></div> : null}>
       {lista.length ? (
-        <Grupo titulo="Registradas">
-          {lista.map((x,i)=>(
-            <Fila key={x.id||i} ico={MI.llaveInglesa} titulo={x.titulo||"Incidencia"}
-              sub={[x.fecha||"", x.categoria||"", x.prioridad?("prioridad "+x.prioridad.toLowerCase()):""].filter(Boolean).join(" · ")}
-              valor={(x.estado||"abierta")==="cerrada"?"Cerrada":""}
-              onClick={()=>irSeccion("incidencias", p)}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Registradas</div>
+          <div className="mob-grid2">
+            {lista.map((x,i)=>(
+              <GridCard key={x.id||i} ico={MI.llaveInglesa} titulo={x.titulo||"Incidencia"}
+                sub={[x.fecha||"", x.categoria||""].filter(Boolean).join(" · ")}
+                chip={(x.estado||"abierta")==="cerrada"?"Cerrada":(x.prioridad||"")}
+                chipOk={(x.estado||"abierta")==="cerrada"}
+                onClick={()=>irSeccion("incidencias", p)}/>
+            ))}
+          </div>
+        </div>
       ) : <div className="mob-vacio">Sin incidencias registradas en esta propiedad.</div>}
-      {hay("incidencias") && <Grupo>
-        <Fila icoNav="llaveInglesa" titulo="Abrir la sección Incidencias" sub="Presupuestos, adjuntos y seguimiento completo" onClick={()=>irSeccion("incidencias", p)}/>
-      </Grupo>}
+      {hay("incidencias") && <GridCard icoNav="llaveInglesa" titulo="Abrir la sección Incidencias" sub="Presupuestos, adjuntos y seguimiento completo" onClick={()=>irSeccion("incidencias", p)}/>}
     </Pantalla>);
   };
 
@@ -7039,17 +7103,18 @@ function MobileApp(props){
         <div style={{fontSize:15.5, fontWeight:700}}>{lista.length}</div></div>
         <button className="mob-btn pri-sm" onClick={()=>AC.bitacora && AC.bitacora(p)}>Nueva entrada</button></div> : null}>
       {lista.length ? (
-        <Grupo titulo="Registro cronológico">
-          {lista.map((b,i)=>(
-            <Fila key={b.id||i} ico={MI.libreta} titulo={b.titulo||b.tipo||"Nota"}
-              sub={[b.fecha||"", b.tipo||""].filter(Boolean).join(" · ")}
-              onClick={()=>irSeccion("bitacora", p)}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Registro cronológico</div>
+          <div className="mob-grid2">
+            {lista.map((b,i)=>(
+              <GridCard key={b.id||i} ico={MI.libreta} titulo={b.titulo||b.tipo||"Nota"}
+                sub={[b.fecha||"", b.tipo||""].filter(Boolean).join(" · ")}
+                onClick={()=>irSeccion("bitacora", p)}/>
+            ))}
+          </div>
+        </div>
       ) : <div className="mob-vacio">Sin entradas de bitácora en esta propiedad.</div>}
-      {hay("bitacora") && <Grupo>
-        <Fila icoNav="libreta" titulo="Abrir la sección Bitácora" sub="Notas, contratos, servicios y mantenciones" onClick={()=>irSeccion("bitacora", p)}/>
-      </Grupo>}
+      {hay("bitacora") && <GridCard icoNav="libreta" titulo="Abrir la sección Bitácora" sub="Notas, contratos, servicios y mantenciones" onClick={()=>irSeccion("bitacora", p)}/>}
     </Pantalla>);
   };
 
@@ -7059,18 +7124,28 @@ function MobileApp(props){
     const vac = (p.vacancias||[]);
     const g = p.garantia||{};
     return (<Pantalla titulo="Historial" contexto={p.name} gap="14">
-      <Grupo titulo="Arrendatarios anteriores">
-        {ant.length ? ant.map((h,i)=>(
-          <Fila key={i} ico={MI.persona} titulo={h.nombre||"Arrendatario"}
-            sub={(h.desde||"")+" — "+(h.hasta||"")} valor={h.arriendoFinal?CLP(num(h.arriendoFinal)):""}/>
-        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Sin arrendatarios anteriores registrados.</div>}
-      </Grupo>
-      <Grupo titulo="Lagunas de arriendo">
-        {vac.length ? vac.map((v,i)=>(
-          <Fila key={i} ico={MI.reloj} titulo={(v.desde||"")+" — "+(v.hasta||"en curso")}
-            sub={v.notas||""} valor={v.dias?(v.dias+" días"):""}/>
-        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>La propiedad no ha estado desocupada.</div>}
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Arrendatarios anteriores</div>
+        {ant.length ? (
+          <div className="mob-grid2">
+            {ant.map((h,i)=>(
+              <GridCard key={i} ico={MI.persona} titulo={h.nombre||"Arrendatario"}
+                sub={[(h.desde||"")+" — "+(h.hasta||""), h.arriendoFinal?CLP(num(h.arriendoFinal)):""].filter(Boolean).join(" · ")}/>
+            ))}
+          </div>
+        ) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Sin arrendatarios anteriores registrados.</div>}
+      </div>
+      <div>
+        <div className="mob-gtit">Lagunas de arriendo</div>
+        {vac.length ? (
+          <div className="mob-grid2">
+            {vac.map((v,i)=>(
+              <GridCard key={i} ico={MI.reloj} titulo={(v.desde||"")+" — "+(v.hasta||"en curso")}
+                sub={v.notas||""} chip={v.dias?(v.dias+" días"):""}/>
+            ))}
+          </div>
+        ) : <div className="mob-vacio" style={{padding:"20px 16px"}}>La propiedad no ha estado desocupada.</div>}
+      </div>
       <Grupo titulo="Garantía">
         <Fila sinIco titulo="Monto" valor={g.monto?CLP(num(g.monto)):"—"}/>
         <Fila sinIco titulo="Recibida el" valor={g.fechaRecibida||"—"}/>
@@ -7277,20 +7352,18 @@ function MobileApp(props){
   /* ============ NIVEL 2-3 · SOCIEDADES ============ */
   const pantallaSociedades = ()=>(
     <Pantalla titulo="Sociedades" contexto="Empresas propietarias de tus inmuebles" gap="14">
-      <Grupo>
+      <div className="mob-grid2">
         {(socs||[]).map(s=>{
           const lista = porSoc(s.id);
-          return (<Fila key={s.id} ico={MI.edif} titulo={s.name}
+          return (<GridCard key={s.id} ico={MI.edif} titulo={s.name}
             sub={lista.length+" propiedad"+(lista.length!==1?"es":"")+(s.rut?" · "+s.rut:"")}
             onClick={()=>push({t:"soc", id:s.id})}/>);
         })}
-      </Grupo>
+      </div>
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaSociedad && AC.nuevaSociedad()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nueva sociedad
       </button>}
-      {hay("sociedades") && <Grupo>
-        <Fila icoNav="edificio" titulo="Abrir la sección Sociedades" sub="Editar datos, representante y cuentas" onClick={()=>irSeccion("sociedades")}/>
-      </Grupo>}
+      {hay("sociedades") && <GridCard icoNav="edificio" titulo="Abrir la sección Sociedades" sub="Editar datos, representante y cuentas" onClick={()=>irSeccion("sociedades")}/>}
     </Pantalla>
   );
 
@@ -7310,15 +7383,14 @@ function MobileApp(props){
           <div className="m"><span className="v">{arrend.length?Math.round(100*alDia/arrend.length):100}%</span><span className="k">AL DÍA</span></div>
         </div>
       </div>
-      <Grupo titulo="Propiedades">
-        {lista.length ? lista.map(p=>(
-          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
-            sub={[p.comuna||"", p.tenant||""].filter(Boolean).join(" · ")}
-            extra={<span className={"mob-chip"+(p.use==="arriendo"&&p.status==="pagado"?" ink":"")}>
-              {p.use==="arriendo"?mobEstado(p):"Uso propio"}</span>}
-            onClick={()=>push({t:"prop", id:p.id})}/>
-        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Esta sociedad todavía no tiene propiedades.</div>}
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Propiedades</div>
+        {lista.length ? (
+          <div className="mob-grid2">
+            {lista.map(p=> <PropCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+          </div>
+        ) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Esta sociedad todavía no tiene propiedades.</div>}
+      </div>
       <Grupo titulo="Resultado del mes">
         <Fila sinIco titulo="Utilidad" valor={mobPlata(utilidad)} valorFuerte/>
         <Fila sinIco titulo="Dividendos" valor={CLP(lista.reduce((t,p)=>t+divCLP(p,uf),0))} valorFuerte/>
@@ -7347,29 +7419,33 @@ function MobileApp(props){
         <input value={buscaCon} onChange={e=>setBuscaCon(e.target.value)} placeholder="Buscar persona, propiedad o teléfono"/>
       </div>
       {va.length>0 && (
-        <Grupo titulo="Arrendatarios vigentes">
-          {va.map((x,i)=>(
-            <Fila key={"v"+i} ico={MI.persona} titulo={x.nombre} sub={x.sub}
-              extra={<span className={"mob-chip"+(x.p.status==="pagado"?" ink":"")}>{mobEstado(x.p)}</span>}
-              onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Arrendatarios vigentes</div>
+          <div className="mob-grid2">
+            {va.map((x,i)=>(
+              <GridCard key={"v"+i} ico={MI.persona} titulo={x.nombre} sub={x.sub}
+                chip={mobEstado(x.p)} chipOk={x.p.status==="pagado"}
+                onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
+            ))}
+          </div>
+        </div>
       )}
       {oa.length>0 && (
-        <Grupo titulo="Otros contactos">
-          {oa.map((x,i)=>(
-            <Fila key={"c"+i} ico={MI.maletin} titulo={x.nombre} sub={x.sub}
-              onClick={()=>push({t:"contacto", id:x.c.id})}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">Otros contactos</div>
+          <div className="mob-grid2">
+            {oa.map((x,i)=>(
+              <GridCard key={"c"+i} ico={MI.maletin} titulo={x.nombre} sub={x.sub}
+                onClick={()=>push({t:"contacto", id:x.c.id})}/>
+            ))}
+          </div>
+        </div>
       )}
       {!va.length && !oa.length && <div className="mob-vacio">No hay personas que coincidan con “{buscaCon}”.</div>}
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.contacto && AC.contacto()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nuevo contacto
       </button>}
-      {hay("arrendatarios") && <Grupo>
-        <Fila icoNav="personas" titulo="Abrir la sección completa" sub="Editar, ver contratos y arrendatarios anteriores" onClick={()=>irSeccion("arrendatarios")}/>
-      </Grupo>}
+      {hay("arrendatarios") && <GridCard icoNav="personas" titulo="Abrir la sección completa" sub="Editar, ver contratos y arrendatarios anteriores" onClick={()=>irSeccion("arrendatarios")}/>}
     </Pantalla>);
   };
 
@@ -7675,14 +7751,17 @@ function MobileApp(props){
     const b = bandeja();
     return (<Pantalla titulo="Bandeja" contexto={b.todos.length ? (b.todos.length+(b.todos.length===1?" cosa por revisar":" cosas por revisar")) : "Todo al día"} gap="14">
       {b.grupos.length ? b.grupos.map(g=>(
-        <Grupo key={g.titulo} titulo={g.titulo}>
-          {g.items.map(x=>(
-            <Fila key={x.id} icoNav={x.ico}
-              titulo={x.t} sub={x.s} valor={x.val}
-              extra={!b.vistosSet.has(x.id) ? <span className="mob-punto" aria-label="Sin ver"></span> : null}
-              onClick={()=>{ marcarVistos([x.id]); x.ir(); }}/>
-          ))}
-        </Grupo>
+        <div key={g.titulo}>
+          <div className="mob-gtit">{g.titulo}</div>
+          <div className="mob-grid2">
+            {g.items.map(x=>(
+              <GridCard key={x.id} icoNav={x.ico}
+                titulo={x.t} sub={[x.s, x.val].filter(Boolean).join(" · ")}
+                punto={!b.vistosSet.has(x.id)}
+                onClick={()=>{ marcarVistos([x.id]); x.ir(); }}/>
+            ))}
+          </div>
+        </div>
       )) : (
         <div className="mob-vacio">Nada pendiente. Cuando alguien escriba, venza un cobro o quede un presupuesto sin decidir, aparece acá.</div>
       )}
@@ -7691,16 +7770,15 @@ function MobileApp(props){
           Marcar todo como visto
         </button>
       )}
-      <Grupo titulo="Ir directo">
-        <Fila icoNav="burbuja" titulo="Chat del equipo" sub="Escribirle a todos o a alguien en particular"
-          onClick={()=>push({t:"equipo"})}/>
-        <Fila icoNav="carpeta" titulo="Material del equipo" sub="Planos, presupuestos, fotos y archivos"
-          onClick={()=>push({t:"aportes"})}/>
-        <Fila icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado"
-          onClick={()=>push({t:"cotiz"})}/>
-        <Fila icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy"
-          onClick={()=>push({t:"tramites"})}/>
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Ir directo</div>
+        <div className="mob-grid2">
+          <GridCard icoNav="burbuja" titulo="Chat del equipo" sub="A todos o a alguien" onClick={()=>push({t:"equipo"})}/>
+          <GridCard icoNav="carpeta" titulo="Material del equipo" sub="Planos, presupuestos, fotos" onClick={()=>push({t:"aportes"})}/>
+          <GridCard icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado" onClick={()=>push({t:"cotiz"})}/>
+          <GridCard icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy" onClick={()=>push({t:"tramites"})}/>
+        </div>
+      </div>
     </Pantalla>);
   };
 
@@ -7833,15 +7911,18 @@ function MobileApp(props){
         <div className="mob-vacio">Cuando alguien suba un plano, un presupuesto o una foto, aparece acá, ordenado por categoría.</div>
       )}
       {APORTE_TIPOS.map(t=> porTipo[t.k].length ? (
-        <Grupo key={t.k} titulo={t.n==="Plano"?"Planos":t.n+"s"}>
-          {porTipo[t.k].map(a=>{
-            const p = a.pid ? propPorId(a.pid) : null;
-            return (<Fila key={a.id} icoNav={t.ico} titulo={a.titulo|| (a.archivos[0]&&a.archivos[0].name) || t.n}
-              sub={[a.autor, p?p.name:"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · ")}
-              extra={a.archivos.length>1 ? <span className="mob-chip">{a.archivos.length}</span> : null}
-              onClick={()=> a.tipo==="plano" ? push({t:"plano", ap:a.id}) : push({t:"aporte", ap:a.id})}/>);
-          })}
-        </Grupo>
+        <div key={t.k}>
+          <div className="mob-gtit">{t.n==="Plano"?"Planos":t.n+"s"}</div>
+          <div className="mob-grid2">
+            {porTipo[t.k].map(a=>{
+              const p = a.pid ? propPorId(a.pid) : null;
+              return (<GridCard key={a.id} icoNav={t.ico} titulo={a.titulo|| (a.archivos[0]&&a.archivos[0].name) || t.n}
+                sub={[a.autor, p?p.name:"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · ")}
+                chip={a.archivos.length>1 ? String(a.archivos.length) : ""}
+                onClick={()=> a.tipo==="plano" ? push({t:"plano", ap:a.id}) : push({t:"aporte", ap:a.id})}/>);
+            })}
+          </div>
+        </div>
       ) : null)}
     </Pantalla>);
   };
@@ -8004,14 +8085,14 @@ function MobileApp(props){
         </button>
       )}
       {planos.length ? (
-        <Grupo>
+        <div className="mob-grid2">
           {planos.map(a=>{
             const p = a.pid ? propPorId(a.pid) : null;
-            return (<Fila key={a.id} icoNav="regla" titulo={a.titulo||(a.archivos[0]&&a.archivos[0].name)||"Plano"}
+            return (<GridCard key={a.id} icoNav="regla" titulo={a.titulo||(a.archivos[0]&&a.archivos[0].name)||"Plano"}
               sub={[a.autor, p?p.name:"", mobCuando(new Date(a.ts).toISOString())].filter(Boolean).join(" · ")}
               onClick={()=>push({t:"plano", ap:a.id})}/>);
           })}
-        </Grupo>
+        </div>
       ) : (
         <div className="mob-vacio">Ningún plano todavía. Cuando una arquitecta suba uno, aparece acá para leerlo con la IA.</div>
       )}
@@ -8036,18 +8117,18 @@ function MobileApp(props){
     const lista = (cotiz||[]).slice();
     return (<Pantalla titulo="Comparar presupuestos" contexto="Cotizaciones lado a lado, con una recomendación" gap="14">
       {lista.length ? (
-        <Grupo>
+        <div className="mob-grid2">
           {lista.map(c=>{
             const cmp = compararOfertas(c.ofertas, c.prioridad);
             const el = c.elegida ? (c.ofertas||[]).find(o=>o.id===c.elegida) : null;
             const p = c.pid ? propPorId(c.pid) : null;
-            return (<Fila key={c.id} icoNav="balanza" titulo={c.titulo||"Sin título"}
+            return (<GridCard key={c.id} icoNav="balanza" titulo={c.titulo||"Sin título"}
               sub={[(c.ofertas||[]).length+(((c.ofertas||[]).length===1)?" cotización":" cotizaciones"),
                     el ? "Elegida: "+(el.prov||"—") : (cmp.mejor ? "Conviene "+(cmp.mejor.prov||"—") : "Sin datos aún"),
                     p ? p.name : ""].filter(Boolean).join(" · ")}
               onClick={()=>push({t:"cotiz1", id:c.id})}/>);
           })}
-        </Grupo>
+        </div>
       ) : (
         <div className="mob-vacio">Ninguna comparación todavía. Arma una cuando tengas dos o más presupuestos por el mismo trabajo.</div>
       )}
@@ -8306,17 +8387,17 @@ function MobileApp(props){
     const lista = (tramites||[]).slice();
     return (<Pantalla titulo="Trámites" contexto="Qué se puede hacer hoy y qué está atrasando el resto" gap="14">
       {lista.length ? (
-        <Grupo>
+        <div className="mob-grid2">
           {lista.map(t=>{
             const pl = tramitePlantilla(t.k);
             const pn = planTramite(pl, t.hechos);
             const p = t.pid ? propPorId(t.pid) : null;
-            return (<Fila key={t.id} icoNav="portapapeles" titulo={t.titulo||pl.n}
+            return (<GridCard key={t.id} icoNav="portapapeles" titulo={t.titulo||pl.n}
               sub={[p?p.name:"", pn.pct===100 ? "Terminado" : ("~"+pn.dias+" días · "+pn.paralelo+(pn.paralelo===1?" paso listo":" pasos listos"))].filter(Boolean).join(" · ")}
-              extra={<span className={"mob-chip"+(pn.pct===100?" ink":"")}>{pn.hechos}/{pn.total}</span>}
+              chip={pn.hechos+"/"+pn.total} chipOk={pn.pct===100}
               onClick={()=>push({t:"tram1", id:t.id})}/>);
           })}
-        </Grupo>
+        </div>
       ) : (
         <div className="mob-vacio">Ningún trámite en curso. Empieza uno y la plataforma te dice el orden más conveniente.</div>
       )}
@@ -8559,21 +8640,30 @@ function MobileApp(props){
     return (<Pantalla titulo="Comunicaciones" contexto="Plantillas de correo, WhatsApp y SMS" gap="14">
       <div className="mob-nota">Los mensajes que la plataforma manda a los arrendatarios. Tócalos para ver el texto de cada canal y copiarlo o ajustarlo.</div>
       {!!base.length && (
-        <Grupo titulo="De la plataforma">
-          {base.map(t=>(
-            <Fila key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
-              onClick={()=>push({t:"plantilla", pl:t.id})}/>
-          ))}
-        </Grupo>
+        <div>
+          <div className="mob-gtit">De la plataforma</div>
+          <div className="mob-grid2">
+            {base.map(t=>(
+              <GridCard key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
+                onClick={()=>push({t:"plantilla", pl:t.id})}/>
+            ))}
+          </div>
+        </div>
       )}
-      <Grupo titulo="Tuyas">
-        {propias.length ? propias.map(t=>(
-          <Fila key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
-            onClick={()=>push({t:"plantilla", pl:t.id})}/>
-        )) : <Fila sinIco titulo="Ninguna todavía" sub="Crea una plantilla propia" chevron={false}/>}
-        {!soloLectura && <Fila icoNav="mas" titulo="Nueva plantilla" chevron={false}
-          onClick={()=>{ const id="pl"+Date.now().toString(36); deep.setPlantillas(ps=>[...ps,{id,label:"Nueva plantilla",ico:"sobre",builtin:false,adjuntos:[],asunto:"",cuerpo:"",cuerpoWA:"",cuerpoCorreo:""}]); push({t:"plantilla", pl:id}); }}/>}
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Tuyas</div>
+        {propias.length ? (
+          <div className="mob-grid2">
+            {propias.map(t=>(
+              <GridCard key={t.id} icoNav={t.ico||"sobre"} titulo={t.label} sub={t.asunto||""}
+                onClick={()=>push({t:"plantilla", pl:t.id})}/>
+            ))}
+          </div>
+        ) : <div className="mob-vacio" style={{padding:"18px 12px"}}>Ninguna todavía. Crea una plantilla propia.</div>}
+        {!soloLectura && <button className="mob-btn sec" style={{marginTop:10}}
+          onClick={()=>{ const id="pl"+Date.now().toString(36); deep.setPlantillas(ps=>[...ps,{id,label:"Nueva plantilla",ico:"sobre",builtin:false,adjuntos:[],asunto:"",cuerpo:"",cuerpoWA:"",cuerpoCorreo:""}]); push({t:"plantilla", pl:id}); }}>
+          <MobIco w={17}>{MI.mas}</MobIco> Nueva plantilla</button>}
+      </div>
     </Pantalla>);
   };
   const pantallaPlantilla = (plid)=>{
@@ -8639,14 +8729,14 @@ function MobileApp(props){
           return <button key={e.id} className={"mob-chip2"+(crmFiltro===e.id?" on":"")} onClick={()=>setCrmFiltro(e.id)}>{e.label} ({n})</button>; })}
       </div>
       {lista.length ? (
-        <Grupo>
+        <div className="mob-grid2">
           {lista.map(l=>(
-            <Fila key={l.id} icoNav="persona" titulo={l.nombre||"Sin nombre"}
+            <GridCard key={l.id} icoNav="persona" titulo={l.nombre||"Sin nombre"}
               sub={[crmEstado(l.estado).label, l.comuna||"", l.fuente||""].filter(Boolean).join(" · ")}
-              extra={(l.tareas||[]).some(t=>!t.hecha) ? <span className="mob-punto" title="Tarea pendiente"></span> : null}
+              punto={(l.tareas||[]).some(t=>!t.hecha)}
               onClick={()=>push({t:"lead", lid:l.id})}/>
           ))}
-        </Grupo>
+        </div>
       ) : <div className="mob-vacio">No hay prospectos que coincidan.</div>}
       {!soloLectura && <button className="mob-btn pri" onClick={()=>{ const id="ld"+Date.now().toString(36);
         deep.setLeads(x=>[{id,nombre:"Nuevo lead",telefono:"",email:"",fuente:"WhatsApp",estado:"nuevo",tipoBusqueda:"arriendo",propInteres:"",presupuesto:"",dorms:"",comuna:"",notas:"",valorUF:"",creado:Date.now(),actualizado:Date.now(),interacciones:[],visitas:[],tareas:[]},...x]);
@@ -8725,18 +8815,26 @@ function MobileApp(props){
   /* ---------- Informes ---------- */
   const pantallaInformes = ()=>(
     <Pantalla titulo="Informes" contexto="Cartolas para ti, tu contador o los dueños" gap="14">
-      <Grupo titulo="Toda la cartera">
-        <Fila icoNav="tendencia" titulo="Informe general" sub="Ingresos, gastos y utilidad de todas las propiedades"
-          onClick={()=>deep.informeGeneral&&deep.informeGeneral()}/>
-        <Fila icoNav="doc" titulo="Descargar como Word" chevron={false}
-          onClick={()=>deep.informeGeneralWord&&deep.informeGeneralWord()}/>
-      </Grupo>
-      <Grupo titulo="Por propiedad" nota="Cada una abre su informe: dividendo, gastos, pagos y balance.">
-        {propiedades.map(p=>(
-          <Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name} sub={p.comuna||""}
-            onClick={()=>push({t:"informeProp", id:p.id})}/>
-        ))}
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Toda la cartera</div>
+        <div className="mob-grid2">
+          <GridCard icoNav="tendencia" titulo="Informe general" sub="Ingresos, gastos y utilidad"
+            onClick={()=>deep.informeGeneral&&deep.informeGeneral()}/>
+          <GridCard icoNav="doc" titulo="Descargar Word" sub="La cartola completa"
+            onClick={()=>deep.informeGeneralWord&&deep.informeGeneralWord()}/>
+        </div>
+      </div>
+      <div>
+        <div className="mob-gtit">Por propiedad</div>
+        <div className="mob-grid2">
+          {propiedades.map(p=>(
+            <GridCard key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
+              titulo={nombreTarjeta(p.name, p.comuna)} sub={p.comuna||""}
+              onClick={()=>push({t:"informeProp", id:p.id})}/>
+          ))}
+        </div>
+        <div className="mob-nota">Cada una abre su informe: dividendo, gastos, pagos y balance.</div>
+      </div>
     </Pantalla>
   );
   const pantallaInformeProp = (p)=>(
@@ -8746,14 +8844,17 @@ function MobileApp(props){
         <div className="mob-porque" style={{color:"var(--mtx)", borderTopColor:"var(--mln)"}}>
           El informe reúne el arriendo, el dividendo, las contribuciones, los seguros, los gastos y los pagos registrados.</div>
       </div>
-      <Grupo>
-        <Fila icoNav="tendencia" titulo="Ver informe / Imprimir (PDF)" onClick={()=>deep.informeProp&&deep.informeProp(p)}/>
-        <Fila icoNav="doc" titulo="Descargar como Word" chevron={false} onClick={()=>deep.informePropWord&&deep.informePropWord(p)}/>
-      </Grupo>
-      <Grupo titulo="Ir a la propiedad">
-        <Fila ico={MI.edif} titulo="Abrir su balance" onClick={()=>push({t:"finProp", id:p.id})}/>
-        <Fila ico={MI.tarj} titulo="Ver sus pagos" onClick={()=>push({t:"pagos", id:p.id})}/>
-      </Grupo>
+      <div className="mob-grid2">
+        <GridCard icoNav="tendencia" titulo="Ver informe" sub="Imprimir / PDF" onClick={()=>deep.informeProp&&deep.informeProp(p)}/>
+        <GridCard icoNav="doc" titulo="Descargar Word" onClick={()=>deep.informePropWord&&deep.informePropWord(p)}/>
+      </div>
+      <div>
+        <div className="mob-gtit">Ir a la propiedad</div>
+        <div className="mob-grid2">
+          <GridCard ico={MI.edif} titulo="Abrir su balance" onClick={()=>push({t:"finProp", id:p.id})}/>
+          <GridCard ico={MI.tarj} titulo="Ver sus pagos" onClick={()=>push({t:"pagos", id:p.id})}/>
+        </div>
+      </div>
     </Pantalla>
   );
 
@@ -8762,20 +8863,47 @@ function MobileApp(props){
     const arrendadas = propiedades.filter(p=>p.use==="arriendo");
     return (<Pantalla titulo="Documentos legales" contexto="Contratos, firma y antecedentes" gap="14">
       <div className="mob-nota">Cada propiedad guarda su contrato, la firma y los antecedentes. Tócala para abrir lo suyo.</div>
-      <Grupo titulo="Contrato y firma por propiedad">
-        {(arrendadas.length?arrendadas:propiedades).map(p=>{
-          const tieneContrato = !!(p.contrato || (p.contratos&&p.contratos.length));
-          return (<Fila key={p.id} ico={p.use==="personal"?MI.casita:MI.edif} titulo={p.name}
-            sub={[p.tenant||"Sin arrendatario", tieneContrato?"Con contrato":"Sin contrato"].filter(Boolean).join(" · ")}
-            onClick={()=>push({t:"contrato", id:p.id})}/>);
-        })}
-      </Grupo>
-      <Grupo titulo="Antecedentes de un arrendatario">
-        <Fila icoNav="lupa" titulo="Consultar InfoCheck" sub="Historial comercial y laboral" chevron={false}
-          onClick={()=>AC.infoCheck && AC.infoCheck()}/>
-      </Grupo>
+      <div>
+        <div className="mob-gtit">Contrato y firma por propiedad</div>
+        <div className="mob-grid2">
+          {(arrendadas.length?arrendadas:propiedades).map(p=>{
+            const tieneContrato = !!(p.contrato || (p.contratos&&p.contratos.length));
+            return (<GridCard key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
+              titulo={nombreTarjeta(p.name, p.comuna)}
+              sub={[p.tenant||"Sin arrendatario", tieneContrato?"Con contrato":"Sin contrato"].filter(Boolean).join(" · ")}
+              chip={tieneContrato?"Contrato":""} chipOk={tieneContrato}
+              onClick={()=>push({t:"contrato", id:p.id})}/>);
+          })}
+        </div>
+      </div>
+      <GridCard icoNav="lupa" titulo="Consultar InfoCheck" sub="Antecedentes: historial comercial y laboral"
+        onClick={()=>AC.infoCheck && AC.infoCheck()}/>
     </Pantalla>);
   };
+
+  /* ---------- Secciones que antes abrían el escritorio encogido ----------
+     Incidencias, Bitácora e Historial ahora abren una rejilla de propiedades
+     en tarjetas; cada una lleva a su pantalla nativa, igual que las propiedades. */
+  const pantallaPickProp = (titulo, contexto, destino, cont)=> (
+    <Pantalla titulo={titulo} contexto={contexto} gap="14">
+      {propiedades.length ? (
+        <div className="mob-grid2">
+          {propiedades.map(p=>(
+            <GridCard key={p.id} ico={p.use==="personal"?MI.casita:MI.edif}
+              titulo={nombreTarjeta(p.name, p.comuna)}
+              sub={cont ? cont(p) : (p.comuna||"")}
+              onClick={()=>push({t:destino, id:p.id})}/>
+          ))}
+        </div>
+      ) : <div className="mob-vacio">Aún no hay propiedades.</div>}
+    </Pantalla>
+  );
+  const pantallaIncidSec = ()=> pantallaPickProp("Incidencias","Reclamos y reparaciones por propiedad","incid",
+    (p)=>{ const n=(p.incidencias||[]).filter(x=>(x.estado||"abierta")!=="cerrada"&&(x.estado||"")!=="resuelta").length; return n?(n+" abierta"+(n===1?"":"s")):"Sin incidencias"; });
+  const pantallaBitacSec = ()=> pantallaPickProp("Bitácora","Notas y mantenciones por propiedad","bitac",
+    (p)=>{ const n=(p.bitacora||[]).length; return n?(n+" entrada"+(n===1?"":"s")):"Sin entradas"; });
+  const pantallaHistSec = ()=> pantallaPickProp("Historial","Pagos, arrendatarios anteriores y garantías","histProp",
+    (p)=>{ const n=(p.histPagos||[]).length; return n?(n+" pago"+(n===1?"":"s")):"Sin pagos"; });
 
   /* ---------- Chat del equipo (pantalla completa, componente real) ---------- */
   const pantallaChatEquipo = ()=>(
@@ -8822,6 +8950,9 @@ function MobileApp(props){
     else if(top.t==="lead")         vista = pantallaLead(top.lid);
     else if(top.t==="informes")     vista = pantallaInformes();
     else if(top.t==="legal")        vista = pantallaLegal();
+    else if(top.t==="incidSec")     vista = pantallaIncidSec();
+    else if(top.t==="bitacSec")     vista = pantallaBitacSec();
+    else if(top.t==="histSec")      vista = pantallaHistSec();
     else if(top.t==="mas")          vista = pantallaMas();
     else if(top.t==="cuenta")       vista = pantallaCuenta();
     else if(top.t==="accesos")      vista = pantallaAccesos();
