@@ -317,11 +317,34 @@
   /* Embebido dentro de la app: la app pone su propia cabecera, así que se
      oculta la barra superior propia de la ficha y se recupera ese alto. */
   html.embed #topbar{ display:none; }
-  html.embed #mobileNavWrap{ top:0; }
   html.embed #sidebar{ top:8px; max-height:calc(100vh - 20px); }
   /* Dentro de la app no hace falta la portada ni las instrucciones largas: se
      entra directo a las secciones (ordenadas y plegadas), no a un folleto. */
   html.embed .hero, html.embed .instructions{ display:none; }
+
+  /* AIRE Y LIMPIEZA · dentro de la app se veía todo junto y apretado.
+     1) El campo "manual" de la UF salía a todo el ancho (un input[type=text]
+        ganaba por especificidad a .uf-input); se le devuelve su tamaño. */
+  #ufBar .uf-input{ width:120px; flex:0 0 auto; }
+  /* 2) Las tarjetas plegadas ya son la navegación: fuera el selector duplicado. */
+  html.embed #mobileNavWrap{ display:none; }
+  /* 3) La barra de UF, limpia y con aire; blanca como el resto. */
+  html.embed #ufBar{ padding:12px 16px; gap:9px 12px; background:#fff; border-bottom:1px solid var(--border); }
+  html.embed .uf-lbl{ font-size:12.5px; }
+  html.embed .uf-btn{ padding:6px 11px; }
+  html.embed .uf-input{ padding:6px 9px; }
+  /* 4) Más respiro: márgenes entre secciones, cabeceras y campos más altos. */
+  html.embed #content{ padding:18px 16px 134px; }
+  html.embed #layout{ max-width:680px; margin:0 auto; }
+  html.embed .card{ margin-bottom:14px; border-radius:18px; }
+  html.embed .card-header{ padding:16px 18px; }
+  html.embed .card-note{ padding:12px 18px 0; }
+  html.embed .card-body{ padding:10px 18px 20px; }
+  html.embed .field{ padding:15px 0; }
+  html.embed .field label.flabel{ margin-bottom:9px; }
+  html.embed .choice-group{ gap:9px; }
+  html.embed .grid-options{ gap:10px 12px; }
+  html.embed .attach-row{ padding:13px; margin-bottom:10px; }
   /* El ícono del asesor va en el negro de la plataforma, no en dorado. */
   #asFab{ background:var(--navy); color:#fff; }
   #asFab .dot{ background:#fff; border-color:var(--navy); }
