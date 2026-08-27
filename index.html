@@ -1736,6 +1736,16 @@
   .mob-lev-head .tl .ctx{ font-size:12.5px; color:var(--mtm); margin-top:1px; }
   .mob-lev-frame{ flex:1 1 auto; width:100%; border:0; background:var(--mbg); }
 
+  /* NITIDEZ · máxima resolución. Toda la interfaz es vectorial (logo e íconos
+     en SVG) y el tipo se suaviza al máximo: se ve nítida en pantallas Retina y
+     4K, sin bordes borrosos. optimizeLegibility hereda a todo el texto; el
+     antialiasing se fuerza también en los controles de formulario. */
+  html{ text-rendering:optimizeLegibility; }
+  body, input, textarea, select, button{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  svg{ shape-rendering:geometricPrecision; }
+  img{ image-rendering:-webkit-optimize-contrast; }
+  .mob-app, .mob-app *{ -webkit-tap-highlight-color:transparent; }
+
 </style>
 </head>
 <body>
@@ -5027,7 +5037,7 @@ function Puerta({ modo, onEntrar }){
 
   return (<div className="puerta">
     <div className="puerta-caja">
-      <div className="brand-logo" style={{width:64,height:64,marginBottom:14}}><img src="/logo.png" alt="ArriendoPro"/></div>
+      <div style={{marginBottom:14, display:"flex", justifyContent:"center"}}><Marca w={64}/></div>
       <h2>{crear?"Protege tu plataforma":"ArriendoPro"}</h2>
       <p>{crear
         ? "Crea la clave con la que entrarás desde ahora. Sin ella, nadie puede ver ni cambiar tus datos."
