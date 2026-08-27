@@ -266,7 +266,11 @@
     --danger:#101012; --danger-bg:#EDEDF2; --radius:16px;
     --brand-bg:#EFEFF4; --red:#101012; --red-bg:#EDEDF2; --line2:#EDEDF2;
   }
-  body{ color:var(--text); -webkit-font-smoothing:antialiased; }
+  body{ color:var(--text); }
+  /* Nitidez: mismo suavizado de texto y vectores que la plataforma (4K/Retina). */
+  html{ text-rendering:optimizeLegibility; }
+  body, input, textarea, select, button{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  svg{ shape-rendering:geometricPrecision; }
   #topbar{ background:#fff; color:var(--text); box-shadow:none; border-bottom:1px solid var(--border); }
   #topbar h1{ color:var(--text); }
   #progressWrap{ color:var(--text-muted); }
