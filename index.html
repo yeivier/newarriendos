@@ -17,8 +17,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<!-- Sin fuentes de Google: la tipografía es la del sistema (San Francisco en
-     iPhone/Mac vía -apple-system), así que no hay nada que descargar. -->
+<!-- Cuerpo en la tipografía del sistema (San Francisco en iPhone/Mac vía
+     -apple-system): nítida y familiar. Para los momentos grandes —títulos y
+     cifras— una tipografía de display con carácter, Space Grotesk, que le da
+     una firma propia y la saca de lo genérico. Si no carga, cae al sistema. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" />
 <style>
   :root{
     /* Blanco y negro puro, sobre grises de sistema iOS. Una sola tinta
@@ -1745,6 +1750,51 @@
   svg{ shape-rendering:geometricPrecision; }
   img{ image-rendering:-webkit-optimize-contrast; }
   .mob-app, .mob-app *{ -webkit-tap-highlight-color:transparent; }
+
+  /* ============================================================
+     PREMIUM · sacar la plataforma de lo genérico: profundidad,
+     materiales, movimiento y una tipografía de display con firma.
+     Solo estética (CSS); no toca datos ni lógica. Va al final. */
+
+  /* Tipografía de display con carácter para los momentos grandes. */
+  :root{ --font-display:'Space Grotesk', var(--font); }
+  .mob-hero-h, .mob-h-scr, .mob-t2, .mob-num-big, .mob-num-med,
+  .mob-hub-top .cifra, .mob-lev-head .nm, .puerta-caja h2{
+    font-family:var(--font-display); }
+  .mob-hero-h, .mob-h-scr, .mob-t2, .mob-lev-head .nm, .puerta-caja h2{ letter-spacing:-.03em; }
+  .mob-num-big, .mob-num-med, .mob-hub-top .cifra{ font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+
+  /* Neutros con más cuerpo: tinta profunda y papel apenas cálido. */
+  .mob-app{ --mib:#0B0B0C; --mib2:#17171A; --mbg:#F2F1EF;
+    --mln:#E8E6E2; --mli:#EEEDEA; --mfl:#EFEEEB; --mfl2:#E9E7E3; background:var(--mbg); }
+
+  /* Elevación real: sombras suaves en capas, no superficies planas. */
+  .mob-card, .mob-cardg, .mob-pc, .mob-group, .mob-row, .mob-seg,
+  .mob-prio-c, .mob-act-c, .mob-kpis2{
+    box-shadow:0 1px 2px rgba(11,11,12,.035), 0 10px 26px -16px rgba(11,11,12,.16); }
+  .mob-hub-top{ box-shadow:0 22px 50px -24px rgba(11,11,12,.6); }
+
+  /* Movimiento: entrada suave de cada pantalla y respuesta al tocar. */
+  @media (prefers-reduced-motion:no-preference){
+    .mob-scr, .mob-lev{ animation:premIn .4s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes premIn{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
+  }
+  .mob-pc, .mob-cardg, .mob-cell, .mob-btn, .mob-prio-c, .mob-act-c{
+    transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background .2s ease; }
+  .mob-pc:active, .mob-cardg:active, .mob-prio-c:active, .mob-act-c:active{ transform:scale(.977); }
+  .mob-btn.pri:active, .mob-btn.blk:active, .mob-btn.pri-sm:active{ transform:scale(.97); }
+
+  /* Botón principal con cuerpo: leve degradado y brillo superior. */
+  .mob-btn.pri, .mob-btn.blk{
+    background:linear-gradient(180deg,#26262A 0%, var(--mib) 78%);
+    box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 14px 30px -16px rgba(11,11,12,.62); }
+
+  /* Firma: grano finísimo sobre el héroe oscuro — la textura que distingue
+     lo premium de lo plano. */
+  .mob-hub-top{ position:relative; overflow:hidden; }
+  .mob-hub-top::after{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .mob-hub-top > *{ position:relative; z-index:1; }
 
 </style>
 </head>
