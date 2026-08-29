@@ -8061,12 +8061,30 @@ function MobileApp(props){
      estima superficies si están acotadas y sugiere mejoras. La conversación
      vive en el aparato mientras se mira el plano; el plano viaja a la IA como
      imagen. */
-  const planoImgIA = async(url)=>{
+  const leerBase64 = (blob)=> new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
+  const planoImgIA = async(url, contentType)=>{
     // El plano está servido por la plataforma (/a/…). Se baja y se pasa a
     // base64 para mandárselo a la IA como imagen.
     const r = await fetch(url); const blob = await r.blob();
-    const dataUrl = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
-    const m = /^data:([^;]+);base64,(.+)$/s.exec(String(dataUrl));
+    const media0 = String(contentType || blob.type || "").toLowerCase();
+    // Los planos suelen ser imágenes enormes. Antes de mandarlos a la IA se
+    // achican a ~1600px de lado: pesan mucho menos, viajan más rápido y la
+    // lectura ya no se cuelga (esa era la causa del "me demoré demasiado").
+    if(media0.startsWith("image/")){
+      try{
+        const img = await cargarImagen(await leerBase64(blob));
+        const w0 = img && (img.naturalWidth||img.width), h0 = img && (img.naturalHeight||img.height);
+        if(img && w0 && h0){
+          const escala = Math.min(1, 1600/Math.max(w0,h0));
+          const w = Math.max(1, Math.round(w0*escala)), h = Math.max(1, Math.round(h0*escala));
+          const jpeg = lienzoDe(img, w, h).toDataURL("image/jpeg", 0.85);
+          const mm = /^data:([^;]+);base64,(.+)$/s.exec(String(jpeg));
+          if(mm) return { media:mm[1], data:mm[2] };
+        }
+      }catch(_e){}
+    }
+    // PDF u otro formato: se manda tal cual.
+    const m = /^data:([^;]+);base64,(.+)$/s.exec(String(await leerBase64(blob)));
     if(!m) throw new Error("plano");
     return { media:m[1], data:m[2] };
   };
@@ -8085,14 +8103,27 @@ function MobileApp(props){
     setPlanoChat(c=>({...c, [a.id]: nuevo}));
     setPlanoBusy(true); setPlanoPreg("");
     try{
-      const plano = await planoImgIA(img.url);
+      const plano = await planoImgIA(img.url, img.contentType);
       const p = a.pid ? propPorId(a.pid) : null;
       const contexto = p ? (p.name+(p.comuna?" · "+p.comuna:"")+(p.address?" · "+p.address:"")) : "";
       const r = await api("/api/planos-ia",{ method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ messages:nuevo.slice(-8), plano, contexto }) });
-      const j = await r.json().catch(()=>({}));
-      const txt = j.text || j.error || "No pude leer el plano.";
-      setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:txt }]}));
+      if(!r.ok || !r.body){
+        const j = await r.json().catch(()=>({}));
+        setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content: j.error || "No pude leer el plano." }]}));
+        setPlanoBusy(false); return;
+      }
+      // La respuesta llega en vivo: el plano se va "leyendo" letra por letra en
+      // pantalla, y por eso ya no se corta por tiempo.
+      setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:"" }]}));
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let acc="";
+      while(true){
+        const {done,value} = await reader.read();
+        if(done) break;
+        acc += dec.decode(value, {stream:true});
+        setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:acc }]}));
+      }
+      if(!acc.trim()) setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:"No pude leer el plano. Intenta de nuevo con una foto más nítida." }]}));
     }catch(_e){
       setPlanoChat(c=>({...c, [a.id]: [...nuevo, { role:"assistant", content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez." }]}));
     }
@@ -8138,7 +8169,7 @@ function MobileApp(props){
                 <div className="tx">{m.content}</div>
               </div>
             ))}
-            {planoBusy && <div className="mob-iamsg ia"><span className="et">Agente de planos</span><div className="tx">Pensando…</div></div>}
+            {planoBusy && conv[conv.length-1] && conv[conv.length-1].role!=="assistant" && <div className="mob-iamsg ia"><span className="et">Agente de planos</span><div className="tx">Leyendo el plano…</div></div>}
           </div>
           <div className="mob-iabar">
             <input className="mob-inp" value={planoPreg} onChange={e=>setPlanoPreg(e.target.value)}

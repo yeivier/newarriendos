@@ -13,7 +13,11 @@ import { quienLlama, sinAcceso } from '../lib/auth.mts'
 
 const API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-opus-5'
-const TOPE_MS = 9500
+// La respuesta se transmite en vivo (streaming). Mientras van llegando letras,
+// la función de Netlify sigue abierta, así que ya no se corta a los ~10 s como
+// antes (esa era la causa del "me demoré más de la cuenta"). El tope es un
+// resguardo generoso por si la IA se cuelga del todo.
+const TOPE_MS = 55_000
 const MAX_B64 = 5_500_000
 
 const EXPERTO = `Eres un arquitecto chileno con años leyendo e interpretando planos. Analizas el plano que te muestran y respondes con criterio profesional, en español de Chile, tratando de "tú". Directo y claro: nada de rodeos ni de repetir la pregunta.
@@ -68,30 +72,76 @@ export default async (req: Request, _context: Context) => {
     ? `\n\n## Contexto de la propiedad\n${String(body.contexto).slice(0, 1500)}`
     : ''
 
+  let r: Response
   try {
-    const r = await fetch(API, {
+    r = await fetch(API, {
       method: 'POST',
       signal: AbortSignal.timeout(TOPE_MS),
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2048,
-        output_config: { effort: 'medium' },
+        // Esfuerzo bajo = primera letra rápida; el plano se lee igual de bien y
+        // ya no depende de terminar antes de que Netlify corte la función,
+        // porque la respuesta va saliendo en vivo.
+        max_tokens: 1600,
+        output_config: { effort: 'low' },
         system: EXPERTO + ctx,
         messages: mensajes,
+        stream: true,
       }),
     })
-    const j: any = await r.json()
-    if (!r.ok) return Response.json({ error: j?.error?.message || 'Error de la IA' }, { status: 502 })
-    if (j.stop_reason === 'refusal') return Response.json({ text: 'Prefiero no responder eso. Muéstrame un plano y te lo leo.' })
-    const texto = (j.content || []).filter((x: any) => x.type === 'text').map((x: any) => x.text).join('\n')
-    return Response.json({ text: texto || 'No alcancé a leer el plano. Prueba con una foto más nítida.' })
   } catch (e: any) {
     if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-      return Response.json({ text: 'Me demoré más de la cuenta con el plano 😅 Prueba de nuevo, o con una imagen más liviana.' })
+      return Response.json({ text: 'Me demoré más de la cuenta con el plano 😅 Prueba de nuevo, o con una imagen más liviana.' }, { status: 200 })
     }
     return Response.json({ error: 'No se pudo contactar la IA: ' + (e?.message || 'error de red') }, { status: 502 })
   }
+
+  // Si la API rechazó la petición antes de empezar a responder, avisamos con un
+  // JSON normal (el navegador lo lee por !r.ok).
+  if (!r.ok || !r.body) {
+    const j: any = await r.json().catch(() => ({}))
+    return Response.json({ error: j?.error?.message || 'Error de la IA' }, { status: 502 })
+  }
+
+  // Reenvía el flujo SSE de Anthropic como texto plano, letra por letra. Así la
+  // ventana ve el plano "escribiéndose" y la función no se cae por tiempo.
+  const enc = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = r.body!.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      let algo = false
+      const empujar = (t: string) => { if (t) { algo = true; controller.enqueue(enc.encode(t)) } }
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += dec.decode(value, { stream: true })
+          const lineas = buf.split('\n')
+          buf = lineas.pop() || ''
+          for (const linea of lineas) {
+            const t = linea.trim()
+            if (!t.startsWith('data:')) continue
+            const carga = t.slice(5).trim()
+            if (!carga || carga === '[DONE]') continue
+            let ev: any
+            try { ev = JSON.parse(carga) } catch { continue }
+            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') empujar(ev.delta.text || '')
+            else if (ev.type === 'message_delta' && ev.delta?.stop_reason === 'refusal' && !algo) empujar('Prefiero no responder eso. Muéstrame un plano y te lo leo.')
+            else if (ev.type === 'error') empujar(algo ? '\n\n(Se cortó la lectura del plano.)' : 'No pude leer el plano. Intenta de nuevo con una foto más nítida.')
+          }
+        }
+        if (!algo) empujar('No alcancé a leer el plano. Prueba con una foto más nítida o más liviana.')
+      } catch {
+        empujar(algo ? '\n\n(Se cortó la lectura del plano. Intenta de nuevo.)' : 'Me demoré más de la cuenta con el plano 😅 Prueba de nuevo, o con una imagen más liviana.')
+      } finally {
+        controller.close()
+      }
+    },
+  })
+  return new Response(stream, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
 }
 
 export const config: Config = { path: '/api/planos-ia', method: ['POST'] }
