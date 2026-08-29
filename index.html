@@ -179,7 +179,7 @@
   .collapse.flush>.cbody{padding-left:0;padding-right:0}
 
   .modal-bg{position:fixed;inset:0;background:rgba(16,16,18,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;padding:18px}
-  .modal{background:var(--card);border-radius:16px;width:640px;max-width:97vw;max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(16,16,18,.3)}
+  .modal{background:var(--card);border-radius:16px;width:640px;max-width:97vw;max-height:92vh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 24px 70px rgba(16,16,18,.3)}
   .modal-head{padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
   /* Flecha para volver: una sola, flotante, sirve para cualquier ventana que
      esté abierta. En el teléfono el botón "Cancelar" queda al final de un
@@ -345,8 +345,17 @@
     .sub-title{font-size:12px;padding:6px 10px}
     .btn{font-size:14px;padding:10px 14px;min-height:43px}
     .btn-sm{font-size:13px;padding:8px 12px;min-height:0}
-    .modal{border-radius:15px}
+    /* En el teléfono cada ventana se vuelve una "hoja" que sube desde abajo:
+       ocupa todo el ancho (sin desplazarse de lado), esquinas redondeadas
+       solo arriba, con una barrita para indicar que se puede deslizar. Así es
+       como se ven las apps del iPhone y resulta natural para cualquiera. */
+    .modal-bg{align-items:flex-end;padding:0}
+    .modal{width:100%!important;max-width:100%!important;max-height:92vh;border-radius:20px 20px 0 0;box-shadow:0 -12px 44px rgba(16,16,18,.3)}
+    .modal-head{padding:22px 18px 14px}
+    .modal-head::after{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:38px;height:4px;border-radius:99px;background:var(--line)}
     .modal-head h3{font-size:17px}
+    .modal-body{padding:16px 18px}
+    .modal-foot{padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px))}
     .collapse>.chead{padding:13px 13px;gap:10px}
     .collapse>.chead .cico{width:25px}
     .collapse>.chead .ctitle{font-size:14.5px}
