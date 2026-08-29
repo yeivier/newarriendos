@@ -1774,10 +1774,13 @@
     box-shadow:0 1px 2px rgba(11,11,12,.035), 0 10px 26px -16px rgba(11,11,12,.16); }
   .mob-hub-top{ box-shadow:0 22px 50px -24px rgba(11,11,12,.6); }
 
-  /* Movimiento: entrada suave de cada pantalla y respuesta al tocar. */
+  /* Movimiento: entrada suave de cada pantalla y respuesta al tocar.
+     IMPORTANTE: la entrada es SOLO opacidad (sin transform). Un transform en
+     .mob-scr crea un bloque contenedor y rompe el position:fixed de la barra
+     inferior "Registrar pago" en iOS —quedaba flotando sobre la tarjeta—. */
   @media (prefers-reduced-motion:no-preference){
-    .mob-scr, .mob-lev{ animation:premIn .4s cubic-bezier(.2,.8,.2,1) both; }
-    @keyframes premIn{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
+    .mob-scr, .mob-lev{ animation:premFade .34s ease both; }
+    @keyframes premFade{ from{ opacity:0; } to{ opacity:1; } }
   }
   .mob-pc, .mob-cardg, .mob-cell, .mob-btn, .mob-prio-c, .mob-act-c{
     transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background .2s ease; }
@@ -6554,7 +6557,7 @@ function MobileApp(props){
     const dominanteVista = dominante && filtro(dominante) ? dominante : null;
     const resto = pendientes.concat(atrasados.filter(p=>p!==dominante)).concat(pagados).filter(filtro);
 
-    return (<div className="mob-scr g14 con-pie">
+    return (<div className="mob-scr g14">
       <HeaderMob eyebrow={mesTxt} title="Cobros" sub={pagados.length+" al día · "+pendientes.length+" por vencer · "+atrasados.length+" atrasado"+(atrasados.length===1?"":"s")}/>
       <div className="mob-buscar">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
@@ -6608,6 +6611,9 @@ function MobileApp(props){
           <div className="mob-eyebrow">COBRADO ESTE MES</div>
           <div className="mob-num-big">{CLP(totalCobrado)}</div>
           <div className="mob-p2">{atrasados.length? "Ajusta la búsqueda para ver el atraso." : "No hay arriendos atrasados."}</div>
+          {!soloLectura && !!rentals.length && <button className="mob-btn pri" style={{marginTop:4}}
+            onClick={()=>{ const p=pendientes[0]||rentals[0]; p&&abrirCobrar(p); }}>
+            <MobIco w={18}>{MI.mas}</MobIco> Registrar un pago</button>}
         </div>
       )}
 
@@ -6628,12 +6634,6 @@ function MobileApp(props){
         </Grupo>
       )}
 
-      <div className="mob-footbar">
-        <button className="mob-btn pri" style={{width:"100%"}}
-          onClick={()=>{ const p=atrasadoMasGrave||pendientes[0]||rentals[0]; p?abrirCobrar(p):notify("Aún no hay propiedades en arriendo"); }}>
-          <MobIco w={19}>{MI.mas}</MobIco> Registrar pago
-        </button>
-      </div>
     </div>);
   };
 
