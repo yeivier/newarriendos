@@ -1837,6 +1837,20 @@
   .mob-app .ios-sw .knob{ position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition:transform .28s cubic-bezier(.3,1.25,.5,1); }
   .mob-app .ios-sw.on .knob{ transform:translateX(20px); }
 
+  /* Barra de navegación de iOS: el título grande se encoge y aparece,
+     centrado y pequeño, en la barra fija de arriba al desplazar. */
+  .mob-app .mob-nav{ transition:background .2s ease, box-shadow .2s ease; }
+  .mob-app .mob-nav-ttl{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) translateY(5px);
+    font-size:16px; font-weight:650; letter-spacing:-.01em; color:var(--mib); opacity:0;
+    transition:opacity .22s ease, transform .22s ease; pointer-events:none; text-align:center;
+    max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-app .mob-scr.nav-fija .mob-nav{ background:rgba(242,241,239,.82);
+    -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px);
+    box-shadow:0 .5px 0 var(--mln); }
+  .mob-app .mob-scr.nav-fija .mob-nav-ttl{ opacity:1; transform:translate(-50%,-50%); }
+  .mob-app .mob-titulo{ position:relative; }
+  .mob-app .mob-sentinela{ position:absolute; left:0; bottom:0; width:1px; height:1px; pointer-events:none; }
+
 </style>
 </head>
 <body>
@@ -6245,12 +6259,35 @@ const HeaderMob = ({ eyebrow, title, sub, right })=>{
   );
 };
 /* Pantalla empujada (nivel 2 en adelante): atrás, título, contexto y nada más. */
+/* Título grande que se encoge al desplazar, como la barra de navegación de iOS:
+   arriba se ve el título grande; al bajar, se desliza hacia afuera y aparece,
+   centrado y pequeño, dentro de la barra fija de arriba. Un "centinela" marca
+   dónde termina el título grande y un IntersectionObserver avisa cuándo cruzó
+   el borde superior. */
+function useColapso(){
+  const ref = React.useRef(null);
+  const [fija, setFija] = React.useState(false);
+  React.useEffect(()=>{
+    const s = ref.current; if(!s || typeof IntersectionObserver==="undefined") return;
+    const root = s.closest(".mob-scr"); if(!root) return;
+    let io;
+    try{
+      io = new IntersectionObserver((ents)=>{ setFija(!ents[0].isIntersecting); },
+        { root, rootMargin:"-50px 0px 0px 0px", threshold:0 });
+      io.observe(s);
+    }catch(_e){}
+    return ()=>{ if(io) io.disconnect(); };
+  },[]);
+  return { ref, fija };
+}
 const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>{
   const { pop } = React.useContext(MobCtx);
+  const { ref, fija } = useColapso();
   return (
-    <div className={"mob-scr"+(gap==="14"?" g14":"")+(pie?" con-pie":"")}>
+    <div className={"mob-scr"+(gap==="14"?" g14":"")+(pie?" con-pie":"")+(fija?" nav-fija":"")}>
       <div className="mob-nav">
         <button className="mob-back" onClick={atras||pop} aria-label="Volver"><MobIco w={19} sw={2.4}>{MI.chevronL}</MobIco></button>
+        <span className="mob-nav-ttl">{titulo}</span>
         <span className="sp"></span>
         {accion||null}
         <BotonBuscar/>
@@ -6258,6 +6295,7 @@ const Pantalla = ({ titulo, contexto, atras, accion, children, pie, gap })=>{
       <div className="mob-titulo">
         <h1 className="mob-h-scr">{titulo}</h1>
         {contexto ? <div className="ctx">{contexto}</div> : null}
+        <div ref={ref} className="mob-sentinela" aria-hidden="true"></div>
       </div>
       {children}
       {pie||null}
