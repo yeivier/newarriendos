@@ -1824,6 +1824,14 @@
   .mob-app .wa-item .wa-tx .sb{ font-size:12.5px; color:var(--mtm); }
   .mob-app .wa-item .wa-tx .d{ font-size:13px; color:var(--mtx); margin-top:2px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 
+  /* Reordenar tarjetas manteniéndolas presionadas (como mover apps en iPhone).
+     El envoltorio llena la celda y la tarjeta llena el envoltorio. */
+  .mob-app .mob-grid2 > .ord-wrap.mob-ord{ display:block; }
+  .mob-app .mob-grid2 > .ord-wrap.mob-ord > .mob-pc{ width:100%; height:100%; }
+  .mob-app .ord-wrap.mob-ord.arrastrando{ z-index:50; box-shadow:0 20px 46px -12px rgba(11,11,12,.4); }
+  .mob-app .ord-wrap.mob-ord.hueco{ outline:2px dashed var(--mib); outline-offset:3px; border-radius:18px; background:var(--mfl); }
+  .mob-app .ord-wrap.mob-ord.hueco > .mob-pc{ opacity:.5; }
+
 </style>
 </head>
 <body>
@@ -3159,7 +3167,7 @@ function MediaSection({ d, set }){
   const renPano=(i,name)=> set(p=>({...p, panoramas:(p.panoramas||[]).map((x,j)=>j===i?{...x,name}:x)}));
   return (<>
     <div className="sub-title dark">⑧ Fotos y recorrido virtual 360°</div>
-    <div className="help" style={{marginBottom:12}}>Sube todas las fotos que quieras, en la mejor calidad que tengas: se guardan a máxima resolución en la plataforma (no en el dispositivo), así que quedan disponibles desde cualquier teléfono o computador y viajan con el enlace al compartir. Solo se reducen si el archivo no cabe en un envío, y en ese caso se conserva el tamaño más grande posible. La <b>primera foto</b> es la portada.</div>
+    <div className="help" style={{marginBottom:12}}>Sube tus mejores fotos. La <b>primera</b> es la portada.</div>
     <label className="btn btn-out btn-sm" style={{marginBottom:10,opacity:busy?0.6:1,pointerEvents:busy?"none":"auto"}}>
       {busy?"Subiendo…":"Agregar fotos"}
       <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{ addFiles(e.target.files,"foto"); e.target.value=""; }}/>
@@ -3175,8 +3183,8 @@ function MediaSection({ d, set }){
     </div>}
 
     <div style={{marginTop:16}}>
-      <div style={{fontWeight:800,fontSize:14.5,marginBottom:4}}>Recorrido virtual 360° (tipo Matterport)</div>
-      <div className="help" style={{marginBottom:10}}>Sube fotos <b>panorámicas equirectangulares</b> (cámara 360° o la app del teléfono), una por ambiente. Quien reciba la ficha podrá mirar en todas las direcciones, como si estuviera dentro de la propiedad.</div>
+      <div style={{fontWeight:800,fontSize:14.5,marginBottom:4}}>Recorrido virtual 360°</div>
+      <div className="help" style={{marginBottom:10}}>Fotos <b>panorámicas 360°</b>, una por ambiente. Se mira en todas las direcciones.</div>
       <label className="btn btn-out btn-sm" style={{marginBottom:10,opacity:busy?0.6:1,pointerEvents:busy?"none":"auto"}}>
         {busy?"Subiendo…":"Agregar panorámica 360°"}
         <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{ addFiles(e.target.files,"pano"); e.target.value=""; }}/>
@@ -3297,15 +3305,15 @@ function PropForm({d, set}){
     {/* Certificado de avalúo fiscal: el documento del SII que acredita el
         avalúo y el rol. Se guarda con su fecha y su archivo. */}
     <div className="sub-title" style={{display:"flex",alignItems:"center",gap:7}}><Ic n="recibo" w={17}/> Certificado de avalúo fiscal</div>
-    <div className="help" style={{marginBottom:10}}>Es el documento del <b>SII</b> que acredita el <b>avalúo fiscal</b> y el <b>rol</b> de la propiedad. Se pide gratis en el sitio del SII con el rol{d.rolSII?<> (el de esta propiedad es <b>{d.rolSII}</b>)</>:null} y sirve para contribuciones, tasaciones, créditos y trámites en notaría.</div>
+    <div className="help" style={{marginBottom:10}}>Documento del <b>SII</b> que acredita el avalúo y el rol. Se pide gratis con el rol{d.rolSII?<> (<b>{d.rolSII}</b>)</>:null}.</div>
     <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
       <Inp f={{k:"certAvaluoFecha",label:"Fecha de emisión del certificado",t:"date"}} value={d.certAvaluoFecha} onChange={ch}/>
       <Inp f={{k:"certAvaluoFolio",label:"Folio o número (si lo trae)",ph:"Ej: 123456789"}} value={d.certAvaluoFolio} onChange={ch}/>
     </div>
     <AdjuntosEditor items={d.certAvaluoDocs||[]} onChange={l=>ch("certAvaluoDocs",l)}/>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
-      <a className="btn btn-out btn-sm" href="https://www4.sii.cl/certconsultarolinternetui/" target="_blank" rel="noopener">Obtener el certificado en el SII →</a>
-      <a className="btn btn-ghost btn-sm" href="https://www.sii.cl/servicios_online/" target="_blank" rel="noopener">Servicios online del SII</a>
+      <a className="btn btn-out btn-sm" href="https://www.sii.cl/servicios_online/1048-.html" target="_blank" rel="noopener">Obtener el certificado en el SII →</a>
+      <a className="btn btn-ghost btn-sm" href="https://www.sii.cl/servicios_online/1048-4544.html" target="_blank" rel="noopener">Mis bienes raíces (SII)</a>
     </div>
 
     {d.use==="arriendo" && <>
@@ -3315,14 +3323,14 @@ function PropForm({d, set}){
         <button className={d.rentedNow===false?"on":""} onClick={()=>ch("rentedNow",false)}>No, disponible</button>
       </div>
       {d.rentedNow===false ? (
-        <div className="help" style={{marginBottom:12}}>Quedará marcada como <b>disponible</b> y registraré automáticamente la <b>laguna de arriendo</b> (tiempo sin arrendar) desde la fecha indicada, hasta que la marques como arrendada (cargando un arrendatario).
+        <div className="help" style={{marginBottom:12}}>Quedará <b>disponible</b> y registro la <b>laguna de arriendo</b> desde esta fecha.
           <div className="field" style={{marginTop:10,maxWidth:300}}><label className="label">Sin arrendar desde</label><input className="input" type="date" value={d.vacDesde||""} onChange={e=>ch("vacDesde",e.target.value)}/></div>
         </div>
       ) : (<>
         <div className="sub-title green">⑤ Datos del arrendatario</div>
         <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>{tenant.map(f=><Inp key={f.k} f={f} value={d[f.k]} onChange={ch}/>)}</div>
         <div className="sub-title green">⑥ Condiciones del arriendo</div>
-        <div className="help" style={{marginBottom:12}}>El arriendo se guarda <b>en UF</b>, así se reajusta solo según el valor diario de la UF. Hoy: <b>1 UF = {CLP(window.__UF__||38500)}</b> → arriendo ≈ <b>{CLP(num(d.rentUF)*(window.__UF__||38500))}/mes</b>.</div>
+        <div className="help" style={{marginBottom:12}}>Se guarda <b>en UF</b> y se reajusta solo. Hoy 1 UF = {CLP(window.__UF__||38500)} → ≈ <b>{CLP(num(d.rentUF)*(window.__UF__||38500))}/mes</b>.</div>
         <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>{rentF.map(f=><Inp key={f.k} f={f} value={d[f.k]} onChange={ch}/>)}</div>
         <div className="sub-title green">Garantía</div>
         <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
@@ -6341,6 +6349,28 @@ function MobileApp(props){
   // local y se comparte con la ficha técnica (mismo origen), un solo interruptor.
   const [iaFabOn, setIaFabOn] = React.useState(()=>{ try{ return localStorage.getItem("ap_ia_fab")!=="off"; }catch(_e){ return true; } });
   const toggleIaFab = (on)=>{ try{ localStorage.setItem("ap_ia_fab", on?"on":"off"); }catch(_e){} setIaFabOn(on); };
+
+  // Orden personalizado de las tarjetas: se mantiene presionada una tarjeta y,
+  // sin soltar, se arrastra a donde uno quiera —igual que al mover las apps en
+  // el iPhone—. El orden se guarda por sección y sigue ahí al volver a entrar.
+  const [ordenes, setOrdenes] = React.useState(()=>store.get("ap_ordenes", {}));
+  React.useEffect(()=>{ try{ store.set("ap_ordenes", ordenes); }catch(_e){} }, [ordenes]);
+  const guardarOrden = (clave, ids)=> setOrdenes(o=>({...o, [clave]:ids}));
+  // Une el orden de una vista filtrada de vuelta al orden completo, para no
+  // perder de vista las tarjetas que ahora no se están mostrando.
+  const fusionarOrden = (visibles, todos)=>{
+    const base = todos.map(x=>String(x.id));
+    const set = new Set(visibles); let k=0;
+    const out = base.map(g=> set.has(g) ? visibles[k++] : g);
+    while(k<visibles.length){ if(out.indexOf(visibles[k])<0) out.push(visibles[k]); k++; }
+    return out;
+  };
+  // Manejadores para arrastrar la tarjeta `i` de `ids`, más la supresión del
+  // toque que llega justo después de moverla (para que no abra la ficha).
+  const arrastreCard = (clave, ids, i, alSoltar)=>({
+    ...arrastrable(clave, ids, i, alSoltar),
+    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } },
+  });
   // Propiedad elegida al empezar un trámite (vive fuera de la pantalla para que
   // no se pierda al volver a dibujar la lista de plantillas).
   const [tramPid, setTramPid] = React.useState("");
@@ -6620,7 +6650,13 @@ function MobileApp(props){
      Una lista y nada más. El detalle vive un nivel más adentro, en el hub. */
   const [propFiltro, setPropFiltro] = React.useState("todas");
   const pantallaPropiedades = ()=>{
-    const lista = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
+    const base = propFiltro==="arriendo" ? rentals : propFiltro==="personal" ? personales : propiedades;
+    // Se muestran en el orden que la persona dejó (arrastrando). El orden es
+    // uno solo para todas las vistas; en las filtradas se acomoda y se vuelve a
+    // unir al completo al soltar.
+    const todosOrd = ordenarPor(propiedades, ordenes.mob_props, p=>String(p.id));
+    const lista = ordenarPor(base, ordenes.mob_props, p=>String(p.id));
+    const ids = lista.map(p=>String(p.id));
     return (<div className="mob-scr g14">
       <HeaderMob title="Propiedades" sub={propiedades.length+" en total · "+rentals.length+" en arriendo"}/>
       <div className="mob-seg">
@@ -6629,11 +6665,17 @@ function MobileApp(props){
         <button className={propFiltro==="personal"?"on":""} onClick={()=>setPropFiltro("personal")}>Uso personal</button>
       </div>
 
-      {lista.length ? (
+      {lista.length ? (<>
         <div className="mob-grid2">
-          {lista.map(p=> <PropCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
+          {lista.map((p,i)=> (
+            <div key={p.id} className="ord-wrap mob-ord" data-ord-clave="mob_props"
+              {...arrastreCard("mob_props", ids, i, (nuevos)=>guardarOrden("mob_props", fusionarOrden(nuevos, todosOrd)))}>
+              <PropCard p={p} onClick={()=>push({t:"prop", id:p.id})}/>
+            </div>
+          ))}
         </div>
-      ) : <div className="mob-vacio">Aún no hay propiedades en esta vista.</div>}
+        {lista.length>1 && <div className="mob-nota" style={{textAlign:"center",marginTop:2}}>Mantén presionada una tarjeta para moverla y ordenarlas a tu gusto.</div>}
+      </>) : <div className="mob-vacio">Aún no hay propiedades en esta vista.</div>}
 
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
         <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
@@ -10873,7 +10915,7 @@ function App(){
      RUT y su clave, así que aquí se entrega lo guardado y el camino exacto para
      obtener lo que falte. */
   const SII_LINKS={
-    certificado_avaluo:"https://www4.sii.cl/certconsultarolinternetui/",
+    certificado_avaluo:"https://www.sii.cl/servicios_online/1048-.html",
     servicios_online:"https://www.sii.cl/servicios_online/",
     situacion_tributaria:"https://zeus.sii.cl/cvc_cgi/stc/getstc",
   };
