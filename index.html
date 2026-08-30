@@ -17,13 +17,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<!-- Cuerpo en la tipografía del sistema (San Francisco en iPhone/Mac vía
-     -apple-system): nítida y familiar. Para los momentos grandes —títulos y
-     cifras— una tipografía de display con carácter, Space Grotesk, que le da
-     una firma propia y la saca de lo genérico. Si no carga, cae al sistema. -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" />
+<!-- Todo en la tipografía del sistema (San Francisco / SF Pro en iPhone y Mac
+     vía -apple-system), títulos y cifras incluidos: se ve idéntica a las apps
+     de Apple que la persona ya usa a diario. -->
+
 <style>
   :root{
     /* Blanco y negro puro, sobre grises de sistema iOS. Una sola tinta
@@ -1765,8 +1762,9 @@
      materiales, movimiento y una tipografía de display con firma.
      Solo estética (CSS); no toca datos ni lógica. Va al final. */
 
-  /* Tipografía de display con carácter para los momentos grandes. */
-  :root{ --font-display:'Space Grotesk', var(--font); }
+  /* Tipografía de display: la misma del sistema (SF Pro en iPhone), para que se
+     vea idéntica a las apps de Apple que la persona ya conoce. */
+  :root{ --font-display:var(--font); }
   .mob-hero-h, .mob-h-scr, .mob-t2, .mob-num-big, .mob-num-med,
   .mob-hub-top .cifra, .mob-lev-head .nm, .puerta-caja h2{
     font-family:var(--font-display); }
@@ -1831,6 +1829,13 @@
   .mob-app .ord-wrap.mob-ord.arrastrando{ z-index:50; box-shadow:0 20px 46px -12px rgba(11,11,12,.4); }
   .mob-app .ord-wrap.mob-ord.hueco{ outline:2px dashed var(--mib); outline-offset:3px; border-radius:18px; background:var(--mfl); }
   .mob-app .ord-wrap.mob-ord.hueco > .mob-pc{ opacity:.5; }
+
+  /* Interruptor tipo iOS (Ajustes del iPhone). */
+  .mob-app .mob-fila-sw{ display:flex; align-items:center; gap:14px; padding:4px 2px; }
+  .mob-app .ios-sw{ width:51px; height:31px; border-radius:31px; background:#E9E9EA; border:none; padding:0; position:relative; cursor:pointer; flex-shrink:0; transition:background .28s ease; -webkit-tap-highlight-color:transparent; }
+  .mob-app .ios-sw.on{ background:#34C759; }
+  .mob-app .ios-sw .knob{ position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition:transform .28s cubic-bezier(.3,1.25,.5,1); }
+  .mob-app .ios-sw.on .knob{ transform:translateX(20px); }
 
 </style>
 </head>
@@ -6321,6 +6326,16 @@ const GridCard = ({ ico, icoNav, titulo, sub, chip, chipOk, punto, onClick })=>{
     : <div className="mob-pc quieta">{dentro}</div>;
 };
 
+/* Interruptor idéntico al de los Ajustes del iPhone (verde encendido, gris
+   apagado, con la perilla que se desliza). Es el control de encendido/apagado
+   que cualquier usuario de iPhone reconoce al instante. */
+const IosSwitch = ({ on, onChange })=> (
+  <button type="button" role="switch" aria-checked={!!on}
+    className={"ios-sw"+(on?" on":"")} onClick={()=>onChange&&onChange(!on)}>
+    <span className="knob"></span>
+  </button>
+);
+
 function MobileApp(props){
   const {
     props: propiedades, socs, contacts, uf, owner, soloLectura,
@@ -6422,6 +6437,85 @@ function MobileApp(props){
      no una sección de escritorio escondida detrás. Se reasigna en cada dibujo
      para que las funciones vean siempre el estado actual. */
   React.useEffect(()=>{ if(nav) nav.current = { irA, push, pop, inicio:()=>setPila([]) }; });
+
+  /* Volver atrás como en el iPhone: deslizar desde el borde izquierdo de la
+     pantalla hacia la derecha retrocede un paso. El estado actual se lee por
+     referencia para que el gesto siempre haga lo correcto. */
+  const atrasRef = React.useRef({});
+  atrasRef.current = { pila, saltoDe, top, pop, volverSalto };
+  React.useEffect(()=>{
+    let sx=0, sy=0, activo=false;
+    const onStart=(e)=>{
+      const t=e.touches&&e.touches[0]; if(!t){ activo=false; return; }
+      // Con una ventana abierta manda la ventana (se cierra deslizándola hacia
+      // abajo), no el retroceso de navegación.
+      if(document.querySelector(".modal-bg")){ activo=false; return; }
+      if(t.clientX<=24){ activo=true; sx=t.clientX; sy=t.clientY; } else activo=false;
+    };
+    const onEnd=(e)=>{
+      if(!activo) return; activo=false;
+      const t=(e.changedTouches&&e.changedTouches[0]); if(!t) return;
+      const dx=t.clientX-sx, dy=t.clientY-sy;
+      if(dx>62 && Math.abs(dy)<48){
+        const n=atrasRef.current;
+        if(n.pila && n.pila.length>0) n.pop();
+        else if(n.saltoDe && !n.top) n.volverSalto();
+      }
+    };
+    document.addEventListener("touchstart", onStart, {passive:true});
+    document.addEventListener("touchend", onEnd, {passive:true});
+    document.addEventListener("touchcancel", ()=>{ activo=false; }, {passive:true});
+    return ()=>{ document.removeEventListener("touchstart",onStart); document.removeEventListener("touchend",onEnd); };
+  },[]);
+
+  /* Cerrar una hoja deslizándola hacia abajo, como las hojas modales del
+     iPhone. Se toma desde la parte de arriba (el asa) y, si se arrastra lo
+     suficiente, se cierra tocando el fondo (que es como cierran todas). */
+  React.useEffect(()=>{
+    let hoja=null, y0=0, dy=0, arrastrando=false, listo=false;
+    const onStart=(e)=>{
+      const t=e.touches&&e.touches[0]; if(!t) return;
+      const s=e.target && e.target.closest && e.target.closest(".modal");
+      if(!s){ listo=false; hoja=null; return; }
+      if(s.scrollTop>0){ listo=false; return; }           // dejar que primero suba el contenido
+      const r=s.getBoundingClientRect();
+      if(t.clientY-r.top>130){ listo=false; return; }      // solo desde el asa / encabezado
+      hoja=s; y0=t.clientY; dy=0; arrastrando=false; listo=true;
+    };
+    const onMove=(e)=>{
+      if(!listo||!hoja) return;
+      const t=e.touches&&e.touches[0]; if(!t) return;
+      const d=t.clientY-y0;
+      if(d<=0 && !arrastrando){ listo=false; hoja=null; return; }  // hacia arriba: es scroll
+      if(d>0){
+        if(!arrastrando && d>8) arrastrando=true;
+        if(arrastrando){
+          dy=d; hoja.style.transition="none"; hoja.style.transform="translateY("+d+"px)";
+          if(e.cancelable) e.preventDefault();
+        }
+      }
+    };
+    const onEnd=()=>{
+      const s=hoja; hoja=null; listo=false;
+      if(!s || !arrastrando){ arrastrando=false; return; }
+      arrastrando=false;
+      s.style.transition="transform .28s ease";
+      if(dy>115){
+        s.style.transform="translateY(100%)";
+        const bg=(s.parentElement&&s.parentElement.classList.contains("modal-bg"))?s.parentElement:(s.closest&&s.closest(".modal-bg"));
+        setTimeout(()=>{ try{ if(bg) bg.click(); }catch(_e){} s.style.transform=""; s.style.transition=""; }, 210);
+      } else {
+        s.style.transform="";
+        setTimeout(()=>{ s.style.transition=""; }, 300);
+      }
+    };
+    document.addEventListener("touchstart", onStart, {passive:true});
+    document.addEventListener("touchmove", onMove, {passive:false});
+    document.addEventListener("touchend", onEnd, {passive:true});
+    document.addEventListener("touchcancel", onEnd, {passive:true});
+    return ()=>{ document.removeEventListener("touchstart",onStart); document.removeEventListener("touchmove",onMove); document.removeEventListener("touchend",onEnd); document.removeEventListener("touchcancel",onEnd); };
+  },[]);
+
   // La lista de accesos se pide al servidor al abrir su pantalla.
   React.useEffect(()=>{ if(top && top.t==="accesos" && accesos && accesos.cargar) accesos.cargar(); },[top && top.t]);
 
@@ -9067,11 +9161,13 @@ function MobileApp(props){
       </Grupo>
 
       <Grupo titulo="Asesor con IA" nota="El botón flotante del asesor. Se aplica igual en la plataforma y en la ficha técnica.">
-        <div className="mob-campo"><span className="mob-lab">Botón flotante del asesor</span>
-          <div className="mob-seg">
-            <button className={iaFabOn?"on":""} onClick={()=>toggleIaFab(true)}>Mostrar</button>
-            <button className={!iaFabOn?"on":""} onClick={()=>toggleIaFab(false)}>Ocultar</button>
-          </div></div>
+        <div className="mob-fila-sw">
+          <div style={{minWidth:0,flex:1}}>
+            <div className="mob-lab" style={{textTransform:"none",fontSize:"15px",letterSpacing:0,fontWeight:600,color:"var(--mib)"}}>Mostrar el botón del asesor</div>
+            <div className="mob-hero-sub" style={{marginTop:2}}>Aparece flotando en la plataforma y en la ficha técnica.</div>
+          </div>
+          <IosSwitch on={iaFabOn} onChange={toggleIaFab}/>
+        </div>
       </Grupo>
       <Guardado/>
     </Pantalla>);
