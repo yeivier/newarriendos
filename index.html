@@ -1808,6 +1808,22 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .mob-hub-top > *{ position:relative; z-index:1; }
 
+  /* Importar de WhatsApp: resumen del archivo y filas seleccionables. */
+  .mob-app .wa-resumen{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .mob-app .wa-resumen .fila{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--mtx); }
+  .mob-app .wa-item{ width:100%; text-align:left; display:flex; gap:12px; align-items:flex-start;
+    background:var(--msf); border:1.5px solid var(--mln); border-radius:16px; padding:14px; cursor:pointer;
+    font-family:inherit; color:var(--mtx); }
+  .mob-app .wa-item.on{ border-color:var(--mib); box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 12px 26px -18px rgba(11,11,12,.5); }
+  .mob-app .wa-item .wa-ck{ width:24px; height:24px; border-radius:8px; border:1.5px solid var(--mbr2);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; color:#fff; }
+  .mob-app .wa-item .wa-ck.on{ background:var(--mib); border-color:var(--mib); }
+  .mob-app .wa-item .wa-ico{ flex-shrink:0; color:var(--mib); margin-top:1px; }
+  .mob-app .wa-item .wa-tx{ display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+  .mob-app .wa-item .wa-tx .tt{ font-weight:700; font-size:15px; color:var(--mib); }
+  .mob-app .wa-item .wa-tx .sb{ font-size:12.5px; color:var(--mtm); }
+  .mob-app .wa-item .wa-tx .d{ font-size:13px; color:var(--mtx); margin-top:2px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+
 </style>
 </head>
 <body>
@@ -2719,6 +2735,80 @@ const fileIcon = (t)=>{ t=(t||"").toLowerCase();
   if(t.startsWith("audio/")) return "megafono";
   if(t.includes("sheet")||t.includes("excel")||t.includes("csv")) return "grafico";
   return "doc"; };
+
+/* ============ LECTOR DE CHATS DE WHATSAPP ============
+   Un chat exportado desde WhatsApp llega como un .txt (o un .zip con el .txt y
+   los archivos). Estas funciones lo parsean, dejan los adjuntos marcados dentro
+   del texto para que la IA sepa dónde va cada uno, y arman el mapa nombre→tipo.
+   La descompresión (.zip) se hace con JSZip, que se carga solo al necesitarlo. */
+let __jszipLoad = null;
+function cargarJSZip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  if(__jszipLoad) return __jszipLoad;
+  __jszipLoad = new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload=()=>res(window.JSZip); s.onerror=()=>rej(new Error("No se pudo cargar el lector de .zip"));
+    document.head.appendChild(s);
+  });
+  return __jszipLoad;
+}
+// Quita los caracteres invisibles de dirección (LTR/RTL) que WhatsApp intercala.
+const limpiarWA = (s)=> String(s||"").replace(/[\u200e\u200f\u202a-\u202e\u00a0\ufeff]/g,"").trim();
+// Inicio de mensaje: iOS «[dd-mm-aa hh:mm:ss] Nombre: …» o Android «dd/mm/aa, hh:mm - Nombre: …».
+const WA_LINEA = /^\[?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})[,\s]+(\d{1,2}:\d{2}(?::\d{2})?)\s*(?:[ap]\.?\s*?m\.?)?\s*\]?\s*(?:-\s*)?([^:]{1,80}?):\s?([\s\S]*)$/i;
+// Referencia a un archivo adjunto (iOS/Android, español/inglés).
+const WA_ADJUNTO = /<(?:adjunto|attached|attach):\s*([^>]+)>|([\w\-][\w\-. ]*\.(?:jpg|jpeg|png|gif|webp|heic|heif|bmp|mp4|mov|3gp|avi|mkv|opus|ogg|m4a|mp3|aac|amr|wav|pdf|docx?|xlsx?|csv|txt|vcf))\s*(?:\((?:archivo adjunto|file attached)\)|<(?:adjunto|attached)>)?/i;
+
+function tipoMedioWA(nombre){
+  const ext=(String(nombre).split(".").pop()||"").toLowerCase();
+  if(["jpg","jpeg","png","gif","webp","heic","heif","bmp"].indexOf(ext)>=0) return "imagen";
+  if(["mp4","mov","3gp","avi","mkv"].indexOf(ext)>=0) return "video";
+  if(["opus","ogg","m4a","mp3","aac","amr","wav"].indexOf(ext)>=0) return "audio";
+  if(ext==="pdf") return "PDF";
+  if(ext==="doc"||ext==="docx") return "Word";
+  if(ext==="xls"||ext==="xlsx"||ext==="csv") return "Excel";
+  return "archivo";
+}
+const mimeMedioWA = (nombre)=>{
+  const ext=(String(nombre).split(".").pop()||"").toLowerCase();
+  const M={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",gif:"image/gif",webp:"image/webp",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",
+    mp4:"video/mp4",mov:"video/quicktime","3gp":"video/3gpp",avi:"video/x-msvideo",mkv:"video/x-matroska",
+    opus:"audio/ogg",ogg:"audio/ogg",m4a:"audio/mp4",mp3:"audio/mpeg",aac:"audio/aac",amr:"audio/amr",wav:"audio/wav",
+    pdf:"application/pdf",doc:"application/msword",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls:"application/vnd.ms-excel",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",csv:"text/csv",txt:"text/plain",vcf:"text/vcard"};
+  return M[ext]||"application/octet-stream";
+};
+// Convierte el texto del _chat.txt en mensajes {fecha,hora,autor,texto,adjunto}.
+function parseWhatsApp(txt){
+  const lineas = String(txt||"").split(/\r?\n/);
+  const msgs = [];
+  for(const raw of lineas){
+    const linea = raw.replace(/^[\u200e\u200f\u202a-\u202e\ufeff]+/,"");
+    const m = WA_LINEA.exec(linea);
+    if(m){ msgs.push({ fecha:m[1], hora:m[2], autor:limpiarWA(m[3]), texto:limpiarWA(m[4]) }); }
+    else if(msgs.length){ msgs[msgs.length-1].texto += "\n"+limpiarWA(linea); }
+  }
+  for(const msg of msgs){
+    const a = WA_ADJUNTO.exec(msg.texto);
+    if(a){ msg.adjunto = limpiarWA(a[1]||a[2]); msg.texto = limpiarWA(msg.texto.replace(WA_ADJUNTO,"")); }
+  }
+  return msgs;
+}
+// Arma la transcripción con los adjuntos marcados como [ARCHIVO: nombre — tipo],
+// y la lista de nombres de archivo mencionados. Recorta si es enorme.
+function armarTranscripcionWA(msgs, maxChars){
+  const partes=[]; const medios=[];
+  for(const m of msgs){
+    let linea = (m.hora?("["+m.fecha+" "+m.hora+"] "):"")+(m.autor?(m.autor+": "):"");
+    if(m.adjunto){ linea += "[ARCHIVO: "+m.adjunto+" — "+tipoMedioWA(m.adjunto)+"]"+(m.texto?(" "+m.texto):""); medios.push(m.adjunto); }
+    else linea += m.texto;
+    if(limpiarWA(linea)) partes.push(linea);
+  }
+  let texto = partes.join("\n");
+  if(maxChars && texto.length>maxChars) texto = "…(inicio del chat recortado)…\n"+texto.slice(texto.length-maxChars);
+  return { texto, medios };
+}
 // Visor de panorámicas 360° (pannellum) cargado solo cuando se necesita.
 let __pnnmLoad=null;
 function loadPannellum(){
@@ -5650,6 +5740,7 @@ const MOB_CARD_CORTO = {
   "Chat del equipo":"Mensajes",
   "Comparar presupuestos":"Presupuestos",
   "Planos y lectura con IA":"Planos IA",
+  "Importar chat de WhatsApp":"WhatsApp",
   "Material del equipo":"Material",
   "Documentos legales":"Legal",
   "Preguntas frecuentes":"Preguntas",
@@ -5683,6 +5774,7 @@ const MOB_MAS_GRUPOS = [
   ]},
   { label:"Herramientas", items:[
     { esp:"aportes", ico:"carpeta",      label:"Material del equipo", sub:"Planos, presupuestos, fotos y archivos" },
+    { esp:"waImport", ico:"burbuja",     label:"Importar chat de WhatsApp", sub:"Fotos, presupuestos y acuerdos, ordenados solos" },
     { esp:"planos",  ico:"regla",        label:"Planos y lectura con IA", sub:"Súbelos y léelos con el agente experto" },
     { esp:"cotiz",   ico:"balanza",      label:"Comparar presupuestos", sub:"Cotizaciones lado a lado, con una recomendación" },
     { esp:"tramites",ico:"portapapeles", label:"Trámites", sub:"El orden más conveniente para avanzar" },
@@ -7927,6 +8019,223 @@ function MobileApp(props){
     setApSubiendo(false);
   };
 
+  /* ============ IMPORTAR CHAT DE WHATSAPP ============
+     Sube el chat exportado (con sus archivos), lo lee la IA, y deja cada foto,
+     presupuesto o acuerdo donde corresponde en la propiedad. Reusa patchProp,
+     /api/archivo/subir y /api/aportes: escribe en las mismas estructuras que el
+     resto de la plataforma. */
+  const [waPaso, setWaPaso] = React.useState("subir");   // subir | revisar
+  const [waPid, setWaPid] = React.useState("");
+  const [waMsgs, setWaMsgs] = React.useState(null);
+  const [waMedios, setWaMedios] = React.useState({});    // nombre -> {tipo, hay}
+  const [waRes, setWaRes] = React.useState(null);        // {resumen, coincidenciaId, items}
+  const [waSel, setWaSel] = React.useState({});
+  const [waBusy, setWaBusy] = React.useState(false);
+  const [waEstado, setWaEstado] = React.useState("");
+  const [waNombre, setWaNombre] = React.useState("");
+  const waZipRef = React.useRef(null);                   // { zip, files:{base->entry} } o null
+  const waFileRef = React.useRef(null);
+  const ACC_LABEL_WA = { gasto:"Gasto", bitacora:"Nota en bitácora", incidencia:"Incidencia", recep_presupuesto:"Presupuesto · recepción", recep_doc:"Documento · recepción", foto:"Foto", archivo:"Archivo" };
+  const ACC_ICO_WA = { gasto:"dinero", bitacora:"libreta", incidencia:"llaveInglesa", recep_presupuesto:"balanza", recep_doc:"portapapeles", foto:"camara", archivo:"doc" };
+
+  const waReset = ()=>{ setWaMsgs(null); setWaMedios({}); setWaRes(null); setWaSel({}); waZipRef.current=null; };
+  const waElegirArchivo = async(file)=>{
+    if(!file) return;
+    setWaBusy(true); setWaEstado("Leyendo el chat…"); setWaNombre(file.name); waReset();
+    try{
+      let txt="";
+      const esZip = /\.zip$/i.test(file.name) || /zip/.test(file.type||"");
+      if(esZip){
+        setWaEstado("Descomprimiendo…");
+        const JSZip = await cargarJSZip();
+        const zip = await JSZip.loadAsync(file);
+        let txtEnt=null; const files={};
+        zip.forEach((path, ent)=>{ if(ent.dir) return; const base=path.split("/").pop();
+          if(/\.txt$/i.test(base)){ if(!txtEnt || /_chat\.txt$/i.test(base)) txtEnt=ent; }
+          else files[base]=ent; });
+        txt = txtEnt ? await txtEnt.async("string") : "";
+        waZipRef.current = { zip, files };
+      } else {
+        txt = await file.text();
+      }
+      const msgs = parseWhatsApp(txt);
+      if(!msgs.length){ notify("No pude leer mensajes. Exporta el chat desde WhatsApp (Exportar chat).", true); setWaBusy(false); setWaEstado(""); return; }
+      const files = (waZipRef.current && waZipRef.current.files) || {};
+      const medios={};
+      msgs.forEach(m=>{ if(m.adjunto) medios[m.adjunto] = { tipo:tipoMedioWA(m.adjunto), hay: !!files[m.adjunto] }; });
+      setWaMsgs(msgs); setWaMedios(medios);
+    }catch(e){ notify(e.message||"No se pudo abrir el archivo", true); }
+    setWaBusy(false); setWaEstado("");
+  };
+
+  const waAnalizar = async()=>{
+    if(!waMsgs) return;
+    setWaBusy(true); setWaEstado("La IA está leyendo el chat…");
+    try{
+      const { texto } = armarTranscripcionWA(waMsgs, 15000);
+      const lista = propiedades.map(p=>({ id:p.id, nombre:p.name, direccion:p.address||"", comuna:p.comuna||"" }));
+      const r = await api("/api/whatsapp",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ transcripcion:texto, propiedades:lista, propiedadId: waPid||"" }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || j.error){ notify(j.error||"No se pudo leer el chat", true); setWaBusy(false); setWaEstado(""); return; }
+      const items = Array.isArray(j.items) ? j.items : [];
+      setWaRes({ resumen:j.resumen||"", coincidenciaId:j.coincidenciaId||null, items });
+      const sel={}; items.forEach((_it,i)=>sel[i]=true); setWaSel(sel);
+      setWaPaso("revisar");
+    }catch(_e){ notify("Sin conexión con la IA", true); }
+    setWaBusy(false); setWaEstado("");
+  };
+
+  // Sube un archivo del .zip a la plataforma. Las imágenes se optimizan de peso.
+  const subirMedioWA = async(nombre)=>{
+    const files = waZipRef.current && waZipRef.current.files;
+    const ent = files && files[nombre];
+    if(!ent) return null;
+    try{
+      const blob = await ent.async("blob");
+      const tipo = mimeMedioWA(nombre);
+      const file = new File([blob], nombre, { type:tipo });
+      let dataUrl;
+      if(tipo.indexOf("image/")===0){ try{ dataUrl = await optimizeImage(file); }catch(_e){ dataUrl = await readFileDataURL(file); } }
+      else dataUrl = await readFileDataURL(file);
+      const r = await api("/api/archivo/subir",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ dataUrl, name:nombre }) });
+      if(!r.ok) return null;
+      return await r.json();
+    }catch(_e){ return null; }
+  };
+
+  const waCrearEntrada = async(it, adjuntos, i)=>{
+    const valida = (id)=> id && propiedades.some(p=>String(p.id)===String(id));
+    const pid = valida(it.propiedadId) ? it.propiedadId
+              : valida(waPid) ? waPid
+              : (waRes && valida(waRes.coincidenciaId)) ? waRes.coincidenciaId
+              : (propiedades[0] && propiedades[0].id);
+    const uid = Date.now().toString(36)+"-"+i;
+    const titulo = it.titulo||"Del chat de WhatsApp";
+    const detalle = it.detalle||"";
+    const fecha = it.fecha || todayISO();
+    if(it.accion==="gasto" && pid){ patchProp(pid, x=>({...x, gastosExtra:[...(x.gastosExtra||[]), { id:"g"+uid, concepto:titulo, monto:String(Math.round(num(it.monto))||""), periodo: it.periodo==="año"?"año":"mes" }]})); return true; }
+    if(it.accion==="incidencia" && pid){ patchProp(pid, x=>({...x, incidencias:[{ id:"inc-"+uid, fecha, titulo, descripcion:detalle, prioridad:"Media", categoria:"Mantención", adjuntos }, ...(x.incidencias||[])]})); return true; }
+    if(it.accion==="bitacora" && pid){ patchProp(pid, x=>({...x, bitacora:[{ id:"bit-"+uid, fecha, tipo:"Nota", titulo, texto:detalle, adjuntos }, ...(x.bitacora||[])]})); return true; }
+    if(it.accion==="recep_presupuesto" && pid){ patchProp(pid, x=>({...x, recepPresupuestos:[{ id:"rp-"+uid, contratista:it.contratista||"", trabajo:titulo, monto:num(it.monto)?String(Math.round(num(it.monto))):"", moneda:it.moneda==="UF"?"UF":"CLP", fecha, estado:"Por revisar", nota:detalle, adjuntos }, ...(x.recepPresupuestos||[])]})); return true; }
+    if(it.accion==="recep_doc" && pid){ patchProp(pid, x=>({...x, recepDocs:[...(x.recepDocs||[]), { id:"rd-"+uid, nombre:titulo, estado:"Listo", nota:detalle, adjuntos }]})); return true; }
+    // foto / archivo (o resto): a "Material del equipo" como aporte.
+    const tipoAporte = it.accion==="foto" ? "foto" : "archivo";
+    try{ await api("/api/aportes",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ tipo:tipoAporte, titulo, pid: pid||"", nota:detalle, archivos:adjuntos }) }); }catch(_e){}
+    return true;
+  };
+
+  const waAplicar = async()=>{
+    if(!waRes) return;
+    const idxs = Object.keys(waSel).filter(k=>waSel[k]).map(Number);
+    if(!idxs.length){ notify("Marca al menos una cosa para ingresar", true); return; }
+    setWaBusy(true);
+    let hechas=0, subidos=0; const usados={};
+    for(const i of idxs){
+      const it = waRes.items[i]; if(!it) continue;
+      setWaEstado("Ingresando “"+(it.titulo||"")+"”…");
+      const adjuntos=[];
+      for(const nm of (it.medios||[])){ const adj = await subirMedioWA(nm); if(adj){ adjuntos.push(adj); subidos++; usados[nm]=true; } }
+      await waCrearEntrada(it, adjuntos, i); hechas++;
+    }
+    // Archivos del chat que ninguna acción usó: no se pierden, van a Material del equipo.
+    const restantes = Object.keys(waMedios).filter(nm=>waMedios[nm].hay && !usados[nm]);
+    if(restantes.length){
+      setWaEstado("Guardando "+restantes.length+" archivo(s) sueltos…");
+      const fotos=[], docs=[];
+      for(const nm of restantes){ const adj = await subirMedioWA(nm); if(adj){ (waMedios[nm].tipo==="imagen"?fotos:docs).push(adj); subidos++; } }
+      const destino = (waPid&&propiedades.some(p=>String(p.id)===String(waPid))) ? waPid : ((waRes.coincidenciaId)||"");
+      if(fotos.length){ try{ await api("/api/aportes",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ tipo:"foto", titulo:"Fotos del chat de WhatsApp", pid:destino, nota:"", archivos:fotos }) }); }catch(_e){} }
+      if(docs.length){ try{ await api("/api/aportes",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ tipo:"archivo", titulo:"Archivos del chat de WhatsApp", pid:destino, nota:"", archivos:docs }) }); }catch(_e){} }
+    }
+    try{ cargarAportes(true); }catch(_e){}
+    setWaBusy(false); setWaEstado("");
+    notify(hechas+(hechas===1?" cosa ingresada":" cosas ingresadas")+(subidos?(" · "+subidos+" archivo(s) adjuntados"):""));
+    setWaPaso("subir"); setWaNombre(""); waReset(); pop();
+  };
+
+  const pantallaWhatsApp = ()=>{
+    const nMsgs = waMsgs ? waMsgs.length : 0;
+    const nombres = Object.keys(waMedios);
+    const nHay = nombres.filter(n=>waMedios[n].hay).length;
+    return (<Pantalla titulo="Importar de WhatsApp" contexto="Sube el chat exportado y yo lo ordeno" gap="14">
+      {waPaso!=="revisar" ? (
+        <React.Fragment>
+          <div className="mob-bloque">
+            <div className="mob-hub-top">
+              <div className="fila"><span className="lb">Chat de WhatsApp</span><span className="mob-chip ink">IA</span></div>
+              <div className="cifra" style={{fontSize:"clamp(19px,5.4vw,24px)"}}>Traer todo de un chat</div>
+              <div className="mob-porque">Sube el chat exportado (con sus fotos, audios y documentos). Leo las fotos de daños, los presupuestos y los acuerdos, los adjunto donde corresponde y anoto lo importante en la propiedad.</div>
+            </div>
+            <div className="mob-nota">En WhatsApp: abre el chat → toca el nombre → “Exportar chat” → “Adjuntar archivos”. Te llega un .zip (o un .txt). Súbelo aquí.</div>
+          </div>
+
+          <Grupo titulo="¿De qué propiedad es este chat?">
+            <div className="mob-campo"><span className="mob-lab">Propiedad</span>
+              <select className="mob-inp" value={waPid} onChange={e=>setWaPid(e.target.value)}>
+                <option value="">Que la IA lo detecte</option>
+                {propiedades.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          </Grupo>
+
+          <input ref={waFileRef} type="file" accept=".zip,.txt,text/plain,application/zip" style={{display:"none"}}
+            onChange={e=>{ const x=(e.target.files||[])[0]; e.target.value=""; waElegirArchivo(x); }}/>
+          <button className="mob-btn sec" onClick={()=>waFileRef.current&&waFileRef.current.click()} disabled={waBusy}>
+            <MobIco w={18}>{MI.clip}</MobIco> {waNombre?("Cambiar archivo"):"Elegir el chat (.zip o .txt)"}
+          </button>
+          {waNombre && <div className="mob-nota" style={{textAlign:"center"}}>{waNombre}</div>}
+          {waEstado && <div className="mob-nota" style={{textAlign:"center"}}>{waEstado}</div>}
+
+          {waMsgs && !waBusy && (
+            <div className="mob-bloque">
+              <div className="wa-resumen">
+                <div className="fila"><MobIco w={16}>{MI.doc}</MobIco> <b>{nMsgs}</b>&nbsp;mensajes leídos</div>
+                <div className="fila"><MobIco w={16}>{MI.clip}</MobIco> <b>{nombres.length}</b>&nbsp;archivo(s){nombres.length?(" · "+nHay+" incluidos"):""}</div>
+              </div>
+              {nombres.length>0 && nHay===0 && <div className="mob-nota">Este chat se exportó “sin archivos”: puedo anotar la información, pero para adjuntar las fotos y documentos vuelve a exportarlo eligiendo “Adjuntar archivos”.</div>}
+              <button className="mob-btn pri" onClick={waAnalizar} disabled={waBusy}>
+                <MobIco w={18}>{MI.chispas}</MobIco> Analizar el chat con IA
+              </button>
+            </div>
+          )}
+        </React.Fragment>
+      ) : (
+        <React.Fragment>
+          {waRes && waRes.resumen && (
+            <div className="mob-bloque">
+              <h2 className="mob-h2">Resumen del chat</h2>
+              <div className="mob-iamsg ia"><div className="tx">{waRes.resumen}</div></div>
+            </div>
+          )}
+          <Grupo titulo={"Para ingresar"+(waRes?(" ("+waRes.items.length+")"):"")}>
+            {waRes && waRes.items.length ? waRes.items.map((it,i)=>{
+              const p = it.propiedadId ? propPorId(it.propiedadId) : null;
+              const nAdj = (it.medios||[]).filter(nm=>waMedios[nm]&&waMedios[nm].hay).length;
+              const montoTx = it.monto ? (it.moneda==="UF" ? ("UF "+it.monto) : ("$"+Math.round(num(it.monto)).toLocaleString("es-CL"))) : "";
+              return (<button key={i} className={"wa-item"+(waSel[i]?" on":"")} onClick={()=>setWaSel(s=>({...s,[i]:!s[i]}))}>
+                <span className={"wa-ck"+(waSel[i]?" on":"")}>{waSel[i]?<MobIco w={14} sw={3}>{MI.check}</MobIco>:null}</span>
+                <span className="wa-ico"><Ic n={ACC_ICO_WA[it.accion]||"doc"} w={19}/></span>
+                <span className="wa-tx">
+                  <span className="tt">{it.titulo}</span>
+                  <span className="sb">{ACC_LABEL_WA[it.accion]||it.accion}{montoTx?(" · "+montoTx):""}{p?(" · "+p.name):""}{nAdj?(" · "+nAdj+" adjunto"+(nAdj>1?"s":"")):""}</span>
+                  {it.detalle && <span className="d">{it.detalle}</span>}
+                </span>
+              </button>);
+            }) : <div className="mob-vacio">La IA no encontró cosas para ingresar en este chat.</div>}
+          </Grupo>
+          {waEstado && <div className="mob-nota" style={{textAlign:"center"}}>{waEstado}</div>}
+          {waRes && !!waRes.items.length && (
+            <button className="mob-btn pri" onClick={waAplicar} disabled={waBusy}>
+              <MobIco w={18}>{MI.check}</MobIco> {waBusy?"Ingresando…":"Ingresar lo marcado"}
+            </button>
+          )}
+          <button className="mob-btn sec" onClick={()=>setWaPaso("subir")} disabled={waBusy}>Volver</button>
+        </React.Fragment>
+      )}
+    </Pantalla>);
+  };
+
   const pantallaSubirAporte = ()=>{
     const f = apForm, set=(k,v)=>setApForm(x=>({...x,[k]:v}));
     const t = aporteTipo(f.tipo);
@@ -9093,6 +9402,7 @@ function MobileApp(props){
     else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
     else if(top.t==="planos")       vista = pantallaPlanos();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
+    else if(top.t==="waImport")     vista = pantallaWhatsApp();
     else if(top.t==="config")       vista = pantallaConfig();
     else if(top.t==="cuentaCfg")    vista = pantallaCuentaCfg(top.cid);
     else if(top.t==="comunic")      vista = pantallaComunic();
