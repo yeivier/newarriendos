@@ -1826,9 +1826,31 @@
      El envoltorio llena la celda y la tarjeta llena el envoltorio. */
   .mob-app .mob-grid2 > .ord-wrap.mob-ord{ display:block; }
   .mob-app .mob-grid2 > .ord-wrap.mob-ord > .mob-pc{ width:100%; height:100%; }
-  .mob-app .ord-wrap.mob-ord.arrastrando{ z-index:50; box-shadow:0 20px 46px -12px rgba(11,11,12,.4); }
-  .mob-app .ord-wrap.mob-ord.hueco{ outline:2px dashed var(--mib); outline-offset:3px; border-radius:18px; background:var(--mfl); }
-  .mob-app .ord-wrap.mob-ord.hueco > .mob-pc{ opacity:.5; }
+  .mob-app .mob-cards > .ord-wrap.mob-ord-cardg{ display:block; }
+  .mob-app .mob-cards > .ord-wrap.mob-ord-cardg > .mob-cardg{ width:100%; height:100%; }
+
+  /* Modo ordenar: las tarjetas tiemblan despacio, igual que al editar la
+     pantalla de inicio del iPhone. Sin bordes punteados. */
+  @keyframes ordTiembla1{ 0%{transform:rotate(-1.15deg)} 50%{transform:rotate(1.15deg)} 100%{transform:rotate(-1.15deg)} }
+  @keyframes ordTiembla2{ 0%{transform:rotate(1.1deg)} 50%{transform:rotate(-1.1deg)} 100%{transform:rotate(1.1deg)} }
+  @media (prefers-reduced-motion:no-preference){
+    .mob-app .editando > .ord-wrap.mob-ord{ animation:ordTiembla1 .32s ease-in-out infinite; transform-origin:50% 50%; }
+    .mob-app .editando > .ord-wrap.mob-ord:nth-child(2n){ animation-name:ordTiembla2; animation-duration:.35s; }
+    .mob-app .editando > .ord-wrap.mob-ord:nth-child(3n){ animation-duration:.29s; }
+  }
+  /* La tarjeta que se levanta: solo se eleva y agranda un poco. Nada de borde. */
+  .mob-app .ord-wrap.mob-ord.arrastrando{ animation:none!important; opacity:1; transform:scale(1.07); border-radius:18px;
+    box-shadow:0 24px 52px -12px rgba(11,11,12,.45); z-index:60; }
+  /* El lugar de destino se insinúa con un relleno suave, sin líneas punteadas. */
+  .mob-app .ord-wrap.mob-ord.hueco{ outline:none; background:transparent; }
+  .mob-app .ord-wrap.mob-ord.hueco > .mob-pc, .mob-app .ord-wrap.mob-ord.hueco > .mob-cardg{ background:var(--mfl2); }
+
+  /* Botón "Listo" para salir del modo ordenar (como el del iPhone). */
+  .mob-app .mob-orden-listo{ position:fixed; left:50%; bottom:calc(98px + env(safe-area-inset-bottom,0px)); z-index:120;
+    display:inline-flex; align-items:center; gap:7px; background:var(--mib); color:#fff; border:none; border-radius:22px;
+    padding:11px 22px; font-family:inherit; font-size:15.5px; font-weight:700; cursor:pointer;
+    box-shadow:0 12px 32px -8px rgba(11,11,12,.5); animation:ordAparece .2s ease both; }
+  @keyframes ordAparece{ from{ opacity:0; transform:translateX(-50%) translateY(10px);} to{ opacity:1; transform:translateX(-50%);} }
 
   /* Interruptor tipo iOS (Ajustes del iPhone). */
   .mob-app .mob-fila-sw{ display:flex; align-items:center; gap:14px; padding:4px 2px; }
@@ -4077,7 +4099,9 @@ const flotanteArrastrable = (el, clave)=>{
   };
 };
 
-const arrastrable = (clave, ids, indice, alSoltar)=>{
+const arrastrable = (clave, ids, indice, alSoltar, opts)=>{
+  const O = opts||{};
+  const demora = O.delay!=null ? O.delay : 420;
   const empezar=(e)=>{
     if(_plEditando(e.target)) return;
     // Hay fichas dentro de otras fichas (una propiedad dentro de la tarjeta
@@ -4092,9 +4116,10 @@ const arrastrable = (clave, ids, indice, alSoltar)=>{
       _ar.t=null; _ar.activo=true; _pl.sup=true;
       _arEscuchar(true);
       try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
+      if(O.onActivar){ try{ O.onActivar(); }catch(_e){} }   // avisa que entró en modo ordenar
       const caja=document.querySelectorAll('.ord-wrap[data-ord-clave="'+clave+'"]')[indice];
       if(caja) caja.classList.add("arrastrando");
-    },420);
+    }, demora);
   };
   /* Antes de que arranque el arrastre: si el dedo se desplaza, era scroll. */
   const mover=(e)=>{
@@ -6409,6 +6434,10 @@ function MobileApp(props){
   const [ordenes, setOrdenes] = React.useState(()=>store.get("ap_ordenes", {}));
   React.useEffect(()=>{ try{ store.set("ap_ordenes", ordenes); }catch(_e){} }, [ordenes]);
   const guardarOrden = (clave, ids)=> setOrdenes(o=>({...o, [clave]:ids}));
+  // Modo "ordenar" (como al editar el iPhone): al mantener presionada una
+  // tarjeta, su sección entra en modo temblor; se sueltan y arrastran a gusto y
+  // se toca "Listo" para terminar. `modoOrden` guarda la clave de la sección.
+  const [modoOrden, setModoOrden] = React.useState(null);
   // Une el orden de una vista filtrada de vuelta al orden completo, para no
   // perder de vista las tarjetas que ahora no se están mostrando.
   const fusionarOrden = (visibles, todos)=>{
@@ -6418,12 +6447,15 @@ function MobileApp(props){
     while(k<visibles.length){ if(out.indexOf(visibles[k])<0) out.push(visibles[k]); k++; }
     return out;
   };
-  // Manejadores para arrastrar la tarjeta `i` de `ids`, más la supresión del
-  // toque que llega justo después de moverla (para que no abra la ficha).
+  // Manejadores para arrastrar la tarjeta `i` de `ids`. En modo ordenar la
+  // demora es corta (se agarra al toque); fuera de él hay que mantener
+  // presionado para entrar. En modo ordenar el toque nunca abre la ficha.
   const arrastreCard = (clave, ids, i, alSoltar)=>({
-    ...arrastrable(clave, ids, i, alSoltar),
-    onClickCapture:(e)=>{ if(_pl.sup){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } },
+    ...arrastrable(clave, ids, i, alSoltar, { delay: modoOrden===clave ? 130 : 460, onActivar: ()=>setModoOrden(clave) }),
+    onClickCapture:(e)=>{ if(_pl.sup || modoOrden===clave){ _pl.sup=false; e.preventDefault(); e.stopPropagation(); } },
   });
+  // Se sale del modo ordenar al cambiar de pestaña o de pantalla.
+  React.useEffect(()=>{ setModoOrden(null); }, [tab, pila.length, pila.length ? pila[pila.length-1].t : ""]);
   // Propiedad elegida al empezar un trámite (vive fuera de la pantalla para que
   // no se pierda al volver a dibujar la lista de plantillas).
   const [tramPid, setTramPid] = React.useState("");
@@ -6798,7 +6830,7 @@ function MobileApp(props){
       </div>
 
       {lista.length ? (<>
-        <div className="mob-grid2">
+        <div className={"mob-grid2"+(modoOrden==="mob_props"?" editando":"")}>
           {lista.map((p,i)=> (
             <div key={p.id} className="ord-wrap mob-ord" data-ord-clave="mob_props"
               {...arrastreCard("mob_props", ids, i, (nuevos)=>guardarOrden("mob_props", fusionarOrden(nuevos, todosOrd)))}>
@@ -6806,7 +6838,7 @@ function MobileApp(props){
             </div>
           ))}
         </div>
-        {lista.length>1 && <div className="mob-nota" style={{textAlign:"center",marginTop:2}}>Mantén presionada una tarjeta para moverla y ordenarlas a tu gusto.</div>}
+        {lista.length>1 && modoOrden!=="mob_props" && <div className="mob-nota" style={{textAlign:"center",marginTop:2}}>Mantén presionada una tarjeta para ordenarlas a tu gusto.</div>}
       </>) : <div className="mob-vacio">Aún no hay propiedades en esta vista.</div>}
 
       {!soloLectura && <button className="mob-btn pri" onClick={()=>AC.nuevaPropiedad&&AC.nuevaPropiedad()}>
@@ -7038,21 +7070,28 @@ function MobileApp(props){
         </div>
       )}
       {/* Cada grupo, en tarjetas: se toca y se abre, como pediste. */}
-      {grupos.map(g=>(
+      {grupos.map(g=>{
+        const claveG = "mas_"+g.label;
+        const items = ordenarPor(g.items, ordenes[claveG], it=>String(it.esp||it.id));
+        const idsG = items.map(it=>String(it.esp||it.id));
+        return (
         <div className="mob-mas-sec" key={g.label}>
           <h2 className="mob-gtit">{g.label}</h2>
-          <div className="mob-cards">
-            {g.items.map(it=>{
+          <div className={"mob-cards"+(modoOrden===claveG?" editando":"")}>
+            {items.map((it,i)=>{
               const bdg = insignia(it);
-              return (<button key={it.esp||it.id} className="mob-cardg" onClick={()=>abrirDestino(it)}>
-                <span className="ic"><Ic n={it.ico} w={24} sw={1.9}/></span>
-                <span className="lb">{MOB_CARD_CORTO[it.label]||it.label}</span>
-                {bdg>0 && <span className="bdg">{bdg>9?"9+":bdg}</span>}
-              </button>);
+              return (<div key={it.esp||it.id} className="ord-wrap mob-ord mob-ord-cardg" data-ord-clave={claveG}
+                  {...arrastreCard(claveG, idsG, i, (nuevos)=>guardarOrden(claveG, nuevos))}>
+                <button className="mob-cardg" onClick={()=>abrirDestino(it)}>
+                  <span className="ic"><Ic n={it.ico} w={24} sw={1.9}/></span>
+                  <span className="lb">{MOB_CARD_CORTO[it.label]||it.label}</span>
+                  {bdg>0 && <span className="bdg">{bdg>9?"9+":bdg}</span>}
+                </button>
+              </div>);
             })}
           </div>
-        </div>
-      ))}
+        </div>);
+      })}
       <Grupo>
         <Fila sinIco titulo={(nombreAcceso||(usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta")}
           sub={soloLectura ? (esArquitecto?"Arquitecto/a":"Solo lectura") : ((rolActual||"Propietario"))}
@@ -9647,8 +9686,15 @@ function MobileApp(props){
   const pantallaCompleta = top && (top.t==="equipo" || top.t==="levantamiento");
 
   const mobCtxVal = { push, pop, buscar, saltoDe, top, volverSalto, guardado, bandejaCuenta, owner };
-  return (<MobCtx.Provider value={mobCtxVal}><div className="mob-app" data-mob="1">
+  return (<MobCtx.Provider value={mobCtxVal}><div className={"mob-app"+(modoOrden?" en-orden":"")} data-mob="1">
     {vista}
+    {/* En modo ordenar, un botón claro para terminar —como el "Listo" del
+        iPhone al reacomodar las apps—. */}
+    {modoOrden && (
+      <button className="mob-orden-listo" onClick={()=>setModoOrden(null)}>
+        <MobIco w={17} sw={2.6}>{MI.check}</MobIco> Listo
+      </button>
+    )}
     {/* Visor de foto a resolución nativa. Toca la imagen para alternar entre
         "cabe en pantalla" y el tamaño real, y desplázala para recorrerla. */}
     {visor && (
