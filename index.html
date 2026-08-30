@@ -1873,6 +1873,25 @@
   .mob-app .mob-titulo{ position:relative; }
   .mob-app .mob-sentinela{ position:absolute; left:0; bottom:0; width:1px; height:1px; pointer-events:none; }
 
+  /* Aviso (toast) como una notificación del iPhone: baja desde arriba, a lo
+     ancho, con vidrio esmerilado. En el computador sigue arriba a la derecha. */
+  @media(max-width:900px){
+    .notif{ top:calc(9px + env(safe-area-inset-top,0px)); left:12px; right:12px; max-width:none; text-align:left;
+      border:none; border-radius:17px; padding:14px 18px; font-size:15px; font-weight:650; color:#fff;
+      background:rgba(22,22,24,.9); -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px);
+      box-shadow:0 14px 44px rgba(0,0,0,.32); animation:notifBaja .32s cubic-bezier(.2,.9,.3,1) both; }
+    .notif.err{ background:rgba(22,22,24,.9); color:#fff; box-shadow:0 14px 44px rgba(120,20,20,.34); }
+    @keyframes notifBaja{ from{ opacity:0; transform:translateY(-18px);} to{ opacity:1; transform:none;} }
+  }
+
+  /* "Tirar para refrescar": el disco que aparece arriba al deslizar hacia abajo. */
+  .mob-app .mob-ptr{ position:absolute; top:0; left:0; right:0; display:flex; align-items:flex-end; justify-content:center;
+    overflow:hidden; pointer-events:none; z-index:5; transition:height .18s ease; }
+  .mob-app .mob-ptr .disco{ width:29px; height:29px; margin-bottom:9px; border-radius:50%;
+    border:2.5px solid var(--mln); border-top-color:var(--mib); }
+  .mob-app .mob-ptr.girando .disco{ animation:ptrGira .7s linear infinite; }
+  @keyframes ptrGira{ to{ transform:rotate(360deg); } }
+
 </style>
 </head>
 <body>
@@ -6405,7 +6424,7 @@ function MobileApp(props){
     setMPay, setMContract, notify, openRem,
     setMFicha, abrirIncidencia,
     buscar, secciones, abrirSeccion, cerrarSeccion,
-    utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores,
+    utm, dolar, ipc, indLoading, indRecien, refrescarIndicadores, recargar,
     alertas, irAlerta, usuarioActual, rolActual,
     guardado, ficha, patchProp, nav, accesos,
     cotiz, setCotiz, tramites, setTramites, esArquitecto, nombreAcceso,
@@ -8200,6 +8219,57 @@ function MobileApp(props){
     return ()=>{ clearInterval(iv); document.removeEventListener("visibilitychange", alVolver); };
   },[cargarAportes]);
 
+  /* Tirar para refrescar, como en Mail y todo el iPhone: al deslizar hacia
+     abajo estando arriba del todo, aparece un disco que gira y se vuelven a
+     leer los datos del servidor. No usa preventDefault, así que convive con el
+     rebote natural de iOS sin trabar el desplazamiento. */
+  const [ptr, setPtr] = React.useState(0);            // px de arrastre visible
+  const [refrescando, setRefrescando] = React.useState(false);
+  const ptrRef = React.useRef({});
+  ptrRef.current = { ptr, refrescando, modoOrden };
+  const refrescarTodo = async ()=>{
+    setRefrescando(true);
+    try{
+      await Promise.all([
+        Promise.resolve(refrescarIndicadores && refrescarIndicadores()).catch(()=>{}),
+        Promise.resolve(recargar && recargar()).catch(()=>{}),
+        Promise.resolve(cargarAportes && cargarAportes(true)).catch(()=>{}),
+        new Promise(r=>setTimeout(r, 650)),
+      ]);
+    }catch(_e){}
+    setRefrescando(false);
+  };
+  React.useEffect(()=>{
+    let sy=0, activo=false, cont=null;
+    const onStart=(e)=>{
+      const S = ptrRef.current;
+      if(S.refrescando || S.modoOrden){ activo=false; return; }
+      if(document.querySelector(".modal-bg")){ activo=false; return; }   // hoja abierta
+      const t=e.touches&&e.touches[0]; if(!t){ activo=false; return; }
+      cont = (e.target && e.target.closest && e.target.closest(".mob-scr")) || null;
+      if(!cont || cont.scrollTop>2){ activo=false; return; }
+      sy=t.clientY; activo=true;
+    };
+    const onMove=(e)=>{
+      if(!activo) return;
+      const t=e.touches&&e.touches[0]; if(!t) return;
+      const dy=t.clientY-sy;
+      if(dy<=0 || (cont && cont.scrollTop>2)){ activo=false; setPtr(0); return; }
+      setPtr(Math.min(88, dy*0.5));   // con resistencia, como iOS
+    };
+    const onEnd=()=>{
+      if(!activo){ return; } activo=false;
+      if((ptrRef.current.ptr||0) > 50){ setPtr(46); refrescarTodo(); }
+      else setPtr(0);
+    };
+    document.addEventListener("touchstart", onStart, {passive:true});
+    document.addEventListener("touchmove", onMove, {passive:true});
+    document.addEventListener("touchend", onEnd, {passive:true});
+    document.addEventListener("touchcancel", onEnd, {passive:true});
+    return ()=>{ document.removeEventListener("touchstart",onStart); document.removeEventListener("touchmove",onMove); document.removeEventListener("touchend",onEnd); document.removeEventListener("touchcancel",onEnd); };
+  },[]);
+  React.useEffect(()=>{ if(!refrescando && ptr===46) setPtr(0); },[refrescando]);
+
   /* Estado del formulario de subida. Fuera de la pantalla para que no se pierda
      al volver a dibujar mientras suben los archivos. */
   const [apForm, setApForm] = React.useState({ tipo:"plano", titulo:"", pid:"", nota:"", archivos:[] });
@@ -9687,6 +9757,11 @@ function MobileApp(props){
 
   const mobCtxVal = { push, pop, buscar, saltoDe, top, volverSalto, guardado, bandejaCuenta, owner };
   return (<MobCtx.Provider value={mobCtxVal}><div className={"mob-app"+(modoOrden?" en-orden":"")} data-mob="1">
+    {(ptr>0 || refrescando) && (
+      <div className={"mob-ptr"+(refrescando?" girando":"")} style={{height:(refrescando?46:ptr)+"px"}}>
+        <span className="disco" style={refrescando?undefined:{transform:"rotate("+Math.round(ptr*4)+"deg)", opacity:Math.min(1,ptr/46)}}></span>
+      </div>
+    )}
     {vista}
     {/* En modo ordenar, un botón claro para terminar —como el "Listo" del
         iPhone al reacomodar las apps—. */}
@@ -10559,6 +10634,22 @@ function App(){
   },[hydrated, puerta]);
   /* El aviso de que llegó trabajo de otra persona se apaga solo. */
   useEffect(()=>{ if(!llegoDeOtro) return; const t=setTimeout(()=>setLlegoDeOtro(false),3000); return ()=>clearTimeout(t); },[llegoDeOtro]);
+
+  /* Volver a leer el estado del servidor a pedido (para "tirar para refrescar"
+     en el teléfono). Fusiona lo del servidor con lo local, igual que la
+     sincronización automática, para no pisar lo que se está escribiendo. */
+  const recargarEstado = async ()=>{
+    if(guardando.current || saveTimer.current) return;
+    try{
+      const r=await api("/api/estado"); if(!r || !r.ok) return;
+      const j=await r.json().catch(()=>({}));
+      if(!j.estado) return;
+      if(guardando.current || saveTimer.current) return;
+      const juntos=fusionarEstado(base.current.estado, estadoVivo.current, j.estado);
+      base.current={ estado:j.estado, version:j.updatedAt||base.current.version };
+      aplicarEstado(juntos);
+    }catch(_e){}
+  };
 
   /* El aviso de "guardado" se apaga solo; el de error se queda a la vista. */
   useEffect(()=>{ if(guardado!=="ok") return; const t=setTimeout(()=>setGuardado(""),2200); return ()=>clearTimeout(t); },[guardado]);
@@ -12983,7 +13074,7 @@ function App(){
       notify={notify} openRem={openRem}
       buscar={()=>setMBusca(true)}
       utm={utm} dolar={dolar} ipc={ipc}
-      indLoading={indLoading} indRecien={indRecien} refrescarIndicadores={refrescarIndicadores}
+      indLoading={indLoading} indRecien={indRecien} refrescarIndicadores={refrescarIndicadores} recargar={recargarEstado}
       alertas={alertas} irAlerta={(a)=>{ irAlerta(a); setMovilCompleto(a.ir==="cobros"?"cobros":"props"); }}
       usuarioActual={usuarioActual} rolActual={rolActual}
       /* Estado real de guardado: el móvil lo muestra como "Autoguardado" en
