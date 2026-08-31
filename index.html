@@ -3972,7 +3972,7 @@ function PropuestasIA({ items, props, onAplicar }){
 
    Devuelve los manejadores para la ficha número `indice` de la lista `ids`.
    `alSoltar(nuevosIds)` recibe el orden final. */
-const _ar = { activo:false, reclamado:false, clave:null, ids:null, desde:-1, sobre:-1, t:null, y0:0, alSoltar:null };
+const _ar = { activo:false, reclamado:false, clave:null, ids:null, desde:-1, sobre:-1, t:null, x0:0, y0:0, alSoltar:null, el:null, px0:0, py0:0 };
 /* Mientras se arrastra, el gesto se sigue desde el documento y no desde la
    ficha: así el dedo puede salirse de ella sin que se pierda el movimiento, y
    —sobre todo— el `preventDefault` sí surte efecto (React escucha los toques
@@ -3982,9 +3982,16 @@ const _arSeguir = (e)=>{
   if(!_ar.activo) return;
   const p=(e.touches&&e.touches[0])||e;
   if(e.cancelable) e.preventDefault(); // ya arrastrando: la página no debe desplazarse
+  // La ficha se pega al dedo: se traslada 1:1 con el movimiento, sin retraso.
+  if(_ar.el){
+    const dx=p.clientX-_ar.px0, dy=p.clientY-_ar.py0;
+    _ar.el.style.transition="none";
+    _ar.el.style.transform="translate("+dx+"px,"+dy+"px) scale(1.06)";
+  }
   const bajo=_arDebajo(p.clientX,p.clientY);
   document.querySelectorAll(".ord-wrap.hueco").forEach(el=>el.classList.remove("hueco"));
   if(bajo && bajo.i!==_ar.desde){ _ar.sobre=bajo.i; bajo.el.classList.add("hueco"); }
+  else { _ar.sobre=_ar.desde; }
 };
 const _arSoltar = ()=>{
   if(!_ar.activo){ _arLimpiar(); return; }
@@ -4007,8 +4014,9 @@ const _arLimpiar = ()=>{
        si no, se comería el siguiente toque de verdad. */
     setTimeout(()=>{ _pl.sup=false; },700);
   }
+  if(_ar.el){ try{ _ar.el.style.transition=""; _ar.el.style.transform=""; }catch(_e){} }
   document.querySelectorAll(".ord-wrap.arrastrando,.ord-wrap.hueco").forEach(el=>el.classList.remove("arrastrando","hueco"));
-  _ar.activo=false; _ar.reclamado=false; _ar.clave=null; _ar.ids=null; _ar.desde=-1; _ar.sobre=-1; _ar.alSoltar=null;
+  _ar.activo=false; _ar.reclamado=false; _ar.clave=null; _ar.ids=null; _ar.desde=-1; _ar.sobre=-1; _ar.alSoltar=null; _ar.el=null; _ar.px0=0; _ar.py0=0;
 };
 /* Sobre qué ficha está el dedo ahora mismo. Se mira también la posición
    horizontal porque en el inicio las propiedades van en dos columnas: si solo
@@ -4017,6 +4025,7 @@ const _arDebajo = (x,y)=>{
   const cajas=[...document.querySelectorAll('.ord-wrap[data-ord-clave="'+_ar.clave+'"]')];
   let soloAltura=null;
   for(let i=0;i<cajas.length;i++){
+    if(i===_ar.desde) continue;   // la que va en el dedo no cuenta como destino
     const r=cajas[i].getBoundingClientRect();
     if(y>=r.top && y<=r.bottom){
       if(x>=r.left && x<=r.right) return { i, el:cajas[i], r };
@@ -4129,7 +4138,7 @@ const arrastrable = (clave, ids, indice, alSoltar, opts)=>{
     if(_ar.reclamado && (_ar.t || _ar.activo)) return;
     _ar.reclamado=true;
     const p=(e.touches&&e.touches[0])||e;
-    _ar.y0=p.clientY; _ar.clave=clave; _ar.ids=ids.slice(); _ar.desde=indice; _ar.sobre=indice; _ar.alSoltar=alSoltar;
+    _ar.x0=p.clientX; _ar.y0=p.clientY; _ar.clave=clave; _ar.ids=ids.slice(); _ar.desde=indice; _ar.sobre=indice; _ar.alSoltar=alSoltar;
     if(_ar.t) clearTimeout(_ar.t);
     _ar.t=setTimeout(()=>{
       _ar.t=null; _ar.activo=true; _pl.sup=true;
@@ -4137,7 +4146,7 @@ const arrastrable = (clave, ids, indice, alSoltar, opts)=>{
       try{ navigator.vibrate&&navigator.vibrate(18); }catch(_e){}
       if(O.onActivar){ try{ O.onActivar(); }catch(_e){} }   // avisa que entró en modo ordenar
       const caja=document.querySelectorAll('.ord-wrap[data-ord-clave="'+clave+'"]')[indice];
-      if(caja) caja.classList.add("arrastrando");
+      if(caja){ caja.classList.add("arrastrando"); _ar.el=caja; _ar.px0=_ar.x0; _ar.py0=_ar.y0; }
     }, demora);
   };
   /* Antes de que arranque el arrastre: si el dedo se desplaza, era scroll. */
