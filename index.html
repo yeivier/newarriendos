@@ -1536,6 +1536,8 @@
   .calc-g2{ display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
   .calc-sw{ display:flex; align-items:center; justify-content:space-between; padding:11px 2px; font-size:15px; font-weight:600; color:var(--mtx); }
   .calc-sw + .calc-sw{ border-top:1px solid var(--mln); }
+  .mob-aviso-ok{ background:var(--mfl); border:1px solid var(--mln); border-radius:12px; padding:11px 13px;
+    font-size:13.5px; line-height:1.4; color:var(--mtx); }
   /* Fila de chips-filtro (CRM): se desplaza de lado, no se apila. */
   .mob-chips-fila{ display:flex; gap:8px; overflow-x:auto; margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
   .mob-chips-fila::-webkit-scrollbar{ display:none; }
@@ -9208,7 +9210,33 @@ function MobileApp(props){
   const [calcHecho, setCalcHecho] = React.useState(false);
   const [calcOut, setCalcOut] = React.useState("");
   const [calcPrecios, setCalcPrecios] = React.useState(null);
+  const [calcLeyendo, setCalcLeyendo] = React.useState(false);
+  const [calcAviso, setCalcAviso] = React.useState("");
+  const calcFileRef = React.useRef(null);
   const setCD = (k,v)=> setCalcDatos(d=>({...d,[k]:v}));
+  // Sube un archivo (aviso, ficha, PDF, foto), la IA saca los datos y se
+  // colocan donde corresponden. Lo que ya estaba escrito no se pisa si el
+  // archivo no traía ese dato; lo que sí trae, lo completa.
+  const calcAutocompletar = async (files)=>{
+    if(!files || !files.length || calcLeyendo) return;
+    setCalcLeyendo(true); setCalcAviso("");
+    try{
+      const prep = await anaPreparar(files);
+      if(!prep.archivos.length && !prep.texto){ setCalcAviso("No pude leer ese archivo. Prueba con una foto, un PDF o un texto."); setCalcLeyendo(false); return; }
+      const r = await api("/api/arriendo-extraer",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ archivos:prep.archivos, texto:prep.texto }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j || !j.datos){ setCalcAviso(j.error || "No pude sacar los datos del archivo. Complétalos a mano."); setCalcLeyendo(false); return; }
+      const d = j.datos; const patch = {}; let n = 0;
+      ["region","comuna","sector","estado","ano","conectividad","plusvalia","notas"].forEach(k=>{ if(d[k]!=null && String(d[k]).trim()!==""){ patch[k]=String(d[k]); n++; } });
+      if(d.tipo && d.tipo!=="Departamento"){ patch.tipo=String(d.tipo); n++; }
+      ["m2","dorm","banos","estac","gc"].forEach(k=>{ if(d[k]!=null && Number(d[k])>0){ patch[k]=String(d[k]); n++; } });
+      if(d.bodega===true){ patch.bodega=true; n++; }
+      if(d.amoblado===true){ patch.amoblado=true; n++; }
+      setCalcDatos(prev=>({...prev, ...patch}));
+      setCalcAviso(n>0 ? ("Listo: completé "+n+" dato"+(n===1?"":"s")+" del archivo. Revísalos y ajusta lo que falte antes de calcular.") : "Leí el archivo, pero no encontré datos claros. Complétalos a mano.");
+    }catch(_e){ setCalcAviso("No se pudo leer el archivo. Revisa la conexión e inténtalo otra vez."); }
+    setCalcLeyendo(false);
+  };
   const parseCalc = (acc)=>{
     let precios=null, cuerpo=acc;
     const m = /\{[\s\S]*?\}/.exec(acc);
@@ -9241,6 +9269,15 @@ function MobileApp(props){
       <input className="mob-inp" type="number" inputMode="numeric" value={calcDatos[k]} onChange={e=>setCD(k,e.target.value)} placeholder={ph||""}/></label>);
     return (<Pantalla titulo="Calculadora de arriendo" contexto="Precio sugerido según el mercado en Chile" gap="14">
       {!calcHecho ? (<React.Fragment>
+        {/* Atajo: subir el aviso, la ficha o una foto de la publicación y que la
+            IA complete los campos sola. Igual se puede llenar todo a mano. */}
+        <input ref={calcFileRef} type="file" multiple style={{display:"none"}}
+          onChange={e=>{ const x=Array.from(e.target.files||[]); e.target.value=""; calcAutocompletar(x); }}/>
+        <button className="mob-btn sec" disabled={calcLeyendo} onClick={()=>calcFileRef.current&&calcFileRef.current.click()}>
+          <MobIco w={18}>{MI.chispas}</MobIco> {calcLeyendo ? "Leyendo el archivo…" : "Subir archivo y autocompletar"}
+        </button>
+        {calcAviso && <div className="mob-aviso-ok">{calcAviso}</div>}
+        <div className="mob-nota" style={{marginTop:"-4px"}}>Sube el aviso, la ficha o una foto de la publicación (foto, PDF, ZIP o texto) y completo los datos solo. Después revisas y ajustas.</div>
         <div className="mob-bloque">
           <h2 className="mob-h2">¿Dónde está?</h2>
           <label className="calc-f"><span>Región</span>
