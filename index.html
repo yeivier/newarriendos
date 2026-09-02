@@ -938,7 +938,13 @@
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
     display:none; flex-direction:column;
     -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+    /* Como una app nativa de iPhone: al mantener presionado para desplazar no se
+       selecciona el texto de las tarjetas ni aparece el menú de copiar. La
+       selección se vuelve a habilitar solo en los campos donde se escribe. */
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
   }
+  .mob-app input, .mob-app textarea, .mob-app select, .mob-app [contenteditable="true"]{
+    -webkit-user-select:text; user-select:text; }
   @media(max-width:900px){ .app.en-movil .mob-app{ display:flex; } }
   .mob-scr{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding:14px 22px calc(110px + env(safe-area-inset-bottom,0px));
