@@ -1519,6 +1519,23 @@
   .mob-iamsg .md-ul li::before{ content:""; position:absolute; left:3px; top:8px; width:5px; height:5px;
     border-radius:50%; background:var(--mtm); }
   .mob-iamsg .md strong{ font-weight:750; color:var(--mtx); }
+  /* Calculadora de arriendo: tres precios grandes (mín / recomendado / máx) y
+     un formulario simple. El recomendado se destaca en oscuro. */
+  .mob-precios{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; align-items:stretch; }
+  .mob-precio{ background:var(--msf); border:1px solid var(--mln); border-radius:15px; padding:15px 8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; min-width:0; }
+  .mob-precio .lb{ font-size:11.5px; color:var(--mtm); font-weight:650; }
+  .mob-precio .am{ font-size:15px; font-weight:800; color:var(--mtx); letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums; line-height:1.12; }
+  .mob-precio.reco{ background:var(--mib); border-color:var(--mib); box-shadow:0 12px 28px rgba(16,16,18,.18); }
+  .mob-precio.reco .lb{ color:rgba(255,255,255,.72); }
+  .mob-precio.reco .am{ color:#fff; font-size:16.5px; }
+  .calc-f{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .calc-f:last-child{ margin-bottom:0; }
+  .calc-f > span{ font-size:12.5px; color:var(--mtm); font-weight:600; padding-left:2px; }
+  .calc-g2{ display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
+  .calc-sw{ display:flex; align-items:center; justify-content:space-between; padding:11px 2px; font-size:15px; font-weight:600; color:var(--mtx); }
+  .calc-sw + .calc-sw{ border-top:1px solid var(--mln); }
   /* Fila de chips-filtro (CRM): se desplaza de lado, no se apila. */
   .mob-chips-fila{ display:flex; gap:8px; overflow-x:auto; margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
   .mob-chips-fila::-webkit-scrollbar{ display:none; }
@@ -5930,6 +5947,9 @@ function MdMini({ texto }){
     const soloNegrita = /^\*\*(.+)\*\*:?$/.exec(t);
     if(h){ out.push(<div key={i} className="md-h"><MdInline t={h[2]}/></div>); return; }
     if(soloNegrita){ out.push(<div key={i} className="md-h">{soloNegrita[1]}</div>); return; }
+    // Encabezado con el "**" de cierre truncado (puede pasar al ir en vivo):
+    // una línea que abre con ** y no tiene un segundo ** también es título.
+    if(t.startsWith("**") && t.indexOf("**",2)===-1){ out.push(<div key={i} className="md-h">{t.slice(2).replace(/:\s*$/,"")}</div>); return; }
     out.push(<p key={i} className="md-p"><MdInline t={t}/></p>);
   });
   cerrar();
@@ -5962,7 +5982,8 @@ const MOB_MAS_GRUPOS = [
   ]},
   { label:"Analizar y decidir", items:[
     { esp:"analizador", ico:"chispas",  label:"Analizar un documento", sub:"Propuestas, cotizaciones, contratos y más — con IA" },
-    { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" }
+    { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" },
+    { esp:"calcArriendo", ico:"calc", label:"Calculadora de arriendo", sub:"Precio sugerido según el mercado en Chile" }
   ]},
   { label:"Operación", items:[
     { esp:"socs",   ico:"edificio",   label:"Sociedades", sub:"Empresas propietarias" },
@@ -9177,6 +9198,115 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============ CALCULADORA DE ARRIENDO (CHILE) ============
+     Con las características de la propiedad estima el arriendo mensual y da un
+     rango: mínimo, recomendado y máximo, con el porqué, cómo apuntar al máximo y
+     los riesgos. Estimación experta de mercado por comuna, no una tasación. La
+     respuesta empieza con un JSON con los tres números y sigue en Markdown. */
+  const [calcDatos, setCalcDatos] = React.useState({ region:"", comuna:"", sector:"", tipo:"Departamento", m2:"", dorm:"", banos:"", estac:"", bodega:false, estado:"", ano:"", amoblado:false, gc:"", conectividad:"", plusvalia:"", notas:"" });
+  const [calcBusy, setCalcBusy] = React.useState(false);
+  const [calcHecho, setCalcHecho] = React.useState(false);
+  const [calcOut, setCalcOut] = React.useState("");
+  const [calcPrecios, setCalcPrecios] = React.useState(null);
+  const setCD = (k,v)=> setCalcDatos(d=>({...d,[k]:v}));
+  const parseCalc = (acc)=>{
+    let precios=null, cuerpo=acc;
+    const m = /\{[\s\S]*?\}/.exec(acc);
+    if(m){ try{ const o=JSON.parse(m[0]); if(o && (Number(o.reco)||Number(o.min)||Number(o.max))){ precios=o; cuerpo=acc.slice(m.index+m[0].length); } }catch(_e){} }
+    return { precios, cuerpo: cuerpo.replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/^\s+/,"") };
+  };
+  const calcular = async ()=>{
+    if(calcBusy) return;
+    if(!calcDatos.comuna.trim() && !calcDatos.region.trim()){ notify("Dime al menos la comuna para estimar bien", true); return; }
+    setCalcBusy(true); setCalcOut(""); setCalcPrecios(null); setCalcHecho(true); subirArriba();
+    try{
+      const r = await api("/api/arriendo-precio",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ datos:calcDatos }) });
+      if(!r.ok || !r.body){ const j=await r.json().catch(()=>({})); setCalcOut(j.error||"No pude calcularlo."); setCalcBusy(false); return; }
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let acc="";
+      while(true){ const {done,value}=await reader.read(); if(done) break; acc+=dec.decode(value,{stream:true}); const p=parseCalc(acc); if(p.precios) setCalcPrecios(p.precios); setCalcOut(p.cuerpo); }
+      const f=parseCalc(acc); if(f.precios) setCalcPrecios(f.precios); setCalcOut(f.cuerpo||acc);
+      if(!acc.trim()) setCalcOut("No alcancé a calcularlo. Intenta de nuevo.");
+    }catch(_e){ setCalcOut("No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez."); }
+    setCalcBusy(false);
+  };
+  const pantallaCalcArriendo = ()=>{
+    const REGIONES=["Arica y Parinacota","Tarapacá","Antofagasta","Atacama","Coquimbo","Valparaíso","Metropolitana de Santiago","O'Higgins","Maule","Ñuble","Biobío","La Araucanía","Los Ríos","Los Lagos","Aysén","Magallanes"];
+    const cardP=(lb,val,cls)=> (
+      <div className={"mob-precio"+(cls?" "+cls:"")}>
+        <span className="lb">{lb}</span>
+        <span className="am">{(val!=null && val!=="") ? CLP(val) : "—"}</span>
+      </div>
+    );
+    const num=(k,lb,ph)=> (<label className="calc-f"><span>{lb}</span>
+      <input className="mob-inp" type="number" inputMode="numeric" value={calcDatos[k]} onChange={e=>setCD(k,e.target.value)} placeholder={ph||""}/></label>);
+    return (<Pantalla titulo="Calculadora de arriendo" contexto="Precio sugerido según el mercado en Chile" gap="14">
+      {!calcHecho ? (<React.Fragment>
+        <div className="mob-bloque">
+          <h2 className="mob-h2">¿Dónde está?</h2>
+          <label className="calc-f"><span>Región</span>
+            <select className="mob-inp" value={calcDatos.region} onChange={e=>setCD("region",e.target.value)}>
+              <option value="">Elige una región…</option>
+              {REGIONES.map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+          </label>
+          <label className="calc-f"><span>Comuna</span>
+            <input className="mob-inp" value={calcDatos.comuna} onChange={e=>setCD("comuna",e.target.value)} placeholder="Ej: Ñuñoa"/></label>
+          <label className="calc-f"><span>Sector o barrio (opcional)</span>
+            <input className="mob-inp" value={calcDatos.sector} onChange={e=>setCD("sector",e.target.value)} placeholder="Ej: Plaza Ñuñoa"/></label>
+        </div>
+        <div className="mob-bloque">
+          <h2 className="mob-h2">¿Cómo es?</h2>
+          <label className="calc-f"><span>Tipo</span>
+            <select className="mob-inp" value={calcDatos.tipo} onChange={e=>setCD("tipo",e.target.value)}>
+              <option>Departamento</option><option>Casa</option><option>Oficina</option><option>Otro</option>
+            </select>
+          </label>
+          <div className="calc-g2">
+            {num("m2","Metros útiles (m²)","m²")}
+            <label className="calc-f"><span>Año o antigüedad</span>
+              <input className="mob-inp" value={calcDatos.ano} onChange={e=>setCD("ano",e.target.value)} placeholder="Ej: 2015"/></label>
+            {num("dorm","Dormitorios")}
+            {num("banos","Baños")}
+            {num("estac","Estacionamientos")}
+            {num("gc","Gastos comunes ($)","$")}
+          </div>
+          <label className="calc-f" style={{marginTop:12}}><span>Estado</span>
+            <select className="mob-inp" value={calcDatos.estado} onChange={e=>setCD("estado",e.target.value)}>
+              <option value="">Sin especificar</option><option>Nuevo / a estrenar</option><option>Buen estado</option><option>Usado</option><option>Para refaccionar</option>
+            </select>
+          </label>
+          <div className="calc-sw"><span>Tiene bodega</span><IosSwitch on={calcDatos.bodega} onChange={v=>setCD("bodega",v)}/></div>
+          <div className="calc-sw"><span>Amoblado</span><IosSwitch on={calcDatos.amoblado} onChange={v=>setCD("amoblado",v)}/></div>
+        </div>
+        <div className="mob-bloque">
+          <h2 className="mob-h2">Para afinar (opcional)</h2>
+          <label className="calc-f"><span>Cercanía a metro y servicios</span>
+            <input className="mob-inp" value={calcDatos.conectividad} onChange={e=>setCD("conectividad",e.target.value)} placeholder="Ej: a 3 cuadras del metro"/></label>
+          <label className="calc-f"><span>Plusvalía / proyección</span>
+            <input className="mob-inp" value={calcDatos.plusvalia} onChange={e=>setCD("plusvalia",e.target.value)} placeholder="Ej: barrio en alza, metro nuevo"/></label>
+          <label className="calc-f"><span>Otros datos</span>
+            <textarea className="mob-inp" rows={2} value={calcDatos.notas} onChange={e=>setCD("notas",e.target.value)} style={{resize:"none"}} placeholder="Vista, orientación, terraza, piso… lo que quieras agregar"/></label>
+        </div>
+        <button className="mob-btn pri" disabled={calcBusy} onClick={calcular}>{calcBusy?"Calculando…":"Calcular precio de arriendo"}</button>
+        <div className="mob-nota">Estimación experta según el mercado por comuna; no es una tasación oficial. Conviene contrastarla con avisos parecidos en portales (Portal Inmobiliario, Yapo, Toctoc).</div>
+      </React.Fragment>) : (<React.Fragment>
+        <div className="mob-precios">
+          {cardP("Mínimo", calcPrecios&&calcPrecios.min)}
+          {cardP("Recomendado", calcPrecios&&calcPrecios.reco, "reco")}
+          {cardP("Máximo", calcPrecios&&calcPrecios.max)}
+        </div>
+        {calcPrecios && calcPrecios.confianza && <div className="mob-nota" style={{textAlign:"center",marginTop:"-2px"}}>Confianza de la estimación: {calcPrecios.confianza}</div>}
+        <div className="mob-bloque">
+          <div className="mob-iamsg ia">
+            {calcOut ? <MdMini texto={calcOut}/> : <div className="tx">{calcBusy?"Calculando el precio con el mercado…":"…"}</div>}
+          </div>
+        </div>
+        <button className="mob-btn sec" onClick={()=>setCalcHecho(false)}>Editar datos y recalcular</button>
+        <div className="mob-nota">Estimación orientativa. Para una decisión importante, contrástala con un corredor local.</div>
+      </React.Fragment>)}
+    </Pantalla>);
+  };
+
   /* ============ COMPARAR PRESUPUESTOS ============
      Las cotizaciones llegan imposibles de comparar: una con IVA y otra sin,
      una en dos semanas y otra en un mes, una con garantía y otra sin nada.
@@ -10060,6 +10190,7 @@ function MobileApp(props){
     else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
     else if(top.t==="planos")       vista = pantallaPlanos();
     else if(top.t==="analizador")   vista = pantallaAnalizador();
+    else if(top.t==="calcArriendo") vista = pantallaCalcArriendo();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
     else if(top.t==="waImport")     vista = pantallaWhatsApp();
     else if(top.t==="config")       vista = pantallaConfig();
