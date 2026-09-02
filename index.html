@@ -1523,6 +1523,39 @@
   .mob-finbar.div > i.pos{ left:50%; }
   .mob-finbar.div > i.neg{ right:50%; left:auto; background:repeating-linear-gradient(-45deg,var(--mtm2) 0 3px,transparent 3px 6px); }
   .mob-finrow .soc{ font-size:12px; color:var(--mtm); }
+  /* Repartición del mes: dona + barras con porcentaje para los tres ítems
+     (utilidad, dividendos, gastos). Todo monocromo, como el resto. La dona y
+     cada fila son tocables y cambian la vista de arriba, como un control más. */
+  .mob-findona{ background:var(--msf); border:1px solid var(--mln); border-radius:16px;
+    padding:17px 16px 8px; display:flex; flex-direction:column; align-items:center; }
+  .mob-findona .aro{ position:relative; width:154px; height:154px; }
+  .mob-findona svg{ width:100%; height:100%; display:block; }
+  .mob-findona svg circle{ transition:stroke-width .2s ease, opacity .2s ease; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; }
+  .mob-findona .centro{ position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+  .mob-findona .centro .pc{ font-size:32px; font-weight:800; letter-spacing:-.03em; color:var(--mtx);
+    font-variant-numeric:tabular-nums; line-height:1; }
+  .mob-findona .centro .et{ font-size:12px; color:var(--mtm); margin-top:4px; font-weight:650; }
+  .mob-findona .cap{ font-size:12px; color:var(--mtm); text-align:center; margin:11px 4px 4px; line-height:1.35; }
+  .mob-fin3{ display:flex; flex-direction:column; width:100%; }
+  .mob-fin3 .f{ display:flex; flex-direction:column; gap:8px; width:100%; text-align:left;
+    background:transparent; border:none; font-family:inherit; padding:12px 6px; cursor:pointer;
+    position:relative; transition:opacity .18s ease; -webkit-tap-highlight-color:transparent; }
+  .mob-fin3 .f + .f::before{ content:""; position:absolute; top:0; left:6px; right:6px; height:1px; background:var(--mln); }
+  .mob-fin3 .f:active{ opacity:.6; }
+  .mob-fin3 .f:not(.on){ opacity:.5; }
+  .mob-fin3 .f.on{ opacity:1; }
+  .mob-fin3 .l1{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .mob-fin3 .nm{ display:flex; align-items:center; gap:8px; font-size:14.5px; font-weight:650; color:var(--mtx);
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mob-fin3 .pt{ width:11px; height:11px; border-radius:3.5px; flex-shrink:0; }
+  .mob-fin3 .rr{ display:flex; align-items:baseline; gap:8px; flex-shrink:0; }
+  .mob-fin3 .vv{ font-size:14.5px; font-weight:770; color:var(--mtx); font-variant-numeric:tabular-nums; }
+  .mob-fin3 .vv.neg{ color:var(--mtm); }
+  .mob-fin3 .pct{ font-size:12px; color:var(--mtm); font-variant-numeric:tabular-nums; min-width:34px; text-align:right; }
+  .mob-fin3 .bar{ position:relative; height:8px; border-radius:4px; background:var(--mfl2); overflow:hidden; }
+  .mob-fin3 .bar > i{ position:absolute; left:0; top:0; height:100%; border-radius:4px; transition:width .35s cubic-bezier(.2,.7,.2,1); }
   /* Tarjetas de "Más": rejilla de 3, icono arriba y nombre corto abajo, como
      una pantalla de inicio. Más aire y menos apretado que una lista. */
   .mob-mas-sec{ display:flex; flex-direction:column; gap:9px; }
@@ -7014,6 +7047,68 @@ function MobileApp(props){
           <span className="lb">{propiedades.length} propiedades</span>
         </div>
       </MobDeslizable>
+      {/* Repartición del mes: una dona con el porcentaje de los tres ítems
+          (utilidad, dividendos, gastos). Tocar una porción —o una fila— cambia
+          la vista de arriba, igual que el control segmentado. De un vistazo se
+          ve en qué se va cada peso que entra. */}
+      {(()=>{
+        const items = [
+          { k:"utilidad",   nm:"Tu utilidad", v:utilTot,   c:"#101012" },
+          { k:"dividendos", nm:"Dividendo",   v:divTot,    c:"#7C7C85" },
+          { k:"gastos",     nm:"Gastos",      v:gastosTot, c:"#C7C7CC" },
+        ];
+        const base = items.reduce((s,x)=> s + Math.max(0,x.v), 0) || 1;
+        const pctDe = (v)=> Math.round(Math.max(0,v)/base*100);
+        const foco = items.find(x=>x.k===finSeg) || items[0];
+        const R = 15.9155;
+        let acc = 0;
+        const hayNegFin = utilTot < 0;
+        return (
+          <div className="mob-bloque">
+            <h2 className="mob-h2">Repartición del mes</h2>
+            <div className="mob-findona">
+              <div className="aro">
+                <svg viewBox="0 0 42 42" role="img" aria-label="Repartición de lo que entra cada mes">
+                  <circle cx="21" cy="21" r={R} fill="none" stroke="var(--mfl2)" strokeWidth="4.4"/>
+                  {items.map(it=>{
+                    const p = Math.max(0, it.v)/base*100;
+                    const off = 100 - acc + 25;
+                    acc += p;
+                    if(p<=0.1) return null;
+                    const on = it.k===finSeg;
+                    return <circle key={it.k} cx="21" cy="21" r={R} fill="none"
+                      stroke={it.c} strokeWidth={on?6.4:4.4}
+                      strokeDasharray={p.toFixed(2)+" "+(100-p).toFixed(2)}
+                      strokeDashoffset={off.toFixed(2)} opacity={on?1:.92}
+                      onClick={()=>setFinSeg(it.k)}/>;
+                  })}
+                </svg>
+                <div className="centro">
+                  <div className="pc">{pctDe(foco.v)}%</div>
+                  <div className="et">{foco.nm}</div>
+                </div>
+              </div>
+              <div className="cap">{hayNegFin
+                ? "Este mes los gastos superan lo que entra. Toca una parte para verla."
+                : "Así se reparte cada $100 que entra al mes. Toca una parte para verla."}</div>
+              <div className="mob-fin3">
+                {items.map(it=>{
+                  const on = it.k===finSeg; const neg = it.v<0;
+                  return (
+                    <button key={it.k} className={"f"+(on?" on":"")} onClick={()=>setFinSeg(it.k)}>
+                      <div className="l1">
+                        <span className="nm"><i className="pt" style={{background:it.c}}></i>{it.nm}</span>
+                        <span className="rr"><span className={"vv"+(neg?" neg":"")}>{mobPlata(it.v)}</span><span className="pct">{pctDe(it.v)}%</span></span>
+                      </div>
+                      <span className="bar"><i style={{width:Math.max(2,pctDe(it.v))+"%", background:it.c}}></i></span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* Por propiedad, como barras y no como lista: la barra deja ver de un
           vistazo cuál pesa más y —en Utilidad— cuáles ganan y cuáles pierden.
           Se ordena de mayor a menor y cada barra abre el balance de esa
