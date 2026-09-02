@@ -1521,11 +1521,12 @@
   .mob-iamsg .md strong{ font-weight:750; color:var(--mtx); }
   /* Calculadora de arriendo: tres precios grandes (mín / recomendado / máx) y
      un formulario simple. El recomendado se destaca en oscuro. */
-  .mob-precios{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; align-items:stretch; }
+  .mob-precios{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; align-items:stretch; }
+  .mob-precios > *{ min-width:0; }
   .mob-precio{ background:var(--msf); border:1px solid var(--mln); border-radius:15px; padding:15px 8px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; min-width:0; }
   .mob-precio .lb{ font-size:11.5px; color:var(--mtm); font-weight:650; }
-  .mob-precio .am{ font-size:15px; font-weight:800; color:var(--mtx); letter-spacing:-.02em;
+  .mob-precio .am{ font-size:15px; font-weight:800; color:var(--mtx); letter-spacing:-.02em; overflow-wrap:anywhere;
     font-variant-numeric:tabular-nums; line-height:1.12; }
   .mob-precio.reco{ background:var(--mib); border-color:var(--mib); box-shadow:0 12px 28px rgba(16,16,18,.18); }
   .mob-precio.reco .lb{ color:rgba(255,255,255,.72); }
@@ -1533,7 +1534,8 @@
   .calc-f{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
   .calc-f:last-child{ margin-bottom:0; }
   .calc-f > span{ font-size:12.5px; color:var(--mtm); font-weight:600; padding-left:2px; }
-  .calc-g2{ display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; }
+  .calc-g2{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 10px; }
+  .calc-g2 > *{ min-width:0; }
   .calc-sw{ display:flex; align-items:center; justify-content:space-between; padding:11px 2px; font-size:15px; font-weight:600; color:var(--mtx); }
   .calc-sw + .calc-sw{ border-top:1px solid var(--mln); }
   .mob-aviso-ok{ background:var(--mfl); border:1px solid var(--mln); border-radius:12px; padding:11px 13px;
@@ -1603,14 +1605,16 @@
      una pantalla de inicio. Más aire y menos apretado que una lista. */
   .mob-mas-sec{ display:flex; flex-direction:column; gap:9px; }
   .mob-mas-sec > .mob-gtit{ margin:2px 2px 0; }
-  .mob-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .mob-cards{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .mob-cards > *{ min-width:0; }
   .mob-cardg{ position:relative; display:flex; flex-direction:column; align-items:flex-start;
     justify-content:space-between; gap:16px; background:var(--msf); border:1px solid var(--mln);
     border-radius:16px; padding:14px 13px; min-height:100px; font-family:inherit; text-align:left;
     cursor:pointer; color:var(--mtx); }
   .mob-cardg:active{ background:var(--mfl2); }
   .mob-cardg .ic{ color:var(--mtx); display:flex; }
-  .mob-cardg .lb{ font-size:14.5px; font-weight:650; line-height:1.18; letter-spacing:-.01em; }
+  .mob-cardg .lb{ font-size:14.5px; font-weight:650; line-height:1.18; letter-spacing:-.01em;
+    overflow-wrap:anywhere; max-width:100%; }
   .mob-cardg .bdg{ position:absolute; top:10px; right:10px; min-width:22px; height:22px; padding:0 6px;
     border-radius:11px; background:var(--mib); color:#fff; font-size:12px; font-weight:800; line-height:22px;
     text-align:center; }
@@ -1799,7 +1803,12 @@
   /* REJILLA · Propiedades y cobros como tarjetas, no como lista. Dos columnas
      compactas: cada inmueble ocupa la mitad del ancho, así entra el doble por
      pantalla y la vista completa se ve sin tener que bajar. */
-  .mob-grid2{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  /* minmax(0,1fr): sin esto, un nombre largo (ej. "Av. La Plaza 1451 — Depto.
+     33A, Las Condes") ensancha la columna más allá de media pantalla y la
+     columna derecha queda cortada. min-width:0 en cada hijo deja que la tarjeta
+     se achique y el texto se recorte en vez de desbordar. */
+  .mob-grid2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .mob-grid2 > *{ min-width:0; }
   .mob-pc{ display:flex; flex-direction:column; text-align:left; min-width:0;
     background:var(--msf); border:1px solid var(--mln); border-radius:16px;
     padding:12px 13px 13px; font-family:inherit; cursor:pointer; }
