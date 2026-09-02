@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ArriendoPro — Administración de Propiedades</title>
+<!-- Calienta la conexión al CDN antes de pedir React: la primera pintura llega
+     antes en el celular (la descarga de React deja de esperar el saludo TLS). -->
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
 <!-- PWA / instalación como aplicación en el celular -->
 <meta name="theme-color" content="#101012" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -8633,7 +8637,7 @@ function MobileApp(props){
         <div className="mob-fotos-aporte">
           {a.archivos.map((f,k)=> esImagen(f.contentType)
             ? <button key={k} className="mob-foto-hero" onClick={()=>{ setVisor(f.url); setVisorReal(false); }}>
-                <img src={f.url} alt={f.name} loading="lazy"/>
+                <img src={f.url} alt={f.name} loading="lazy" decoding="async"/>
               </button>
             : <a key={k} href={f.url} target="_blank" rel="noopener" className="mob-cell" style={{borderRadius:14, border:"1px solid var(--mln)"}}>
                 <span className="ic"><Ic n={fileIcon(f.contentType)} w={20}/></span>
@@ -8739,7 +8743,7 @@ function MobileApp(props){
     return (<Pantalla titulo={a.titulo||"Plano"} contexto={[a.autor, p?p.name:""].filter(Boolean).join(" · ")} gap="14">
       {img && esImagen(img.contentType) && (
         <button className="mob-foto-hero" onClick={()=>{ setVisor(img.url); setVisorReal(false); }}>
-          <img src={img.url} alt={a.titulo||"Plano"} loading="lazy"/>
+          <img src={img.url} alt={a.titulo||"Plano"} loading="lazy" decoding="async"/>
         </button>
       )}
       {img && !esImagen(img.contentType) && (
@@ -9992,7 +9996,7 @@ function ChatEquipo({ compacto, conInicial }){
                     );
                     return esImagen(a.contentType)
                     ? <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-img">
-                        <img src={a.url} alt={a.name} loading="lazy"/>
+                        <img src={a.url} alt={a.name} loading="lazy" decoding="async"/>
                       </a>
                     : <a key={k} href={a.url} target="_blank" rel="noopener" className="chat-eq-file">
                         <span className="ic"><Ic n={fileIcon(a.contentType)} w={16}/></span>
