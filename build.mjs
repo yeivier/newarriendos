@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import babel from '@babel/standalone'
+import * as esbuild from 'esbuild'
 
 const root = process.cwd()
 const out = path.join(root, 'dist')
@@ -42,7 +43,16 @@ let html = fs.readFileSync(idx, 'utf8')
 let transpilado = false
 html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/, (m, code) => {
   transpilado = true
-  const js = babel.transform(code, { presets: [['react', { runtime: 'classic' }]], compact: false }).code
+  let js = babel.transform(code, { presets: [['react', { runtime: 'classic' }]], compact: false }).code
+  // Minificado: el celular descarga y procesa mucho menos (el HTML pasa de
+  // ~1,5 MB a la mitad), así la app abre más rápido. Si por lo que sea fallara,
+  // se sigue con el código sin minificar para no romper nunca el build.
+  try {
+    const min = esbuild.transformSync(js, { minify: true, loader: 'js', legalComments: 'none', target: 'es2019', charset: 'utf8' })
+    if (min && min.code && min.code.length) js = min.code
+  } catch (e) {
+    console.warn('Aviso: no se pudo minificar el JS (' + (e && e.message) + '); se publica sin minificar.')
+  }
   return '<script>\n' + js + '\n</script>'
 })
 if (!transpilado) throw new Error('No encontré el bloque <script type="text/babel"> en index.html')
