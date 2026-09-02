@@ -1495,6 +1495,30 @@
   /* El botón primario es de ancho completo por defecto; aquí NO: si lo fuera,
      se comería el campo y no se podría escribir. */
   .mob-iabar > .mob-btn.pri{ width:auto; flex:0 0 auto; min-width:52px; padding:0 16px; min-height:44px; }
+  /* Analizador con IA: selector de modo (chips que se deslizan), fila para
+     adjuntar y render de la respuesta como Markdown simple. */
+  .mob-anamodos{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; padding:2px 2px 2px; margin:0 -2px; }
+  .mob-anamodos::-webkit-scrollbar{ display:none; }
+  .mob-anamodos .chip{ display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; cursor:pointer;
+    background:var(--msf); border:1px solid var(--mbr); color:var(--mtx); border-radius:999px;
+    padding:8px 14px; font-size:14px; font-weight:600; font-family:inherit; white-space:nowrap; min-height:38px;
+    -webkit-tap-highlight-color:transparent; transition:background .15s, border-color .15s, color .15s; }
+  .mob-anamodos .chip.on{ background:var(--mib); border-color:var(--mib); color:#fff; }
+  .mob-anadj{ display:flex; gap:9px; }
+  .mob-anadj > .mob-btn.sec{ flex:1; }
+  .mob-adj .x{ background:none; border:none; color:var(--mtm); cursor:pointer; padding:4px 6px; font-size:19px; line-height:1; flex-shrink:0; }
+  /* Markdown simple de las respuestas de la IA (analizador y calculadora). */
+  .mob-iamsg .md{ white-space:normal; }
+  .mob-iamsg .md-h{ font-size:14.5px; font-weight:750; color:var(--mtx); letter-spacing:-.01em; margin:13px 0 5px; }
+  .mob-iamsg .md-h:first-child{ margin-top:0; }
+  .mob-iamsg .md-p{ margin:0 0 8px; line-height:1.5; }
+  .mob-iamsg .md-p:last-child{ margin-bottom:0; }
+  .mob-iamsg .md-ul{ margin:0 0 9px; padding-left:2px; list-style:none; display:flex; flex-direction:column; gap:5px; }
+  .mob-iamsg .md-ul li{ position:relative; padding-left:16px; line-height:1.45; }
+  .mob-iamsg .md-ul li::before{ content:""; position:absolute; left:3px; top:8px; width:5px; height:5px;
+    border-radius:50%; background:var(--mtm); }
+  .mob-iamsg .md strong{ font-weight:750; color:var(--mtx); }
   /* Fila de chips-filtro (CRM): se desplaza de lado, no se apila. */
   .mob-chips-fila{ display:flex; gap:8px; overflow-x:auto; margin:0 -17px; padding:2px 17px 4px; -webkit-overflow-scrolling:touch; }
   .mob-chips-fila::-webkit-scrollbar{ display:none; }
@@ -5604,6 +5628,18 @@ const MI = {
     <rect x="2.6" y="8.4" width="18.8" height="7.2" rx="2.2"/>
     <path d="M7 8.4v2.8M11 8.4v3.8M15 8.4v2.8M19 8.4v3.8"/>
   </React.Fragment>),
+  impuesto: (<React.Fragment>
+    <path d="M6 3.4h8.6L18.6 7.4V20.6a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.4a1 1 0 0 1 1-1z"/>
+    <path d="M14.4 3.6V7.6h4"/>
+    <path d="M9 17 15 11"/>
+    <circle cx="9.3" cy="11.4" r="1"/>
+    <circle cx="14.7" cy="16.6" r="1"/>
+  </React.Fragment>),
+  calc: (<React.Fragment>
+    <rect x="5" y="3" width="14" height="18" rx="2.6"/>
+    <rect x="8" y="6" width="8" height="3.2" rx="1"/>
+    <path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.6h.01M12 16.6h.01M15.5 16.6h.01"/>
+  </React.Fragment>),
   cama: (<React.Fragment>
     <path d="M3 19.4v-9.6"/>
     <path d="M3 14.6h18v4.8"/>
@@ -5870,6 +5906,52 @@ const MOB_CARD_CORTO = {
   "Mi perfil":"Perfil"
 };
 
+/* Render mínimo de Markdown para las respuestas de la IA: negritas, encabezados
+   (líneas que son solo **...**), viñetas y párrafos. Nada de librerías: la IA
+   responde con esta estructura y acá se ve ordenada y fácil de leer, sin los
+   asteriscos crudos. */
+function MdInline({ t }){
+  const partes = String(t==null?"":t).split(/(\*\*[^*]+\*\*)/g);
+  return partes.map((s,i)=> /^\*\*[^*]+\*\*$/.test(s)
+    ? <strong key={i}>{s.slice(2,-2)}</strong>
+    : <React.Fragment key={i}>{s}</React.Fragment>);
+}
+function MdMini({ texto }){
+  const lineas = String(texto==null?"":texto).replace(/\r/g,"").split("\n");
+  const out = []; let viñetas = null;
+  const cerrar = ()=>{ if(viñetas){ out.push(<ul key={"u"+out.length} className="md-ul">{viñetas}</ul>); viñetas = null; } };
+  lineas.forEach((ln,i)=>{
+    const t = ln.trim();
+    if(!t){ cerrar(); return; }
+    const b = /^[-•*]\s+(.*)/.exec(t);
+    if(b){ if(!viñetas) viñetas = []; viñetas.push(<li key={i}><MdInline t={b[1]}/></li>); return; }
+    cerrar();
+    const h = /^(#{1,4})\s+(.*)/.exec(t);
+    const soloNegrita = /^\*\*(.+)\*\*:?$/.exec(t);
+    if(h){ out.push(<div key={i} className="md-h"><MdInline t={h[2]}/></div>); return; }
+    if(soloNegrita){ out.push(<div key={i} className="md-h">{soloNegrita[1]}</div>); return; }
+    out.push(<p key={i} className="md-p"><MdInline t={t}/></p>);
+  });
+  cerrar();
+  return <div className="md">{out}</div>;
+}
+
+/* Modos del analizador con IA. Cada uno afina el foco del mismo cerebro. */
+const ANA_MODOS = [
+  { k:"general",    nm:"Todo",        ico:"chispas",  ayuda:"Sube lo que sea —foto, PDF, video, ZIP o carpeta— y te digo qué es y lo analizo." },
+  { k:"cotizacion", nm:"Cotización",  ico:"balanza",  ayuda:"Una o varias cotizaciones o presupuestos. Los comparo y te digo cuál conviene y por qué." },
+  { k:"propuesta",  nm:"Propuesta",   ico:"doc",      ayuda:"Propuestas, proyectos, contratos o informes. Te digo si conviene, qué negociar y qué cuidar." },
+  { k:"impuestos",  nm:"Impuestos",   ico:"impuesto", ayuda:"Contribuciones, renta por arriendo, IVA, DFL2. Adjunta documentos o cuéntame tu situación." },
+  { k:"plano",      nm:"Plano",       ico:"regla",    ayuda:"Planos de arquitectura: lo leo, estimo superficies y sugiero mejoras." },
+];
+const ANA_PEDIDO = {
+  general:"Analiza lo que te adjunto y dime lo importante, los contras y qué me recomiendas.",
+  cotizacion:"Analiza y compara. Si hay varias, dime cuál conviene y por qué.",
+  propuesta:"Lee esta propuesta y dime si conviene, qué negociar y qué cuidar.",
+  impuestos:"Analiza mi situación tributaria y dime qué hacer, qué conviene pagar y qué revisar.",
+  plano:"Lee este plano y dime todo lo relevante, con mejoras y qué verificar.",
+};
+
 const MOB_MAS_GRUPOS = [
   { label:"Gestión diaria", items:[
     { esp:"contactos", ico:"personas", label:"Arrendatarios y contactos", sub:"Quién arrienda cada propiedad" },
@@ -5877,6 +5959,10 @@ const MOB_MAS_GRUPOS = [
     { id:"bitacora",    ico:"libreta",      label:"Bitácora", sub:"Notas y mantenciones" },
     { id:"comunicaciones", ico:"sobre",     label:"Comunicaciones", sub:"Plantillas de correo, WhatsApp y SMS" },
     { esp:"equipo",     ico:"burbuja",      label:"Chat del equipo", sub:"Mensajes y archivos con quien tiene acceso" }
+  ]},
+  { label:"Analizar y decidir", items:[
+    { esp:"analizador", ico:"chispas",  label:"Analizar un documento", sub:"Propuestas, cotizaciones, contratos y más — con IA" },
+    { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" }
   ]},
   { label:"Operación", items:[
     { esp:"socs",   ico:"edificio",   label:"Sociedades", sub:"Empresas propietarias" },
@@ -7241,6 +7327,7 @@ function MobileApp(props){
     if(it.esp==="buscar") return buscar();
     if(it.esp==="infocheck") return AC.infoCheck && AC.infoCheck();
     if(it.esp==="levantamiento") return push({t:"ftecSec"});
+    if(it.esp==="analizador" || it.esp==="impuestos"){ setAnaModo(it.esp==="impuestos"?"impuestos":"general"); setAnaMsgs([]); setAnaSel([]); setAnaTexto(""); return push({t:"analizador"}); }
     push({t:it.esp});
   };
 
@@ -8912,6 +8999,184 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============ ANALIZADOR CON IA ============
+     Un lector universal: propuestas, cotizaciones/presupuestos, contratos,
+     planos, o cualquier archivo. Adjuntas fotos, PDF, video, ZIP o una carpeta,
+     y la IA lo lee a fondo pero responde simple: resumen, análisis, contras e
+     incongruencias con su solución, recomendaciones y una decisión. Comparte el
+     modo "impuestos" para la situación tributaria. Todo se transmite en vivo. */
+  const anaImagenIA = async (blob, name)=>{
+    try{
+      const img = await cargarImagen(await leerBase64(blob));
+      const w0 = img && (img.naturalWidth||img.width), h0 = img && (img.naturalHeight||img.height);
+      if(img && w0 && h0){
+        const esc = Math.min(1, 1500/Math.max(w0,h0));
+        const w = Math.max(1,Math.round(w0*esc)), h = Math.max(1,Math.round(h0*esc));
+        const jpeg = lienzoDe(img,w,h).toDataURL("image/jpeg",0.85);
+        const mm = /^data:([^;]+);base64,(.+)$/s.exec(String(jpeg));
+        if(mm) return { media:mm[1], data:mm[2], name };
+      }
+    }catch(_e){}
+    const m = /^data:([^;]+);base64,(.+)$/s.exec(String(await leerBase64(blob)));
+    return m ? { media:m[1], data:m[2], name } : null;
+  };
+  // De un video sacamos un fotograma para que la IA "vea" de qué se trata.
+  const anaVideoFrame = (file)=> new Promise((res)=>{
+    try{
+      const v = document.createElement("video");
+      v.preload="metadata"; v.muted=true; v.playsInline=true;
+      const url = URL.createObjectURL(file);
+      let listo=false; const fin=(r)=>{ if(listo) return; listo=true; try{URL.revokeObjectURL(url);}catch(_){}; res(r); };
+      v.onloadeddata = ()=>{ try{ v.currentTime = Math.min(1, (v.duration||3)/3); }catch(_){ fin(null); } };
+      v.onseeked = ()=>{ try{
+        const w=v.videoWidth, h=v.videoHeight; if(!w||!h) return fin(null);
+        const esc=Math.min(1,1200/Math.max(w,h)); const cw=Math.round(w*esc), ch=Math.round(h*esc);
+        const c=document.createElement("canvas"); c.width=cw; c.height=ch;
+        c.getContext("2d").drawImage(v,0,0,cw,ch);
+        const mm=/^data:([^;]+);base64,(.+)$/s.exec(c.toDataURL("image/jpeg",0.82));
+        fin(mm?{media:mm[1],data:mm[2],name:(file.name||"video")+" (fotograma)"}:null);
+      }catch(_e){ fin(null); } };
+      v.onerror=()=>fin(null);
+      setTimeout(()=>fin(null), 6000);
+      v.src=url;
+    }catch(_e){ res(null); }
+  });
+  const anaPreparar = async (files)=>{
+    const archivos=[]; const textos=[]; const avisos=[]; let total=0; const TOPE=8_500_000;
+    const empujar=(o)=>{ if(!o) return; if(total+o.data.length<=TOPE){ archivos.push(o); total+=o.data.length; } else avisos.push((o.name||"archivo")+": muy pesado, no se incluyó."); };
+    for(const f of files){
+      if(archivos.length>=8){ avisos.push("Tomé los primeros 8 archivos; el resto quedó fuera."); break; }
+      const name=f.name||"archivo"; const type=(f.type||"").toLowerCase();
+      try{
+        if(type.startsWith("image/") || /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i.test(name)) empujar(await anaImagenIA(f,name));
+        else if(type==="application/pdf" || /\.pdf$/i.test(name)){ const m=/^data:([^;]+);base64,(.+)$/s.exec(String(await leerBase64(f))); if(m) empujar({media:"application/pdf",data:m[2],name}); }
+        else if(type.startsWith("video/") || /\.(mp4|mov|m4v|webm|avi|mkv|3gp)$/i.test(name)){ const fr=await anaVideoFrame(f); if(fr) empujar(fr); else avisos.push(name+": es un video; no pude sacar un cuadro, cuéntame qué muestra."); }
+        else if(type==="application/zip" || /\.zip$/i.test(name)){
+          const JSZip=await cargarJSZip(); const zip=await JSZip.loadAsync(f);
+          const ent=Object.keys(zip.files).map(k=>zip.files[k]).filter(e=>!e.dir).slice(0,40);
+          for(const e of ent){ if(archivos.length>=8) break; const en=(e.name.split("/").pop()||e.name);
+            if(/\.(jpe?g|png|gif|webp|bmp)$/i.test(en)){ const b=await e.async("blob"); empujar(await anaImagenIA(b,en)); }
+            else if(/\.pdf$/i.test(en)){ const b64=await e.async("base64"); empujar({media:"application/pdf",data:b64,name:en}); }
+            else if(/\.(txt|csv|md|json|log|vtt|srt)$/i.test(en)){ const tx=await e.async("string"); textos.push("["+en+"]\n"+String(tx).slice(0,6000)); }
+          }
+        }
+        else if(/^text\//.test(type) || /\.(txt|csv|md|json|log|rtf|vtt|srt)$/i.test(name)){ const tx=await f.text(); textos.push("["+name+"]\n"+String(tx).slice(0,8000)); }
+        else avisos.push(name+": no pude leer este tipo de archivo; descríbeme qué es.");
+      }catch(_e){ avisos.push(name+": no se pudo procesar."); }
+    }
+    return { archivos, texto:textos.join("\n\n").slice(0,22000), avisos };
+  };
+
+  const [anaModo, setAnaModo] = React.useState("general");
+  const [anaSel, setAnaSel] = React.useState([]);      // File[] elegidos
+  const [anaTexto, setAnaTexto] = React.useState("");  // notas / pregunta
+  const [anaMsgs, setAnaMsgs] = React.useState([]);    // [{role,content}]
+  const [anaBusy, setAnaBusy] = React.useState(false);
+  const [anaFase, setAnaFase] = React.useState("");
+  const anaFileRef = React.useRef(null);
+  const anaDirRef = React.useRef(null);
+
+  const analizar = async (primera, pregunta)=>{
+    if(anaBusy) return;
+    const modo = anaModo;
+    const msgs = primera
+      ? [{ role:"user", content: (anaTexto.trim() || ANA_PEDIDO[modo] || "Analiza lo que te adjunto.") }]
+      : [...anaMsgs, { role:"user", content: pregunta }];
+    setAnaMsgs(msgs); setAnaBusy(true); if(primera) setAnaTexto("");
+    try{
+      let archivos=[], texto="";
+      if(primera && anaSel.length){
+        setAnaFase("Preparando los archivos…");
+        const prep = await anaPreparar(anaSel);
+        archivos = prep.archivos; texto = prep.texto;
+        if(prep.avisos.length) texto = (texto?texto+"\n\n":"") + "Avisos al preparar: " + prep.avisos.join(" ");
+      }
+      setAnaFase("Analizando…");
+      const r = await api("/api/analizador",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ modo, archivos, texto, messages: msgs.slice(-10) }) });
+      if(!r.ok || !r.body){ const j=await r.json().catch(()=>({})); setAnaMsgs([...msgs,{role:"assistant",content:j.error||"No pude analizarlo."}]); setAnaBusy(false); setAnaFase(""); return; }
+      setAnaMsgs([...msgs,{role:"assistant",content:""}]);
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let acc="";
+      while(true){ const {done,value}=await reader.read(); if(done) break; acc+=dec.decode(value,{stream:true}); setAnaMsgs([...msgs,{role:"assistant",content:acc}]); }
+      if(!acc.trim()) setAnaMsgs([...msgs,{role:"assistant",content:"No alcancé a analizarlo. Prueba con archivos más nítidos o livianos."}]);
+    }catch(_e){ setAnaMsgs([...msgs,{role:"assistant",content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez."}]); }
+    setAnaBusy(false); setAnaFase("");
+  };
+
+  const pantallaAnalizador = ()=>{
+    const modoActual = ANA_MODOS.find(m=>m.k===anaModo) || ANA_MODOS[0];
+    const hayConv = anaMsgs.length>0;
+    const ultimo = anaMsgs[anaMsgs.length-1];
+    const esperando = anaBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
+    const elegir=(x)=>{ if(x&&x.length) setAnaSel(s=>[...s,...x].slice(0,12)); };
+    return (<Pantalla titulo={anaModo==="impuestos"?"Impuestos":"Analizar"} contexto="Adjunta lo que sea y la IA lo analiza a fondo, en simple" gap="14">
+      {!hayConv ? (<React.Fragment>
+        <div className="mob-anamodos">
+          {ANA_MODOS.map(m=>(
+            <button key={m.k} className={"chip"+(m.k===anaModo?" on":"")} onClick={()=>setAnaModo(m.k)}>
+              <MobIco w={15}>{MI[m.ico]}</MobIco>{m.nm}
+            </button>
+          ))}
+        </div>
+        <div className="mob-porque" style={{margin:"0 2px"}}>{modoActual.ayuda}</div>
+        <input ref={anaFileRef} type="file" multiple style={{display:"none"}}
+          onChange={e=>{ const x=Array.from(e.target.files||[]); e.target.value=""; elegir(x); }}/>
+        <input ref={anaDirRef} type="file" multiple style={{display:"none"}}
+          onChange={e=>{ const x=Array.from(e.target.files||[]); e.target.value=""; elegir(x); }}/>
+        <div className="mob-anadj">
+          <button className="mob-btn sec" onClick={()=>anaFileRef.current&&anaFileRef.current.click()}>
+            <MobIco w={18}>{MI.mas}</MobIco> Adjuntar archivos
+          </button>
+          <button className="mob-btn sec" onClick={()=>{ const el=anaDirRef.current; if(el){ try{el.setAttribute("webkitdirectory","");el.setAttribute("directory","");}catch(_){}; el.click(); } }}>
+            <MobIco w={18}>{MI.carpeta}</MobIco> Carpeta
+          </button>
+        </div>
+        {anaSel.length>0 && (
+          <div className="mob-adjs">
+            {anaSel.map((f,i)=>(
+              <span key={i} className="mob-adj">
+                <span className="nm">{f.name||"archivo"}</span>
+                <button className="x" onClick={()=>setAnaSel(s=>s.filter((_,j)=>j!==i))} aria-label="Quitar">×</button>
+              </span>
+            ))}
+          </div>
+        )}
+        <textarea className="mob-inp" rows={3} value={anaTexto} onChange={e=>setAnaTexto(e.target.value)}
+          placeholder={anaModo==="impuestos" ? "Cuéntame tu situación tributaria (o adjunta contribuciones, tu declaración, boletas…)" : "¿Algo puntual que quieras saber? (opcional)"}
+          style={{resize:"none"}}/>
+        <button className="mob-btn pri" disabled={anaBusy || (!anaSel.length && !anaTexto.trim())} onClick={()=>analizar(true)}>
+          {anaBusy ? (anaFase||"Analizando…") : "Analizar con IA"}
+        </button>
+        <div className="mob-nota">Puedes adjuntar fotos, PDF, videos, ZIP o una carpeta. Análisis orientativo; para temas legales, municipales o tributarios, confírmalo con un especialista o en el SII.</div>
+      </React.Fragment>) : (
+        <div className="mob-bloque">
+          <div className="mob-iachat">
+            {anaMsgs.map((m,i)=>{
+              if(m.role==="assistant" && !m.content) return null;
+              return (
+                <div key={i} className={"mob-iamsg "+(m.role==="user"?"yo":"ia")}>
+                  {m.role==="assistant" && <span className="et">{modoActual.nm} · IA</span>}
+                  {m.role==="assistant" ? <MdMini texto={m.content}/> : <div className="tx">{m.content}</div>}
+                </div>
+              );
+            })}
+            {esperando && <div className="mob-iamsg ia"><span className="et">{modoActual.nm} · IA</span><div className="tx">{anaFase||"Analizando…"}</div></div>}
+          </div>
+          <div className="mob-iabar">
+            <input className="mob-inp" value={anaTexto} onChange={e=>setAnaTexto(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"&&anaTexto.trim()&&!anaBusy){ const q=anaTexto.trim(); setAnaTexto(""); analizar(false,q); } }}
+              placeholder="Pregúntale algo más…" disabled={anaBusy}/>
+            <button className="mob-btn pri" style={{minWidth:56}} disabled={!anaTexto.trim()||anaBusy}
+              onClick={()=>{ const q=anaTexto.trim(); setAnaTexto(""); analizar(false,q); }}>→</button>
+          </div>
+          <button className="mob-btn sec" style={{marginTop:6}} onClick={()=>{ setAnaMsgs([]); setAnaSel([]); setAnaTexto(""); }}>
+            Analizar otra cosa
+          </button>
+        </div>
+      )}
+    </Pantalla>);
+  };
+
   /* ============ COMPARAR PRESUPUESTOS ============
      Las cotizaciones llegan imposibles de comparar: una con IVA y otra sin,
      una en dos semanas y otra en un mes, una con garantía y otra sin nada.
@@ -9794,6 +10059,7 @@ function MobileApp(props){
     else if(top.t==="subirAporte")  vista = pantallaSubirAporte();
     else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
     else if(top.t==="planos")       vista = pantallaPlanos();
+    else if(top.t==="analizador")   vista = pantallaAnalizador();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
     else if(top.t==="waImport")     vista = pantallaWhatsApp();
     else if(top.t==="config")       vista = pantallaConfig();
