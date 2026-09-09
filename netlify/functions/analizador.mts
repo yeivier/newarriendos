@@ -1,5 +1,6 @@
 import type { Config, Context } from '@netlify/functions'
 import { quienLlama, sinAcceso } from '../lib/auth.mts'
+import { responderIA } from '../lib/ia-stream.mts'
 
 // Analizador universal con IA. Un solo cerebro para varios lectores:
 //   - plano        : lectura de planos de arquitectura
@@ -21,9 +22,12 @@ import { quienLlama, sinAcceso } from '../lib/auth.mts'
 //   { modo, archivos:[{media,data,name}], texto?, contexto?, titulo?,
 //     messages?:[{role,content}] } -> stream de texto
 
-const API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-opus-5'
-const TOPE_MS = 58_000
+const TOPE_MS = 60_000
+// Tope alto de tokens: un análisis completo (con sus 7 secciones) termina de una
+// sola vez. Y si aun así se pasara, el motor de streaming continúa solo hasta el
+// final, así el análisis nunca queda cortado por largo que sea.
+const MAX_TOKENS = 8_000
 const MAX_B64_TOTAL = 9_000_000   // suma de todos los archivos (base64)
 const MAX_ARCHIVOS = 8
 const MAX_TEXTO = 24_000
@@ -164,69 +168,24 @@ export default async (req: Request, _context: Context) => {
     : ''
   const system = BASE + POR_MODO[modo] + ctx
 
-  let r: Response
-  try {
-    r = await fetch(API, {
-      method: 'POST',
-      signal: AbortSignal.timeout(TOPE_MS),
-      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 3200,
-        output_config: { effort: 'low' },
-        system,
-        messages: mensajes,
-        stream: true,
-      }),
-    })
-  } catch (e: any) {
-    if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-      return Response.json({ text: 'Me demoré más de la cuenta con el análisis 😅 Prueba de nuevo, o con archivos más livianos.' }, { status: 200 })
-    }
-    return Response.json({ error: 'No se pudo contactar la IA: ' + (e?.message || 'error de red') }, { status: 502 })
-  }
-
-  if (!r.ok || !r.body) {
-    const j: any = await r.json().catch(() => ({}))
-    return Response.json({ error: j?.error?.message || 'Error de la IA' }, { status: 502 })
-  }
-
-  const enc = new TextEncoder()
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = r.body!.getReader()
-      const dec = new TextDecoder()
-      let buf = ''
-      let algo = false
-      const empujar = (t: string) => { if (t) { algo = true; controller.enqueue(enc.encode(t)) } }
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buf += dec.decode(value, { stream: true })
-          const lineas = buf.split('\n')
-          buf = lineas.pop() || ''
-          for (const linea of lineas) {
-            const t = linea.trim()
-            if (!t.startsWith('data:')) continue
-            const carga = t.slice(5).trim()
-            if (!carga || carga === '[DONE]') continue
-            let ev: any
-            try { ev = JSON.parse(carga) } catch { continue }
-            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') empujar(ev.delta.text || '')
-            else if (ev.type === 'message_delta' && ev.delta?.stop_reason === 'refusal' && !algo) empujar('Prefiero no responder eso. Adjúntame el documento y lo analizo.')
-            else if (ev.type === 'error') empujar(algo ? '\n\n(Se cortó el análisis.)' : 'No pude analizarlo. Intenta de nuevo con archivos más nítidos o livianos.')
-          }
-        }
-        if (!algo) empujar('No alcancé a analizarlo. Prueba con archivos más nítidos o más livianos.')
-      } catch {
-        empujar(algo ? '\n\n(Se cortó el análisis. Intenta de nuevo.)' : 'Me demoré más de la cuenta 😅 Prueba de nuevo, o con archivos más livianos.')
-      } finally {
-        controller.close()
-      }
+  // El motor de streaming reenvía la respuesta en vivo y, si el modelo se corta
+  // por tope de tokens, continúa solo hasta terminar: el análisis nunca queda
+  // cortado, del largo que sea.
+  return responderIA({
+    apiKey,
+    model: MODEL,
+    maxTokens: MAX_TOKENS,
+    effort: 'low',
+    system,
+    messages: mensajes,
+    topeMs: TOPE_MS,
+    textos: {
+      refusal: 'Prefiero no responder eso. Adjúntame el documento y lo analizo.',
+      vacio: 'No alcancé a analizarlo. Prueba con archivos más nítidos o más livianos.',
+      corte: '(Se cortó el análisis. Intenta de nuevo.)',
+      demora: 'Me demoré más de la cuenta con el análisis 😅 Prueba de nuevo, o con archivos más livianos.',
     },
   })
-  return new Response(stream, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
 }
 
 export const config: Config = { path: '/api/analizador', method: ['POST'] }
