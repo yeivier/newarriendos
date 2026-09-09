@@ -1,5 +1,6 @@
 import type { Config, Context } from '@netlify/functions'
 import { quienLlama, sinAcceso } from '../lib/auth.mts'
+import { responderIA } from '../lib/ia-stream.mts'
 
 // Calculadora de precio de arriendo para Chile.
 //
@@ -17,9 +18,11 @@ import { quienLlama, sinAcceso } from '../lib/auth.mts'
 // POST /api/arriendo-precio
 //   { datos:{...}, messages?:[{role,content}] } -> stream de texto
 
-const API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-opus-5'
-const TOPE_MS = 45_000
+const TOPE_MS = 50_000
+// Tope alto de tokens: la estimación con todo su análisis termina de una sola
+// vez; y si se pasara, el motor de streaming la continúa hasta el final.
+const MAX_TOKENS = 4_000
 
 const EXPERTO = `Eres un tasador y corredor de propiedades chileno con años fijando precios de arriendo en todo Chile. Conoces cómo se mueve el mercado por región y por comuna, qué pesa en cada sector y cómo la oferta y la demanda mueven los valores. Hablas en español de Chile, de "tú", claro y simple. La persona no es técnica.
 
@@ -112,68 +115,23 @@ export default async (req: Request, _context: Context) => {
     mensajes.push({ role: 'user', content: `Estima el precio de arriendo mensual de esta propiedad y dame el rango (mínimo, recomendado y máximo). Datos:\n\n${ficha}` })
   }
 
-  let r: Response
-  try {
-    r = await fetch(API, {
-      method: 'POST',
-      signal: AbortSignal.timeout(TOPE_MS),
-      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2200,
-        output_config: { effort: 'low' },
-        system: EXPERTO,
-        messages: mensajes,
-        stream: true,
-      }),
-    })
-  } catch (e: any) {
-    if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-      return Response.json({ text: 'Me demoré más de la cuenta 😅 Prueba de nuevo.' }, { status: 200 })
-    }
-    return Response.json({ error: 'No se pudo contactar la IA: ' + (e?.message || 'error de red') }, { status: 502 })
-  }
-
-  if (!r.ok || !r.body) {
-    const j: any = await r.json().catch(() => ({}))
-    return Response.json({ error: j?.error?.message || 'Error de la IA' }, { status: 502 })
-  }
-
-  const enc = new TextEncoder()
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = r.body!.getReader()
-      const dec = new TextDecoder()
-      let buf = ''
-      let algo = false
-      const empujar = (t: string) => { if (t) { algo = true; controller.enqueue(enc.encode(t)) } }
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buf += dec.decode(value, { stream: true })
-          const lineas = buf.split('\n')
-          buf = lineas.pop() || ''
-          for (const linea of lineas) {
-            const t = linea.trim()
-            if (!t.startsWith('data:')) continue
-            const carga = t.slice(5).trim()
-            if (!carga || carga === '[DONE]') continue
-            let ev: any
-            try { ev = JSON.parse(carga) } catch { continue }
-            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') empujar(ev.delta.text || '')
-            else if (ev.type === 'error') empujar(algo ? '\n\n(Se cortó el cálculo.)' : 'No pude calcularlo. Intenta de nuevo.')
-          }
-        }
-        if (!algo) empujar('No alcancé a calcularlo. Intenta de nuevo.')
-      } catch {
-        empujar(algo ? '\n\n(Se cortó el cálculo. Intenta de nuevo.)' : 'Me demoré más de la cuenta 😅 Prueba de nuevo.')
-      } finally {
-        controller.close()
-      }
+  // El motor de streaming reenvía la respuesta en vivo y, si el modelo se corta
+  // por tope de tokens, continúa solo hasta terminar: el cálculo y su análisis
+  // nunca quedan cortados.
+  return responderIA({
+    apiKey,
+    model: MODEL,
+    maxTokens: MAX_TOKENS,
+    effort: 'low',
+    system: EXPERTO,
+    messages: mensajes,
+    topeMs: TOPE_MS,
+    textos: {
+      vacio: 'No alcancé a calcularlo. Intenta de nuevo.',
+      corte: '(Se cortó el cálculo. Intenta de nuevo.)',
+      demora: 'Me demoré más de la cuenta 😅 Prueba de nuevo.',
     },
   })
-  return new Response(stream, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
 }
 
 export const config: Config = { path: '/api/arriendo-precio', method: ['POST'] }
