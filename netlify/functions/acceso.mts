@@ -12,8 +12,10 @@ import {
 //   entrar          -> { token, rol, nombre }
 //   salir           -> { ok }
 //   cambiar         -> { ok }                       (cambia la clave del dueño)
-//   accesos         -> { accesos }                  (lista de invitados)
+//   usuario         -> { ok, usuario }               (usuario del dueño para entrar)
+//   accesos         -> { accesos, usuario }          (lista de invitados + usuario del dueño)
 //   crear_acceso    -> { accesos }
+//   editar_acceso   -> { accesos }                   (nombre, usuario, rol y clave nueva opcional)
 //   borrar_acceso   -> { accesos }
 
 const CLAVE_MIN = 6
@@ -170,6 +172,38 @@ export default async (req: Request, _context: Context) => {
 
   if (accion === 'borrar_acceso') {
     const invitados = config.invitados.filter((a) => a.id !== String(body.id || ''))
+    await guardarConfig({ ...config, invitados })
+    return Response.json({ accesos: invitados.map(publico) })
+  }
+
+  if (accion === 'editar_acceso') {
+    const id = String(body.id || '')
+    const actual = config.invitados.find((x) => x.id === id)
+    if (!actual) return Response.json({ error: 'No se encontró ese acceso' }, { status: 404 })
+    const nombre = body.nombre != null ? String(body.nombre).trim() : actual.nombre
+    if (!nombre) return Response.json({ error: 'Ponle un nombre a este acceso' }, { status: 400 })
+    const rol: Rol = body.rol === 'dueño' ? 'dueño' : body.rol === 'arquitecto' ? 'arquitecto' : body.rol === 'lectura' ? 'lectura' : actual.rol
+    const usuario = body.usuario != null ? String(body.usuario).trim() : actual.usuario || ''
+    if (usuario) {
+      const tomado =
+        (config.usuario && norm(config.usuario) === norm(usuario)) ||
+        config.invitados.some((x) => x.id !== id && x.usuario && norm(x.usuario) === norm(usuario))
+      if (tomado) return Response.json({ error: 'Ese usuario ya lo tiene otra persona' }, { status: 409 })
+    }
+    let salt = actual.salt
+    let hash = actual.hash
+    // Clave nueva opcional: en blanco, no se toca (la actual no se puede
+    // mostrar de vuelta porque el servidor solo guarda su huella).
+    if (clave) {
+      if (clave.length < CLAVE_MIN) {
+        return Response.json({ error: `La clave debe tener al menos ${CLAVE_MIN} caracteres` }, { status: 400 })
+      }
+      salt = nuevoId()
+      hash = await huella(clave, salt)
+    }
+    const invitados = config.invitados.map((x) =>
+      x.id === id ? { ...x, nombre, rol, usuario: usuario || undefined, salt, hash } : x,
+    )
     await guardarConfig({ ...config, invitados })
     return Response.json({ accesos: invitados.map(publico) })
   }
