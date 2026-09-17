@@ -1541,6 +1541,12 @@
   .mob-iamsg .md-ul li::before{ content:""; position:absolute; left:3px; top:8px; width:5px; height:5px;
     border-radius:50%; background:var(--mtm); }
   .mob-iamsg .md strong{ font-weight:750; color:var(--mtx); }
+  .mob-iamsg .md-tabla-wrap{ overflow-x:auto; margin:0 0 9px; -webkit-overflow-scrolling:touch; }
+  .mob-iamsg .md-tabla{ border-collapse:collapse; width:100%; min-width:340px; font-size:13px; font-variant-numeric:tabular-nums; }
+  .mob-iamsg .md-tabla th, .mob-iamsg .md-tabla td{ padding:7px 10px; text-align:left; border-bottom:1px solid var(--mln); white-space:nowrap; }
+  .mob-iamsg .md-tabla th{ color:var(--mtm); font-weight:650; font-size:11.5px; text-transform:uppercase; letter-spacing:.02em; }
+  .mob-iamsg .md-tabla td{ color:var(--mtx); }
+  .mob-iamsg .md-tabla tr:last-child td{ border-bottom:none; font-weight:750; }
   /* Calculadora de arriendo: tres precios grandes (mín / recomendado / máx) y
      un formulario simple. El recomendado se destaca en oscuro. */
   .mob-precios{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; align-items:stretch; }
@@ -6061,6 +6067,8 @@ const MOB_CARD_CORTO = {
   "CRM y leads":"Interesados",
   "Comunicaciones":"Mensajes listos",
   "Analizar un documento":"Analizar",
+  "Matriz de decisión":"Decisiones",
+  "Generador de contratos":"Contratos IA",
   "Impuestos y contribuciones":"Impuestos",
   "Calculadora de arriendo":"Calculadora",
   "Equipo y accesos":"Accesos",
@@ -6077,13 +6085,38 @@ function MdInline({ t }){
     ? <strong key={i}>{s.slice(2,-2)}</strong>
     : <React.Fragment key={i}>{s}</React.Fragment>);
 }
+/* Fila de tabla markdown "| a | b |" → celdas recortadas, sin las barras de borde. */
+const mdFilaTabla = (t)=>{ let s=t.trim(); if(s.startsWith("|")) s=s.slice(1); if(s.endsWith("|")) s=s.slice(0,-1); return s.split("|").map(c=>c.trim()); };
+const mdEsSepTabla = (t)=> /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(t.trim());
 function MdMini({ texto }){
   const lineas = String(texto==null?"":texto).replace(/\r/g,"").split("\n");
-  const out = []; let viñetas = null;
+  const out = []; let viñetas = null; let tabla = null;
   const cerrar = ()=>{ if(viñetas){ out.push(<ul key={"u"+out.length} className="md-ul">{viñetas}</ul>); viñetas = null; } };
+  const cerrarTabla = ()=>{
+    if(tabla && tabla.filas.length){
+      out.push(<div key={"t"+out.length} className="md-tabla-wrap"><table className="md-tabla">
+        {tabla.header && <thead><tr>{tabla.header.map((c,j)=><th key={j}><MdInline t={c}/></th>)}</tr></thead>}
+        <tbody>{tabla.filas.map((f,i)=>(<tr key={i}>{f.map((c,j)=><td key={j}><MdInline t={c}/></td>)}</tr>))}</tbody>
+      </table></div>);
+    }
+    tabla = null;
+  };
   lineas.forEach((ln,i)=>{
     const t = ln.trim();
-    if(!t){ cerrar(); return; }
+    if(!t){ cerrar(); cerrarTabla(); return; }
+    // Tabla: cada fila "| ... | ... |". La segunda fila, si es de guiones
+    // (|---|---|), confirma que la primera era el encabezado.
+    if(/^\|.*\|$/.test(t)){
+      if(mdEsSepTabla(t)){
+        if(tabla && tabla.filas.length===1 && !tabla.header) tabla.header = tabla.filas.pop();
+        return;
+      }
+      cerrar();
+      if(!tabla) tabla = { header:null, filas:[] };
+      tabla.filas.push(mdFilaTabla(t));
+      return;
+    }
+    cerrarTabla();
     const b = /^[-•*]\s+(.*)/.exec(t);
     if(b){ if(!viñetas) viñetas = []; viñetas.push(<li key={i}><MdInline t={b[1]}/></li>); return; }
     cerrar();
@@ -6096,7 +6129,7 @@ function MdMini({ texto }){
     if(t.startsWith("**") && t.indexOf("**",2)===-1){ out.push(<div key={i} className="md-h">{t.slice(2).replace(/:\s*$/,"")}</div>); return; }
     out.push(<p key={i} className="md-p"><MdInline t={t}/></p>);
   });
-  cerrar();
+  cerrar(); cerrarTabla();
   return <div className="md">{out}</div>;
 }
 
@@ -6126,12 +6159,14 @@ const MOB_MAS_GRUPOS = [
   ]},
   { label:"Analizar y decidir", items:[
     { esp:"analizador", ico:"chispas",  label:"Analizar un documento", sub:"Propuestas, cotizaciones, contratos y más — con IA" },
+    { esp:"decidir",    ico:"diana",    label:"Matriz de decisión", sub:"Compara opciones con criterios y pesos — análisis técnico con IA" },
     { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" },
     { esp:"calcArriendo", ico:"calc", label:"Calculadora de arriendo", sub:"Precio sugerido según el mercado en Chile" }
   ]},
   { label:"Papeles y gestiones", items:[
     { esp:"socs",   ico:"edificio",   label:"Sociedades", sub:"Empresas propietarias" },
     { id:"legal",   ico:"balanza",    label:"Documentos legales", sub:"Contratos, firma y antecedentes" },
+    { esp:"contratoIA", ico:"doc",    label:"Generador de contratos", sub:"Arriendo, compraventa y propuestas — redactado con IA, a la chilena" },
     { id:"crm",     ico:"embudo",     label:"CRM y leads", sub:"Personas interesadas en arrendar o comprar" },
     { id:"historial", ico:"archivador", label:"Historial", sub:"Pagos, arrendatarios anteriores y garantías" }
   ]},
@@ -7824,40 +7859,69 @@ function MobileApp(props){
     </Pantalla>);
   };
 
-  /* ---------- Nivel 4 · Documentos y fotos ---------- */
+  /* ---------- Nivel 4 · Documentos y fotos ----------
+     El lugar único para guardar absolutamente todo de una propiedad: el
+     contrato, propuestas, escrituras, comprobantes, lo que sea. Cada archivo
+     se guarda con una categoría para que la lista quede ordenada y sea obvio
+     dónde volver a encontrarlo — nada de adivinar entre Documentos o Bitácora. */
+  const [docCat, setDocCat] = React.useState("contrato");
+  const DOC_CATS = [
+    { k:"contrato",    n:"Contrato" },
+    { k:"propuesta",   n:"Propuesta u oferta" },
+    { k:"escritura",   n:"Escritura / notarial" },
+    { k:"comprobante", n:"Comprobante" },
+    { k:"otro",        n:"Otro" },
+  ];
+  const docCatNombre = (k)=> (DOC_CATS.find(c=>c.k===k)||{}).n || "Otro";
   const pantallaDocs = (p)=>{
     const f = fichaDe(p);
     const archivos = f.archivos||[];
     const fotos = p.fotos||[];
-    return (<Pantalla titulo="Documentos y fotos" contexto={p.name} gap="14" accion={<Guardado/>}>
-      <Grupo titulo="Archivos de la ficha" nota="Se guardan en la plataforma, no en el teléfono. Máximo 4 MB por archivo.">
-        {archivos.length ? archivos.map((a,i)=>(
-          /* Fila propia: abrir y quitar son dos acciones distintas, así que son
-             dos botones hermanos y no uno dentro de otro. */
-          <div className="mob-cell" key={i}>
-            <span className="ic"><Ic n={fileIcon(a.contentType)} w={21} sw={1.9}/></span>
-            <a className="tx" href={a.url} target="_blank" rel="noopener" style={{textDecoration:"none"}}>
-              <span className="t">{a.name||"Archivo"}</span>
-              <span className="s">{a.contentType||"Archivo adjunto"}</span>
-            </a>
-            {!soloLectura && <button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
-              onClick={()=>{ FI.set && FI.set(p, "archivos", archivos.filter((_,j)=>j!==i)); }}>Quitar</button>}
-          </div>
-        )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía no hay archivos adjuntos.</div>}
+    // Agrupados por categoría, en el mismo orden que DOC_CATS, y solo los
+    // grupos que tienen algo (los archivos viejos sin categoría caen en "Otro").
+    const grupos = DOC_CATS.map(c=>({
+      ...c,
+      items: archivos.map((a,i)=>({...a, _i:i})).filter(a=>(a.categoria||"otro")===c.k)
+    })).filter(g=>g.items.length);
+    return (<Pantalla titulo="Documentos y fotos" contexto={p.name+" · guarda aquí todo lo de esta propiedad"} gap="14" accion={<Guardado/>}>
+      {archivos.length>0 && grupos.map(g=>(
+        <Grupo key={g.k} titulo={g.n+" ("+g.items.length+")"}>
+          {g.items.map(a=>(
+            /* Fila propia: abrir y quitar son dos acciones distintas, así que son
+               dos botones hermanos y no uno dentro de otro. */
+            <div className="mob-cell" key={a._i}>
+              <span className="ic"><Ic n={fileIcon(a.contentType)} w={21} sw={1.9}/></span>
+              <a className="tx" href={a.url} target="_blank" rel="noopener" style={{textDecoration:"none"}}>
+                <span className="t">{a.name||"Archivo"}</span>
+                <span className="s">{a.contentType||"Archivo adjunto"}</span>
+              </a>
+              {!soloLectura && <button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
+                onClick={()=>{ FI.set && FI.set(p, "archivos", archivos.filter((_,j)=>j!==a._i)); }}>Quitar</button>}
+            </div>
+          ))}
+        </Grupo>
+      ))}
+      {!archivos.length && <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía no hay archivos adjuntos. Sube el contrato, una propuesta, la escritura o lo que necesites guardar de esta propiedad.</div>}
+
+      <Grupo titulo="Adjuntar un archivo" nota="Se guarda en la plataforma, no en el teléfono. Máximo 4 MB por archivo.">
+        <div className="mob-campo"><span className="mob-lab">Qué tipo de archivo es</span>
+          <select className="mob-inp" value={docCat} onChange={e=>setDocCat(e.target.value)}>
+            {DOC_CATS.map(c=><option key={c.k} value={c.k}>{c.n}</option>)}
+          </select></div>
+        <label className="mob-btn pri" style={{display:"flex", cursor:"pointer", marginTop:10}}>
+          <MobIco w={18}>{MI.clip}</MobIco> Adjuntar {docCatNombre(docCat).toLowerCase()}
+          <input type="file" multiple style={{display:"none"}} onChange={async(e)=>{
+            const files = Array.from(e.target.files||[]); e.target.value="";
+            if(!files.length) return;
+            const nuevos=[];
+            for(const file of files){
+              try{ const r=await uploadArchivo(file); nuevos.push({url:r.url, name:r.name||file.name, contentType:r.contentType||file.type, size:file.size, categoria:docCat}); }
+              catch(err){ notify(err.message||("No se pudo subir "+file.name), true); }
+            }
+            if(nuevos.length && FI.set){ FI.set(p, "archivos", [...archivos, ...nuevos]); notify(nuevos.length+" archivo(s) adjuntado(s) en "+docCatNombre(docCat).toLowerCase()); }
+          }}/>
+        </label>
       </Grupo>
-      <label className="mob-btn pri" style={{display:"flex", cursor:"pointer"}}>
-        <MobIco w={18}>{MI.clip}</MobIco> Adjuntar archivos
-        <input type="file" multiple style={{display:"none"}} onChange={async(e)=>{
-          const files = Array.from(e.target.files||[]); e.target.value="";
-          if(!files.length) return;
-          const nuevos=[];
-          for(const file of files){
-            try{ const r=await uploadArchivo(file); nuevos.push({url:r.url, name:r.name||file.name, contentType:r.contentType||file.type, size:file.size}); }
-            catch(err){ notify(err.message||("No se pudo subir "+file.name), true); }
-          }
-          if(nuevos.length && FI.set){ FI.set(p, "archivos", [...archivos, ...nuevos]); notify(nuevos.length+" archivo(s) adjuntado(s)"); }
-        }}/>
-      </label>
 
       {fotos.length>0 && (
         <div>
@@ -7878,6 +7942,8 @@ function MobileApp(props){
           onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Documentación disponible"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
         {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Contratos, firma notarial y antecedentes" onClick={()=>irSeccion("legal", p)}/>}
         {hay("props") && <Fila icoNav="casas" titulo="Fotos, planos y recepción municipal" sub="Se administran en la sección Propiedades" onClick={()=>irSeccion("props", p)}/>}
+        <Fila ico={MI.doc} titulo="Redactar un contrato para esta propiedad" sub="Generador con IA, al estilo notarial chileno"
+          onClick={()=>{ setCtrProp(String(p.id)); push({t:"contratoIA"}); }}/>
       </Grupo>
     </Pantalla>);
   };
@@ -9431,6 +9497,159 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============ MATRIZ DE DECISIÓN (IA) ============
+     Análisis multicriterio técnico (MCDA): criterios, pesos, puntajes por
+     opción, cálculo ponderado y recomendación — para cualquier disyuntiva de
+     la cartera, no solo cotizaciones (eso ya lo cubre "Comparar presupuestos").
+     Mismo patrón de chat que el Analizador, para que se sienta conocido. */
+  const [decTexto, setDecTexto] = React.useState("");
+  const [decMsgs, setDecMsgs] = React.useState([]);
+  const [decBusy, setDecBusy] = React.useState(false);
+  const decidirEnviar = async (primera, pregunta)=>{
+    if(decBusy) return;
+    if(primera && !decTexto.trim()) return;
+    const msgs = primera ? [{ role:"user", content: decTexto.trim() }] : [...decMsgs, { role:"user", content: pregunta }];
+    setDecMsgs(msgs); setDecBusy(true); if(primera) setDecTexto("");
+    try{
+      const r = await api("/api/redactor",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ modo:"decision", messages: msgs.slice(-10) }) });
+      if(!r.ok || !r.body){ const j=await r.json().catch(()=>({})); setDecMsgs([...msgs,{role:"assistant",content:j.error||"No pude armar la matriz."}]); setDecBusy(false); return; }
+      setDecMsgs([...msgs,{role:"assistant",content:""}]);
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let acc="";
+      while(true){ const {done,value}=await reader.read(); if(done) break; acc+=dec.decode(value,{stream:true}); setDecMsgs([...msgs,{role:"assistant",content:acc}]); }
+      if(!acc.trim()) setDecMsgs([...msgs,{role:"assistant",content:"No alcancé a armar la matriz. Cuéntame con un poco más de detalle."}]);
+    }catch(_e){ setDecMsgs([...msgs,{role:"assistant",content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez."}]); }
+    setDecBusy(false);
+  };
+  const pantallaDecidir = ()=>{
+    const hayConv = decMsgs.length>0;
+    const ultimo = decMsgs[decMsgs.length-1];
+    const esperando = decBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
+    return (<Pantalla titulo="Matriz de decisión" contexto="Criterios, pesos y puntajes — análisis técnico con IA" gap="14">
+      {!hayConv ? (<React.Fragment>
+        <div className="mob-porque" style={{margin:"0 2px"}}>Cuéntame qué decisión debes tomar y entre qué opciones. La IA arma una matriz técnica: criterios, pesos, puntaje de cada opción y el cálculo ponderado, con una recomendación al final.</div>
+        <textarea className="mob-inp" rows={7} value={decTexto} onChange={e=>setDecTexto(e.target.value)}
+          placeholder={"Ej: Tengo dos ofertas por el Depto 3B: Arrendatario A ofrece $650.000 con contrato de 1 año, buenas referencias, sin garantía adicional. Arrendatario B ofrece $600.000 con contrato de 2 años, es funcionario público, con garantía de 2 meses. ¿A quién le arriendo?"}
+          style={{resize:"none"}}/>
+        <button className="mob-btn pri" disabled={decBusy || !decTexto.trim()} onClick={()=>decidirEnviar(true)}>
+          {decBusy ? "Armando la matriz…" : "Generar matriz de decisión"}
+        </button>
+        <div className="mob-nota">Sirve para cualquier tipo de decisión: elegir arrendatario, vender o arrendar, qué oferta aceptar, qué proveedor contratar, en qué invertir. Entre más datos le des, más preciso el puntaje.</div>
+      </React.Fragment>) : (
+        <div className="mob-bloque">
+          <div className="mob-iachat">
+            {decMsgs.map((m,i)=>{
+              if(m.role==="assistant" && !m.content) return null;
+              return (
+                <div key={i} className={"mob-iamsg "+(m.role==="user"?"yo":"ia")}>
+                  {m.role==="assistant" && <span className="et">Matriz de decisión · IA</span>}
+                  {m.role==="assistant" ? <MdMini texto={m.content}/> : <div className="tx">{m.content}</div>}
+                </div>
+              );
+            })}
+            {esperando && <div className="mob-iamsg ia"><span className="et">Matriz de decisión · IA</span><div className="tx">Calculando los puntajes…</div></div>}
+          </div>
+          <div className="mob-iabar">
+            <input className="mob-inp" value={decTexto} onChange={e=>setDecTexto(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"&&decTexto.trim()&&!decBusy){ const q=decTexto.trim(); setDecTexto(""); decidirEnviar(false,q); } }}
+              placeholder="Agrega otra opción o afina un criterio…" disabled={decBusy}/>
+            <button className="mob-btn pri" style={{minWidth:56}} disabled={!decTexto.trim()||decBusy}
+              onClick={()=>{ const q=decTexto.trim(); setDecTexto(""); decidirEnviar(false,q); }}>→</button>
+          </div>
+          <button className="mob-btn sec" style={{marginTop:6}} onClick={()=>{ setDecMsgs([]); setDecTexto(""); }}>
+            Decidir otra cosa
+          </button>
+        </div>
+      )}
+    </Pantalla>);
+  };
+
+  /* ============ GENERADOR DE CONTRATOS (IA) ============
+     Actúa con el rigor de un abogado experto en instrumentos notariales
+     chilenos. Para el arriendo estándar ya existe un generador completo y
+     gratuito (Generar o editar el contrato, dentro de cada propiedad); este
+     es para lo que ESE no cubre: condiciones especiales, compraventa,
+     propuestas y cartas de oferta — redactado a la medida por IA. */
+  const CTR_TIPOS = [
+    { k:"arriendo",  n:"Arriendo con condiciones especiales", ph:"Ej: renta mixta (fijo + % de ingresos), plazo de 5 años, obligación de habilitar el local antes de una fecha, con garante solidario adicional…" },
+    { k:"compraventa", n:"Compraventa", ph:"Ej: precio UF 25.000, pie del 20% a la firma, saldo en 60 cuotas mensuales en UF con 5% de interés anual, hipoteca de primer grado como garantía…" },
+    { k:"propuesta", n:"Propuesta o carta de oferta", ph:"Ej: propuesta de arriendo comercial con período de gracia de 3 meses, renta creciente por temporada, opción de compra…" },
+    { k:"otro",      n:"Otro documento", ph:"Describe qué documento necesitas y sus condiciones." },
+  ];
+  const [ctrProp, setCtrProp] = React.useState("");
+  const [ctrTipo, setCtrTipo] = React.useState("arriendo");
+  const [ctrTexto, setCtrTexto] = React.useState("");
+  const [ctrBusy, setCtrBusy] = React.useState(false);
+  const [ctrFase, setCtrFase] = React.useState("");
+  const ctrContexto = (p)=>{
+    if(!p) return "";
+    const soc = socDe(p);
+    return [
+      "Propiedad: "+(p.name||""),
+      "Dirección: "+[p.address,p.comuna,p.region].filter(Boolean).join(", "),
+      p.rolSII ? "Rol de avalúo SII: "+p.rolSII : "",
+      p.surfaceBuilt ? "Superficie edificada: "+p.surfaceBuilt+" m²" : "",
+      p.surfaceTerrain ? "Superficie de terreno: "+p.surfaceTerrain+" m²" : "",
+      "Propietario (arrendador/vendedor): "+(soc.name||"—")+(soc.rut?(", RUT "+soc.rut):""),
+      soc.rep ? "Representante legal de la sociedad: "+soc.rep+(soc.repRut?(", cédula "+soc.repRut):"") : "",
+      soc.direccion ? "Domicilio de la sociedad: "+soc.direccion : "",
+      p.tenant ? "Arrendatario/contraparte actual: "+p.tenant : "",
+      p.rent ? "Renta o valor actualmente pactado: "+CLP(num(p.rent))+(p.adjustment==="UF"?" (con reajuste en UF)":"") : "",
+    ].filter(Boolean).join("\n");
+  };
+  const ctrEnvolver = (bodyHtml, titulo)=>`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${(titulo||"Documento").replace(/[<>&]/g,"")}</title>
+    <style>@page{size:21cm 29.7cm;margin:2.4cm 2.4cm;} body{font-family:'Times New Roman',Georgia,serif;font-size:12pt;line-height:1.55;color:#000;margin:0;padding:24px;} th{background:#f0f0f0;}</style>
+    </head><body>${bodyHtml}</body></html>`;
+  const ctrGenerar = async ()=>{
+    if(ctrBusy || !ctrTexto.trim()) return;
+    setCtrBusy(true); setCtrFase("Redactando…");
+    try{
+      const p = propiedades.find(x=>String(x.id)===String(ctrProp));
+      const tipo = CTR_TIPOS.find(t=>t.k===ctrTipo)||CTR_TIPOS[0];
+      const mensaje = "Redacta un documento de tipo: "+tipo.n+". Condiciones y detalle: "+ctrTexto.trim();
+      const r = await api("/api/redactor",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ modo:"contrato", mensaje, contexto: ctrContexto(p) }) });
+      if(!r.ok || !r.body){ const j=await r.json().catch(()=>({})); notify(j.error||"No pude redactar el documento", true); setCtrBusy(false); setCtrFase(""); return; }
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let acc="";
+      while(true){ const {done,value}=await reader.read(); if(done) break; acc+=dec.decode(value,{stream:true});
+        const palabras = acc.replace(/<[^>]+>/g," ").trim().split(/\s+/).filter(Boolean).length;
+        setCtrFase(palabras>0 ? ("Redactando… "+palabras+" palabras") : "Redactando…"); }
+      if(!acc.trim()){ notify("No alcancé a redactarlo. Prueba de nuevo con un poco más de detalle.", true); setCtrBusy(false); setCtrFase(""); return; }
+      deep.verDocumento && deep.verDocumento(ctrEnvolver(acc, tipo.n+(p?" — "+p.name:"")));
+      notify("Documento listo. Revísalo con un abogado antes de firmarlo.");
+    }catch(_e){ notify("No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez.", true); }
+    setCtrBusy(false); setCtrFase("");
+  };
+  const pantallaContratoIA = ()=>{
+    const tipoActual = CTR_TIPOS.find(t=>t.k===ctrTipo)||CTR_TIPOS[0];
+    return (<Pantalla titulo="Generador de contratos" contexto="Redactado con IA, con el rigor de un abogado chileno" gap="14">
+      <div className="mob-porque" style={{margin:"0 2px"}}>Para un arriendo estándar, usa <b>Generar o editar el contrato</b> dentro de cada propiedad: es instantáneo y gratis. Este generador es para lo que ese no cubre: condiciones especiales, compraventa, o una propuesta para negociar.</div>
+      <Grupo titulo="¿Sobre qué propiedad?" nota="Opcional. Si la eliges, se usan sus datos (dirección, sociedad, arrendatario) para redactar el documento.">
+        <div className="mob-campo">
+          <select className="mob-inp" value={ctrProp} onChange={e=>setCtrProp(e.target.value)}>
+            <option value="">Sin propiedad específica</option>
+            {propiedades.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      </Grupo>
+      <Grupo titulo="Tipo de documento">
+        <div className="mob-campo">
+          <select className="mob-inp" value={ctrTipo} onChange={e=>setCtrTipo(e.target.value)}>
+            {CTR_TIPOS.map(t=><option key={t.k} value={t.k}>{t.n}</option>)}
+          </select>
+        </div>
+      </Grupo>
+      <Grupo titulo="Condiciones" nota="Mientras más detalle le des —montos, plazos, porcentajes, nombres—, más completo y específico queda el documento.">
+        <textarea className="mob-inp" rows={7} value={ctrTexto} onChange={e=>setCtrTexto(e.target.value)}
+          placeholder={tipoActual.ph} style={{resize:"none"}}/>
+      </Grupo>
+      <button className="mob-btn pri" disabled={ctrBusy || !ctrTexto.trim()} onClick={ctrGenerar}>
+        {ctrBusy ? (ctrFase||"Redactando…") : "Redactar con IA"}
+      </button>
+      <div className="mob-nota">Es un borrador de nivel notarial, redactado por IA con la estructura y el rigor de un contrato chileno real — pero no reemplaza a un abogado. Revísalo antes de firmar, y autoriza las firmas ante Notario Público.</div>
+    </Pantalla>);
+  };
+
   /* ============ CALCULADORA DE ARRIENDO (CHILE) ============
      Con las características de la propiedad estima el arriendo mensual y da un
      rango: mínimo, recomendado y máximo, con el porqué, cómo apuntar al máximo y
@@ -10458,6 +10677,8 @@ function MobileApp(props){
     else if(top.t==="aporte")       vista = pantallaAporte(aportePorId(top.ap));
     else if(top.t==="planos")       vista = pantallaPlanos();
     else if(top.t==="analizador")   vista = pantallaAnalizador();
+    else if(top.t==="decidir")      vista = pantallaDecidir();
+    else if(top.t==="contratoIA")   vista = pantallaContratoIA();
     else if(top.t==="calcArriendo") vista = pantallaCalcArriendo();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
     else if(top.t==="waImport")     vista = pantallaWhatsApp();
@@ -13889,6 +14110,7 @@ function App(){
         informeGeneral: ()=>abrirImprimir(informeGeneralHTML()),
         informeGeneralWord: ()=>descargarBlob("informe_general_"+todayISO()+".doc", informeGeneralHTML(), "application/msword"),
         informeProp: (pp)=>abrirImprimir(informePropHTML(pp)),
+        verDocumento: (html)=>abrirImprimir(html),
         informePropWord: (pp)=>descargarBlob("informe_"+(pp.name||"propiedad").replace(/[^a-z0-9]+/gi,"_")+"_"+todayISO()+".doc", informePropHTML(pp), "application/msword")
       }}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
