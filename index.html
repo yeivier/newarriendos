@@ -1225,6 +1225,18 @@
   .mob-visor img.real{ max-width:none; max-height:none; }
   .mob-visor .pie{ flex-shrink:0; color:rgba(255,255,255,.6); font-size:13px; text-align:center;
     padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px)); }
+  /* Documento a pantalla completa DENTRO de la app (informes, liquidaciones):
+     arriba una barra con "Cerrar" —siempre se puede volver, en el teléfono ya no
+     hay que cerrar la app— y "Imprimir / Guardar PDF". */
+  .doc-vista{ position:fixed; inset:0; z-index:600; background:#F4F5F7; display:flex; flex-direction:column; }
+  .doc-vista .barra{ display:flex; align-items:center; gap:10px; flex-shrink:0;
+    padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px; background:#fff; border-bottom:1px solid #E5E5EA; }
+  .doc-vista .barra .sp{ flex:1; }
+  .doc-vista .barra button{ min-height:44px; display:inline-flex; align-items:center; gap:6px;
+    background:#EFEFF4; border:none; border-radius:12px; padding:0 15px; font-family:inherit; font-size:15px;
+    font-weight:650; color:#101012; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .doc-vista .barra button.pri{ background:#101012; color:#fff; }
+  .doc-vista iframe{ flex:1; width:100%; border:none; background:#fff; }
   .mob-kpis2 .v{ font-size:clamp(19px,5.6vw,26px); font-weight:700; letter-spacing:-.028em;
     color:var(--mib); font-variant-numeric:tabular-nums; line-height:1.08;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -6825,7 +6837,7 @@ function MobileApp(props){
       fase=0; vista=null;
       const t=e.touches&&e.touches[0]; if(!t) return;
       // Con una hoja abierta manda la hoja (se cierra hacia abajo), no el atrás.
-      if(document.querySelector(".modal-bg")) return;
+      if(document.querySelector(".modal-bg, .doc-vista")) return;
       if(t.clientX>28 || !hayAtras()) return;    // solo desde el borde izquierdo
       sx=t.clientX; sy=t.clientY; fase=1;
       vista=document.querySelector(".mob-app .mob-view");
@@ -8189,8 +8201,15 @@ function MobileApp(props){
         <Fila sinIco titulo="Representante" valor={s.rep||"—"}/>
         <Fila sinIco titulo="Teléfono" valor={s.telefono||"—"}/>
         <Fila sinIco titulo="Correo" valor={s.email||"—"}/>
-        {hay("sociedades") && <Fila ico={MI.lapiz} titulo="Editar la sociedad" onClick={()=>irSeccion("sociedades")}/>}
       </Grupo>
+      {!soloLectura && (
+        <Grupo titulo="Editar" nota="Para eliminar una sociedad, primero mueve o quita las propiedades que tiene.">
+          <Fila ico={MI.lapiz} titulo="Editar la sociedad" sub="Nombre, RUT, representante y cuenta bancaria"
+            onClick={()=>AC.editarSociedad && AC.editarSociedad(s)}/>
+          <Fila sinIco titulo="Eliminar esta sociedad" chevron={false}
+            onClick={()=>AC.eliminarSociedad && AC.eliminarSociedad(s)}/>
+        </Grupo>
+      )}
     </Pantalla>);
   };
 
@@ -8369,23 +8388,36 @@ function MobileApp(props){
   };
 
   /* ============ NIVEL 2 · MI CUENTA ============ */
-  const pantallaCuenta = ()=>(
-    <Pantalla titulo="Mi cuenta" contexto={(usuarioActual&&usuarioActual.email)||owner.email||""} gap="14">
+  const pantallaCuenta = ()=>{
+    // El nombre y el correo se toman de "Mis datos" (los que se editan aquí), así
+    // el encabezado cambia al instante cuando la persona los edita. Un invitado ve
+    // su propio nombre de acceso y no puede editar.
+    const perfilNombre = soloLectura ? ((usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta")
+                                      : (owner.name||(usuarioActual&&usuarioActual.nombre)||"Mi cuenta");
+    const perfilEmail  = soloLectura ? ((usuarioActual&&usuarioActual.email)||owner.email||"")
+                                      : (owner.email||(usuarioActual&&usuarioActual.email)||"");
+    return (
+    <Pantalla titulo="Mi cuenta" contexto={perfilEmail} gap="14">
       <div className="mob-hub-top claro" style={{alignItems:"center", textAlign:"center"}}>
         <div className="mob-avatar" style={{width:64, height:64, borderRadius:22, fontSize:22, margin:"0 auto"}}>
-          {mobIni((usuarioActual&&usuarioActual.nombre)||owner.name||"U")}
+          {mobIni(perfilNombre)}
         </div>
         <div>
-          <div style={{fontSize:21, fontWeight:700, letterSpacing:"-.02em"}}>{(usuarioActual&&usuarioActual.nombre)||owner.name||"Mi cuenta"}</div>
+          <div style={{fontSize:21, fontWeight:700, letterSpacing:"-.02em"}}>{perfilNombre}</div>
           <div className="mob-p2" style={{marginTop:4}}>{soloLectura ? "Invitado · solo lectura" : (rolActual||"Propietario")}</div>
         </div>
       </div>
-      <Grupo titulo="Datos">
-        <Fila sinIco titulo="Nombre" valor={owner.name||"—"}/>
-        <Fila sinIco titulo="RUT" valor={owner.rut||"—"}/>
-        <Fila sinIco titulo="Correo" valor={owner.email||"—"}/>
-        <Fila sinIco titulo="Teléfono" valor={owner.telefono||"—"}/>
+      <Grupo titulo="Mis datos" nota={soloLectura ? "Como invitado no puedes editar estos datos." : "Se guardan solos. Estos datos salen en tus cobros y recordatorios."}>
+        <div className="mob-campo"><span className="mob-lab">Nombre</span>
+          <input className="mob-inp" value={owner.name||""} disabled={soloLectura} onChange={e=>dsetOwner("name", e.target.value)} placeholder="Tu nombre"/></div>
+        <div className="mob-campo"><span className="mob-lab">RUT</span>
+          <input className="mob-inp" value={owner.rut||""} disabled={soloLectura} onChange={e=>dsetOwner("rut", e.target.value)} placeholder="12.345.678-9"/></div>
+        <div className="mob-campo"><span className="mob-lab">Correo</span>
+          <input className="mob-inp" type="email" inputMode="email" value={owner.email||""} disabled={soloLectura} onChange={e=>dsetOwner("email", e.target.value)} placeholder="tucorreo@ejemplo.cl"/></div>
+        <div className="mob-campo"><span className="mob-lab">Teléfono</span>
+          <input className="mob-inp" type="tel" inputMode="tel" value={owner.phone||""} disabled={soloLectura} onChange={e=>dsetOwner("phone", e.target.value)} placeholder="+56 9 1234 5678"/></div>
       </Grupo>
+      {!soloLectura && <Guardado/>}
       <Grupo titulo="Ajustes de la plataforma">
         {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pago en línea" onClick={()=>push({t:"config"})}/>}
         <Fila icoNav="candado" titulo="Equipo y accesos" sub="Quién puede entrar y qué puede hacer" onClick={()=>push({t:"accesos"})}/>
@@ -8396,6 +8428,7 @@ function MobileApp(props){
       </Grupo>
     </Pantalla>
   );
+  };
 
   /* ============ NIVEL 2 · ASISTENTE ============ */
   const pantallaAsistente = ()=>(
@@ -8628,7 +8661,7 @@ function MobileApp(props){
     const onStart=(e)=>{
       const S = ptrRef.current;
       if(S.refrescando || S.modoOrden){ activo=false; return; }
-      if(document.querySelector(".modal-bg")){ activo=false; return; }   // hoja abierta
+      if(document.querySelector(".modal-bg, .doc-vista")){ activo=false; return; }   // hoja abierta
       const t=e.touches&&e.touches[0]; if(!t){ activo=false; return; }
       cont = (e.target && e.target.closest && e.target.closest(".mob-scr")) || null;
       if(!cont || cont.scrollTop>2){ activo=false; return; }
@@ -11090,6 +11123,10 @@ function App(){
   const [mNewTenant,setMNewTenant]=useState(false);
   const [ntForm,setNtForm]=useState({propId:"",tenant:"",tenantRut:"",tenantEmail:"",tenantPhone:"",tenantWhatsapp:"",contractStart:"",contractEnd:"",rentUF:"",garantiaMonto:""});
   const [mDel,setMDel]=useState(null);
+  // Documento (informe, liquidación, etc.) mostrado DENTRO de la app, en pantalla
+  // completa y con botón para cerrar. Antes se abría con window.open, que en el
+  // teléfono (app agregada a la pantalla de inicio) dejaba atrapado sin volver.
+  const [docVista,setDocVista]=useState(null);
   const [mSoc,setMSoc]=useState(false), [socForm,setSocForm]=useState(blankSociedad), [socEditId,setSocEditId]=useState(null);
   const [mSocDel,setMSocDel]=useState(null);
   const [mPay,setMPay]=useState(null), [payStep,setPayStep]=useState(1), [payMethod,setPayMethod]=useState("transfer"), [card,setCard]=useState({n:"",nm:"",ex:"",cv:""});
@@ -12451,7 +12488,11 @@ function App(){
     setAiDocRes(null); setAiDocs([]); };
 
   /* ================== INFORMES PROFESIONALES (por propiedad y general) ================== */
-  const abrirImprimir=(html)=>{ const w=window.open("","_blank"); if(!w){ notify("Permite ventanas emergentes para ver el PDF",true); return; } w.document.write(html); w.document.close(); setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },700); };
+  // Muestra el documento DENTRO de la app (pantalla completa, con "Cerrar" e
+  // "Imprimir / Guardar PDF"). Antes usaba window.open, que en el teléfono con la
+  // app agregada a la pantalla de inicio abría una vista sin retorno: había que
+  // cerrar la app para volver. Ahora nunca se queda atrapado.
+  const abrirImprimir=(html)=>{ setDocVista(html); };
   const docPro=(titulo,subtitulo,bodyHtml)=>`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>
     @page{margin:16mm 14mm}
     body{font-family:Georgia,'Times New Roman',serif;color:#15181D;margin:0;padding:0;font-size:12.5px;line-height:1.55}
@@ -13839,6 +13880,8 @@ function App(){
         nuevaSociedad:openNewSoc,
         editarPropiedad:(p)=>{ setEP({...p}); setMEdit(p); },
         eliminarPropiedad:(p)=>setMDel(p),
+        editarSociedad:(s)=>openEditSoc(s),
+        eliminarSociedad:(s)=>setMSocDel(s),
         fichaCompleta:abrirFicha,
         contrato:openContract,
         firma:(p)=>setMFirma(p),
@@ -15452,6 +15495,15 @@ function App(){
         </div>
         <iframe srcDoc={fichaPreview} title="Vista previa de la ficha" style={{flex:1,width:"100%",border:"none",background:"#fff",borderRadius:"0 0 12px 12px"}}/>
       </div>
+    </div>}
+
+    {docVista && <div className="doc-vista" role="dialog" aria-label="Documento">
+      <div className="barra">
+        <button onClick={()=>setDocVista(null)}><Ic n="chevronL" w={18} sw={2.4}/> Cerrar</button>
+        <span className="sp"></span>
+        <button className="pri" onClick={()=>{ try{ const f=document.getElementById("docFrame"); f&&f.contentWindow&&f.contentWindow.focus(); f&&f.contentWindow&&f.contentWindow.print(); }catch(e){} }}><Ic n="descarga" w={17}/> Imprimir / Guardar PDF</button>
+      </div>
+      <iframe id="docFrame" title="Documento" srcDoc={docVista}></iframe>
     </div>}
 
     {mDel && <div className="modal-bg" onClick={()=>setMDel(null)}><div className="modal" style={{width:440}} onClick={e=>e.stopPropagation()}>
