@@ -1968,6 +1968,40 @@
   .mob-app .mob-titulo{ position:relative; }
   .mob-app .mob-sentinela{ position:absolute; left:0; bottom:0; width:1px; height:1px; pointer-events:none; }
 
+  /* ==========================================================================
+     MOVIMIENTO NATIVO (como iPhone). Antes las pantallas se cambiaban de golpe;
+     ahora ENTRAN deslizándose: desde el borde derecho al abrir algo, y desde la
+     izquierda (con un leve desfase) al volver, con la misma curva del iPhone.
+     Toda la app va recortada al viewport (position:fixed) para que el deslizado
+     no genere barra horizontal. El gesto de volver, además, arrastra la pantalla
+     con el dedo (ver el efecto táctil en el JS de MobileApp). ================ */
+  .mob-app{ overflow:hidden; }
+  .mob-app .mob-view{ flex:1; min-height:0; display:flex; flex-direction:column;
+    position:relative; will-change:transform; backface-visibility:hidden; }
+  @media (prefers-reduced-motion: no-preference){
+    .mob-app .mob-view.an-fwd{  animation:mobEntraDer .42s cubic-bezier(.32,.72,0,1) both; }
+    .mob-app .mob-view.an-back{ animation:mobEntraIzq .42s cubic-bezier(.32,.72,0,1) both; }
+    .mob-app .mob-view.an-fade{ animation:mobEntraFade .26s ease both; }
+  }
+  @keyframes mobEntraDer{  from{ transform:translate3d(100%,0,0); }        to{ transform:translate3d(0,0,0); } }
+  @keyframes mobEntraIzq{  from{ transform:translate3d(-24%,0,0); opacity:.5; } to{ transform:translate3d(0,0,0); opacity:1; } }
+  @keyframes mobEntraFade{ from{ opacity:0; transform:translate3d(0,7px,0) scale(.994); } to{ opacity:1; transform:none; } }
+
+  /* PULSACIÓN TÁCTIL · toda superficie que se toca responde al instante con un
+     leve hundimiento, como los controles del iPhone. La app se siente viva y
+     rápida: el dedo aprieta y algo pasa de inmediato. */
+  .mob-app .mob-pc, .mob-app .mob-prio-c, .mob-app .mob-act-c, .mob-app .mob-hub-top,
+  .mob-app .mob-cell:not(.quieta), .mob-app .mob-acc2 > button, .mob-app .mob-accion,
+  .mob-app .mob-cob-c, .mob-app .mob-acciones .mob-accion{
+    transition:transform .14s cubic-bezier(.2,.7,.3,1), background-color .14s ease; }
+  .mob-app .mob-pc:active, .mob-app .mob-prio-c:active, .mob-app .mob-act-c:active,
+  .mob-app .mob-hub-top:active, .mob-app .mob-cell:not(.quieta):active,
+  .mob-app .mob-acc2 > button:active, .mob-app .mob-accion:active,
+  .mob-app .mob-cob-c:active{ transform:scale(.972); }
+  /* La barra de pestañas: el ícono se hunde un poco al tocarlo. */
+  .mob-app .mob-tab{ transition:transform .12s cubic-bezier(.2,.7,.3,1); }
+  .mob-app .mob-tab:active{ transform:scale(.9); }
+
   /* Aviso (toast) como una notificación del iPhone: baja desde arriba, a lo
      ancho, con vidrio esmerilado. En el computador sigue arriba a la derecha. */
   @media(max-width:900px){
@@ -6607,6 +6641,12 @@ function MobileApp(props){
 
   const [tab, setTab] = React.useState("inicio");
   const [pila, setPila] = React.useState([]);
+  // Dirección del último salto de navegación, para animar la ENTRADA de cada
+  // pantalla como en el iPhone: entra desde la derecha al abrir algo y desde la
+  // izquierda (con un leve desfase) al volver. `n` sube en cada salto, y como es
+  // la `key` de la capa que envuelve la pantalla, la animación se reproduce.
+  const [anim, setAnim] = React.useState({ n:0, dir:"fade" });
+  const animar = (dir)=> setAnim(a=>({ n:a.n+1, dir }));
   const [socSel, setSocSel] = React.useState("todas");
   const [finSeg, setFinSeg] = React.useState("utilidad");
   const [busca, setBusca] = React.useState("");
@@ -6677,14 +6717,14 @@ function MobileApp(props){
   /* La pila guarda identificadores, nunca copias del objeto: si se edita una
      propiedad mientras está abierta, la pantalla muestra el dato nuevo. */
   const top  = pila[pila.length-1] || null;
-  const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); if(v && v.t==="prop") recordarProp(v.id); setPila(p=>[...p, v]); subirArriba(); };
-  const pop  = ()=> setPila(p=>p.slice(0,-1));
+  const push = (v)=>{ if(cerrarSeccion) cerrarSeccion(); if(v && v.t==="prop") recordarProp(v.id); animar("fwd"); setPila(p=>[...p, v]); subirArriba(); };
+  const pop  = ()=>{ if(pila.length){ animar("back"); setPila(p=>p.slice(0,-1)); } };
   /* Saltar a otra pestaña deja una miga para volver. Cambiar de pestaña con la
      barra de abajo la borra: ahí no hay "atrás", como en iOS. */
   const [saltoDe, setSaltoDe] = React.useState(null);
-  const irA  = (t)=>{ setSaltoDe(null); if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
-  const saltarA = (t)=>{ setSaltoDe(prev=> t===tab ? prev : tab); if(cerrarSeccion) cerrarSeccion(); setPila([]); setTab(t); subirArriba(); };
-  const volverSalto = ()=>{ const d=saltoDe; setSaltoDe(null); setPila([]); setTab(d||"inicio"); subirArriba(); };
+  const irA  = (t)=>{ setSaltoDe(null); if(cerrarSeccion) cerrarSeccion(); animar("fade"); setPila([]); setTab(t); subirArriba(); };
+  const saltarA = (t)=>{ setSaltoDe(prev=> t===tab ? prev : tab); if(cerrarSeccion) cerrarSeccion(); animar("fwd"); setPila([]); setTab(t); subirArriba(); };
+  const volverSalto = ()=>{ const d=saltoDe; setSaltoDe(null); animar("back"); setPila([]); setTab(d||"inicio"); subirArriba(); };
   const subirArriba = ()=>{ try{ const s=document.querySelector(".mob-app .mob-scr"); if(s) s.scrollTop=0; }catch(_e){} };
   const irSeccion = (id, p)=>{ abrirSeccion(id, p); };
   const propPorId = (id)=> propiedades.find(x=>String(x.id)===String(id)) || null;
@@ -6703,28 +6743,65 @@ function MobileApp(props){
   const atrasRef = React.useRef({});
   atrasRef.current = { pila, saltoDe, top, pop, volverSalto };
   React.useEffect(()=>{
-    let sx=0, sy=0, activo=false;
+    // fase: 0 = nada · 1 = evaluando dirección · 2 = arrastrando la pantalla.
+    let sx=0, sy=0, fase=0, vista=null, ancho=360;
+    const hayAtras=()=>{ const n=atrasRef.current; return (n.pila && n.pila.length>0) || (n.saltoDe && !n.top); };
+    const volver=()=>{ const n=atrasRef.current; if(n.pila && n.pila.length>0) n.pop(); else if(n.saltoDe && !n.top) n.volverSalto(); };
     const onStart=(e)=>{
-      const t=e.touches&&e.touches[0]; if(!t){ activo=false; return; }
-      // Con una ventana abierta manda la ventana (se cierra deslizándola hacia
-      // abajo), no el retroceso de navegación.
-      if(document.querySelector(".modal-bg")){ activo=false; return; }
-      if(t.clientX<=24){ activo=true; sx=t.clientX; sy=t.clientY; } else activo=false;
+      fase=0; vista=null;
+      const t=e.touches&&e.touches[0]; if(!t) return;
+      // Con una hoja abierta manda la hoja (se cierra hacia abajo), no el atrás.
+      if(document.querySelector(".modal-bg")) return;
+      if(t.clientX>28 || !hayAtras()) return;    // solo desde el borde izquierdo
+      sx=t.clientX; sy=t.clientY; fase=1;
+      vista=document.querySelector(".mob-app .mob-view");
+      ancho=window.innerWidth||360;
     };
-    const onEnd=(e)=>{
-      if(!activo) return; activo=false;
-      const t=(e.changedTouches&&e.changedTouches[0]); if(!t) return;
+    const onMove=(e)=>{
+      if(!fase) return;
+      const t=e.touches&&e.touches[0]; if(!t) return;
       const dx=t.clientX-sx, dy=t.clientY-sy;
-      if(dx>62 && Math.abs(dy)<48){
-        const n=atrasRef.current;
-        if(n.pila && n.pila.length>0) n.pop();
-        else if(n.saltoDe && !n.top) n.volverSalto();
+      if(fase===1){
+        if(Math.abs(dy)>Math.abs(dx) && Math.abs(dy)>8){ fase=0; return; }  // es scroll vertical
+        if(dx>10){
+          fase=2;
+          // Neutraliza la animación de entrada para que el arrastre mande, y de
+          // forma que sobreviva a un re-render de React (inline gana a la clase).
+          if(vista){ vista.style.animation="none"; vista.style.transition="none"; }
+        } else return;
+      }
+      if(fase===2 && vista){
+        const x=Math.max(0, dx);
+        vista.style.transform="translate3d("+x+"px,0,0)";
+        vista.style.opacity=String(Math.max(.55, 1 - x/(ancho*2.2)));
+        if(e.cancelable) e.preventDefault();
       }
     };
+    const soltar=(hazVolver)=>{
+      const v=vista; vista=null; const f=fase; fase=0;
+      if(f!==2){ if(hazVolver) volver(); return; }
+      if(hazVolver){ volver(); return; }   // pop → la pantalla anterior entra sola (an-back)
+      if(!v) return;
+      // No pasó el umbral: la pantalla vuelve a su sitio con un resorte suave.
+      v.style.transition="transform .26s cubic-bezier(.32,.72,0,1), opacity .2s ease";
+      v.style.transform="translate3d(0,0,0)"; v.style.opacity="1";
+      window.setTimeout(()=>{ try{ v.style.transition=""; v.style.transform=""; v.style.opacity=""; }catch(_e){} }, 280);
+    };
+    const onEnd=(e)=>{
+      if(fase!==2){ fase=0; vista=null; return; }
+      const t=(e.changedTouches&&e.changedTouches[0]);
+      const dx=t?(t.clientX-sx):0;
+      soltar(dx > Math.min(150, ancho*0.34));
+    };
     document.addEventListener("touchstart", onStart, {passive:true});
+    document.addEventListener("touchmove", onMove, {passive:false});
     document.addEventListener("touchend", onEnd, {passive:true});
-    document.addEventListener("touchcancel", ()=>{ activo=false; }, {passive:true});
-    return ()=>{ document.removeEventListener("touchstart",onStart); document.removeEventListener("touchend",onEnd); };
+    document.addEventListener("touchcancel", ()=>soltar(false), {passive:true});
+    return ()=>{
+      document.removeEventListener("touchstart",onStart);
+      document.removeEventListener("touchmove",onMove);
+      document.removeEventListener("touchend",onEnd);
+    };
   },[]);
 
   /* Cerrar una hoja deslizándola hacia abajo, como las hojas modales del
@@ -10319,7 +10396,10 @@ function MobileApp(props){
         <span className="disco" style={refrescando?undefined:{transform:"rotate("+Math.round(ptr*4)+"deg)", opacity:Math.min(1,ptr/46)}}></span>
       </div>
     )}
-    {vista}
+    {/* Cada pantalla vive en su propia capa, con `key` que cambia en cada salto:
+        así entra deslizándose (an-fwd al abrir, an-back al volver, an-fade entre
+        pestañas), como una app nativa del iPhone. */}
+    <div className={"mob-view an-"+anim.dir} key={anim.n}>{vista}</div>
     {/* En modo ordenar, un botón claro para terminar —como el "Listo" del
         iPhone al reacomodar las apps—. */}
     {modoOrden && (
