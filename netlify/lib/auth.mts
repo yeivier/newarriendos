@@ -21,8 +21,25 @@ const DIAS_SESION = 30
 
 export type Rol = 'dueño' | 'lectura' | 'arquitecto'
 export type Acceso = { rol: Rol; nombre: string; token: string }
-export type AccesoInvitado = { id: string; nombre: string; rol: Rol; salt: string; hash: string; creado: number }
-export type ConfigAuth = { salt: string; hash: string; creado: number; invitados: AccesoInvitado[] }
+export type AccesoInvitado = {
+  id: string
+  nombre: string
+  rol: Rol
+  salt: string
+  hash: string
+  creado: number
+  // Usuario opcional para entrar (correo, alias o nombre corto): permite
+  // que cada persona escriba "quién es" además de su clave, en vez de que
+  // el servidor tenga que probar la clave contra todos los accesos.
+  usuario?: string
+}
+export type ConfigAuth = {
+  salt: string
+  hash: string
+  creado: number
+  invitados: AccesoInvitado[]
+  usuario?: string // el usuario del dueño para entrar, opcional
+}
 
 const enc = new TextEncoder()
 const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')

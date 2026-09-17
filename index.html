@@ -5391,6 +5391,7 @@ function PortalArrendatario({u,propiedades,uf,owner,cuentas,montoCobro,calcMulta
    Sin esto, cualquiera que llegara a la dirección del sitio podía leer y
    sobrescribir todos los datos. */
 function Puerta({ modo, onEntrar }){
+  const [usuario,setUsuario]=useState("");
   const [clave,setClave]=useState("");
   const [clave2,setClave2]=useState("");
   const [busy,setBusy]=useState(false);
@@ -5424,7 +5425,7 @@ function Puerta({ modo, onEntrar }){
     if(busy||corta||noCalza) return;
     setBusy(true); setErr("");
     try{
-      const r=await apiJSON("/api/acceso", crear?{accion:"crear",clave}:{accion:"entrar",clave});
+      const r=await apiJSON("/api/acceso", crear?{accion:"crear",clave,usuario:usuario.trim()}:{accion:"entrar",clave,usuario:usuario.trim()});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.token){ setErr(j.error||"No se pudo entrar"); setBusy(false); return; }
       guardarToken(j.token);
@@ -5479,13 +5480,19 @@ function Puerta({ modo, onEntrar }){
       <h2>{crear?"Protege tu plataforma":"ArriendoPro"}</h2>
       <p>{crear
         ? "Crea la clave con la que entrarás desde ahora. Sin ella, nadie puede ver ni cambiar tus datos."
-        : (hayCara ? "Entra con tu cara, o con tu clave." : "Ingresa tu clave para entrar.")}</p>
+        : (hayCara ? "Entra con tu cara, o con tu usuario y tu clave." : "Ingresa tu usuario y tu clave para entrar.")}</p>
       {hayCara && !crear && <>
         <button className="btn btn-red" style={{width:"100%",padding:"14px",marginBottom:14}} disabled={busy} onClick={entrarCara}>
           <Ic n="cara" w={19}/> {busy?"Abriendo…":"Entrar con Face ID"}</button>
         <div className="puerta-o"><span>o con tu clave</span></div>
       </>}
-      <input className="input" type="password" value={clave} autoFocus={!hayCara}
+      <input className="input" type="text" value={usuario} autoFocus={!hayCara}
+        autoCapitalize="none" autoCorrect="off"
+        placeholder={crear?"Tu usuario (correo o alias, opcional)":"Tu usuario (correo, alias o nombre)"}
+        onChange={e=>setUsuario(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter") document.getElementById("puerta-clave")?.focus(); }}/>
+      <input id="puerta-clave" className="input" type="password" value={clave}
+        style={{marginTop:10}}
         placeholder={crear?"Clave nueva (mínimo 6 caracteres)":"Tu clave"}
         onChange={e=>setClave(e.target.value)}
         onKeyDown={e=>{ if(e.key==="Enter"&&!crear) entrar(); }}/>
@@ -5496,8 +5503,8 @@ function Puerta({ modo, onEntrar }){
       <button className={"btn "+(hayCara&&!crear?"btn-out":"btn-red")} style={{width:"100%",marginTop:14,padding:"14px"}}
         disabled={busy||corta||noCalza} onClick={entrar}>
         {busy?"Entrando…":(crear?"Crear clave y entrar":"Entrar")}</button>
-      {crear && <div className="puerta-nota">Anótala en un lugar seguro: no hay forma de recuperarla desde acá.</div>}
-      {!crear && <div className="puerta-nota">Si alguien más administra contigo, pídele su propio acceso al dueño de la cuenta.</div>}
+      {crear && <div className="puerta-nota">Anótala en un lugar seguro: no hay forma de recuperarla desde acá. Si no escribes un usuario, entras solo con la clave, como antes.</div>}
+      {!crear && <div className="puerta-nota">{hayCara ? "Si alguien más administra contigo, pídele su propio acceso al dueño de la cuenta." : "Si no tienes un usuario asignado, deja ese campo en blanco y entra solo con tu clave."}</div>}
     </div>
   </div>);
 }
@@ -6940,6 +6947,9 @@ function MobileApp(props){
 
   // La lista de accesos se pide al servidor al abrir su pantalla.
   React.useEffect(()=>{ if(top && top.t==="accesos" && accesos && accesos.cargar) accesos.cargar(); },[top && top.t]);
+  // Cuando llega el usuario del dueño desde el servidor, se refleja en el
+  // campo de edición (solo si la persona no está escribiendo algo distinto).
+  React.useEffect(()=>{ if(accesos && accesos.miUsuario!=null) setMiUsuario(accesos.miUsuario); },[accesos && accesos.miUsuario]);
 
   // Datos derivados.
   const rentals    = propiedades.filter(p=>p.use==="arriendo");
@@ -8298,10 +8308,13 @@ function MobileApp(props){
     return trozo(AC_LETRAS,4)+"-"+trozo(AC_NUMS,4)+"-"+trozo(AC_LETRAS,4);
   };
   const [acNombre, setAcNombre] = React.useState("");
+  const [acUsuario, setAcUsuario] = React.useState("");
   const [acClave, setAcClave] = React.useState("");
   const [acRol, setAcRol] = React.useState("lectura");
   const [acBusy, setAcBusy] = React.useState(false);
   const [acNuevo, setAcNuevo] = React.useState(null);
+  const [miUsuario, setMiUsuario] = React.useState("");
+  const [miUsuarioBusy, setMiUsuarioBusy] = React.useState(false);
 
   const pantallaAccesos = ()=>{
     const AX = accesos || {};
@@ -8311,12 +8324,19 @@ function MobileApp(props){
       if(!puedeCrear) return;
       setAcBusy(true);
       try{
-        const hecho = await AX.crear(acNombre.trim(), acClave.trim(), acRol);
+        const hecho = await AX.crear(acNombre.trim(), acClave.trim(), acRol, acUsuario.trim());
         setAcNuevo(hecho);
-        setAcNombre(""); setAcClave("");
+        setAcNombre(""); setAcClave(""); setAcUsuario("");
         notify("Acceso creado");
       }catch(e){ notify(e.message||"No se pudo crear el acceso", true); }
       setAcBusy(false);
+    };
+    const guardarMiUsuario = async()=>{
+      if(!AX.usuario || miUsuarioBusy) return;
+      setMiUsuarioBusy(true);
+      try{ await AX.usuario(miUsuario.trim()); notify("Usuario guardado"); }
+      catch(e){ notify(e.message||"No se pudo guardar", true); }
+      setMiUsuarioBusy(false);
     };
     const quitar = async(x)=>{
       if(!window.confirm("¿Quitar el acceso de "+(x.nombre||"esta persona")+"?")) return;
@@ -8331,6 +8351,7 @@ function MobileApp(props){
           <div className="fila"><span className="lb">Acceso creado</span>
             <span className="mob-chip ink">{acNuevo.rol==="lectura"?"Solo mirar":acNuevo.rol==="arquitecto"?"Arquitecto/a":"Puede editar"}</span></div>
           <div className="cifra" style={{fontSize:"clamp(22px,6.4vw,28px)"}}>{acNuevo.nombre}</div>
+          {acNuevo.usuario ? <div className="fila"><span className="lb">Usuario</span><span className="lb fuerte">{acNuevo.usuario}</span></div> : null}
           <div className="fila"><span className="lb">Clave</span><span className="lb fuerte">{acNuevo.clave}</span></div>
           <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
             <button className="mob-btn gray-sm" onClick={()=>{
@@ -8346,6 +8367,9 @@ function MobileApp(props){
         <div className="mob-campo"><span className="mob-lab">Nombre de la persona</span>
           <input className="mob-inp" value={acNombre} onChange={e=>setAcNombre(e.target.value)}
             placeholder="Ej: Claudia, mi contadora" disabled={soloLectura}/></div>
+        <div className="mob-campo"><span className="mob-lab">Usuario para entrar (opcional)</span>
+          <input className="mob-inp" value={acUsuario} onChange={e=>setAcUsuario(e.target.value)}
+            placeholder="Su correo, un apodo o su nombre" disabled={soloLectura}/></div>
         <div className="mob-campo"><span className="mob-lab">Qué puede hacer</span>
           <div className="mob-seg tres">
             <button className={acRol==="lectura"?"on":""} onClick={()=>setAcRol("lectura")}>Solo mirar</button>
@@ -8374,12 +8398,24 @@ function MobileApp(props){
       <Grupo titulo={"Con acceso ("+lista.length+")"}>
         {lista.length ? lista.map(x=>(
           <Fila key={x.id} ico={MI.persona} titulo={x.nombre||"Sin nombre"}
-            sub={x.rol==="lectura"?"Solo mirar":x.rol==="arquitecto"?"Arquitecto/a · sube material":"Ver y editar"}
+            sub={[x.rol==="lectura"?"Solo mirar":x.rol==="arquitecto"?"Arquitecto/a · sube material":"Ver y editar", x.usuario?("usuario: "+x.usuario):null].filter(Boolean).join(" · ")}
             extra={soloLectura?null:<button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
               onClick={()=>quitar(x)}>Quitar</button>}
             chevron={false}/>
         )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía nadie más tiene acceso.</div>}
       </Grupo>
+
+      {!soloLectura && (
+        <Grupo titulo="Tu usuario para entrar" nota="Opcional. Si lo pones, en la pantalla de entrada escribes ese usuario y tu clave, en vez de que el sistema pruebe la clave contra todos los accesos.">
+          <div className="mob-campo"><span className="mob-lab">Tu correo, alias o nombre</span>
+            <div style={{display:"flex", gap:8}}>
+              <input className="mob-inp" value={miUsuario} onChange={e=>setMiUsuario(e.target.value)}
+                placeholder="Ej: javier@correo.cl" style={{flex:1}}/>
+              <button className="mob-btn gray-sm" style={{flexShrink:0}} disabled={miUsuarioBusy} onClick={guardarMiUsuario}>
+                {miUsuarioBusy?"Guardando…":"Guardar"}</button>
+            </div></div>
+        </Grupo>
+      )}
 
       <Grupo titulo="Tu cuenta">
         {hay("equipo") && <Fila icoNav="candado" titulo="Portal del arrendatario y más ajustes" sub="Roles, invitaciones y sesión" onClick={()=>irSeccion("equipo")}/>}
@@ -10862,12 +10898,16 @@ function App(){
     return ()=>{ vivo=false; window.__sinAcceso=null; };
   },[]);
   /* Clave, accesos de otras personas y respaldos. */
-  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",claveInv:"",rol:"lectura",correo:"",wsp:""});
+  const [segForm,setSegForm]=useState({actual:"",nueva:"",nombre:"",usuario:"",claveInv:"",rol:"lectura",correo:"",wsp:""});
   /* Último acceso creado, para poder mandárselo a la persona. La clave vive
      solo aquí, en la pantalla: el servidor guarda su huella, no la clave. */
   const [ultAcceso,setUltAcceso]=useState(null);
   const [segBusy,setSegBusy]=useState(false);
   const [accesos,setAccesos]=useState([]);
+  const [usuarioDueno,setUsuarioDueno]=useState("");
+  const [miUsuario,setMiUsuario]=useState("");
+  const [miUsuarioBusy,setMiUsuarioBusy]=useState(false);
+  useEffect(()=>{ setMiUsuario(usuarioDueno); },[usuarioDueno]);
   const [respaldos,setRespaldos]=useState([]);
   const [repBusy,setRepBusy]=useState(false);
   const cambiarClave=async()=>{
@@ -10882,7 +10922,14 @@ function App(){
   };
   const cargarAccesos=async()=>{
     try{ const r=await apiJSON("/api/acceso",{accion:"accesos"}); const j=await r.json().catch(()=>({}));
-      if(r.ok&&Array.isArray(j.accesos)) setAccesos(j.accesos); }catch(_e){}
+      if(r.ok&&Array.isArray(j.accesos)) setAccesos(j.accesos);
+      if(r.ok) setUsuarioDueno(j.usuario||""); }catch(_e){}
+  };
+  const guardarUsuarioDueno=async(usuario)=>{
+    const r=await apiJSON("/api/acceso",{accion:"usuario",usuario});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||"No se pudo guardar");
+    setUsuarioDueno(j.usuario||"");
   };
   /* Entrar con Face ID o huella: activar este aparato y ver los ya activados. */
   const [caraPosible,setCaraPosible]=useState(false);
@@ -10920,12 +10967,12 @@ function App(){
   const crearAcceso=async()=>{
     setSegBusy(true);
     try{
-      const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol});
+      const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre:segForm.nombre,usuario:segForm.usuario,clave:segForm.claveInv,rol:segForm.rol});
       const j=await r.json().catch(()=>({}));
       if(!r.ok) notify(j.error||"No se pudo crear el acceso",true);
       else { setAccesos(j.accesos||[]);
-        setUltAcceso({nombre:segForm.nombre,clave:segForm.claveInv,rol:segForm.rol,correo:segForm.correo,wsp:segForm.wsp});
-        setSegForm(f=>({...f,nombre:"",claveInv:""}));
+        setUltAcceso({nombre:segForm.nombre,usuario:segForm.usuario,clave:segForm.claveInv,rol:segForm.rol,correo:segForm.correo,wsp:segForm.wsp});
+        setSegForm(f=>({...f,nombre:"",usuario:"",claveInv:""}));
         notify("Acceso creado. Ahora mándaselo por correo o WhatsApp."); }
     }catch(e){ notify("Sin conexión",true); }
     setSegBusy(false);
@@ -10940,9 +10987,12 @@ function App(){
     "Hola "+(a.nombre||"")+":","",
     "Te damos acceso a la plataforma donde administramos las propiedades.","",
     "Dirección: "+window.location.origin,
+    ...(a.usuario ? ["Tu usuario: "+a.usuario] : []),
     "Tu clave: "+a.clave,
     "Permiso: "+(a.rol==="lectura"?"solo lectura (puedes ver todo, no modificar)":"ver y modificar"),"",
-    "Entra a la dirección, escribe la clave y listo. No la compartas con nadie más.","",
+    a.usuario
+      ? "Entra a la dirección, escribe tu usuario y tu clave, y listo. No la compartas con nadie más."
+      : "Entra a la dirección, escribe la clave y listo. No la compartas con nadie más.","",
     "Cualquier duda, escríbenos a "+CORREO_ADMIN+" o al WhatsApp "+waRemitente(owner)+".","",
     "ArriendoPro · Administración de propiedades",
   ].join("\n");
@@ -13851,13 +13901,14 @@ function App(){
          escritorio: crear el acceso, listarlos y quitarlos. */
       accesos={{
         lista: accesos,
+        miUsuario: usuarioDueno,
         cargar: cargarAccesos,
-        crear: async (nombre, clave, rol)=>{
-          const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre,clave,rol});
+        crear: async (nombre, clave, rol, usuario)=>{
+          const r=await apiJSON("/api/acceso",{accion:"crear_acceso",nombre,clave,rol,usuario});
           const j=await r.json().catch(()=>({}));
           if(!r.ok) throw new Error(j.error||"No se pudo crear el acceso");
           setAccesos(j.accesos||[]);
-          return { nombre, clave, rol };
+          return { nombre, clave, rol, usuario };
         },
         borrar: async (id)=>{
           const r=await apiJSON("/api/acceso",{accion:"borrar_acceso",id});
@@ -13865,6 +13916,7 @@ function App(){
           if(!r.ok) throw new Error(j.error||"No se pudo quitar");
           setAccesos(j.accesos||[]);
         },
+        usuario: guardarUsuarioDueno,
         texto: (a)=>textoAcceso(a),
       }}
       /* Todas las acciones del escritorio, para que ninguna quede sin alcance
@@ -15016,17 +15068,28 @@ function App(){
             </div>
             <button className="btn btn-green btn-sm" disabled={segBusy||!segForm.actual||segForm.nueva.length<6} onClick={cambiarClave}>{segBusy?"Guardando…":"Cambiar clave"}</button>
 
+            <div className="sub-title" style={{marginTop:20}}>Tu usuario para entrar</div>
+            <div className="help" style={{marginBottom:10}}>Opcional. Si lo pones, en la pantalla de entrada escribes ese usuario (tu correo, un alias o tu nombre) junto con tu clave, en vez de entrar solo con la clave.</div>
+            <div className="grid c2" style={{gridTemplateColumns:"1fr auto"}}>
+              <div className="field"><label className="label">Tu correo, alias o nombre</label>
+                <input className="input" placeholder="Ej: javier@correo.cl" value={miUsuario} onChange={e=>setMiUsuario(e.target.value)}/></div>
+              <button className="btn btn-out btn-sm" style={{alignSelf:"end"}} disabled={miUsuarioBusy}
+                onClick={async()=>{ setMiUsuarioBusy(true); try{ await guardarUsuarioDueno(miUsuario.trim()); notify("Usuario guardado"); }catch(e){ notify(e.message||"No se pudo guardar",true); } setMiUsuarioBusy(false); }}>
+                {miUsuarioBusy?"Guardando…":"Guardar"}</button>
+            </div>
+
             <div className="sub-title" style={{marginTop:20}}>Accesos de otras personas</div>
             {accesos.length===0
               ? <div className="help" style={{marginBottom:10}}>Todavía no has creado accesos para nadie más.</div>
               : <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
                   {accesos.map(a=>(<div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10}}>
-                    <div><div style={{fontWeight:700}}>{a.nombre}</div><div style={{fontSize:13,color:"var(--muted)"}}>{a.rol==="dueño"?"Puede ver y modificar":"Solo lectura"}</div></div>
+                    <div><div style={{fontWeight:700}}>{a.nombre}</div><div style={{fontSize:13,color:"var(--muted)"}}>{a.rol==="dueño"?"Puede ver y modificar":"Solo lectura"}{a.usuario?" · usuario: "+a.usuario:""}</div></div>
                     <button className="btn btn-ghost btn-sm" onClick={()=>borrarAcceso(a.id)}><Ic n="cerrar" w={15}/> Quitar</button>
                   </div>))}
                 </div>}
-            <div className="grid" style={{gridTemplateColumns:"1.2fr 1fr 1fr",gap:10}}>
+            <div className="grid" style={{gridTemplateColumns:"1.2fr 1.2fr 1fr 1fr",gap:10}}>
               <div className="field"><label className="label">Nombre</label><input className="input" placeholder="Ej: Mamá, Contador" value={segForm.nombre} onChange={e=>setSegForm(f=>({...f,nombre:e.target.value}))}/></div>
+              <div className="field"><label className="label">Usuario para entrar (opcional)</label><input className="input" placeholder="Su correo, un apodo o su nombre" value={segForm.usuario} onChange={e=>setSegForm(f=>({...f,usuario:e.target.value}))}/></div>
               <div className="field"><label className="label">Clave para esa persona</label><input className="input" type="password" value={segForm.claveInv} onChange={e=>setSegForm(f=>({...f,claveInv:e.target.value}))}/></div>
               <div className="field"><label className="label">Permiso</label>
                 <select value={segForm.rol} onChange={e=>setSegForm(f=>({...f,rol:e.target.value}))}>
