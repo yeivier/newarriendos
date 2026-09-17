@@ -1619,12 +1619,15 @@
   .mob-cards > *{ min-width:0; }
   .mob-cardg{ position:relative; display:flex; flex-direction:column; align-items:flex-start;
     justify-content:space-between; gap:16px; background:var(--msf); border:1px solid var(--mln);
-    border-radius:16px; padding:14px 13px; min-height:100px; font-family:inherit; text-align:left;
+    border-radius:16px; padding:14px 11px; min-height:100px; font-family:inherit; text-align:left;
     cursor:pointer; color:var(--mtx); }
   .mob-cardg:active{ background:var(--mfl2); }
   .mob-cardg .ic{ color:var(--mtx); display:flex; }
-  .mob-cardg .lb{ font-size:14.5px; font-weight:650; line-height:1.18; letter-spacing:-.01em;
-    overflow-wrap:anywhere; max-width:100%; }
+  /* Las etiquetas cortan por sílaba (con guion) solo si una palabra no cabe, en
+     vez de partirse por cualquier letra ("Comunica ciones"). Con nombres cortos
+     (MOB_CARD_CORTO) casi nunca hace falta; esto es el resguardo. */
+  .mob-cardg .lb{ font-size:12.5px; font-weight:650; line-height:1.24; letter-spacing:-.03em;
+    overflow-wrap:break-word; word-break:normal; -webkit-hyphens:auto; hyphens:auto; max-width:100%; }
   .mob-cardg .bdg{ position:absolute; top:10px; right:10px; min-width:22px; height:22px; padding:0 6px;
     border-radius:11px; background:var(--mib); color:#fff; font-size:12px; font-weight:800; line-height:22px;
     text-align:center; }
@@ -2028,6 +2031,60 @@
     border:2.5px solid var(--mln); border-top-color:var(--mib); }
   .mob-app .mob-ptr.girando .disco{ animation:ptrGira .7s linear infinite; }
   @keyframes ptrGira{ to{ transform:rotate(360deg); } }
+
+  /* ==========================================================================
+     LEGIBILIDAD 60+ · ajustes finales para que una persona mayor lea y toque
+     todo sin esfuerzo. Va al final, así manda sobre la escala compacta: sube el
+     contraste del texto de apoyo, agranda los rótulos más chicos, deja los
+     montos y cifras SIEMPRE completos (nunca cortados), y asegura 44px para
+     tocar cómodo. Solo tamaños, colores y áreas de toque; nada de lógica.
+     ====================================================================== */
+  /* 1 · Contraste del texto de apoyo. Antes era gris muy claro (~3.4:1) y con
+     presbicia o poca luz no se leía; ahora sí. En el héroe oscuro el texto usa
+     su propio blanco, así que este cambio no lo afecta (y ahí lo subimos un
+     poco también). */
+  .mob-app{ --mtm:#48484A; --mtm2:#5A5A63; }
+  .mob-app .mob-hub-top .lb, .mob-app .mob-hub-top .mob-metrics .m .k,
+  .mob-app .mob-hub-top .mob-eyebrow, .mob-app .mob-hub-top .mob-mono,
+  .mob-app .mob-hub-top .mob-p2{ color:rgba(255,255,255,.75); }
+
+  /* 2 · Los montos y las cifras NUNCA se cortan: es el dato que vino a ver. */
+  .mob-app .mob-cell .val{ max-width:62%; }
+  .mob-app .mob-kpis2 .v, .mob-app .mob-metrics .m .v{ white-space:nowrap;
+    overflow:visible; text-overflow:clip; }
+  .mob-app .mob-kpis2 .v{ font-size:clamp(15px,4.6vw,22px); }
+
+  /* 3 · Rótulos que estaban muy chicos, ahora legibles (piso ~12px). */
+  .mob-app .mob-tab .lb{ font-size:11.5px; font-weight:650; }
+  .mob-app .mob-tab{ color:#5B5B60; }
+  .mob-app .mob-tab.on{ color:var(--mib); }
+  .mob-app .mob-metrics .m .k{ font-size:11.5px; letter-spacing:.06em;
+    white-space:normal; overflow:visible; text-overflow:clip; line-height:1.2; }
+  .mob-app .mob-eyebrow, .mob-app .mob-mono{ font-size:12px; }
+  .mob-app .mob-nota{ font-size:13px; }
+  .mob-app .mob-lab, .mob-app .mob-field .lb, .mob-app .mob-precio .lb{ font-size:12.5px; }
+  .mob-app .mob-cell .tx .s{ font-size:13px; }
+  .mob-app .mob-act .tx .s{ font-size:13.5px; }
+  .mob-app .mob-fin3 .pct, .mob-app .mob-finrow .soc{ font-size:13px; }
+  .mob-app .mob-pc-chip{ font-size:12.5px; max-width:none; }
+
+  /* 4 · Todo lo que se toca mide al menos 44px (dedo de adulto mayor). */
+  .mob-app .mob-seg > button{ min-height:44px; padding:9px 8px; }
+  .mob-app .mob-anamodos .chip, .mob-app .mob-chip2, .mob-app .mob-ind.act,
+  .mob-app .chat-eq-gente .g{ min-height:44px; }
+  .mob-app .ios-sw{ position:relative; }
+  .mob-app .ios-sw::before{ content:""; position:absolute; inset:-7px -8px; }
+
+  /* 5 · Pistas de los campos y flechas de navegación, un poco más visibles. */
+  .mob-app .mob-inp::placeholder{ color:rgba(60,60,67,.5); }
+  .mob-app .chev{ color:rgba(60,60,67,.5); }
+
+  /* 6 · Color del estado de cada arriendo, para verlo de un vistazo sin leer:
+     verde = al día · ámbar = vence hoy · rojo = atrasado. Tonos suaves para que
+     no griten, pero que salten a la vista. */
+  .mob-app .mob-pc-chip.ok{   background:#E6F5EC; color:#0C7A38; }
+  .mob-app .mob-pc-chip.warn{ background:#FBEFD6; color:#8A5A00; }
+  .mob-app .mob-pc-chip.bad{  background:#FBE7E5; color:#C0271C; }
 
 </style>
 </head>
@@ -4805,12 +4862,12 @@ const asResumenCatalogo=(props,uf,empresa,contacto,lead)=>{
 // (más oscuro = más cerca del cierre), no en colores distintos por etapa.
 const CRM_ESTADOS=[
   {id:"nuevo",label:"Nuevo",color:"#C7C7CC"},
-  {id:"contactado",label:"Contactado",color:"#AEAEB2"},
-  {id:"calificado",label:"Calificado",color:"#8E8E93"},
+  {id:"contactado",label:"Ya lo contacté",color:"#AEAEB2"},
+  {id:"calificado",label:"Interesado en serio",color:"#8E8E93"},
   {id:"visita",label:"Visita agendada",color:"#636366"},
-  {id:"propuesta",label:"Propuesta / Negociación",color:"#48484A"},
-  {id:"ganado",label:"Cerrado ganado",color:"#101012"},
-  {id:"perdido",label:"Cerrado perdido",color:"#8E8E93"}
+  {id:"propuesta",label:"En conversación",color:"#48484A"},
+  {id:"ganado",label:"Cerramos trato",color:"#101012"},
+  {id:"perdido",label:"No siguió",color:"#8E8E93"}
 ];
 const CRM_FUENTES=["WhatsApp","Instagram","Facebook","Portal Inmobiliario","Yapo","Web","Referido","Llamada","Otro"];
 const CRM_CANALES=["WhatsApp","Llamada","Correo","Instagram","Presencial","SMS","Otro"];
@@ -5887,6 +5944,11 @@ const mobCuando = (iso)=>{
 const mobEstado = (p)=> p.status==="pagado" ? "Al día"
   : p.status==="pendiente" ? "Vence hoy"
   : p.status==="atrasado" ? "Atrasado" : "Disponible";
+/* Color del estado para que se vea de un vistazo (pensado para leerlo rápido):
+   verde = al día, ámbar = vence hoy, rojo = atrasado. El resto queda neutro. */
+const mobEstadoClase = (p)=> p.status==="pagado" ? "ok"
+  : p.status==="pendiente" ? "warn"
+  : p.status==="atrasado" ? "bad" : "";
 
 const mobDiasDesde = (iso)=> {
   try{ return Math.max(0, Math.round((Date.now() - new Date(iso).getTime())/86400000)); }
@@ -5975,9 +6037,13 @@ const MOB_CARD_CORTO = {
   "Preguntas frecuentes":"Preguntas",
   "Balance por propiedad":"Balance",
   "Cobros del mes":"Cobros",
-  "Consultar InfoCheck":"InfoCheck",
+  "Consultar InfoCheck":"Antecedentes",
   "Buscar en la plataforma":"Buscar",
-  "CRM y leads":"CRM",
+  "CRM y leads":"Interesados",
+  "Comunicaciones":"Mensajes listos",
+  "Analizar un documento":"Analizar",
+  "Impuestos y contribuciones":"Impuestos",
+  "Calculadora de arriendo":"Calculadora",
   "Equipo y accesos":"Accesos",
   "Mi perfil":"Perfil"
 };
@@ -6044,10 +6110,10 @@ const MOB_MAS_GRUPOS = [
     { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" },
     { esp:"calcArriendo", ico:"calc", label:"Calculadora de arriendo", sub:"Precio sugerido según el mercado en Chile" }
   ]},
-  { label:"Operación", items:[
+  { label:"Papeles y gestiones", items:[
     { esp:"socs",   ico:"edificio",   label:"Sociedades", sub:"Empresas propietarias" },
     { id:"legal",   ico:"balanza",    label:"Documentos legales", sub:"Contratos, firma y antecedentes" },
-    { id:"crm",     ico:"embudo",     label:"CRM y leads", sub:"Prospectos, visitas y conversión" },
+    { id:"crm",     ico:"embudo",     label:"CRM y leads", sub:"Personas interesadas en arrendar o comprar" },
     { id:"historial", ico:"archivador", label:"Historial", sub:"Pagos, arrendatarios anteriores y garantías" }
   ]},
   { label:"Finanzas", items:[
@@ -6061,7 +6127,7 @@ const MOB_MAS_GRUPOS = [
     { esp:"planos",  ico:"regla",        label:"Planos y lectura con IA", sub:"Súbelos y léelos con el agente experto" },
     { esp:"cotiz",   ico:"balanza",      label:"Comparar presupuestos", sub:"Cotizaciones lado a lado, con una recomendación" },
     { esp:"tramites",ico:"portapapeles", label:"Trámites", sub:"El orden más conveniente para avanzar" },
-    { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tu cartera" },
+    { esp:"asistente", ico:"chispas", label:"Asistente", sub:"Pregúntale por tus propiedades" },
     { esp:"infocheck", ico:"lupa",    label:"Consultar InfoCheck", sub:"Antecedentes de un arrendatario" },
     { esp:"levantamiento", ico:"portapapeles", label:"Ficha técnica", sub:"La ficha de cada propiedad" },
     { esp:"buscar",    ico:"lupa",    label:"Buscar en la plataforma", sub:"Secciones, propiedades, personas y campos" }
@@ -6069,7 +6135,7 @@ const MOB_MAS_GRUPOS = [
   { label:"Cuenta", items:[
     { esp:"cuenta", ico:"persona",   label:"Mi perfil", sub:"Tus datos y los de cobro" },
     { esp:"accesos", ico:"candado",  label:"Equipo y accesos", sub:"Quién puede entrar y qué puede hacer" },
-    { id:"config",  ico:"engranaje", label:"Configuración", sub:"Datos bancarios, UF y pasarela de pago" },
+    { id:"config",  ico:"engranaje", label:"Configuración", sub:"Datos bancarios, UF y pago en línea" },
     { id:"faq",     ico:"pregunta",  label:"Preguntas frecuentes", sub:"Qué hace cada sección" }
   ]}
 ];
@@ -6462,7 +6528,7 @@ const Guardado = ()=>{
     <span className={"mob-guardado"+(guardado==="guardando"?" grabando":"")}>
       {guardado==="guardando" ? <><span className="pt"></span>Guardando…</>
         : guardado==="error"  ? <><span className="pt"></span>Sin guardar · revisa la conexión</>
-        : <><MobIco w={14} sw={2.4}>{MI.check}</MobIco>Autoguardado</>}
+        : <><MobIco w={14} sw={2.4}>{MI.check}</MobIco>Se guarda solo</>}
     </span>
   );
 };
@@ -6581,7 +6647,7 @@ const PropCard = ({ p, onClick })=>{
     <button className="mob-pc" onClick={onClick} type="button">
       <div className="mob-pc-top">
         <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{arr?MI.edif:MI.casita}</MobIco></span>
-        <span className={"mob-pc-chip"+(arr&&p.status==="pagado"?" ok":"")}>{est}</span>
+        <span className={"mob-pc-chip"+(arr?" "+mobEstadoClase(p):"")}>{est}</span>
       </div>
       <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
       <div className="mob-pc-mt">{meta||"—"}</div>
@@ -6595,7 +6661,7 @@ const CobCard = ({ p, onClick })=>{
     <button className="mob-pc" onClick={onClick} type="button">
       <div className="mob-pc-top">
         <span className="mob-pc-ic"><MobIco w={18} sw={1.9}>{pagado?MI.check:MI.reloj}</MobIco></span>
-        <span className={"mob-pc-chip"+(pagado?" ok":"")}>{mobEstado(p)}</span>
+        <span className={"mob-pc-chip"+" "+mobEstadoClase(p)}>{mobEstado(p)}</span>
       </div>
       <div className="mob-pc-nm">{nombreTarjeta(p.name, p.comuna)}</div>
       <div className="mob-pc-mt">{CLP(num(p.rent))} · {pagado?"pagado":"vence "+(p.dueDay||5)}</div>
@@ -6606,11 +6672,11 @@ const CobCard = ({ p, onClick })=>{
    cualquier lista (sociedades, contactos, prospectos, plantillas, informes,
    incidencias…), de modo que ninguna sección se vea como lista apilada.
    Suelta dentro de .mob-grid2 va a media pantalla; suelta fuera, ancho completo. */
-const GridCard = ({ ico, icoNav, titulo, sub, chip, chipOk, punto, onClick })=>{
+const GridCard = ({ ico, icoNav, titulo, sub, chip, chipOk, chipClase, punto, onClick })=>{
   const dentro = (<React.Fragment>
     <div className="mob-pc-top">
       {(ico||icoNav) ? <span className="mob-pc-ic">{icoNav ? <Ic n={icoNav} w={18} sw={1.9}/> : <MobIco w={18} sw={1.9}>{ico}</MobIco>}</span> : <span></span>}
-      {chip ? <span className={"mob-pc-chip"+(chipOk?" ok":"")}>{chip}</span> : (punto ? <span className="mob-pc-pt"></span> : null)}
+      {chip ? <span className={"mob-pc-chip"+(chipClase?" "+chipClase:(chipOk?" ok":""))}>{chip}</span> : (punto ? <span className="mob-pc-pt"></span> : null)}
     </div>
     <div className="mob-pc-nm">{titulo}</div>
     {sub ? <div className="mob-pc-mt">{sub}</div> : null}
@@ -7239,7 +7305,7 @@ function MobileApp(props){
       : (contribMes(p) + seguroMes(p,uf) + gastosExtraMes(p,uf));
     const orden = propiedades.slice().sort((a,b)=> Math.abs(valorDe(b)) - Math.abs(valorDe(a)));
     return (<div className="mob-scr g14">
-      <HeaderMob title="Finanzas" sub="Balance real de la cartera, mes a mes"/>
+      <HeaderMob title="Finanzas" sub="Cuánto gana y gasta cada propiedad, mes a mes"/>
       <div className="mob-seg">
         <button className={finSeg==="utilidad"?"on":""} onClick={()=>setFinSeg("utilidad")}>Utilidad</button>
         <button className={finSeg==="dividendos"?"on":""} onClick={()=>setFinSeg("dividendos")}>Dividendos</button>
@@ -7391,16 +7457,16 @@ function MobileApp(props){
       <HeaderMob title="Más" sub="Todo lo demás, a un toque"/>
       <div className="mob-buscar" onClick={buscar} role="button">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
-        <input readOnly placeholder="Buscar en toda la plataforma" style={{pointerEvents:"none"}}/>
+        <input readOnly placeholder="Buscar propiedad, persona o dato" style={{pointerEvents:"none"}}/>
       </div>
       {/* Las propiedades no van desplegadas: una sola tarjeta que abre la lista. */}
       {!!propiedades.length && (
         <div className="mob-mas-sec">
-          <h2 className="mob-gtit">Tu cartera</h2>
+          <h2 className="mob-gtit">Tus propiedades</h2>
           <div className="mob-cards">
             <button className="mob-cardg" onClick={()=>saltarA("props")}>
               <span className="ic"><Ic n="casas" w={24} sw={1.9}/></span>
-              <span className="lb">Mis propiedades</span>
+              <span className="lb">Ver todas</span>
             </button>
           </div>
         </div>
@@ -7697,7 +7763,7 @@ function MobileApp(props){
       ) : <div className="mob-vacio">Todavía no hay pagos registrados en esta propiedad.</div>}
       <Grupo>
         <Fila ico={MI.campana} titulo="Enviar recordatorio" sub="Correo, WhatsApp o SMS con el link de pago" onClick={()=>abrirRecord(p)}/>
-        {hay("historial") && <Fila icoNav="archivador" titulo="Historial completo de la cartera" sub="Pagos, garantías y lagunas de arriendo" onClick={()=>irSeccion("historial", p)}/>}
+        {hay("historial") && <Fila icoNav="archivador" titulo="Historial completo" sub="Pagos, garantías y meses sin arrendar" onClick={()=>irSeccion("historial", p)}/>}
       </Grupo>
     </Pantalla>);
   };
@@ -8068,7 +8134,7 @@ function MobileApp(props){
         <Fila ico={MI.doc} titulo="Generar o editar el contrato" sub="Cláusulas, montos y partes" onClick={()=>AC.contrato && AC.contrato(p)}/>
         <Fila ico={MI.lapiz} titulo="Firma notarial online" sub="Enviar a firmar y seguir el estado" onClick={()=>AC.firma && AC.firma(p)}/>
         <Fila ico={MI.dinero} titulo="Arriendo y cobro" sub="Montos, plazos y garantía" onClick={()=>push({t:"arriendo", id:p.id})}/>
-        {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Antecedentes y contratos de la cartera" onClick={()=>irSeccion("legal", p)}/>}
+        {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Antecedentes y contratos" onClick={()=>irSeccion("legal", p)}/>}
       </Grupo>
     </Pantalla>);
   };
@@ -8148,7 +8214,7 @@ function MobileApp(props){
           <div className="mob-grid2">
             {va.map((x,i)=>(
               <GridCard key={"v"+i} ico={MI.persona} titulo={x.nombre} sub={x.sub}
-                chip={mobEstado(x.p)} chipOk={x.p.status==="pagado"}
+                chip={mobEstado(x.p)} chipClase={mobEstadoClase(x.p)}
                 onClick={()=>push({t:"arrendatario", id:x.p.id})}/>
             ))}
           </div>
@@ -8321,7 +8387,7 @@ function MobileApp(props){
         <Fila sinIco titulo="Teléfono" valor={owner.telefono||"—"}/>
       </Grupo>
       <Grupo titulo="Ajustes de la plataforma">
-        {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pasarela de pago" onClick={()=>push({t:"config"})}/>}
+        {hay("config") && <Fila icoNav="engranaje" titulo="Configuración" sub="Datos bancarios, UF y pago en línea" onClick={()=>push({t:"config"})}/>}
         <Fila icoNav="candado" titulo="Equipo y accesos" sub="Quién puede entrar y qué puede hacer" onClick={()=>push({t:"accesos"})}/>
         {hay("faq") && <Fila icoNav="pregunta" titulo="Preguntas frecuentes" onClick={()=>irSeccion("faq")}/>}
       </Grupo>
@@ -9897,7 +9963,7 @@ function MobileApp(props){
           onClick={()=>{ const id="c"+Date.now().toString(36); deep.setCuentas(cs=>[...cs, {...({banco:"",tipoCuenta:"Cuenta Corriente",numero:"",rut:"",nombre:"",alias:"",email:""}), id}]); push({t:"cuentaCfg", cid:id}); }}/>}
       </Grupo>
 
-      <Grupo titulo="Pasarela de pago" nota="Por dónde paga el arrendatario en línea.">
+      <Grupo titulo="Pago en línea" nota="Por dónde paga el arrendatario por internet.">
         {(deep.gateways||[]).map(x=>(
           <Fila key={x.id} sinIco titulo={x.name} sub={x.methods}
             valor={o.gateway===x.id ? "Activa" : (x.rec?"Sugerida":"")}
@@ -10068,10 +10134,10 @@ function MobileApp(props){
       (!q || (l.nombre||"").toLowerCase().includes(q) || (l.comuna||"").toLowerCase().includes(q) || (l.fuente||"").toLowerCase().includes(q)));
     const abiertos = ls.filter(l=> l.estado!=="ganado" && l.estado!=="perdido").length;
     const ganados = ls.filter(l=> l.estado==="ganado").length;
-    return (<Pantalla titulo="CRM y leads" contexto="Prospectos, visitas y conversión" gap="14">
+    return (<Pantalla titulo="Interesados" contexto="Personas que quieren arrendar o comprar, y cómo va cada una" gap="14">
       <div className="mob-kpis2">
-        <div><span className="k">Abiertos</span><span className="v">{abiertos}</span></div>
-        <div><span className="k">Cerrados ganados</span><span className="v">{ganados}</span></div>
+        <div><span className="k">En proceso</span><span className="v">{abiertos}</span></div>
+        <div><span className="k">Cerrados con éxito</span><span className="v">{ganados}</span></div>
       </div>
       <div className="mob-buscar">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
@@ -10092,17 +10158,17 @@ function MobileApp(props){
               onClick={()=>push({t:"lead", lid:l.id})}/>
           ))}
         </div>
-      ) : <div className="mob-vacio">No hay prospectos que coincidan.</div>}
+      ) : <div className="mob-vacio">No hay interesados que coincidan.</div>}
       {!soloLectura && <button className="mob-btn pri" onClick={()=>{ const id="ld"+Date.now().toString(36);
-        deep.setLeads(x=>[{id,nombre:"Nuevo lead",telefono:"",email:"",fuente:"WhatsApp",estado:"nuevo",tipoBusqueda:"arriendo",propInteres:"",presupuesto:"",dorms:"",comuna:"",notas:"",valorUF:"",creado:Date.now(),actualizado:Date.now(),interacciones:[],visitas:[],tareas:[]},...x]);
+        deep.setLeads(x=>[{id,nombre:"Nueva persona interesada",telefono:"",email:"",fuente:"WhatsApp",estado:"nuevo",tipoBusqueda:"arriendo",propInteres:"",presupuesto:"",dorms:"",comuna:"",notas:"",valorUF:"",creado:Date.now(),actualizado:Date.now(),interacciones:[],visitas:[],tareas:[]},...x]);
         push({t:"lead", lid:id}); }}>
-        <MobIco w={18}>{MI.mas}</MobIco> Nuevo prospecto
+        <MobIco w={18}>{MI.mas}</MobIco> Nuevo interesado
       </button>}
     </Pantalla>);
   };
   const pantallaLead = (lid)=>{
     const l = (deep.leads||[]).find(x=>x.id===lid);
-    if(!l) return (<Pantalla titulo="Prospecto"><div className="mob-vacio">Este prospecto ya no está.</div></Pantalla>);
+    if(!l) return (<Pantalla titulo="Interesado"><div className="mob-vacio">Este interesado ya no está.</div></Pantalla>);
     const set=(k,v)=> deep.setLeads(ls=>ls.map(x=>x.id===lid?{...x,[k]:v,actualizado:Date.now()}:x));
     const tel=String(l.telefono||"").replace(/[^\d+]/g,"");
     const addInter=()=>{ const t=crmNota.trim(); if(!t) return;
@@ -10162,7 +10228,7 @@ function MobileApp(props){
         ))}
         {!(l.interacciones||[]).length && <Fila sinIco titulo="Sin interacciones aún" chevron={false}/>}
       </Grupo>
-      {!soloLectura && <button className="mob-btn sec" onClick={()=>{ if(window.confirm("¿Borrar este prospecto?")){ deep.setLeads(ls=>ls.filter(x=>x.id!==lid)); pop(); } }}>Borrar prospecto</button>}
+      {!soloLectura && <button className="mob-btn sec" onClick={()=>{ if(window.confirm("¿Borrar a esta persona interesada?")){ deep.setLeads(ls=>ls.filter(x=>x.id!==lid)); pop(); } }}>Borrar interesado</button>}
       <Guardado/>
     </Pantalla>);
   };
