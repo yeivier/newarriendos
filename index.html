@@ -8395,13 +8395,15 @@ function MobileApp(props){
         </button>
       )}
 
-      <Grupo titulo={"Con acceso ("+lista.length+")"}>
+      <Grupo titulo={"Con acceso ("+lista.length+")"} nota={soloLectura?null:"Toca a alguien para ver y cambiar su usuario, su permiso o ponerle una clave nueva."}>
         {lista.length ? lista.map(x=>(
-          <Fila key={x.id} ico={MI.persona} titulo={x.nombre||"Sin nombre"}
-            sub={[x.rol==="lectura"?"Solo mirar":x.rol==="arquitecto"?"Arquitecto/a · sube material":"Ver y editar", x.usuario?("usuario: "+x.usuario):null].filter(Boolean).join(" · ")}
-            extra={soloLectura?null:<button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
-              onClick={()=>quitar(x)}>Quitar</button>}
-            chevron={false}/>
+          <div key={x.id} onClick={()=>!soloLectura && AX.editar && AX.editar(x)}>
+            <Fila ico={MI.persona} titulo={x.nombre||"Sin nombre"}
+              sub={[x.rol==="lectura"?"Solo mirar":x.rol==="arquitecto"?"Arquitecto/a · sube material":"Ver y editar", x.usuario?("usuario: "+x.usuario):null].filter(Boolean).join(" · ")}
+              extra={soloLectura?null:<button className="mob-btn link" style={{fontSize:14, color:"var(--mtm)", flexShrink:0}}
+                onClick={e=>{ e.stopPropagation(); quitar(x); }}>Quitar</button>}
+              chevron={!soloLectura}/>
+          </div>
         )) : <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía nadie más tiene acceso.</div>}
       </Grupo>
 
@@ -10930,6 +10932,29 @@ function App(){
     const j=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(j.error||"No se pudo guardar");
     setUsuarioDueno(j.usuario||"");
+  };
+  /* Editar un acceso ya creado: nombre, usuario y permiso se ven y se cambian
+     tal cual. La clave nunca se puede volver a mostrar (el servidor guarda
+     solo su huella, igual que un banco): se deja una clave nueva en blanco
+     para no tocarla, o se escribe una para reemplazarla al toque. */
+  const [mAccEdit,setMAccEdit]=useState(null);
+  const [accEditForm,setAccEditForm]=useState({nombre:"",usuario:"",rol:"lectura",clave:""});
+  const [accEditBusy,setAccEditBusy]=useState(false);
+  const abrirEditarAcceso=(a)=>{ setMAccEdit(a); setAccEditForm({nombre:a.nombre||"",usuario:a.usuario||"",rol:a.rol||"lectura",clave:""}); };
+  const guardarEditarAcceso=async()=>{
+    if(!mAccEdit||accEditBusy) return;
+    if(!accEditForm.nombre.trim()){ notify("Ponle un nombre a este acceso",true); return; }
+    if(accEditForm.clave && accEditForm.clave.length<6){ notify("La clave nueva debe tener al menos 6 caracteres",true); return; }
+    setAccEditBusy(true);
+    try{
+      const r=await apiJSON("/api/acceso",{accion:"editar_acceso",id:mAccEdit.id,
+        nombre:accEditForm.nombre.trim(), usuario:accEditForm.usuario.trim(), rol:accEditForm.rol,
+        clave:accEditForm.clave});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ notify(j.error||"No se pudo guardar",true); }
+      else { setAccesos(j.accesos||[]); notify("Acceso actualizado"); setMAccEdit(null); }
+    }catch(e){ notify("Sin conexión",true); }
+    setAccEditBusy(false);
   };
   /* Entrar con Face ID o huella: activar este aparato y ver los ya activados. */
   const [caraPosible,setCaraPosible]=useState(false);
@@ -13729,6 +13754,7 @@ function App(){
     [mContact,()=>setMContact(false)], [mFicha,()=>setMFicha(null)], [mover,()=>setMover(null)],
     [mInc,()=>setMInc(null)], [mBit,()=>setMBit(null)], [mShare,()=>setMShare(null)],
     [mIncShare,()=>setMIncShare(null)], [mBusca,()=>cerrarBusca()], [menuOpen,()=>setMenuOpen(false)],
+    [mAccEdit,()=>setMAccEdit(null)],
   ];
   const panelAbierto = PANELES.some(([v])=>!!v);
   const cerrarPaneles = ()=>{ PANELES.forEach(([v,cerrar])=>{ if(v) cerrar(); }); };
@@ -13917,6 +13943,7 @@ function App(){
           setAccesos(j.accesos||[]);
         },
         usuario: guardarUsuarioDueno,
+        editar: abrirEditarAcceso,
         texto: (a)=>textoAcceso(a),
       }}
       /* Todas las acciones del escritorio, para que ninguna quede sin alcance
@@ -15061,14 +15088,14 @@ function App(){
                   {caraLista.length>0 && <div className="help" style={{marginTop:10}}>Si pierdes un aparato, quítalo de esta lista: deja de servir al instante. Tu clave sigue funcionando en cualquier caso.</div>}
                 </>}
 
-            <div className="sub-title" style={{marginTop:20}}>Cambiar mi clave</div>
+            <div className="sub-title" style={{marginTop:20,display:"flex"}}>Cambiar mi clave</div>
             <div className="grid c2" style={{gridTemplateColumns:"1fr 1fr"}}>
               <div className="field"><label className="label">Clave actual</label><input className="input" type="password" value={segForm.actual} onChange={e=>setSegForm(f=>({...f,actual:e.target.value}))}/></div>
               <div className="field"><label className="label">Clave nueva</label><input className="input" type="password" value={segForm.nueva} onChange={e=>setSegForm(f=>({...f,nueva:e.target.value}))}/></div>
             </div>
             <button className="btn btn-green btn-sm" disabled={segBusy||!segForm.actual||segForm.nueva.length<6} onClick={cambiarClave}>{segBusy?"Guardando…":"Cambiar clave"}</button>
 
-            <div className="sub-title" style={{marginTop:20}}>Tu usuario para entrar</div>
+            <div className="sub-title" style={{marginTop:20,display:"flex"}}>Tu usuario para entrar</div>
             <div className="help" style={{marginBottom:10}}>Opcional. Si lo pones, en la pantalla de entrada escribes ese usuario (tu correo, un alias o tu nombre) junto con tu clave, en vez de entrar solo con la clave.</div>
             <div className="grid c2" style={{gridTemplateColumns:"1fr auto"}}>
               <div className="field"><label className="label">Tu correo, alias o nombre</label>
@@ -15078,13 +15105,13 @@ function App(){
                 {miUsuarioBusy?"Guardando…":"Guardar"}</button>
             </div>
 
-            <div className="sub-title" style={{marginTop:20}}>Accesos de otras personas</div>
+            <div className="sub-title" style={{marginTop:20,display:"flex"}}>Accesos de otras personas</div>
             {accesos.length===0
               ? <div className="help" style={{marginBottom:10}}>Todavía no has creado accesos para nadie más.</div>
               : <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
-                  {accesos.map(a=>(<div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10}}>
-                    <div><div style={{fontWeight:700}}>{a.nombre}</div><div style={{fontSize:13,color:"var(--muted)"}}>{a.rol==="dueño"?"Puede ver y modificar":"Solo lectura"}{a.usuario?" · usuario: "+a.usuario:""}</div></div>
-                    <button className="btn btn-ghost btn-sm" onClick={()=>borrarAcceso(a.id)}><Ic n="cerrar" w={15}/> Quitar</button>
+                  {accesos.map(a=>(<div key={a.id} onClick={()=>abrirEditarAcceso(a)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--panel2)",borderRadius:10,cursor:"pointer"}}>
+                    <div><div style={{fontWeight:700}}>{a.nombre}</div><div style={{fontSize:13,color:"var(--muted)"}}>{a.rol==="dueño"?"Puede ver y modificar":a.rol==="arquitecto"?"Arquitecto/a":"Solo lectura"}{a.usuario?" · usuario: "+a.usuario:""}</div></div>
+                    <button className="btn btn-ghost btn-sm" onClick={e=>{ e.stopPropagation(); borrarAcceso(a.id); }}><Ic n="cerrar" w={15}/> Quitar</button>
                   </div>))}
                 </div>}
             <div className="grid" style={{gridTemplateColumns:"1.2fr 1.2fr 1fr 1fr",gap:10}}>
@@ -15589,6 +15616,33 @@ function App(){
           {props.filter(p=>(p.sociedad||"")===mSocDel.id).length===0 && <button className="btn btn-red" style={{flex:1}} onClick={doDelSoc}>Sí, eliminar</button>}
           <button className="btn btn-out" style={{flex:1}} onClick={()=>setMSocDel(null)}>Cancelar</button>
         </div>
+      </div>
+    </div></div>}
+
+    {mAccEdit && <div className="modal-bg" onClick={()=>setMAccEdit(null)}><div className="modal" style={{width:460}} onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><h3>Editar acceso</h3><p>Quién puede entrar y qué puede hacer.</p></div>
+      <div className="modal-body">
+        <div className="field"><label className="label">Nombre</label>
+          <input className="input" placeholder="Ej: Claudia, mi contadora" value={accEditForm.nombre} onChange={e=>setAccEditForm(f=>({...f,nombre:e.target.value}))}/></div>
+        <div className="field" style={{marginTop:12}}><label className="label">Usuario para entrar (opcional)</label>
+          <input className="input" placeholder="Su correo, un apodo o su nombre" value={accEditForm.usuario} onChange={e=>setAccEditForm(f=>({...f,usuario:e.target.value}))}/></div>
+        <div className="field" style={{marginTop:12}}><label className="label">Qué puede hacer</label>
+          <select value={accEditForm.rol} onChange={e=>setAccEditForm(f=>({...f,rol:e.target.value}))}>
+            <option value="lectura">Solo lectura</option>
+            <option value="arquitecto">Arquitecto/a</option>
+            <option value="dueño">Ver y modificar</option>
+          </select></div>
+        <div className="field" style={{marginTop:12}}><label className="label">Clave nueva (opcional)</label>
+          <input className="input" type="password" placeholder="Déjalo en blanco para no cambiarla" value={accEditForm.clave} onChange={e=>setAccEditForm(f=>({...f,clave:e.target.value}))}/></div>
+        <div className="help" style={{marginTop:10}}>Por seguridad, la clave actual no se puede volver a mostrar: el servidor solo guarda su huella, igual que un banco. Escribe una clave nueva arriba para reemplazarla al toque, o déjalo en blanco y sigue siendo la misma.</div>
+      </div>
+      <div className="modal-foot" style={{flexWrap:"wrap"}}>
+        <button className="btn btn-red" style={{flex:1}} disabled={accEditBusy} onClick={guardarEditarAcceso}>{accEditBusy?"Guardando…":"Guardar cambios"}</button>
+        <button className="btn btn-out" onClick={()=>setMAccEdit(null)}>Cancelar</button>
+        <button className="btn btn-out" style={{color:"var(--red-d)",borderColor:"var(--red-soft)",width:"100%"}}
+          onClick={async()=>{ if(!window.confirm("¿Quitar el acceso de "+(mAccEdit.nombre||"esta persona")+"?")) return;
+            await borrarAcceso(mAccEdit.id); setMAccEdit(null); }}>
+          <Ic n="cerrar" w={15}/> Eliminar este acceso</button>
       </div>
     </div></div>}
 
