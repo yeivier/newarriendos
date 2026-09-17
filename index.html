@@ -8574,17 +8574,14 @@ function MobileApp(props){
     const b = bandeja();
     return (<Pantalla titulo="Bandeja" contexto={b.todos.length ? (b.todos.length+(b.todos.length===1?" cosa por revisar":" cosas por revisar")) : "Todo al día"} gap="14">
       {b.grupos.length ? b.grupos.map(g=>(
-        <div key={g.titulo}>
-          <div className="mob-gtit">{g.titulo}</div>
-          <div className="mob-grid2">
-            {g.items.map(x=>(
-              <GridCard key={x.id} icoNav={x.ico}
-                titulo={x.t} sub={[x.s, x.val].filter(Boolean).join(" · ")}
-                punto={!b.vistosSet.has(x.id)}
-                onClick={()=>{ marcarVistos([x.id]); x.ir(); }}/>
-            ))}
-          </div>
-        </div>
+        <Grupo key={g.titulo} titulo={g.titulo}>
+          {g.items.map(x=>(
+            <Fila key={x.id} icoNav={x.ico}
+              titulo={x.t} sub={x.s} valor={x.val}
+              extra={!b.vistosSet.has(x.id) ? <span className="mob-pc-pt"></span> : null}
+              onClick={()=>{ marcarVistos([x.id]); x.ir(); }}/>
+          ))}
+        </Grupo>
       )) : (
         <div className="mob-vacio">Nada pendiente. Cuando alguien escriba, venza un cobro o quede un presupuesto sin decidir, aparece acá.</div>
       )}
@@ -8593,15 +8590,12 @@ function MobileApp(props){
           Marcar todo como visto
         </button>
       )}
-      <div>
-        <div className="mob-gtit">Ir directo</div>
-        <div className="mob-grid2">
-          <GridCard icoNav="burbuja" titulo="Chat del equipo" sub="A todos o a alguien" onClick={()=>push({t:"equipo"})}/>
-          <GridCard icoNav="carpeta" titulo="Material del equipo" sub="Planos, presupuestos, fotos" onClick={()=>push({t:"aportes"})}/>
-          <GridCard icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado" onClick={()=>push({t:"cotiz"})}/>
-          <GridCard icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy" onClick={()=>push({t:"tramites"})}/>
-        </div>
-      </div>
+      <Grupo titulo="Ir directo">
+        <Fila icoNav="burbuja" titulo="Chat del equipo" sub="A todos o a alguien" onClick={()=>push({t:"equipo"})}/>
+        <Fila icoNav="carpeta" titulo="Material del equipo" sub="Planos, presupuestos, fotos" onClick={()=>push({t:"aportes"})}/>
+        <Fila icoNav="balanza" titulo="Comparar presupuestos" sub="Cotizaciones lado a lado" onClick={()=>push({t:"cotiz"})}/>
+        <Fila icoNav="portapapeles" titulo="Trámites" sub="Qué se puede hacer hoy" onClick={()=>push({t:"tramites"})}/>
+      </Grupo>
     </Pantalla>);
   };
 
