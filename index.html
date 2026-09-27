@@ -7253,7 +7253,7 @@ function MobileApp(props){
         <MobIco w={18}>{MI.mas}</MobIco> Nueva propiedad
       </button>}
 
-      <Grupo titulo="Ver por sociedad" nota="Las sociedades propietarias, con su patrimonio y sus inmuebles.">
+      <Grupo titulo="Ver por sociedad">
         <Fila ico={MI.edif} titulo="Sociedades" sub={socs.length+" registradas"} onClick={()=>push({t:"socs"})}/>
       </Grupo>
     </div>);
@@ -7338,7 +7338,6 @@ function MobileApp(props){
           <div className="mob-grid2">
             {resto.map(p=> <CobCard key={p.id} p={p} onClick={()=>push({t:"prop", id:p.id})}/>)}
           </div>
-          <div className="mob-nota">Toca una propiedad para abrir su resumen.</div>
         </div>
       )}
 
@@ -7702,7 +7701,7 @@ function MobileApp(props){
       <button className="mob-btn pri" onClick={()=>window.open("https://www.google.com/maps/search/?api=1&query="+(tieneCoord?(p.lat+","+p.lng):q), "_blank", "noopener")}>
         <MobIco w={18}>{MI.pin}</MobIco> Abrir en Mapas
       </button>
-      <div className="mob-nota">La dirección se edita en Ajustes de la propiedad, y también en el bloque “Datos básicos” de la ficha.</div>
+      <div className="mob-nota">Se edita en Ajustes de la propiedad.</div>
     </Pantalla>);
   };
 
@@ -7739,7 +7738,7 @@ function MobileApp(props){
           <input className="mob-inp" disabled={soloLectura} type="email" value={p.tenantEmail||""} onChange={e=>set("tenantEmail", e.target.value)} placeholder="correo@ejemplo.cl"/></div>
       </Grupo>
 
-      <Grupo titulo="Antecedentes" nota="Consulta InfoCheck para traer puntaje, renta y deudas del arrendatario.">
+      <Grupo titulo="Antecedentes">
         <Fila ico={MI.grafico} titulo="Puntaje InfoCheck" valor={ic.puntaje||"—"}/>
         <Fila ico={MI.billete} titulo="Renta líquida" valor={ic.rentaLiquida? CLP(num(ic.rentaLiquida)) : "—"}/>
         <Fila ico={MI.lupa} titulo="Consultar InfoCheck" sub="Antecedentes comerciales" onClick={()=>AC.infoCheck && AC.infoCheck()}/>
@@ -7807,7 +7806,7 @@ function MobileApp(props){
         <Fila ico={MI.balanza} titulo="Contrato y firma online" sub="Redactar, enviar y firmar" onClick={()=>push({t:"contrato", id:p.id})}/>
         <Fila ico={MI.tarj} titulo="Registrar un pago" sub="Queda en el historial de la propiedad" onClick={()=>abrirCobrar(p)}/>
       </Grupo>
-      <div className="mob-nota">Todo lo que escribas se guarda solo. El bloque “Situación de arriendo” de la ficha guarda el detalle fino (forma de pago, servicios, gasto común).</div>
+      <div className="mob-nota">Se guarda solo mientras escribes.</div>
     </Pantalla>);
   };
 
@@ -7860,7 +7859,7 @@ function MobileApp(props){
         <Fila sinIco titulo="Seguros" valor={"−"+CLP(seg)} valorFuerte/>
         <Fila sinIco titulo="Gastos editables" valor={"−"+CLP(extra)} valorFuerte/>
       </Grupo>
-      <Grupo titulo="Editar el detalle" nota="Los gastos e ingresos con periodicidad, subítems y adjuntos se administran en la sección Finanzas.">
+      <Grupo titulo="Editar el detalle">
         <Fila ico={MI.banco} titulo="Crédito hipotecario" sub="Banco, dividendo y plazos"
           onClick={()=>{ const i=SECS.findIndex(s=>s.t==="Crédito hipotecario"); if(i>=0) push({t:"fichaBloque", id:p.id, i}); }}/>
         <Fila ico={MI.recibo} titulo="Gastos, cargas y seguros" sub="Contribuciones, gasto común y pólizas"
@@ -7894,7 +7893,7 @@ function MobileApp(props){
       ...c,
       items: archivos.map((a,i)=>({...a, _i:i})).filter(a=>(a.categoria||"otro")===c.k)
     })).filter(g=>g.items.length);
-    return (<Pantalla titulo="Documentos y fotos" contexto={p.name+" · guarda aquí todo lo de esta propiedad"} gap="14" accion={<Guardado/>}>
+    return (<Pantalla titulo="Documentos y fotos" contexto={p.name} gap="14" accion={<Guardado/>}>
       {archivos.length>0 && grupos.map(g=>(
         <Grupo key={g.k} titulo={g.n+" ("+g.items.length+")"}>
           {g.items.map(a=>(
@@ -7912,9 +7911,9 @@ function MobileApp(props){
           ))}
         </Grupo>
       ))}
-      {!archivos.length && <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía no hay archivos adjuntos. Sube el contrato, una propuesta, la escritura o lo que necesites guardar de esta propiedad.</div>}
+      {!archivos.length && <div className="mob-vacio" style={{padding:"20px 16px"}}>Todavía no hay archivos adjuntos.</div>}
 
-      <Grupo titulo="Adjuntar un archivo" nota="Se guarda en la plataforma, no en el teléfono. Máximo 4 MB por archivo.">
+      <Grupo titulo="Adjuntar un archivo" nota="Máximo 4 MB por archivo.">
         <div className="mob-campo"><span className="mob-lab">Qué tipo de archivo es</span>
           <select className="mob-inp" value={docCat} onChange={e=>setDocCat(e.target.value)}>
             <option value="" disabled>Elige el tipo de archivo…</option>
@@ -7945,7 +7944,6 @@ function MobileApp(props){
               </button>
             ))}
           </div>
-          <div className="mob-nota">Toca una foto para verla a tamaño completo. Se guardan tal como las subiste, sin recortar la resolución.</div>
         </div>
       )}
 
@@ -8150,7 +8148,7 @@ function MobileApp(props){
       {MOB_FICHA_DESC[s.t] ? <div className="mob-nota" style={{margin:"0 4px 4px"}}>{MOB_FICHA_DESC[s.t]}.</div> : null}
       <MobCamposFicha key={s.t} campos={s.f} valores={f} bloqueado={soloLectura}
         onCommit={(cambios)=> FI.setMuchos && FI.setMuchos(p, cambios)}/>
-      <div className="mob-nota">No hay botón Guardar: lo que escribes queda guardado solo, aquí y en el computador.</div>
+      <div className="mob-nota">Se guarda solo, sin botón Guardar.</div>
       {i+1 < SECS.length && (
         <button className="mob-btn sec" style={{width:"100%"}} onClick={()=>setPila(x=>[...x.slice(0,-1), {t:"fichaBloque", id:p.id, i:i+1}])}>
           Siguiente bloque: {MOB_FICHA_CORTO[SECS[i+1].t] || SECS[i+1].t}
@@ -8219,7 +8217,7 @@ function MobileApp(props){
             + (p.contractEnd ? (daysBetweenSafe(p.contractEnd)>=0 ? " · quedan "+daysBetweenSafe(p.contractEnd)+" días" : " · vencido") : "")}
         </span></div>
       </div>
-      <Grupo titulo="Condiciones pactadas" nota="Se editan en “Arriendo y cobro”; lo que cambies allí se guarda solo.">
+      <Grupo titulo="Condiciones pactadas" nota="Se editan en “Arriendo y cobro”.">
         <Fila sinIco titulo="Renta mensual" valor={CLP(num(p.rent))} valorFuerte/>
         <Fila sinIco titulo="Reajuste" valor={p.adjustment||"UF"}/>
         <Fila sinIco titulo="Día de pago" valor={String(p.dueDay||5)}/>
@@ -8311,7 +8309,7 @@ function MobileApp(props){
       sub:[c.tipo||"", c.telefono||c.email||""].filter(Boolean).join(" · ") }));
     const filtra = (x)=> !q || (x.nombre||"").toLowerCase().includes(q) || (x.sub||"").toLowerCase().includes(q);
     const va = vigentes.filter(filtra), oa = otros.filter(filtra);
-    return (<Pantalla titulo="Arrendatarios y contactos" contexto="Quién arrienda cada propiedad, y con quién hablas" gap="14">
+    return (<Pantalla titulo="Arrendatarios y contactos" contexto="Tus arrendatarios y contactos" gap="14">
       <div className="mob-buscar">
         <span className="ic"><MobIco w={18}>{MI.lupa}</MobIco></span>
         <input value={buscaCon} onChange={e=>setBuscaCon(e.target.value)} placeholder="Buscar persona, propiedad o teléfono"/>
@@ -8474,7 +8472,7 @@ function MobileApp(props){
         </button>
       )}
 
-      <Grupo titulo={"Con acceso ("+lista.length+")"} nota={soloLectura?null:"Toca a alguien para ver y cambiar su usuario, su permiso o ponerle una clave nueva."}>
+      <Grupo titulo={"Con acceso ("+lista.length+")"}>
         {lista.length ? lista.map(x=>(
           <div key={x.id} onClick={()=>!soloLectura && AX.editar && AX.editar(x)}>
             <Fila ico={MI.persona} titulo={x.nombre||"Sin nombre"}
@@ -8487,7 +8485,7 @@ function MobileApp(props){
       </Grupo>
 
       {!soloLectura && (
-        <Grupo titulo="Tu usuario para entrar" nota="Opcional. Si lo pones, en la pantalla de entrada escribes ese usuario y tu clave, en vez de que el sistema pruebe la clave contra todos los accesos.">
+        <Grupo titulo="Tu usuario para entrar" nota="Opcional: te deja identificarte con un usuario, además de tu clave.">
           <div className="mob-campo"><span className="mob-lab">Tu correo, alias o nombre</span>
             <div style={{display:"flex", gap:8}}>
               <input className="mob-inp" value={miUsuario} onChange={e=>setMiUsuario(e.target.value)}
@@ -8976,7 +8974,7 @@ function MobileApp(props){
             <div className="mob-hub-top">
               <div className="fila"><span className="lb">Chat de WhatsApp</span><span className="mob-chip ink">IA</span></div>
               <div className="cifra" style={{fontSize:"clamp(19px,5.4vw,24px)"}}>Traer todo de un chat</div>
-              <div className="mob-porque">Sube el chat exportado (con sus fotos, audios y documentos). Leo las fotos de daños, los presupuestos y los acuerdos, los adjunto donde corresponde y anoto lo importante en la propiedad.</div>
+              <div className="mob-porque">Leo las fotos, los presupuestos y los acuerdos, y anoto lo importante en la propiedad.</div>
             </div>
             <div className="mob-nota">En WhatsApp: abre el chat → toca el nombre → “Exportar chat” → “Adjuntar archivos”. Te llega un .zip (o un .txt). Súbelo aquí.</div>
           </div>
@@ -9273,7 +9271,7 @@ function MobileApp(props){
             <div className="fila"><span className="lb">Agente experto</span>
               <span className="mob-chip ink">IA</span></div>
             <div className="cifra" style={{fontSize:"clamp(19px,5.4vw,24px)"}}>Leer este plano</div>
-            <div className="mob-porque">Identifica qué es, lee los recintos y las medidas acotadas, estima superficies y sugiere mejoras con criterio de arquitecto.</div>
+            <div className="mob-porque">Identifica el plano, calcula superficies y sugiere mejoras.</div>
           </div>
           <button className="mob-btn pri" disabled={planoBusy || !img} onClick={()=>preguntarPlano(a, "", true)}>
             {planoBusy ? "Leyendo el plano…" : "Analizar con IA"}
@@ -9442,7 +9440,7 @@ function MobileApp(props){
     const ultimo = anaMsgs[anaMsgs.length-1];
     const esperando = anaBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
     const elegir=(x)=>{ if(x&&x.length) setAnaSel(s=>[...s,...x].slice(0,12)); };
-    return (<Pantalla titulo={anaModo==="impuestos"?"Impuestos":"Analizar"} contexto="Adjunta lo que sea y la IA lo analiza a fondo, en simple" gap="14">
+    return (<Pantalla titulo={anaModo==="impuestos"?"Impuestos":"Analizar"} gap="14">
       {!hayConv ? (<React.Fragment>
         <div className="mob-anamodos">
           {ANA_MODOS.map(m=>(
@@ -9475,12 +9473,12 @@ function MobileApp(props){
           </div>
         )}
         <textarea className="mob-inp" rows={3} value={anaTexto} onChange={e=>setAnaTexto(e.target.value)}
-          placeholder={anaModo==="impuestos" ? "Cuéntame tu situación tributaria (o adjunta contribuciones, tu declaración, boletas…)" : "¿Algo puntual que quieras saber? (opcional)"}
+          placeholder={anaModo==="impuestos" ? "Tu situación tributaria (opcional)" : "¿Algo puntual que quieras saber? (opcional)"}
           style={{resize:"none"}}/>
         <button className="mob-btn pri" disabled={anaBusy || (!anaSel.length && !anaTexto.trim())} onClick={()=>analizar(true)}>
           {anaBusy ? (anaFase||"Analizando…") : "Analizar con IA"}
         </button>
-        <div className="mob-nota">Puedes adjuntar fotos, PDF, videos, ZIP o una carpeta. Análisis orientativo; para temas legales, municipales o tributarios, confírmalo con un especialista o en el SII.</div>
+        <div className="mob-nota">Análisis orientativo; para temas legales o tributarios, confírmalo con un especialista.</div>
       </React.Fragment>) : (
         <div className="mob-bloque">
           <div className="mob-iachat">
@@ -9583,9 +9581,9 @@ function MobileApp(props){
      es para lo que ESE no cubre: condiciones especiales, compraventa,
      propuestas y cartas de oferta — redactado a la medida por IA. */
   const CTR_TIPOS = [
-    { k:"arriendo",  n:"Arriendo con condiciones especiales", ph:"Ej: renta mixta (un monto fijo más un % de lo que venda el negocio), contrato por 5 años, tiene que dejar listo el local antes de una fecha, y otra persona firma como respaldo si no paga…" },
-    { k:"compraventa", n:"Compraventa", ph:"Ej: el departamento se vende en UF 25.000. Me pagan el 20% al firmar y el resto en 60 meses, con la propiedad como garantía del banco…" },
-    { k:"propuesta", n:"Propuesta o carta de oferta", ph:"Ej: propuesta de arriendo comercial con período de gracia de 3 meses, renta creciente por temporada, opción de compra…" },
+    { k:"arriendo",  n:"Arriendo con condiciones especiales", ph:"Ej: renta mixta, contrato por 5 años, con un aval que respalda si no paga…" },
+    { k:"compraventa", n:"Compraventa", ph:"Ej: se vende en UF 25.000, 20% al firmar y el resto en 60 meses…" },
+    { k:"propuesta", n:"Propuesta o carta de oferta", ph:"Ej: arriendo comercial con 3 meses de gracia y opción de compra…" },
     { k:"otro",      n:"Otro documento", ph:"Describe qué documento necesitas y sus condiciones." },
   ];
   const [ctrProp, setCtrProp] = React.useState("");
@@ -9741,7 +9739,6 @@ function MobileApp(props){
           <MobIco w={18}>{MI.chispas}</MobIco> {calcLeyendo ? "Leyendo el archivo…" : "Subir archivo y autocompletar"}
         </button>
         {calcAviso && <div className="mob-aviso-ok">{calcAviso}</div>}
-        <div className="mob-nota" style={{marginTop:"-4px"}}>Sube el aviso, la ficha o una foto de la publicación (foto, PDF, ZIP o texto) y completo los datos solo. Después revisas y ajustas.</div>
         <div className="mob-bloque">
           <h2 className="mob-h2">¿Dónde está?</h2>
           <label className="calc-f"><span>Región</span>
@@ -9789,7 +9786,6 @@ function MobileApp(props){
             <textarea className="mob-inp" rows={2} value={calcDatos.notas} onChange={e=>setCD("notas",e.target.value)} style={{resize:"none"}} placeholder="Vista, orientación, terraza, piso… lo que quieras agregar"/></label>
         </div>
         <button className="mob-btn pri" disabled={calcBusy} onClick={calcular}>{calcBusy?"Calculando…":"Calcular precio de arriendo"}</button>
-        <div className="mob-nota">Estimación experta según el mercado por comuna; no es una tasación oficial. Conviene contrastarla con avisos parecidos en portales (Portal Inmobiliario, Yapo, Toctoc).</div>
       </React.Fragment>) : (<React.Fragment>
         <div className="mob-precios">
           {cardP("Mínimo", calcPrecios&&calcPrecios.min)}
@@ -10311,7 +10307,7 @@ function MobileApp(props){
           <input className="mob-inp" value={o.whatsappEnvio||""} disabled={soloLectura} onChange={e=>dsetOwner("whatsappEnvio", e.target.value)}/></div>
       </Grupo>
 
-      <Grupo titulo="Asesor con IA" nota="El botón flotante del asesor. Se aplica igual en la plataforma y en la ficha técnica.">
+      <Grupo titulo="Asesor con IA">
         <div className="mob-fila-sw">
           <div style={{minWidth:0,flex:1}}>
             <div className="mob-lab" style={{textTransform:"none",fontSize:"15px",letterSpacing:0,fontWeight:600,color:"var(--mib)"}}>Mostrar el botón del asesor</div>
@@ -10432,7 +10428,7 @@ function MobileApp(props){
       (!q || (l.nombre||"").toLowerCase().includes(q) || (l.comuna||"").toLowerCase().includes(q) || (l.fuente||"").toLowerCase().includes(q)));
     const abiertos = ls.filter(l=> l.estado!=="ganado" && l.estado!=="perdido").length;
     const ganados = ls.filter(l=> l.estado==="ganado").length;
-    return (<Pantalla titulo="Interesados" contexto="Personas que quieren arrendar o comprar, y cómo va cada una" gap="14">
+    return (<Pantalla titulo="Interesados" contexto="Personas interesadas en arrendar o comprar" gap="14">
       <div className="mob-kpis2">
         <div><span className="k">En proceso</span><span className="v">{abiertos}</span></div>
         <div><span className="k">Cerrados con éxito</span><span className="v">{ganados}</span></div>
@@ -10552,7 +10548,6 @@ function MobileApp(props){
               onClick={()=>push({t:"informeProp", id:p.id})}/>
           ))}
         </div>
-        <div className="mob-nota">Cada una abre su informe: dividendo, gastos, pagos y balance.</div>
       </div>
     </Pantalla>
   );
@@ -10560,8 +10555,6 @@ function MobileApp(props){
     <Pantalla titulo={p.name} contexto="Informe de la propiedad" gap="14">
       <div className="mob-hub-top claro">
         <div className="fila"><span className="lb">{p.comuna||p.address||""}</span></div>
-        <div className="mob-porque" style={{color:"var(--mtx)", borderTopColor:"var(--mln)"}}>
-          El informe reúne el arriendo, el dividendo, las contribuciones, los seguros, los gastos y los pagos registrados.</div>
       </div>
       <div className="mob-grid2">
         <GridCard icoNav="tendencia" titulo="Ver informe" sub="Imprimir / PDF" onClick={()=>deep.informeProp&&deep.informeProp(p)}/>
@@ -10581,7 +10574,6 @@ function MobileApp(props){
   const pantallaLegal = ()=>{
     const arrendadas = propiedades.filter(p=>p.use==="arriendo");
     return (<Pantalla titulo="Documentos legales" contexto="Contratos, firma y antecedentes" gap="14">
-      <div className="mob-nota">Cada propiedad guarda su contrato, la firma y los antecedentes. Tócala para abrir lo suyo.</div>
       <div>
         <div className="mob-gtit">Contrato y firma por propiedad</div>
         <div className="mob-grid2">
