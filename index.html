@@ -765,7 +765,7 @@
        que se pueden tocar— sin tocar el escritorio ni perder una sola
        función, porque el contenido es el mismo. */
     .app.en-movil.modo-completo > .main{
-      background:#F2F2F7;
+      background:#FFFFFF;
       padding:calc(58px + env(safe-area-inset-top,0px)) 0 calc(96px + env(safe-area-inset-bottom,0px));
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
       -webkit-font-smoothing:antialiased;
@@ -863,7 +863,7 @@
      Mismo lenguaje del diseño móvil: lo mío en negro a la derecha, lo de los
      demás en blanco a la izquierda. Sirve igual en el móvil (pantalla completa)
      y en el escritorio (dentro de su sección, con .compacto). */
-  .chat-eq{ display:flex; flex-direction:column; background:#F2F2F7;
+  .chat-eq{ display:flex; flex-direction:column; background:#FFFFFF;
     height:calc(100dvh - 46px - env(safe-area-inset-bottom,0px));
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif; }
   .chat-eq.compacto{ height:min(620px,70vh); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
@@ -914,7 +914,7 @@
      cuadrado— y no con una franja negra, que se veía pegada de otra parte.
      El título no se repite aquí: lo pone la propia sección, en grande. */
   .mob-volver-barra{ display:none; position:fixed; top:0; left:0; right:0; z-index:170;
-    background:#F2F2F7; color:#101012; align-items:center; gap:12px;
+    background:#FFFFFF; color:#101012; align-items:center; gap:12px; border-bottom:1px solid #E5E5EA;
     padding:calc(10px + env(safe-area-inset-top,0px)) 20px 4px;
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif; }
   .mob-volver-barra button{ width:44px; height:44px; border-radius:14px; background:#fff;
@@ -929,7 +929,7 @@
     --mib:#101012; --mib2:#1E1E22; --mib2b:#2C2C31;
     --mon:#F0F0F3; --mon2:#8C8C96;
     --mtx:#2B2B30; --mtm:#5A5A63; --mtm2:#6B6B75;
-    --mbg:#F2F2F7; --msf:#FFFFFF;
+    --mbg:#FFFFFF; --msf:#FFFFFF;
     --mln:#E5E5EA; --mli:#EDEDF2;
     --mfl:#EFEFF4; --mfl2:#E8E8EE;
     --mbr:#D9D9DE; --mbr2:#D4D4D9;
@@ -1116,7 +1116,7 @@
     --mon:#FFFFFF; --mon2:rgba(255,255,255,.62);
     --mtx:#000000;
     --mtm:rgba(60,60,67,.60); --mtm2:rgba(60,60,67,.60);
-    --mbg:#F2F2F7; --msf:#FFFFFF;
+    --mbg:#FFFFFF; --msf:#FFFFFF;
     --mln:rgba(60,60,67,.18); --mli:rgba(60,60,67,.18);
     --mfl:rgba(120,120,128,.12); --mfl2:rgba(120,120,128,.12);
     --mbr:rgba(60,60,67,.18); --mbr2:rgba(60,60,67,.29);
@@ -1160,7 +1160,7 @@
      perdían dentro del scroll. */
   .mob-gtit{ font-size:26px; font-weight:700; color:var(--mib); letter-spacing:-.024em;
     margin:10px 2px 2px; text-transform:none; font-family:inherit; }
-  .mob-group{ background:var(--msf); border-radius:16px; overflow:hidden; margin-top:12px; }
+  .mob-group{ background:var(--msf); border:1px solid var(--mln); border-radius:16px; overflow:hidden; margin-top:12px; }
   /* Título con una acción a la derecha ("Prioridad · Ver cobros"). */
   .mob-gtit-fila{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   .mob-gtit-fila .mob-gtit{ margin-bottom:0; }
@@ -1185,7 +1185,7 @@
   .mob-cell .mob-chip{ flex-shrink:0; max-width:40%; }
   .mob-cell .val.dato{ color:var(--mib); font-weight:700; }
   .mob-kpis2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-  .mob-kpis2 > div{ background:var(--msf); border-radius:16px; padding:16px;
+  .mob-kpis2 > div{ background:var(--msf); border:1px solid var(--mln); border-radius:16px; padding:16px;
     display:flex; flex-direction:column; gap:6px; min-width:0; }
   .mob-kpis2 .k{ font-size:14.5px; color:var(--mtm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
@@ -1228,7 +1228,7 @@
   /* Documento a pantalla completa DENTRO de la app (informes, liquidaciones):
      arriba una barra con "Cerrar" —siempre se puede volver, en el teléfono ya no
      hay que cerrar la app— y "Imprimir / Guardar PDF". */
-  .doc-vista{ position:fixed; inset:0; z-index:600; background:#F4F5F7; display:flex; flex-direction:column; }
+  .doc-vista{ position:fixed; inset:0; z-index:600; background:#FFFFFF; display:flex; flex-direction:column; }
   .doc-vista .barra{ display:flex; align-items:center; gap:10px; flex-shrink:0;
     padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px; background:#fff; border-bottom:1px solid #E5E5EA; }
   .doc-vista .barra .sp{ flex:1; }
@@ -1236,6 +1236,8 @@
     background:#EFEFF4; border:none; border-radius:12px; padding:0 15px; font-family:inherit; font-size:15px;
     font-weight:650; color:#101012; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .doc-vista .barra button.pri{ background:#101012; color:#fff; }
+  .doc-vista-aviso{ flex-shrink:0; padding:8px 14px; background:#FBEFD6; color:#8A5A00; font-size:13px;
+    font-weight:650; text-align:center; border-bottom:1px solid #E5E5EA; }
   .doc-vista iframe{ flex:1; width:100%; border:none; background:#fff; }
   .mob-kpis2 .v{ font-size:clamp(19px,5.6vw,26px); font-weight:700; letter-spacing:-.028em;
     color:var(--mib); font-variant-numeric:tabular-nums; line-height:1.08;
@@ -1340,7 +1342,7 @@
   .mob-bloque{ display:flex; flex-direction:column; gap:12px; }
 
   .mob-prio{ display:flex; align-items:center; gap:14px; width:100%; text-align:left;
-    background:var(--msf); border:none; border-radius:18px; padding:16px; min-height:80px;
+    background:var(--msf); border:1px solid var(--mln); border-radius:18px; padding:16px; min-height:80px;
     font-family:inherit; color:var(--mtx); cursor:pointer; min-width:0; }
   .mob-prio:active{ background:#FAFAFC; }
   .mob-prio.quieta{ cursor:default; }
@@ -1358,7 +1360,7 @@
   .mob-prio .chev{ color:rgba(60,60,67,.3); flex-shrink:0; display:flex; }
 
   .mob-acc2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-  .mob-acc2 > button{ background:var(--msf); border:none; border-radius:18px; padding:18px;
+  .mob-acc2 > button{ background:var(--msf); border:1px solid var(--mln); border-radius:18px; padding:18px;
     min-height:112px; display:flex; flex-direction:column; align-items:flex-start;
     justify-content:space-between; gap:18px; font-family:inherit; text-align:left;
     color:var(--mib); cursor:pointer; min-width:0; }
@@ -1367,7 +1369,7 @@
     letter-spacing:-.018em; line-height:1.2; overflow:hidden;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 
-  .mob-act{ background:var(--msf); border-radius:18px; overflow:hidden; }
+  .mob-act{ background:var(--msf); border:1px solid var(--mln); border-radius:18px; overflow:hidden; }
   .mob-act > *{ display:flex; align-items:center; gap:12px; width:100%; padding:15px 16px;
     background:transparent; border:none; font-family:inherit; text-align:left;
     color:var(--mtx); position:relative; min-height:64px; min-width:0; cursor:pointer; }
@@ -1541,7 +1543,9 @@
   .mob-iamsg .md-ul li::before{ content:""; position:absolute; left:3px; top:8px; width:5px; height:5px;
     border-radius:50%; background:var(--mtm); }
   .mob-iamsg .md strong{ font-weight:750; color:var(--mtx); }
-  .mob-iamsg .md-tabla-wrap{ overflow-x:auto; margin:0 0 9px; -webkit-overflow-scrolling:touch; }
+  .mob-iamsg .md-tabla-wrap{ margin:0 0 9px; position:relative; }
+  .mob-iamsg .md-tabla-pista{ font-size:11.5px; color:var(--mtm); font-weight:650; margin:0 0 5px; text-align:center; }
+  .mob-iamsg .md-tabla-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   .mob-iamsg .md-tabla{ border-collapse:collapse; width:100%; min-width:340px; font-size:13px; font-variant-numeric:tabular-nums; }
   .mob-iamsg .md-tabla th, .mob-iamsg .md-tabla td{ padding:7px 10px; text-align:left; border-bottom:1px solid var(--mln); white-space:nowrap; }
   .mob-iamsg .md-tabla th{ color:var(--mtm); font-weight:650; font-size:11.5px; text-transform:uppercase; letter-spacing:.02em; }
@@ -1891,8 +1895,9 @@
   .mob-hero-h, .mob-h-scr, .mob-t2, .mob-lev-head .nm, .puerta-caja h2{ letter-spacing:-.03em; }
   .mob-num-big, .mob-num-med, .mob-hub-top .cifra{ font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
 
-  /* Neutros con más cuerpo: tinta profunda y papel apenas cálido. */
-  .mob-app{ --mib:#0B0B0C; --mib2:#17171A; --mbg:#F2F1EF;
+  /* Blanco y negro puro: sin fondo gris ni papel cálido — la plataforma es
+     estrictamente monocromática, tinta profunda sobre blanco. */
+  .mob-app{ --mib:#0B0B0C; --mib2:#17171A; --mbg:#FFFFFF;
     --mln:#E8E6E2; --mli:#EEEDEA; --mfl:#EFEEEB; --mfl2:#E9E7E3; background:var(--mbg); }
 
   /* Elevación real: sombras suaves en capas, no superficies planas. */
@@ -6067,8 +6072,8 @@ const MOB_CARD_CORTO = {
   "CRM y leads":"Interesados",
   "Comunicaciones":"Mensajes listos",
   "Analizar un documento":"Analizar",
-  "Matriz de decisión":"Decisiones",
-  "Generador de contratos":"Contratos IA",
+  "Matriz de decisión":"Comparar y decidir",
+  "Generador de contratos":"Redactar contrato",
   "Impuestos y contribuciones":"Impuestos",
   "Calculadora de arriendo":"Calculadora",
   "Equipo y accesos":"Accesos",
@@ -6094,10 +6099,16 @@ function MdMini({ texto }){
   const cerrar = ()=>{ if(viñetas){ out.push(<ul key={"u"+out.length} className="md-ul">{viñetas}</ul>); viñetas = null; } };
   const cerrarTabla = ()=>{
     if(tabla && tabla.filas.length){
-      out.push(<div key={"t"+out.length} className="md-tabla-wrap"><table className="md-tabla">
+      // Aviso de que se puede deslizar: en el resto de la app nada se desliza
+      // de lado, así que sin esta pista nadie prueba y se pierde la mitad de
+      // la tabla (columnas fuera de la pantalla en un iPhone angosto).
+      const anchas = (tabla.header||tabla.filas[0]||[]).length > 2;
+      out.push(<div key={"t"+out.length} className="md-tabla-wrap">
+        {anchas && <div className="md-tabla-pista">◄ Desliza para ver todas las columnas ►</div>}
+        <div className="md-tabla-scroll"><table className="md-tabla">
         {tabla.header && <thead><tr>{tabla.header.map((c,j)=><th key={j}><MdInline t={c}/></th>)}</tr></thead>}
         <tbody>{tabla.filas.map((f,i)=>(<tr key={i}>{f.map((c,j)=><td key={j}><MdInline t={c}/></td>)}</tr>))}</tbody>
-      </table></div>);
+      </table></div></div>);
     }
     tabla = null;
   };
@@ -7864,15 +7875,15 @@ function MobileApp(props){
      contrato, propuestas, escrituras, comprobantes, lo que sea. Cada archivo
      se guarda con una categoría para que la lista quede ordenada y sea obvio
      dónde volver a encontrarlo — nada de adivinar entre Documentos o Bitácora. */
-  const [docCat, setDocCat] = React.useState("contrato");
+  const [docCat, setDocCat] = React.useState("");
   const DOC_CATS = [
-    { k:"contrato",    n:"Contrato" },
-    { k:"propuesta",   n:"Propuesta u oferta" },
-    { k:"escritura",   n:"Escritura / notarial" },
-    { k:"comprobante", n:"Comprobante" },
-    { k:"otro",        n:"Otro" },
+    { k:"contrato",    n:"Contrato",             frase:"el contrato" },
+    { k:"propuesta",   n:"Propuesta u oferta",   frase:"la propuesta u oferta" },
+    { k:"escritura",   n:"Escritura o notarial", frase:"la escritura o documento notarial" },
+    { k:"comprobante", n:"Comprobante",          frase:"el comprobante" },
+    { k:"otro",        n:"Otro",                 frase:"el archivo" },
   ];
-  const docCatNombre = (k)=> (DOC_CATS.find(c=>c.k===k)||{}).n || "Otro";
+  const docCatFrase  = (k)=> (DOC_CATS.find(c=>c.k===k)||{}).frase || "el archivo";
   const pantallaDocs = (p)=>{
     const f = fichaDe(p);
     const archivos = f.archivos||[];
@@ -7906,19 +7917,20 @@ function MobileApp(props){
       <Grupo titulo="Adjuntar un archivo" nota="Se guarda en la plataforma, no en el teléfono. Máximo 4 MB por archivo.">
         <div className="mob-campo"><span className="mob-lab">Qué tipo de archivo es</span>
           <select className="mob-inp" value={docCat} onChange={e=>setDocCat(e.target.value)}>
+            <option value="" disabled>Elige el tipo de archivo…</option>
             {DOC_CATS.map(c=><option key={c.k} value={c.k}>{c.n}</option>)}
           </select></div>
-        <label className="mob-btn pri" style={{display:"flex", cursor:"pointer", marginTop:10}}>
-          <MobIco w={18}>{MI.clip}</MobIco> Adjuntar {docCatNombre(docCat).toLowerCase()}
-          <input type="file" multiple style={{display:"none"}} onChange={async(e)=>{
+        <label className="mob-btn pri" style={{display:"flex", cursor:docCat?"pointer":"not-allowed", opacity:docCat?1:.45, marginTop:10}}>
+          <MobIco w={18}>{MI.clip}</MobIco> {docCat ? ("Adjuntar "+docCatFrase(docCat)) : "Elige primero el tipo de archivo"}
+          <input type="file" multiple disabled={!docCat} style={{display:"none"}} onChange={async(e)=>{
             const files = Array.from(e.target.files||[]); e.target.value="";
-            if(!files.length) return;
+            if(!files.length || !docCat) return;
             const nuevos=[];
             for(const file of files){
               try{ const r=await uploadArchivo(file); nuevos.push({url:r.url, name:r.name||file.name, contentType:r.contentType||file.type, size:file.size, categoria:docCat}); }
               catch(err){ notify(err.message||("No se pudo subir "+file.name), true); }
             }
-            if(nuevos.length && FI.set){ FI.set(p, "archivos", [...archivos, ...nuevos]); notify(nuevos.length+" archivo(s) adjuntado(s) en "+docCatNombre(docCat).toLowerCase()); }
+            if(nuevos.length && FI.set){ FI.set(p, "archivos", [...archivos, ...nuevos]); notify(nuevos.length+" archivo(s) adjuntado(s) como "+docCatFrase(docCat)); }
           }}/>
         </label>
       </Grupo>
@@ -8223,6 +8235,7 @@ function MobileApp(props){
         <Fila ico={MI.lapiz} titulo="Firma notarial online" sub="Enviar a firmar y seguir el estado" onClick={()=>AC.firma && AC.firma(p)}/>
         <Fila ico={MI.dinero} titulo="Arriendo y cobro" sub="Montos, plazos y garantía" onClick={()=>push({t:"arriendo", id:p.id})}/>
         {hay("legal") && <Fila icoNav="balanza" titulo="Documentos legales" sub="Antecedentes y contratos" onClick={()=>irSeccion("legal", p)}/>}
+        <Fila ico={MI.chispas} titulo="¿Compraventa o condiciones especiales?" sub="Generador de contratos con IA" onClick={()=>{ setCtrProp(String(p.id)); push({t:"contratoIA"}); }}/>
       </Grupo>
     </Pantalla>);
   };
@@ -9525,9 +9538,9 @@ function MobileApp(props){
     const hayConv = decMsgs.length>0;
     const ultimo = decMsgs[decMsgs.length-1];
     const esperando = decBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
-    return (<Pantalla titulo="Matriz de decisión" contexto="Criterios, pesos y puntajes — análisis técnico con IA" gap="14">
+    return (<Pantalla titulo="Matriz de decisión" contexto="Compara tus opciones y te dice cuál conviene más, con los números detrás" gap="14">
       {!hayConv ? (<React.Fragment>
-        <div className="mob-porque" style={{margin:"0 2px"}}>Cuéntame qué decisión debes tomar y entre qué opciones. La IA arma una matriz técnica: criterios, pesos, puntaje de cada opción y el cálculo ponderado, con una recomendación al final.</div>
+        <div className="mob-porque" style={{margin:"0 2px"}}>Cuéntame qué decisión debes tomar y entre qué opciones. Yo reviso qué es lo más importante para ti (por ejemplo: precio, plazo, confianza), le doy un puntaje a cada opción en cada cosa, y al final te digo cuál conviene más y por qué.</div>
         <textarea className="mob-inp" rows={7} value={decTexto} onChange={e=>setDecTexto(e.target.value)}
           placeholder={"Ej: Tengo dos ofertas por el Depto 3B: Arrendatario A ofrece $650.000 con contrato de 1 año, buenas referencias, sin garantía adicional. Arrendatario B ofrece $600.000 con contrato de 2 años, es funcionario público, con garantía de 2 meses. ¿A quién le arriendo?"}
           style={{resize:"none"}}/>
@@ -9571,8 +9584,8 @@ function MobileApp(props){
      es para lo que ESE no cubre: condiciones especiales, compraventa,
      propuestas y cartas de oferta — redactado a la medida por IA. */
   const CTR_TIPOS = [
-    { k:"arriendo",  n:"Arriendo con condiciones especiales", ph:"Ej: renta mixta (fijo + % de ingresos), plazo de 5 años, obligación de habilitar el local antes de una fecha, con garante solidario adicional…" },
-    { k:"compraventa", n:"Compraventa", ph:"Ej: precio UF 25.000, pie del 20% a la firma, saldo en 60 cuotas mensuales en UF con 5% de interés anual, hipoteca de primer grado como garantía…" },
+    { k:"arriendo",  n:"Arriendo con condiciones especiales", ph:"Ej: renta mixta (un monto fijo más un % de lo que venda el negocio), contrato por 5 años, tiene que dejar listo el local antes de una fecha, y otra persona firma como respaldo si no paga…" },
+    { k:"compraventa", n:"Compraventa", ph:"Ej: el departamento se vende en UF 25.000. Me pagan el 20% al firmar y el resto en 60 meses, con la propiedad como garantía del banco…" },
     { k:"propuesta", n:"Propuesta o carta de oferta", ph:"Ej: propuesta de arriendo comercial con período de gracia de 3 meses, renta creciente por temporada, opción de compra…" },
     { k:"otro",      n:"Otro documento", ph:"Describe qué documento necesitas y sus condiciones." },
   ];
@@ -9615,8 +9628,10 @@ function MobileApp(props){
         const palabras = acc.replace(/<[^>]+>/g," ").trim().split(/\s+/).filter(Boolean).length;
         setCtrFase(palabras>0 ? ("Redactando… "+palabras+" palabras") : "Redactando…"); }
       if(!acc.trim()){ notify("No alcancé a redactarlo. Prueba de nuevo con un poco más de detalle.", true); setCtrBusy(false); setCtrFase(""); return; }
-      deep.verDocumento && deep.verDocumento(ctrEnvolver(acc, tipo.n+(p?" — "+p.name:"")));
-      notify("Documento listo. Revísalo con un abogado antes de firmarlo.");
+      // El recordatorio va fijo en la barra del visor (no en el toast: se
+      // abriría al mismo tiempo que este visor de pantalla completa y
+      // quedaría tapado detrás, sin que nadie llegue a verlo).
+      deep.verDocumento && deep.verDocumento(ctrEnvolver(acc, tipo.n+(p?" — "+p.name:"")), "Es un borrador: revísalo con un abogado antes de firmarlo.");
     }catch(_e){ notify("No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez.", true); }
     setCtrBusy(false); setCtrFase("");
   };
@@ -9624,6 +9639,7 @@ function MobileApp(props){
     const tipoActual = CTR_TIPOS.find(t=>t.k===ctrTipo)||CTR_TIPOS[0];
     return (<Pantalla titulo="Generador de contratos" contexto="Redactado con IA, con el rigor de un abogado chileno" gap="14">
       <div className="mob-porque" style={{margin:"0 2px"}}>Para un arriendo estándar, usa <b>Generar o editar el contrato</b> dentro de cada propiedad: es instantáneo y gratis. Este generador es para lo que ese no cubre: condiciones especiales, compraventa, o una propuesta para negociar.</div>
+      <div className="mob-nota" style={{margin:"0 2px", fontWeight:650, color:"var(--mtx)"}}>Recuerda: esto redacta un borrador. Antes de firmar, tiene que revisarlo un abogado y autorizarse ante notario.</div>
       <Grupo titulo="¿Sobre qué propiedad?" nota="Opcional. Si la eliges, se usan sus datos (dirección, sociedad, arrendatario) para redactar el documento.">
         <div className="mob-campo">
           <select className="mob-inp" value={ctrProp} onChange={e=>setCtrProp(e.target.value)}>
@@ -12782,7 +12798,10 @@ function App(){
   // "Imprimir / Guardar PDF"). Antes usaba window.open, que en el teléfono con la
   // app agregada a la pantalla de inicio abría una vista sin retorno: había que
   // cerrar la app para volver. Ahora nunca se queda atrapado.
-  const abrirImprimir=(html)=>{ setDocVista(html); };
+  // `aviso` es opcional: un recordatorio corto que queda fijo en la barra del
+  // visor (no en el toast, que se cierra solo y puede quedar tapado por este
+  // mismo visor si se abre en el mismo instante).
+  const abrirImprimir=(html, aviso)=>{ setDocVista(aviso ? {html, aviso} : html); };
   const docPro=(titulo,subtitulo,bodyHtml)=>`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>
     @page{margin:16mm 14mm}
     body{font-family:Georgia,'Times New Roman',serif;color:#15181D;margin:0;padding:0;font-size:12.5px;line-height:1.55}
@@ -14110,7 +14129,7 @@ function App(){
         informeGeneral: ()=>abrirImprimir(informeGeneralHTML()),
         informeGeneralWord: ()=>descargarBlob("informe_general_"+todayISO()+".doc", informeGeneralHTML(), "application/msword"),
         informeProp: (pp)=>abrirImprimir(informePropHTML(pp)),
-        verDocumento: (html)=>abrirImprimir(html),
+        verDocumento: (html, aviso)=>abrirImprimir(html, aviso),
         informePropWord: (pp)=>descargarBlob("informe_"+(pp.name||"propiedad").replace(/[^a-z0-9]+/gi,"_")+"_"+todayISO()+".doc", informePropHTML(pp), "application/msword")
       }}
       setMPay={setMPay} setMContract={setMContract} setMFicha={setMFicha}
@@ -15803,14 +15822,17 @@ function App(){
       </div>
     </div>}
 
-    {docVista && <div className="doc-vista" role="dialog" aria-label="Documento">
+    {docVista && (()=>{ const dvHtml = typeof docVista==="string" ? docVista : docVista.html;
+      const dvAviso = typeof docVista==="string" ? null : docVista.aviso;
+      return (<div className="doc-vista" role="dialog" aria-label="Documento">
       <div className="barra">
         <button onClick={()=>setDocVista(null)}><Ic n="chevronL" w={18} sw={2.4}/> Cerrar</button>
         <span className="sp"></span>
         <button className="pri" onClick={()=>{ try{ const f=document.getElementById("docFrame"); f&&f.contentWindow&&f.contentWindow.focus(); f&&f.contentWindow&&f.contentWindow.print(); }catch(e){} }}><Ic n="descarga" w={17}/> Imprimir / Guardar PDF</button>
       </div>
-      <iframe id="docFrame" title="Documento" srcDoc={docVista}></iframe>
-    </div>}
+      {dvAviso && <div className="doc-vista-aviso">{dvAviso}</div>}
+      <iframe id="docFrame" title="Documento" srcDoc={dvHtml}></iframe>
+    </div>); })()}
 
     {mDel && <div className="modal-bg" onClick={()=>setMDel(null)}><div className="modal" style={{width:440}} onClick={e=>e.stopPropagation()}>
       <div className="modal-body" style={{textAlign:"center"}}><div style={{marginBottom:10,display:"flex",justifyContent:"center",color:"var(--red-d)"}}><Ic n="cerrar" w={44} sw={1.8}/></div><h3 style={{fontSize:20,fontWeight:800,marginBottom:10}}>¿Eliminar propiedad?</h3>
