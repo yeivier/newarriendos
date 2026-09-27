@@ -9538,16 +9538,15 @@ function MobileApp(props){
     const hayConv = decMsgs.length>0;
     const ultimo = decMsgs[decMsgs.length-1];
     const esperando = decBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
-    return (<Pantalla titulo="Matriz de decisión" contexto="Compara tus opciones y te dice cuál conviene más, con los números detrás" gap="14">
+    return (<Pantalla titulo="Matriz de decisión" contexto="Compara tus opciones y te dice cuál conviene más" gap="14">
       {!hayConv ? (<React.Fragment>
-        <div className="mob-porque" style={{margin:"0 2px"}}>Cuéntame qué decisión debes tomar y entre qué opciones. Yo reviso qué es lo más importante para ti (por ejemplo: precio, plazo, confianza), le doy un puntaje a cada opción en cada cosa, y al final te digo cuál conviene más y por qué.</div>
+        <div className="mob-porque" style={{margin:"0 2px"}}>Cuéntame qué decisión debes tomar y entre qué opciones.</div>
         <textarea className="mob-inp" rows={7} value={decTexto} onChange={e=>setDecTexto(e.target.value)}
-          placeholder={"Ej: Tengo dos ofertas por el Depto 3B: Arrendatario A ofrece $650.000 con contrato de 1 año, buenas referencias, sin garantía adicional. Arrendatario B ofrece $600.000 con contrato de 2 años, es funcionario público, con garantía de 2 meses. ¿A quién le arriendo?"}
+          placeholder={"Ej: Arrendatario A ofrece $650.000, 1 año, buenas referencias. Arrendatario B ofrece $600.000, 2 años, con garantía extra. ¿A quién le arriendo?"}
           style={{resize:"none"}}/>
         <button className="mob-btn pri" disabled={decBusy || !decTexto.trim()} onClick={()=>decidirEnviar(true)}>
           {decBusy ? "Armando la matriz…" : "Generar matriz de decisión"}
         </button>
-        <div className="mob-nota">Sirve para cualquier tipo de decisión: elegir arrendatario, vender o arrendar, qué oferta aceptar, qué proveedor contratar, en qué invertir. Entre más datos le des, más preciso el puntaje.</div>
       </React.Fragment>) : (
         <div className="mob-bloque">
           <div className="mob-iachat">
@@ -9638,9 +9637,9 @@ function MobileApp(props){
   const pantallaContratoIA = ()=>{
     const tipoActual = CTR_TIPOS.find(t=>t.k===ctrTipo)||CTR_TIPOS[0];
     return (<Pantalla titulo="Generador de contratos" contexto="Redactado con IA, con el rigor de un abogado chileno" gap="14">
-      <div className="mob-porque" style={{margin:"0 2px"}}>Para un arriendo estándar, usa <b>Generar o editar el contrato</b> dentro de cada propiedad: es instantáneo y gratis. Este generador es para lo que ese no cubre: condiciones especiales, compraventa, o una propuesta para negociar.</div>
+      <div className="mob-porque" style={{margin:"0 2px"}}>Para un arriendo estándar, usa <b>Generar o editar el contrato</b> en la propiedad. Este generador es para compraventa o condiciones especiales.</div>
       <div className="mob-nota" style={{margin:"0 2px", fontWeight:650, color:"var(--mtx)"}}>Recuerda: esto redacta un borrador. Antes de firmar, tiene que revisarlo un abogado y autorizarse ante notario.</div>
-      <Grupo titulo="¿Sobre qué propiedad?" nota="Opcional. Si la eliges, se usan sus datos (dirección, sociedad, arrendatario) para redactar el documento.">
+      <Grupo titulo="¿Sobre qué propiedad?" nota="Opcional — si la eliges, se usan sus datos para redactar el documento.">
         <div className="mob-campo">
           <select className="mob-inp" value={ctrProp} onChange={e=>setCtrProp(e.target.value)}>
             <option value="">Sin propiedad específica</option>
@@ -9655,14 +9654,13 @@ function MobileApp(props){
           </select>
         </div>
       </Grupo>
-      <Grupo titulo="Condiciones" nota="Mientras más detalle le des —montos, plazos, porcentajes, nombres—, más completo y específico queda el documento.">
+      <Grupo titulo="Condiciones" nota="Mientras más detalle le des, más completo queda el documento.">
         <textarea className="mob-inp" rows={7} value={ctrTexto} onChange={e=>setCtrTexto(e.target.value)}
           placeholder={tipoActual.ph} style={{resize:"none"}}/>
       </Grupo>
       <button className="mob-btn pri" disabled={ctrBusy || !ctrTexto.trim()} onClick={ctrGenerar}>
         {ctrBusy ? (ctrFase||"Redactando…") : "Redactar con IA"}
       </button>
-      <div className="mob-nota">Es un borrador de nivel notarial, redactado por IA con la estructura y el rigor de un contrato chileno real — pero no reemplaza a un abogado. Revísalo antes de firmar, y autoriza las firmas ante Notario Público.</div>
     </Pantalla>);
   };
 
