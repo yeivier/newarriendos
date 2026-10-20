@@ -129,14 +129,16 @@ export async function responderIA(o: OpcionesIA): Promise<Response> {
           // ¿Terminó de verdad, o hay que seguir?
           if (errStream) { empujar(algo ? '\n\n' + o.textos.corte : o.textos.vacio); break }
           if (stop === 'refusal' && !algo) { empujar(o.textos.refusal || 'Prefiero no responder eso.'); break }
-          if (stop !== 'max_tokens') break                 // end_turn / stop_sequence -> completo
-          // Se cortó por tokens: continuar justo donde quedó.
+          // stop===null significa que la conexión se cerró sin avisar el motivo
+          // (se cae a mitad, no que terminó bien) — hay que seguir igual que con
+          // max_tokens, si no la respuesta queda cortada en silencio.
+          if (stop !== 'max_tokens' && stop !== null) break    // end_turn / stop_sequence -> completo de verdad
           rondas++
-          if (rondas > maxRondas || !acc || restante() < 12_000) break
+          if (rondas > maxRondas || !acc || restante() < 12_000) { empujar('\n\n' + o.textos.corte); break }
           let rc: Response
           try { rc = await llamar(o, [...o.messages, { role: 'assistant', content: acc }], restante()) }
-          catch { break }
-          if (!rc.ok || !rc.body) { break }
+          catch { empujar('\n\n' + o.textos.corte); break }
+          if (!rc.ok || !rc.body) { empujar('\n\n' + o.textos.corte); break }
           resp = rc
         }
         if (!algo) empujar(o.textos.vacio)

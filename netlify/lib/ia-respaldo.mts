@@ -174,14 +174,17 @@ async function streamDesde(prov: Proveedor, primeraRespuesta: Response, o: Opcio
             }
           }
           if (errStream) { empujar(algo ? '\n\n' + o.textos.corte : o.textos.vacio); break }
-          if (finReason !== 'length') break // terminó de verdad
+          // finReason===null significa que la conexión se cerró sin avisar el
+          // motivo (típico de proveedores gratuitos poco estables) — no es que
+          // terminó bien, hay que seguir igual que cuando se corta por tokens.
+          if (finReason !== 'length' && finReason !== null) break // terminó de verdad
           rondas++
-          if (rondas > maxRondas || !acc || restante() < 12_000) break
+          if (rondas > maxRondas || !acc || restante() < 12_000) { empujar('\n\n' + o.textos.corte); break }
           const mensajesCont = [...mensajesBase, { role: 'assistant', content: acc }]
           let rc: Response
           try { rc = await llamarProveedor(prov, clave, o.maxTokens, Math.max(8_000, Math.min(o.topeMs ?? 60_000, restante())), mensajesCont) }
-          catch { break }
-          if (!rc.ok || !rc.body) break
+          catch { empujar('\n\n' + o.textos.corte); break }
+          if (!rc.ok || !rc.body) { empujar('\n\n' + o.textos.corte); break }
           resp = rc
         }
         if (!algo) empujar(o.textos.vacio)
