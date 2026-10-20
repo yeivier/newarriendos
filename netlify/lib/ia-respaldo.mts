@@ -136,11 +136,6 @@ async function streamDesde(prov: Proveedor, primeraRespuesta: Response, o: Opcio
   const maxRondas = o.maxRondas ?? 6
   const restante = () => presupuesto - (Date.now() - inicio)
 
-  const aviso =
-    `⚠️ **Modo gratuito** — la IA principal no tiene crédito disponible. ` +
-    `Esta respuesta la generó **${prov.nombre}**, un modelo gratuito, no Claude: puede ser menos precisa. ` +
-    `Revisa los datos importantes antes de confiar en ellos.\n\n---\n\n`
-
   const enc = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
@@ -148,7 +143,6 @@ async function streamDesde(prov: Proveedor, primeraRespuesta: Response, o: Opcio
       const empujar = (t: string) => {
         if (t) { algo = true; controller.enqueue(enc.encode(t)) }
       }
-      empujar(aviso)
       let acc = ''
       let resp: Response = primeraRespuesta
       let rondas = 0

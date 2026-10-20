@@ -3038,6 +3038,43 @@ function cargarJSZip(){
   });
   return __jszipLoad;
 }
+// Lector de PDF (pdf.js), cargado solo al necesitarlo, igual que JSZip arriba.
+// Se usa para sacar el texto del PDF en el teléfono: así la IA lo puede leer
+// aunque responda un modelo de respaldo gratuito que no entiende PDF binario
+// (solo Claude lee el PDF "de verdad", con su forma y tablas — esto es además,
+// no en vez de, mandarle el PDF completo).
+let __pdfjsLoad = null;
+function cargarPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(__pdfjsLoad) return __pdfjsLoad;
+  __pdfjsLoad = new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload=()=>{
+      try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }catch(_e){}
+      res(window.pdfjsLib);
+    };
+    s.onerror=()=>rej(new Error("No se pudo cargar el lector de PDF"));
+    document.head.appendChild(s);
+  });
+  return __pdfjsLoad;
+}
+const extraerTextoPDF = async (blob, nombre)=>{
+  try{
+    const pdfjsLib = await cargarPdfJs();
+    const buf = await blob.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({data:buf}).promise;
+    const partes = [];
+    const tope = Math.min(doc.numPages, 25); // tope razonable: no demorar ni pesar de más
+    for(let i=1;i<=tope;i++){
+      const pagina = await doc.getPage(i);
+      const contenido = await pagina.getTextContent();
+      const texto = contenido.items.map(it=>it.str).join(" ");
+      if(texto.trim()) partes.push(texto.trim());
+    }
+    return partes.join("\n\n").slice(0,12000);
+  }catch(_e){ return ""; } // PDF escaneado (sin texto) u otro error: se sigue solo con el PDF binario
+};
 // Quita los caracteres invisibles de dirección (LTR/RTL) que WhatsApp intercala.
 const limpiarWA = (s)=> String(s||"").replace(/[\u200e\u200f\u202a-\u202e\u00a0\ufeff]/g,"").trim();
 // Inicio de mensaje: iOS «[dd-mm-aa hh:mm:ss] Nombre: …» o Android «dd/mm/aa, hh:mm - Nombre: …».
@@ -9386,14 +9423,17 @@ function MobileApp(props){
       const name=f.name||"archivo"; const type=(f.type||"").toLowerCase();
       try{
         if(type.startsWith("image/") || /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i.test(name)) empujar(await anaImagenIA(f,name));
-        else if(type==="application/pdf" || /\.pdf$/i.test(name)){ const m=/^data:([^;]+);base64,(.+)$/s.exec(String(await leerBase64(f))); if(m) empujar({media:"application/pdf",data:m[2],name}); }
+        else if(type==="application/pdf" || /\.pdf$/i.test(name)){
+          const m=/^data:([^;]+);base64,(.+)$/s.exec(String(await leerBase64(f))); if(m) empujar({media:"application/pdf",data:m[2],name});
+          const tx=await extraerTextoPDF(f,name); if(tx) textos.push("["+name+" — texto extraído]\n"+tx);
+        }
         else if(type.startsWith("video/") || /\.(mp4|mov|m4v|webm|avi|mkv|3gp)$/i.test(name)){ const fr=await anaVideoFrame(f); if(fr) empujar(fr); else avisos.push(name+": es un video; no pude sacar un cuadro, cuéntame qué muestra."); }
         else if(type==="application/zip" || /\.zip$/i.test(name)){
           const JSZip=await cargarJSZip(); const zip=await JSZip.loadAsync(f);
           const ent=Object.keys(zip.files).map(k=>zip.files[k]).filter(e=>!e.dir).slice(0,40);
           for(const e of ent){ if(archivos.length>=8) break; const en=(e.name.split("/").pop()||e.name);
             if(/\.(jpe?g|png|gif|webp|bmp)$/i.test(en)){ const b=await e.async("blob"); empujar(await anaImagenIA(b,en)); }
-            else if(/\.pdf$/i.test(en)){ const b64=await e.async("base64"); empujar({media:"application/pdf",data:b64,name:en}); }
+            else if(/\.pdf$/i.test(en)){ const b=await e.async("blob"); const b64=await e.async("base64"); empujar({media:"application/pdf",data:b64,name:en}); const tx=await extraerTextoPDF(b,en); if(tx) textos.push("["+en+" — texto extraído]\n"+tx); }
             else if(/\.(txt|csv|md|json|log|vtt|srt)$/i.test(en)){ const tx=await e.async("string"); textos.push("["+en+"]\n"+String(tx).slice(0,6000)); }
           }
         }
