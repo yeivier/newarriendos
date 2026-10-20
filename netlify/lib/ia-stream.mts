@@ -35,6 +35,9 @@ export type OpcionesIA = {
   effort?: 'low' | 'medium' | 'high'
   system: string
   messages: any[]
+  // Herramientas nativas de Anthropic (web_search, web_fetch, etc.), que
+  // corren en el servidor de Anthropic, no en Netlify ni en el navegador.
+  tools?: any[]
   // Tope por cada llamada al modelo.
   topeMs?: number
   // Tope total sumando todas las continuaciones (resguardo de tiempo).
@@ -58,6 +61,7 @@ function llamar(o: OpcionesIA, messages: any[], msRestante: number): Promise<Res
       output_config: { effort: o.effort ?? 'low' },
       system: o.system,
       messages,
+      ...(o.tools?.length ? { tools: o.tools } : {}),
       stream: true,
     }),
   })
@@ -130,13 +134,19 @@ export async function responderIA(o: OpcionesIA): Promise<Response> {
           if (errStream) { empujar(algo ? '\n\n' + o.textos.corte : o.textos.vacio); break }
           if (stop === 'refusal' && !algo) { empujar(o.textos.refusal || 'Prefiero no responder eso.'); break }
           // stop===null significa que la conexión se cerró sin avisar el motivo
-          // (se cae a mitad, no que terminó bien) — hay que seguir igual que con
+          // (se cae a mitad, no que terminó bien). stop==='pause_turn' es el
+          // caso de una búsqueda web larga que Anthropic corta para seguir
+          // después: en ambos casos hay que continuar igual que con
           // max_tokens, si no la respuesta queda cortada en silencio.
-          if (stop !== 'max_tokens' && stop !== null) break    // end_turn / stop_sequence -> completo de verdad
+          if (stop !== 'max_tokens' && stop !== null && stop !== 'pause_turn') break // end_turn / stop_sequence -> completo de verdad
           rondas++
-          if (rondas > maxRondas || !acc || restante() < 12_000) { empujar('\n\n' + o.textos.corte); break }
+          if (rondas > maxRondas || (!acc && stop !== 'pause_turn') || restante() < 12_000) {
+            empujar(algo ? '\n\n' + o.textos.corte : o.textos.vacio)
+            break
+          }
           let rc: Response
-          try { rc = await llamar(o, [...o.messages, { role: 'assistant', content: acc }], restante()) }
+          const mensajesCont = acc ? [...o.messages, { role: 'assistant', content: acc }] : o.messages
+          try { rc = await llamar(o, mensajesCont, restante()) }
           catch { empujar('\n\n' + o.textos.corte); break }
           if (!rc.ok || !rc.body) { empujar('\n\n' + o.textos.corte); break }
           resp = rc
