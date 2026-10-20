@@ -1,6 +1,6 @@
 import type { Config, Context } from '@netlify/functions'
 import { quienLlama, sinAcceso } from '../lib/auth.mts'
-import { responderIA } from '../lib/ia-stream.mts'
+import { responderConRespaldo } from '../lib/ia-respaldo.mts'
 
 // Redactor con IA: dos cerebros especializados, separados del analizador
 // porque aquí no se lee un documento — se REDACTA uno desde cero.
@@ -98,8 +98,9 @@ export default async (req: Request, _context: Context) => {
   const yo = await quienLlama(req)
   if (!yo) return sinAcceso()
 
+  // Si no hay clave de Anthropic (o no tiene crédito), responderConRespaldo
+  // cae automáticamente al modelo gratuito de respaldo, si está configurado.
   const apiKey = Netlify.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) return Response.json({ error: 'Falta configurar ANTHROPIC_API_KEY en Netlify.' }, { status: 503 })
 
   let body: any
   try {
@@ -133,8 +134,8 @@ export default async (req: Request, _context: Context) => {
 
   const system = modo === 'contrato' ? SISTEMA_CONTRATO : SISTEMA_DECISION
 
-  return responderIA({
-    apiKey,
+  return responderConRespaldo({
+    apiKey: apiKey || '',
     model: MODEL,
     maxTokens: MAX_TOKENS,
     effort: 'low',
