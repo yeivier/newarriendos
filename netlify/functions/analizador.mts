@@ -1,6 +1,6 @@
 import type { Config, Context } from '@netlify/functions'
 import { quienLlama, sinAcceso } from '../lib/auth.mts'
-import { responderIA } from '../lib/ia-stream.mts'
+import { responderConRespaldo } from '../lib/ia-respaldo.mts'
 
 // Analizador universal con IA. Un solo cerebro para varios lectores:
 //   - plano        : lectura de planos de arquitectura
@@ -99,8 +99,9 @@ export default async (req: Request, _context: Context) => {
   const yo = await quienLlama(req)
   if (!yo) return sinAcceso()
 
+  // Si no hay clave de Anthropic (o no tiene crédito), responderConRespaldo
+  // cae automáticamente al modelo gratuito de respaldo, si está configurado.
   const apiKey = Netlify.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) return Response.json({ error: 'Falta configurar ANTHROPIC_API_KEY en Netlify.' }, { status: 503 })
 
   let body: any
   try { body = await req.json() } catch { return Response.json({ error: 'Cuerpo inválido' }, { status: 400 }) }
@@ -171,8 +172,8 @@ export default async (req: Request, _context: Context) => {
   // El motor de streaming reenvía la respuesta en vivo y, si el modelo se corta
   // por tope de tokens, continúa solo hasta terminar: el análisis nunca queda
   // cortado, del largo que sea.
-  return responderIA({
-    apiKey,
+  return responderConRespaldo({
+    apiKey: apiKey || '',
     model: MODEL,
     maxTokens: MAX_TOKENS,
     effort: 'low',

@@ -6073,6 +6073,7 @@ const MOB_CARD_CORTO = {
   "Comunicaciones":"Mensajes listos",
   "Analizar un documento":"Analizar",
   "Matriz de decisión":"Comparar y decidir",
+  "Investigar el mercado":"Mercado",
   "Generador de contratos":"Redactar contrato",
   "Impuestos y contribuciones":"Impuestos",
   "Calculadora de arriendo":"Calculadora",
@@ -6080,15 +6081,19 @@ const MOB_CARD_CORTO = {
   "Mi perfil":"Perfil"
 };
 
-/* Render mínimo de Markdown para las respuestas de la IA: negritas, encabezados
-   (líneas que son solo **...**), viñetas y párrafos. Nada de librerías: la IA
-   responde con esta estructura y acá se ve ordenada y fácil de leer, sin los
-   asteriscos crudos. */
+/* Render mínimo de Markdown para las respuestas de la IA: negritas, enlaces
+   (para que una fuente citada, como "Investigar el mercado", se pueda tocar
+   y abrir de verdad), encabezados (líneas que son solo **...**), viñetas y
+   párrafos. Nada de librerías: la IA responde con esta estructura y acá se
+   ve ordenada y fácil de leer, sin los asteriscos ni corchetes crudos. */
 function MdInline({ t }){
-  const partes = String(t==null?"":t).split(/(\*\*[^*]+\*\*)/g);
-  return partes.map((s,i)=> /^\*\*[^*]+\*\*$/.test(s)
-    ? <strong key={i}>{s.slice(2,-2)}</strong>
-    : <React.Fragment key={i}>{s}</React.Fragment>);
+  const partes = String(t==null?"":t).split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g);
+  return partes.map((s,i)=>{
+    if(/^\*\*[^*]+\*\*$/.test(s)) return <strong key={i}>{s.slice(2,-2)}</strong>;
+    const enlace = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/.exec(s);
+    if(enlace) return <a key={i} href={enlace[2]} target="_blank" rel="noopener noreferrer">{enlace[1]}</a>;
+    return <React.Fragment key={i}>{s}</React.Fragment>;
+  });
 }
 /* Fila de tabla markdown "| a | b |" → celdas recortadas, sin las barras de borde. */
 const mdFilaTabla = (t)=>{ let s=t.trim(); if(s.startsWith("|")) s=s.slice(1); if(s.endsWith("|")) s=s.slice(0,-1); return s.split("|").map(c=>c.trim()); };
@@ -6171,6 +6176,7 @@ const MOB_MAS_GRUPOS = [
   { label:"Analizar y decidir", items:[
     { esp:"analizador", ico:"chispas",  label:"Analizar un documento", sub:"Propuestas, cotizaciones, contratos y más — con IA" },
     { esp:"decidir",    ico:"diana",    label:"Matriz de decisión", sub:"Compara opciones con criterios y pesos — análisis técnico con IA" },
+    { esp:"mercado",    ico:"lupa",     label:"Investigar el mercado", sub:"Precios, noticias y comunas — con búsqueda real, no inventada" },
     { esp:"impuestos",  ico:"impuesto", label:"Impuestos y contribuciones", sub:"Tu situación tributaria, explicada en simple" },
     { esp:"calcArriendo", ico:"calc", label:"Calculadora de arriendo", sub:"Precio sugerido según el mercado en Chile" }
   ]},
@@ -9574,6 +9580,73 @@ function MobileApp(props){
     </Pantalla>);
   };
 
+  /* ============ INVESTIGAR EL MERCADO (IA + búsqueda real) ============
+     A diferencia de la calculadora de arriendo (que estima con lo que el
+     modelo ya sabe), esto busca en internet de verdad antes de responder —
+     precios, noticias, comunas — y cita la fuente de cada dato. Si no
+     encuentra nada confiable, lo dice en vez de inventar. Mismo patrón de
+     chat que el Analizador y la Matriz de decisión. */
+  const [mercTexto, setMercTexto] = React.useState("");
+  const [mercMsgs, setMercMsgs] = React.useState([]);
+  const [mercBusy, setMercBusy] = React.useState(false);
+  const mercadoEnviar = async (primera, pregunta)=>{
+    if(mercBusy) return;
+    if(primera && !mercTexto.trim()) return;
+    const msgs = primera ? [{ role:"user", content: mercTexto.trim() }] : [...mercMsgs, { role:"user", content: pregunta }];
+    setMercMsgs(msgs); setMercBusy(true); if(primera) setMercTexto("");
+    try{
+      const r = await api("/api/mercado",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ messages: msgs.slice(-8) }) });
+      if(!r.ok || !r.body){ const j=await r.json().catch(()=>({})); setMercMsgs([...msgs,{role:"assistant",content:j.error||"No pude investigar eso."}]); setMercBusy(false); return; }
+      setMercMsgs([...msgs,{role:"assistant",content:""}]);
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let acc="";
+      while(true){ const {done,value}=await reader.read(); if(done) break; acc+=dec.decode(value,{stream:true}); setMercMsgs([...msgs,{role:"assistant",content:acc}]); }
+      if(!acc.trim()) setMercMsgs([...msgs,{role:"assistant",content:"No alcancé a investigarlo. Prueba con una pregunta más concreta."}]);
+    }catch(_e){ setMercMsgs([...msgs,{role:"assistant",content:"No se pudo contactar la IA. Revisa la conexión e inténtalo otra vez."}]); }
+    setMercBusy(false);
+  };
+  const pantallaMercado = ()=>{
+    const hayConv = mercMsgs.length>0;
+    const ultimo = mercMsgs[mercMsgs.length-1];
+    const esperando = mercBusy && (!ultimo || ultimo.role!=="assistant" || !ultimo.content);
+    return (<Pantalla titulo="Investigar el mercado" contexto="Busca en internet antes de responder, y cita la fuente" gap="14">
+      {!hayConv ? (<React.Fragment>
+        <div className="mob-porque" style={{margin:"0 2px"}}>Pregúntame un precio, una comuna, una noticia del rubro. Busco en internet antes de responder — si no encuentro nada confiable, te lo digo en vez de inventarlo.</div>
+        <textarea className="mob-inp" rows={5} value={mercTexto} onChange={e=>setMercTexto(e.target.value)}
+          placeholder={"Ej: ¿Cómo está el precio de arriendo en Ñuñoa este año? ¿Hay alguna noticia reciente que afecte a los arrendadores?"}
+          style={{resize:"none"}}/>
+        <button className="mob-btn pri" disabled={mercBusy || !mercTexto.trim()} onClick={()=>mercadoEnviar(true)}>
+          {mercBusy ? "Investigando…" : "Investigar"}
+        </button>
+      </React.Fragment>) : (
+        <div className="mob-bloque">
+          <div className="mob-iachat">
+            {mercMsgs.map((m,i)=>{
+              if(m.role==="assistant" && !m.content) return null;
+              return (
+                <div key={i} className={"mob-iamsg "+(m.role==="user"?"yo":"ia")}>
+                  {m.role==="assistant" && <span className="et">Mercado · IA</span>}
+                  {m.role==="assistant" ? <MdMini texto={m.content}/> : <div className="tx">{m.content}</div>}
+                </div>
+              );
+            })}
+            {esperando && <div className="mob-iamsg ia"><span className="et">Mercado · IA</span><div className="tx">Buscando…</div></div>}
+          </div>
+          <div className="mob-iabar">
+            <input className="mob-inp" value={mercTexto} onChange={e=>setMercTexto(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"&&mercTexto.trim()&&!mercBusy){ const q=mercTexto.trim(); setMercTexto(""); mercadoEnviar(false,q); } }}
+              placeholder="Pregunta algo más…" disabled={mercBusy}/>
+            <button className="mob-btn pri" style={{minWidth:56}} disabled={!mercTexto.trim()||mercBusy}
+              onClick={()=>{ const q=mercTexto.trim(); setMercTexto(""); mercadoEnviar(false,q); }}>→</button>
+          </div>
+          <button className="mob-btn sec" style={{marginTop:6}} onClick={()=>{ setMercMsgs([]); setMercTexto(""); }}>
+            Investigar otra cosa
+          </button>
+        </div>
+      )}
+    </Pantalla>);
+  };
+
   /* ============ GENERADOR DE CONTRATOS (IA) ============
      Actúa con el rigor de un abogado experto en instrumentos notariales
      chilenos. Para el arriendo estándar ya existe un generador completo y
@@ -10684,6 +10757,7 @@ function MobileApp(props){
     else if(top.t==="planos")       vista = pantallaPlanos();
     else if(top.t==="analizador")   vista = pantallaAnalizador();
     else if(top.t==="decidir")      vista = pantallaDecidir();
+    else if(top.t==="mercado")      vista = pantallaMercado();
     else if(top.t==="contratoIA")   vista = pantallaContratoIA();
     else if(top.t==="calcArriendo") vista = pantallaCalcArriendo();
     else if(top.t==="plano")        vista = pantallaPlano(aportePorId(top.ap));
