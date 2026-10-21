@@ -6,3 +6,7 @@
   Cache-Control: public, max-age=0, must-revalidate
 /version.txt
   Cache-Control: no-store
+# El JavaScript va aparte y con la huella de su contenido en el nombre: si algo
+# cambia, cambia el nombre del archivo, así que se puede cachear para siempre.
+/app.*.js
+  Cache-Control: public, max-age=31536000, immutable

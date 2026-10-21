@@ -1,0 +1,21 @@
+# Imagen base del entorno de desarrollo del sandbox (Base44).
+#
+# No lleva el código de la app: el repositorio se monta en /app al arrancar, así
+# que cualquier edición se ve al recargar. Aquí solo se dejan listas las
+# dependencias, que son lo único que conviene tener ya instalado en la imagen:
+# las del proyecto (package-lock.json) y la CLI de Netlify, que en local levanta
+# el sitio y ejecuta las funciones de netlify/functions.
+FROM node:22
+
+WORKDIR /app
+
+# Dependencias del proyecto, fijadas por package-lock.json. Las usan las
+# funciones al ejecutarse (por ejemplo @netlify/blobs).
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+# netlify dev = servidor estático + funciones de Netlify + emulación local de
+# Netlify Blobs. Se instala en la imagen para que cada arranque sea rápido.
+RUN npm install --global netlify-cli@27.14.0 --no-audit --no-fund
+
+CMD ["node", "--version"]

@@ -1,0 +1,87 @@
+# Entorno de desarrollo del sandbox (Base44) para ArriendoPro.
+#
+# ArriendoPro es un sitio de Netlify: un index.html que se sirve tal cual y una
+# carpeta de funciones (netlify/functions) que atiende /api/*, /p/*, /m/*, /a/*
+# y /llenar/*. Este compose lo levanta completo y en local, desde el código
+# fuente, sin desplegar nada:
+#
+#   - `netlify dev` sirve el repositorio en el puerto 3000 y ejecuta las
+#     funciones.
+#   - Emula Netlify Blobs en .netlify/ (dentro del repo): ahí viven los datos
+#     de la plataforma (accesos, propiedades, chat, aportes, archivos).
+#   - Inyecta los secretos guardados en la app (/run/base44/app.env, fuera del
+#     repo) para las funciones que llaman a servicios externos (IA, correo,
+#     pagos).
+#
+# Se sirve dist/, igual que Netlify, no el fuente: el JSX de index.html lo
+# transpila build.mjs en el arranque (es el paso de compilación del despliegue).
+# Servir el fuente tal cual no funciona —el navegador tendría que transpilar un
+# bloque de más de 1 MB con Babel y la página queda en blanco, que es el motivo
+# por el que existe build.mjs—. Para que las ediciones se vean igual, un watcher
+# vuelve a compilar dist/ cada vez que cambia index.html: se edita, y al
+# recargar la página ya está aplicado.
+#
+# Uso:  docker compose -f docker-compose.base44.yml up -d --build
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app
+    # npm ci deja node_modules igual al lockfile antes de arrancar (el volumen
+    # node_modules se reutiliza entre arranques, así que se sincroniza aquí),
+    # build.mjs compila index.html a dist/ y deja el watcher recompilando en
+    # segundo plano; exec pasa el proceso a netlify dev para que reciba las señales.
+    command:
+      - sh
+      - -ec
+      - >-
+        npm ci --no-audit --no-fund && node build.mjs &&
+        (node --watch-path=./index.html --watch-path=./levantamiento build.mjs &) &&
+        exec netlify dev --dir dist --port 3000 --no-open
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      # El sandbox marca la previsualización con esta variable: se pasa tal cual y
+      # nunca se fija en 1. Las funciones la ignoran; está aquí por si algún día
+      # hace falta una excepción de previsualización.
+      - BASE44_PREVIEW_MODE
+      # netlify dev no debe abrir un navegador ni mandar telemetría.
+      - BROWSER=none
+      - NETLIFY_TELEMETRY_DISABLED=1
+      # Dentro del contenedor "localhost" resuelve primero a ::1 (IPv6), así que
+      # el servidor interno que ejecuta cada función escuchaba en ::1 y el resto
+      # de netlify dev lo llamaba en 127.0.0.1: la función fallaba con
+      # ECONNREFUSED y /api/* respondía 500. Forzando IPv4 primero, las dos
+      # puntas usan 127.0.0.1. Solo afecta a este entorno de desarrollo.
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+    env_file:
+      # Secretos que el usuario guarda en la app (servicios externos, fuera del
+      # repo). Opcional: la app arranca sin ellos, y las funciones que los
+      # necesitan responden con su propio aviso.
+      - path: /run/base44/app.env
+        required: false
+    healthcheck:
+      # Comprueba las dos piezas: la página (que el HTML de verdad se sirva, no
+      # un 404) y las funciones con Netlify Blobs (POST /api/acceso estado lee el
+      # almacén). Si alguna falla, dice cuál.
+      test:
+        - CMD-SHELL
+        - >-
+          node -e 'const t=async(u,o)=>{try{const r=await fetch(u,o);return {s:r.status,b:await r.text()}}catch(e){return {s:0,b:""}}};
+          Promise.all([t("http://127.0.0.1:3000/"),t("http://127.0.0.1:3000/api/acceso",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({accion:"estado"})})])
+          .then(([p,a])=>{const okP=p.s===200&&p.b.includes("ArriendoPro");const okA=a.s===200;
+          console.log("pagina="+(okP?"ok":"falla("+p.s+")")+" funciones="+(okA?"ok":"falla("+a.s+")"));
+          process.exit(okP&&okA?0:1)}).catch(e=>{console.log("falla: "+e.message);process.exit(1)})'
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+    restart: on-failure
+
+volumes:
+  node_modules:

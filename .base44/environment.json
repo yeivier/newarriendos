@@ -1,0 +1,52 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d --build",
+  "secrets": [
+    {
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Clave de Anthropic (console.anthropic.com → API keys). Es la IA principal de la app: analizador de documentos, planos, asesor, chat, redactor, precios de arriendo. Sin ella esas funciones responden 503.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Clave de Resend (resend.com → API keys) para mandar los correos de acceso y los códigos de verificación. Sin ella la app funciona en modo demo: el código se muestra en pantalla y el correo de acceso se abre en el teléfono.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "CORREO_REMITENTE",
+      "description": "Remitente de esos correos, por ejemplo contacto@tudominio.com (el dominio debe estar verificado en Resend). Opcional: si falta, se usa el remitente por defecto del código.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "KHIPU_API_KEY",
+      "description": "Clave de Khipu (khipu.com → comercio → API) para crear y consultar cobros por transferencia bancaria. Sin ella las funciones /api/khipu/* responden con aviso.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GEMINI_API_KEY",
+      "description": "Opcional. Clave gratuita de Google AI Studio, usada como respaldo de IA cuando Anthropic no tiene crédito o falla.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GROQ_API_KEY",
+      "description": "Opcional. Clave gratuita de Groq (Llama), segundo respaldo de IA.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "OPENROUTER_API_KEY",
+      "description": "Opcional. Clave gratuita de OpenRouter (DeepSeek), tercer respaldo de IA.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GOOGLE_SEARCH_API_KEY",
+      "description": "Opcional. Clave de Google Custom Search para la investigación de mercado con búsqueda web.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GOOGLE_SEARCH_CX",
+      "description": "Opcional. Id del motor de búsqueda programable (CX) de Google, junto con GOOGLE_SEARCH_API_KEY.",
+      "requiredAtBoot": false
+    }
+  ]
+}

@@ -41,6 +41,11 @@ copiar(root, out)
 const idx = path.join(out, 'index.html')
 let html = fs.readFileSync(idx, 'utf8')
 let transpilado = false
+let codigo = ''
+// Marca que después se cambia por la etiqueta <script src="app.<huella>.js">.
+// El nombre lleva la huella, y la huella se calcula con el código ya
+// transpilado, así que primero se deja la marca y se reemplaza al final.
+const MARCA = '<!--app.js-->'
 html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/, (m, code) => {
   transpilado = true
   let js = babel.transform(code, { presets: [['react', { runtime: 'classic' }]], compact: false }).code
@@ -53,7 +58,8 @@ html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/, (m, code)
   } catch (e) {
     console.warn('Aviso: no se pudo minificar el JS (' + (e && e.message) + '); se publica sin minificar.')
   }
-  return '<script>\n' + js + '\n</script>'
+  codigo = js
+  return MARCA
 })
 if (!transpilado) throw new Error('No encontré el bloque <script type="text/babel"> en index.html')
 // El navegador ya no necesita Babel: se saca el CDN.
@@ -66,9 +72,24 @@ html = html.replace(/\s*<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/lib
 // build con la huella de su contenido y se deja esa misma huella en un archivo
 // diminuto (version.txt): la página lo mira de vez en cuando y, si cambió,
 // avisa que hay una versión nueva.
-const version = crypto.createHash('sha1').update(html).digest('hex').slice(0, 12)
+const version = crypto.createHash('sha1').update(html + codigo).digest('hex').slice(0, 12)
+
+// El código va en un archivo aparte (app.<huella>.js), no dentro del HTML.
+//
+// Un bloque en línea de ~1 MB deja el documento "en lectura" mucho rato, y
+// cualquier cosa que escriba en la página mientras el navegador todavía lo está
+// leyendo —un script de terceros, la previsualización, una extensión— mete su
+// texto en medio del código, lo corta y la página queda en blanco (ya pasó: el
+// navegador cortaba el bloque a la altura de un "<!--" de un string del Word de
+// la ficha). Como archivo aparte el HTML es diminuto y nadie puede escribir
+// dentro del JavaScript; el nombre lleva la huella del contenido, así que se
+// puede cachear para siempre sin riesgo de quedarse con la versión vieja.
+const archivoJs = 'app.' + version + '.js'
+fs.writeFileSync(path.join(out, archivoJs), codigo + '\n')
+html = html.replace(MARCA, '<script src="/' + archivoJs + '"></script>')
+
 html = html.replace('</head>', '<script>window.__APV=' + JSON.stringify(version) + ';</script>\n</head>')
 fs.writeFileSync(idx, html)
 fs.writeFileSync(path.join(out, 'version.txt'), version + '\n')
 
-console.log('Build listo: index.html pre-transpilado, Babel quitado del navegador. Versión ' + version)
+console.log('Build listo: JSX pre-transpilado a ' + archivoJs + ', Babel quitado del navegador. Versión ' + version)
