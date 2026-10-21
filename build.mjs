@@ -53,6 +53,16 @@ html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/, (m, code)
   } catch (e) {
     console.warn('Aviso: no se pudo minificar el JS (' + (e && e.message) + '); se publica sin minificar.')
   }
+  // Las plantillas que arman documentos (contratos, informes, fichas, la
+  // versión imprimible) generan HTML completo, así que el código lleva
+  // "</head>", "</body>" y "</html>" escritos tal cual. Eso, dentro de un
+  // <script> en línea, es una trampa: cualquier herramienta que recorra el HTML
+  // buscando esas etiquetas (el proxy del preview, por ejemplo) encuentra
+  // primero las de adentro del código, inyecta ahí y parte el <script> en dos
+  // — la página quedaba en blanco. Se escriben escapadas (<\/head>): lo que
+  // ve el navegador al ejecutar es exactamente lo mismo, pero el HTML servido
+  // ya no tiene etiquetas de documento dentro del script.
+  js = js.replace(/<\/(head|body|html)>/gi, '<\\/$1>')
   return '<script>\n' + js + '\n</script>'
 })
 if (!transpilado) throw new Error('No encontré el bloque <script type="text/babel"> en index.html')

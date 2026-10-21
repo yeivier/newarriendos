@@ -1,0 +1,79 @@
+# Entorno de desarrollo de Base44 para ArriendoPro.
+#
+# La aplicación NO tiene servidor propio: es un sitio estático de un solo
+# archivo (index.html, con su JSX, que build.mjs transpila a dist/) más las
+# funciones de Netlify de netlify/functions, publicadas en las rutas /api/*
+# (cada una declara su `path` en su `export const config`).
+#
+# Por eso se levanta con el mismo Netlify Dev que ya usa el proyecto
+# (netlify.toml): sirve dist/ y ejecuta las funciones locales con recarga en
+# caliente, sin depender de ninguna cuenta de Netlify. El código se monta
+# desde el repo clonado y se reconstruye al vuelo, así que los cambios se ven
+# enseguida, sin rebuild de imagen.
+#
+# Nada de este archivo se despliega a producción: es solo el entorno de
+# desarrollo del sandbox (ver AGENTS.md).
+services:
+  app:
+    image: node:22
+    working_dir: /app
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    volumes:
+      # El repo clonado (código fuente, en vivo).
+      - ./:/app
+      # Caché de npm/npx: sin esto cada reinicio vuelve a descargar el CLI.
+      - npm-cache:/root/.npm
+    # Los secrets de la plataforma llegan aquí (fuera del repo). Van al final:
+    # si algún día se agregan defaults para el repo, deben ir ANTES que este
+    # archivo para que el valor del usuario siempre gane. Hoy no hacen falta
+    # para arrancar: las funciones leen sus claves dentro de cada llamada.
+    env_file:
+      - /run/base44/app.env
+    environment:
+      # Las claves (ANTHROPIC_API_KEY, RESEND_API_KEY, KHIPU_API_KEY, ...) NO
+      # se listan aquí a propósito: `environment:` gana sobre `env_file:`, y
+      # las funciones las leen con Netlify.env del entorno que ya heredan.
+      #
+      # La app no necesita nada atado a BASE44_PREVIEW_MODE: se comporta igual
+      # aquí y en producción (todo es mismo origen, sin allowlists que ampliar).
+      #
+      # Los datos de la app viven en Netlify Blobs. En local, Netlify Dev
+      # levanta su servidor de Blobs escuchando en "localhost", que dentro del
+      # contenedor resuelve a ::1 (IPv6) mientras las funciones se conectan a
+      # 127.0.0.1 (IPv4): cada llamada terminaba en ECONNREFUSED y la app no
+      # podía ni cargar (la clave de acceso se guarda ahí). Forzando IPv4
+      # primero, ambos lados hablan por la misma dirección. Solo afecta a este
+      # contenedor de desarrollo.
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+    command:
+      - sh
+      - -ec
+      - |
+        # Dependencias desde el lockfile del propio checkout (no se congelan
+        # en la imagen: el repo va montado y puede cambiar).
+        npm ci --no-audit --no-fund
+        # dist/ se genera siempre al arrancar: el navegador no transpila nada.
+        node build.mjs
+        # index.html es el código fuente real; al editarlo se recompila dist/
+        # y Netlify Dev recarga el navegador solo. (Las funciones en
+        # netlify/functions las vigila Netlify Dev por su cuenta.)
+        npx --yes nodemon@3 --quiet --watch index.html --watch build.mjs --ext html,js,mjs --exec "node build.mjs" &
+        exec npx --yes netlify-cli@27 dev --offline --port 3000
+    healthcheck:
+      # Se comprueba lo que la persona realmente usa: la página y una función
+      # real. Cualquier respuesta de HTTP de /api/estado prueba que el motor de
+      # funciones está vivo (401/403 = pide sesión); un 404 significaría que
+      # las rutas /api/* no están enganchadas.
+      test:
+        - CMD-SHELL
+        - curl -fsS -o /dev/null http://127.0.0.1:3000/ || exit 1; c=$$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/estado); case "$$c" in 200|400|401|403|405) exit 0;; *) echo "API /api/estado respondio $$c"; exit 1;; esac
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      # npm ci + build + arranque del CLI tardan: margen para el primer chequeo.
+      start_period: 150s
+
+volumes:
+  npm-cache:

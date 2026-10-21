@@ -1,0 +1,37 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Clave de Anthropic (console.anthropic.com > API Keys). La usan todas las pantallas de IA: analizador, redactor, mercado, chat, asistente, ficha. Sin ella esas funciones responden 503.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Opcional. Resend (resend.com > API Keys) para enviar los códigos de acceso por correo.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "CORREO_REMITENTE",
+      "description": "Opcional. Remitente verificado en Resend para los correos de acceso (p. ej. ArriendoPro <no-reply@tudominio.cl>).",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "KHIPU_API_KEY",
+      "description": "Opcional. Khipu (khipu.com > credenciales) para los cobros del arriendo.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GOOGLE_SEARCH_API_KEY",
+      "description": "Opcional. Respaldo de búsqueda web para Investigar el mercado cuando la IA principal no tiene crédito.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GOOGLE_SEARCH_CX",
+      "description": "Opcional. Motor de búsqueda programable de Google (cx) para ese mismo respaldo.",
+      "requiredAtBoot": false
+    }
+  ]
+}
