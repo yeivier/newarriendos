@@ -25,7 +25,10 @@ fs.mkdirSync(out, { recursive: true })
 
 // Todo lo estático se copia a dist/. Las funciones (netlify/functions) las
 // compila Netlify aparte, así que no van aquí.
-const SALTAR = new Set(['.git', 'node_modules', 'dist', 'netlify', 'build.mjs', 'package.json', 'package-lock.json', 'scratchpad'])
+// '.netlify' tampoco se publica: ahí viven las funciones compiladas por Netlify
+// y, en local, el almacén de datos (Blobs). Son archivos internos y enormes que
+// no tienen por qué quedar accesibles desde el sitio.
+const SALTAR = new Set(['.git', 'node_modules', 'dist', 'netlify', '.netlify', 'build.mjs', 'package.json', 'package-lock.json', 'scratchpad'])
 function copiar(src, dst) {
   for (const nombre of fs.readdirSync(src)) {
     if (SALTAR.has(nombre)) continue

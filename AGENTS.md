@@ -13,13 +13,19 @@ docker compose -f docker-compose.base44.yml up -d --build
 ```
 
 - El sitio queda en el puerto **3000** (`Dockerfile.base44` + `web`).
-- Dentro corre `netlify dev`, que sirve el repositorio **desde el código fuente**
-  (`--dir .`) y ejecuta las funciones. Por eso una edición en `index.html` o en
-  `netlify/functions/` se ve al recargar, sin recompilar ni reconstruir la imagen.
-- `npm run build` (`build.mjs`) es solo el paso de compilación de Netlify: genera
-  `dist/` con el JSX ya transpilado y sin Babel. **No hace falta en local** y
-  `dist/` no se sirve aquí (si se sirviera, los cambios de `index.html` no se
-  verían hasta volver a compilar).
+- Dentro corre `netlify dev` (`--dir dist`), que sirve esa carpeta y ejecuta las
+  funciones de `netlify/functions/`. Se sirve `dist/` y no el fuente porque
+  `index.html` transpila su JSX con Babel **en el navegador**: con el archivo ya
+  sobre 1 MB la página queda en blanco, y en la previsualización empeora (lo que
+  se escribe en el documento llega en medio del bloque en línea y lo corta).
+  `node build.mjs` es el mismo paso de compilación de Netlify: transpila ese
+  bloque una sola vez y deja `dist/index.html` liviano más `dist/app.<huella>.js`.
+- Ese build corre al arrancar el contenedor y un watcher (`node --watch-path`)
+  lo repite cada vez que cambia `index.html` o `levantamiento/`. Se edita igual
+  que siempre y al recargar la página el cambio ya está. **No hay recarga en
+  vivo (HMR)**: hay que refrescar el navegador; en la previsualización de Base44,
+  recargar la vista después de editar.
+- Una edición en `netlify/functions/` sí se ve al recargar sin recompilar nada.
 
 ### Comprobaciones rápidas
 
